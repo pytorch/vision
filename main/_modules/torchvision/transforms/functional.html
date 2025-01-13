@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,29 +393,29 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.transforms.functional</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">numbers</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
-<span class="kn">from</span> <span class="nn">PIL.Image</span> <span class="kn">import</span> <span class="n">Image</span> <span class="k">as</span> <span class="n">PILImage</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL.Image</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span> <span class="k">as</span> <span class="n">PILImage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">import</span> <span class="nn">accimage</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">accimage</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="n">accimage</span> <span class="o">=</span> <span class="kc">None</span>
 
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">_functional_pil</span> <span class="k">as</span> <span class="n">F_pil</span><span class="p">,</span> <span class="n">_functional_tensor</span> <span class="k">as</span> <span class="n">F_t</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">_functional_pil</span> <span class="k">as</span> <span class="n">F_pil</span><span class="p">,</span> <span class="n">_functional_tensor</span> <span class="k">as</span> <span class="n">F_t</span>
 
 
-<span class="k">class</span> <span class="nc">InterpolationMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">InterpolationMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Interpolation modes</span>
 <span class="sd">    Available interpolation methods are ``nearest``, ``nearest-exact``, ``bilinear``, ``bicubic``, ``box``, ``hamming``,</span>
 <span class="sd">    and ``lanczos``.</span>
@@ -433,7 +433,7 @@
 
 <span class="c1"># TODO: Once torchscript supports Enums with staticmethod</span>
 <span class="c1"># this can be put into InterpolationMode as staticmethod</span>
-<span class="k">def</span> <span class="nf">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InterpolationMode</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InterpolationMode</span><span class="p">:</span>
     <span class="n">inverse_modes_mapping</span> <span class="o">=</span> <span class="p">{</span>
         <span class="mi">0</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
         <span class="mi">2</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -458,7 +458,7 @@
 <span class="n">_is_pil_image</span> <span class="o">=</span> <span class="n">F_pil</span><span class="o">.</span><span class="n">_is_pil_image</span>
 
 
-<div class="viewcode-block" id="get_dimensions"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.get_dimensions.html#torchvision.transforms.functional.get_dimensions">[docs]</a><span class="k">def</span> <span class="nf">get_dimensions</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<div class="viewcode-block" id="get_dimensions"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.get_dimensions.html#torchvision.transforms.functional.get_dimensions">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_dimensions</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the dimensions of an image as [channels, height, width].</span>
 
 <span class="sd">    Args:</span>
@@ -475,7 +475,7 @@
     <span class="k">return</span> <span class="n">F_pil</span><span class="o">.</span><span class="n">get_dimensions</span><span class="p">(</span><span class="n">img</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_image_size"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.get_image_size.html#torchvision.transforms.functional.get_image_size">[docs]</a><span class="k">def</span> <span class="nf">get_image_size</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<div class="viewcode-block" id="get_image_size"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.get_image_size.html#torchvision.transforms.functional.get_image_size">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_image_size</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the size of an image as [width, height].</span>
 
 <span class="sd">    Args:</span>
@@ -492,7 +492,7 @@
     <span class="k">return</span> <span class="n">F_pil</span><span class="o">.</span><span class="n">get_image_size</span><span class="p">(</span><span class="n">img</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_image_num_channels"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.get_image_num_channels.html#torchvision.transforms.functional.get_image_num_channels">[docs]</a><span class="k">def</span> <span class="nf">get_image_num_channels</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<div class="viewcode-block" id="get_image_num_channels"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.get_image_num_channels.html#torchvision.transforms.functional.get_image_num_channels">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_image_num_channels</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the number of channels of an image.</span>
 
 <span class="sd">    Args:</span>
@@ -510,16 +510,16 @@
 
 
 <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span>
-<span class="k">def</span> <span class="nf">_is_numpy</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_numpy</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
 
 
 <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span>
-<span class="k">def</span> <span class="nf">_is_numpy_image</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_numpy_image</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">img</span><span class="o">.</span><span class="n">ndim</span> <span class="ow">in</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}</span>
 
 
-<div class="viewcode-block" id="to_tensor"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.to_tensor.html#torchvision.transforms.functional.to_tensor">[docs]</a><span class="k">def</span> <span class="nf">to_tensor</span><span class="p">(</span><span class="n">pic</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PILImage</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="to_tensor"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.to_tensor.html#torchvision.transforms.functional.to_tensor">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">to_tensor</span><span class="p">(</span><span class="n">pic</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PILImage</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.</span>
 <span class="sd">    This function does not support torchscript.</span>
 
@@ -573,7 +573,7 @@
         <span class="k">return</span> <span class="n">img</span></div>
 
 
-<div class="viewcode-block" id="pil_to_tensor"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.functional.pil_to_tensor.html#torchvision.transforms.functional.pil_to_tensor">[docs]</a><span class="k">def</span> <span class="nf">pil_to_tensor</span><span class="p">(</span><span class="n">pic</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="pil_to_tensor"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.functional.pil_to_tensor.html#torchvision.transforms.functional.pil_to_tensor">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">pil_to_tensor</span><span class="p">(</span><span class="n">pic</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a ``PIL Image`` to a tensor of the same type.</span>
 <span class="sd">    This function does not support torchscript.</span>
 
@@ -608,7 +608,7 @@
     <span class="k">return</span> <span class="n">img</span></div>
 
 
-<div class="viewcode-block" id="convert_image_dtype"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.convert_image_dtype.html#torchvision.transforms.functional.convert_image_dtype">[docs]</a><span class="k">def</span> <span class="nf">convert_image_dtype</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="convert_image_dtype"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.convert_image_dtype.html#torchvision.transforms.functional.convert_image_dtype">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">convert_image_dtype</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a tensor image to the given ``dtype`` and scale the values accordingly</span>
 <span class="sd">    This function does not support PIL Image.</span>
 
@@ -638,7 +638,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">convert_image_dtype</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="to_pil_image"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.functional.to_pil_image.html#torchvision.transforms.functional.to_pil_image">[docs]</a><span class="k">def</span> <span class="nf">to_pil_image</span><span class="p">(</span><span class="n">pic</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="to_pil_image"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.functional.to_pil_image.html#torchvision.transforms.functional.to_pil_image">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">to_pil_image</span><span class="p">(</span><span class="n">pic</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a tensor or an ndarray to PIL Image. This function does not support torchscript.</span>
 
 <span class="sd">    See :class:`~torchvision.transforms.ToPILImage` for more details.</span>
@@ -719,7 +719,7 @@
     <span class="k">return</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">npimg</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="normalize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.normalize.html#torchvision.transforms.functional.normalize">[docs]</a><span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">std</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="normalize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.normalize.html#torchvision.transforms.functional.normalize">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">std</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize a float tensor image with mean and standard deviation.</span>
 <span class="sd">    This transform does not support PIL Image.</span>
 
@@ -745,7 +745,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_compute_resized_output_size</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_resized_output_size</span><span class="p">(</span>
     <span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
     <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -779,7 +779,7 @@
     <span class="k">return</span> <span class="p">[</span><span class="n">new_h</span><span class="p">,</span> <span class="n">new_w</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="resize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.resize.html#torchvision.transforms.functional.resize">[docs]</a><span class="k">def</span> <span class="nf">resize</span><span class="p">(</span>
+<div class="viewcode-block" id="resize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.resize.html#torchvision.transforms.functional.resize">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">resize</span><span class="p">(</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -874,7 +874,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">output_size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">antialias</span><span class="o">=</span><span class="n">antialias</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="pad"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.pad.html#torchvision.transforms.functional.pad">[docs]</a><span class="k">def</span> <span class="nf">pad</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">fill</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">padding_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="pad"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.pad.html#torchvision.transforms.functional.pad">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">pad</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">fill</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">padding_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Pad the given image on all sides with the given &quot;pad&quot; value.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,</span>
@@ -923,7 +923,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="n">padding_mode</span><span class="o">=</span><span class="n">padding_mode</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.crop.html#torchvision.transforms.functional.crop">[docs]</a><span class="k">def</span> <span class="nf">crop</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.crop.html#torchvision.transforms.functional.crop">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">crop</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Crop the given image at specified location and output size.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -948,7 +948,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="center_crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.center_crop.html#torchvision.transforms.functional.center_crop">[docs]</a><span class="k">def</span> <span class="nf">center_crop</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="center_crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.center_crop.html#torchvision.transforms.functional.center_crop">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">center_crop</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Crops the given image at the center.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -989,7 +989,7 @@
     <span class="k">return</span> <span class="n">crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">crop_top</span><span class="p">,</span> <span class="n">crop_left</span><span class="p">,</span> <span class="n">crop_height</span><span class="p">,</span> <span class="n">crop_width</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="resized_crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.resized_crop.html#torchvision.transforms.functional.resized_crop">[docs]</a><span class="k">def</span> <span class="nf">resized_crop</span><span class="p">(</span>
+<div class="viewcode-block" id="resized_crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.resized_crop.html#torchvision.transforms.functional.resized_crop">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">resized_crop</span><span class="p">(</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1046,7 +1046,7 @@
     <span class="k">return</span> <span class="n">img</span></div>
 
 
-<div class="viewcode-block" id="hflip"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.hflip.html#torchvision.transforms.functional.hflip">[docs]</a><span class="k">def</span> <span class="nf">hflip</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="hflip"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.hflip.html#torchvision.transforms.functional.hflip">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">hflip</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Horizontally flip the given image.</span>
 
 <span class="sd">    Args:</span>
@@ -1066,7 +1066,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">hflip</span><span class="p">(</span><span class="n">img</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_get_perspective_coeffs</span><span class="p">(</span><span class="n">startpoints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">endpoints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_perspective_coeffs</span><span class="p">(</span><span class="n">startpoints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">endpoints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.</span>
 
 <span class="sd">    In Perspective Transform each pixel (x, y) in the original image gets transformed as,</span>
@@ -1099,7 +1099,7 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
-<div class="viewcode-block" id="perspective"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.perspective.html#torchvision.transforms.functional.perspective">[docs]</a><span class="k">def</span> <span class="nf">perspective</span><span class="p">(</span>
+<div class="viewcode-block" id="perspective"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.perspective.html#torchvision.transforms.functional.perspective">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">perspective</span><span class="p">(</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
@@ -1149,7 +1149,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">perspective</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">coeffs</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="vflip"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.vflip.html#torchvision.transforms.functional.vflip">[docs]</a><span class="k">def</span> <span class="nf">vflip</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="vflip"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.vflip.html#torchvision.transforms.functional.vflip">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">vflip</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Vertically flip the given image.</span>
 
 <span class="sd">    Args:</span>
@@ -1169,7 +1169,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">vflip</span><span class="p">(</span><span class="n">img</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="five_crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.five_crop.html#torchvision.transforms.functional.five_crop">[docs]</a><span class="k">def</span> <span class="nf">five_crop</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<div class="viewcode-block" id="five_crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.five_crop.html#torchvision.transforms.functional.five_crop">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">five_crop</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Crop the given image into four corners and the central crop.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions</span>
@@ -1214,7 +1214,7 @@
     <span class="k">return</span> <span class="n">tl</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">bl</span><span class="p">,</span> <span class="n">br</span><span class="p">,</span> <span class="n">center</span></div>
 
 
-<div class="viewcode-block" id="ten_crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.ten_crop.html#torchvision.transforms.functional.ten_crop">[docs]</a><span class="k">def</span> <span class="nf">ten_crop</span><span class="p">(</span>
+<div class="viewcode-block" id="ten_crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.ten_crop.html#torchvision.transforms.functional.ten_crop">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">ten_crop</span><span class="p">(</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">vertical_flip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate ten cropped images from the given image.</span>
@@ -1260,7 +1260,7 @@
     <span class="k">return</span> <span class="n">first_five</span> <span class="o">+</span> <span class="n">second_five</span></div>
 
 
-<div class="viewcode-block" id="adjust_brightness"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_brightness.html#torchvision.transforms.functional.adjust_brightness">[docs]</a><span class="k">def</span> <span class="nf">adjust_brightness</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="adjust_brightness"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_brightness.html#torchvision.transforms.functional.adjust_brightness">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">adjust_brightness</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust brightness of an image.</span>
 
 <span class="sd">    Args:</span>
@@ -1282,7 +1282,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">adjust_brightness</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="adjust_contrast"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_contrast.html#torchvision.transforms.functional.adjust_contrast">[docs]</a><span class="k">def</span> <span class="nf">adjust_contrast</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="adjust_contrast"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_contrast.html#torchvision.transforms.functional.adjust_contrast">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">adjust_contrast</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust contrast of an image.</span>
 
 <span class="sd">    Args:</span>
@@ -1304,7 +1304,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">adjust_contrast</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">contrast_factor</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="adjust_saturation"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_saturation.html#torchvision.transforms.functional.adjust_saturation">[docs]</a><span class="k">def</span> <span class="nf">adjust_saturation</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="adjust_saturation"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_saturation.html#torchvision.transforms.functional.adjust_saturation">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">adjust_saturation</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust color saturation of an image.</span>
 
 <span class="sd">    Args:</span>
@@ -1326,7 +1326,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">adjust_saturation</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">saturation_factor</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="adjust_hue"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_hue.html#torchvision.transforms.functional.adjust_hue">[docs]</a><span class="k">def</span> <span class="nf">adjust_hue</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">hue_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="adjust_hue"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_hue.html#torchvision.transforms.functional.adjust_hue">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">adjust_hue</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">hue_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust hue of an image.</span>
 
 <span class="sd">    The image hue is adjusted by converting the image to HSV and</span>
@@ -1365,7 +1365,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">adjust_hue</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">hue_factor</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="adjust_gamma"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_gamma.html#torchvision.transforms.functional.adjust_gamma">[docs]</a><span class="k">def</span> <span class="nf">adjust_gamma</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">gain</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="adjust_gamma"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_gamma.html#torchvision.transforms.functional.adjust_gamma">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">adjust_gamma</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">gain</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Perform gamma correction on an image.</span>
 
 <span class="sd">    Also known as Power Law Transform. Intensities in RGB mode are adjusted</span>
@@ -1398,7 +1398,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">adjust_gamma</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">gain</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_get_inverse_affine_matrix</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_inverse_affine_matrix</span><span class="p">(</span>
     <span class="n">center</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">shear</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">inverted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
     <span class="c1"># Helper method to compute inverse matrix for affine transformation</span>
@@ -1458,7 +1458,7 @@
     <span class="k">return</span> <span class="n">matrix</span>
 
 
-<div class="viewcode-block" id="rotate"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.rotate.html#torchvision.transforms.functional.rotate">[docs]</a><span class="k">def</span> <span class="nf">rotate</span><span class="p">(</span>
+<div class="viewcode-block" id="rotate"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.rotate.html#torchvision.transforms.functional.rotate">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">rotate</span><span class="p">(</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
@@ -1527,7 +1527,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">matrix</span><span class="o">=</span><span class="n">matrix</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="n">expand</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="affine"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.affine.html#torchvision.transforms.functional.affine">[docs]</a><span class="k">def</span> <span class="nf">affine</span><span class="p">(</span>
+<div class="viewcode-block" id="affine"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.affine.html#torchvision.transforms.functional.affine">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">affine</span><span class="p">(</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -1637,7 +1637,7 @@
 <span class="c1"># from the transform classes. Perhaps it&#39;s still here for BC? I can&#39;t be</span>
 <span class="c1"># bothered to dig.</span>
 <div class="viewcode-block" id="to_grayscale"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.to_grayscale.html#torchvision.transforms.functional.to_grayscale">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span>
-<span class="k">def</span> <span class="nf">to_grayscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_grayscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.</span>
 <span class="sd">    This transform does not support torch Tensor.</span>
 
@@ -1659,7 +1659,7 @@
     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Input should be PIL Image&quot;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="rgb_to_grayscale"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.rgb_to_grayscale.html#torchvision.transforms.functional.rgb_to_grayscale">[docs]</a><span class="k">def</span> <span class="nf">rgb_to_grayscale</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="rgb_to_grayscale"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.rgb_to_grayscale.html#torchvision.transforms.functional.rgb_to_grayscale">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">rgb_to_grayscale</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert RGB image to grayscale version of image.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions</span>
@@ -1686,7 +1686,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">rgb_to_grayscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="erase"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.erase.html#torchvision.transforms.functional.erase">[docs]</a><span class="k">def</span> <span class="nf">erase</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="erase"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.erase.html#torchvision.transforms.functional.erase">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">erase</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Erase the input Tensor Image with given value.</span>
 <span class="sd">    This transform does not support PIL Image.</span>
 
@@ -1710,7 +1710,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">erase</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="gaussian_blur"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.gaussian_blur.html#torchvision.transforms.functional.gaussian_blur">[docs]</a><span class="k">def</span> <span class="nf">gaussian_blur</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="gaussian_blur"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.gaussian_blur.html#torchvision.transforms.functional.gaussian_blur">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">gaussian_blur</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs Gaussian blurring on the image by given kernel</span>
 
 <span class="sd">    The convolution will be using reflection padding corresponding to the kernel size, to maintain the input shape.</span>
@@ -1779,7 +1779,7 @@
     <span class="k">return</span> <span class="n">output</span></div>
 
 
-<div class="viewcode-block" id="invert"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.invert.html#torchvision.transforms.functional.invert">[docs]</a><span class="k">def</span> <span class="nf">invert</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="invert"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.invert.html#torchvision.transforms.functional.invert">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">invert</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Invert the colors of an RGB/grayscale image.</span>
 
 <span class="sd">    Args:</span>
@@ -1799,7 +1799,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">img</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="posterize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.posterize.html#torchvision.transforms.functional.posterize">[docs]</a><span class="k">def</span> <span class="nf">posterize</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">bits</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="posterize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.posterize.html#torchvision.transforms.functional.posterize">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">posterize</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">bits</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Posterize an image by reducing the number of bits for each color channel.</span>
 
 <span class="sd">    Args:</span>
@@ -1823,7 +1823,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">posterize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">bits</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="solarize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.solarize.html#torchvision.transforms.functional.solarize">[docs]</a><span class="k">def</span> <span class="nf">solarize</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="solarize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.solarize.html#torchvision.transforms.functional.solarize">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">solarize</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Solarize an RGB/grayscale image by inverting all pixel values above a threshold.</span>
 
 <span class="sd">    Args:</span>
@@ -1843,7 +1843,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">solarize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="adjust_sharpness"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_sharpness.html#torchvision.transforms.functional.adjust_sharpness">[docs]</a><span class="k">def</span> <span class="nf">adjust_sharpness</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="adjust_sharpness"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.adjust_sharpness.html#torchvision.transforms.functional.adjust_sharpness">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">adjust_sharpness</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust the sharpness of an image.</span>
 
 <span class="sd">    Args:</span>
@@ -1865,7 +1865,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">adjust_sharpness</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">sharpness_factor</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="autocontrast"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.autocontrast.html#torchvision.transforms.functional.autocontrast">[docs]</a><span class="k">def</span> <span class="nf">autocontrast</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="autocontrast"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.autocontrast.html#torchvision.transforms.functional.autocontrast">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">autocontrast</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Maximize contrast of an image by remapping its</span>
 <span class="sd">    pixels per channel so that the lowest becomes black and the lightest</span>
 <span class="sd">    becomes white.</span>
@@ -1887,7 +1887,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">autocontrast</span><span class="p">(</span><span class="n">img</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="equalize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.equalize.html#torchvision.transforms.functional.equalize">[docs]</a><span class="k">def</span> <span class="nf">equalize</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="equalize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.equalize.html#torchvision.transforms.functional.equalize">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">equalize</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Equalize the histogram of an image by applying</span>
 <span class="sd">    a non-linear mapping to the input in order to create a uniform</span>
 <span class="sd">    distribution of grayscale values in the output.</span>
@@ -1910,7 +1910,7 @@
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">equalize</span><span class="p">(</span><span class="n">img</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">elastic_transform</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">elastic_transform</span><span class="p">(</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">displacement</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>

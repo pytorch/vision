@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,25 +393,25 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.quantization.shufflenetv2</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">shufflenetv2</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">shufflenetv2</span>
 
-<span class="kn">from</span> <span class="nn">...transforms._presets</span> <span class="kn">import</span> <span class="n">ImageClassification</span>
-<span class="kn">from</span> <span class="nn">.._api</span> <span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
-<span class="kn">from</span> <span class="nn">.._meta</span> <span class="kn">import</span> <span class="n">_IMAGENET_CATEGORIES</span>
-<span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
-<span class="kn">from</span> <span class="nn">..shufflenetv2</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...transforms._presets</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImageClassification</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._api</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_IMAGENET_CATEGORIES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..shufflenetv2</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ShuffleNet_V2_X0_5_Weights</span><span class="p">,</span>
     <span class="n">ShuffleNet_V2_X1_0_Weights</span><span class="p">,</span>
     <span class="n">ShuffleNet_V2_X1_5_Weights</span><span class="p">,</span>
     <span class="n">ShuffleNet_V2_X2_0_Weights</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">_fuse_modules</span><span class="p">,</span> <span class="n">_replace_relu</span><span class="p">,</span> <span class="n">quantize_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_fuse_modules</span><span class="p">,</span> <span class="n">_replace_relu</span><span class="p">,</span> <span class="n">quantize_model</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -427,12 +427,12 @@
 <span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">QuantizableInvertedResidual</span><span class="p">(</span><span class="n">shufflenetv2</span><span class="o">.</span><span class="n">InvertedResidual</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">QuantizableInvertedResidual</span><span class="p">(</span><span class="n">shufflenetv2</span><span class="o">.</span><span class="n">InvertedResidual</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cat</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">quantized</span><span class="o">.</span><span class="n">FloatFunctional</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stride</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cat</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">branch2</span><span class="p">(</span><span class="n">x2</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -444,20 +444,20 @@
         <span class="k">return</span> <span class="n">out</span>
 
 
-<span class="k">class</span> <span class="nc">QuantizableShuffleNetV2</span><span class="p">(</span><span class="n">shufflenetv2</span><span class="o">.</span><span class="n">ShuffleNetV2</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">QuantizableShuffleNetV2</span><span class="p">(</span><span class="n">shufflenetv2</span><span class="o">.</span><span class="n">ShuffleNetV2</span><span class="p">):</span>
     <span class="c1"># TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">inverted_residual</span><span class="o">=</span><span class="n">QuantizableInvertedResidual</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore[misc]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">quant</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ao</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">QuantStub</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dequant</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ao</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">DeQuantStub</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quant</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_impl</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dequant</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">x</span>
 
-    <span class="k">def</span> <span class="nf">fuse_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_qat</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fuse_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_qat</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fuse conv/bn/relu modules in shufflenetv2 model</span>
 
 <span class="sd">        Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.</span>
@@ -482,7 +482,7 @@
                 <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_shufflenetv2</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_shufflenetv2</span><span class="p">(</span>
     <span class="n">stages_repeats</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">stages_out_channels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
@@ -520,7 +520,7 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="ShuffleNet_V2_X0_5_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.shufflenet_v2_x0_5.html#torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights">[docs]</a><span class="k">class</span> <span class="nc">ShuffleNet_V2_X0_5_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="ShuffleNet_V2_X0_5_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.shufflenet_v2_x0_5.html#torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ShuffleNet_V2_X0_5_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_FBGEMM_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/quantized/shufflenetv2_x0.5_fbgemm-00845098.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -541,7 +541,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_FBGEMM_V1</span></div>
 
 
-<div class="viewcode-block" id="ShuffleNet_V2_X1_0_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.shufflenet_v2_x1_0.html#torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights">[docs]</a><span class="k">class</span> <span class="nc">ShuffleNet_V2_X1_0_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="ShuffleNet_V2_X1_0_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.shufflenet_v2_x1_0.html#torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ShuffleNet_V2_X1_0_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_FBGEMM_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-1e62bb32.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -562,7 +562,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_FBGEMM_V1</span></div>
 
 
-<div class="viewcode-block" id="ShuffleNet_V2_X1_5_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.shufflenet_v2_x1_5.html#torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights">[docs]</a><span class="k">class</span> <span class="nc">ShuffleNet_V2_X1_5_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="ShuffleNet_V2_X1_5_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.shufflenet_v2_x1_5.html#torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ShuffleNet_V2_X1_5_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_FBGEMM_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/quantized/shufflenetv2_x1_5_fbgemm-d7401f05.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
@@ -584,7 +584,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_FBGEMM_V1</span></div>
 
 
-<div class="viewcode-block" id="ShuffleNet_V2_X2_0_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.shufflenet_v2_x2_0.html#torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights">[docs]</a><span class="k">class</span> <span class="nc">ShuffleNet_V2_X2_0_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="ShuffleNet_V2_X2_0_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.shufflenet_v2_x2_0.html#torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ShuffleNet_V2_X2_0_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_FBGEMM_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/quantized/shufflenetv2_x2_0_fbgemm-5cac526c.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
@@ -615,7 +615,7 @@
         <span class="k">else</span> <span class="n">ShuffleNet_V2_X0_5_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">shufflenet_v2_x0_5</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">shufflenet_v2_x0_5</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">ShuffleNet_V2_X0_5_QuantizedWeights</span><span class="p">,</span> <span class="n">ShuffleNet_V2_X0_5_Weights</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -669,7 +669,7 @@
         <span class="k">else</span> <span class="n">ShuffleNet_V2_X1_0_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">shufflenet_v2_x1_0</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">shufflenet_v2_x1_0</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">ShuffleNet_V2_X1_0_QuantizedWeights</span><span class="p">,</span> <span class="n">ShuffleNet_V2_X1_0_Weights</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -723,7 +723,7 @@
         <span class="k">else</span> <span class="n">ShuffleNet_V2_X1_5_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">shufflenet_v2_x1_5</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">shufflenet_v2_x1_5</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">ShuffleNet_V2_X1_5_QuantizedWeights</span><span class="p">,</span> <span class="n">ShuffleNet_V2_X1_5_Weights</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -777,7 +777,7 @@
         <span class="k">else</span> <span class="n">ShuffleNet_V2_X2_0_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
     <span class="p">)</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">shufflenet_v2_x2_0</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">shufflenet_v2_x2_0</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">ShuffleNet_V2_X2_0_QuantizedWeights</span><span class="p">,</span> <span class="n">ShuffleNet_V2_X2_0_Weights</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>

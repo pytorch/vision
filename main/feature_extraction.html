@@ -270,7 +270,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -454,13 +454,13 @@ disambiguate.</p></li>
 </ul>
 <p><strong>An Example</strong></p>
 <p>Here is an example of how we might extract features for MaskRCNN:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet50</span>
-<span class="kn">from</span> <span class="nn">torchvision.models.feature_extraction</span> <span class="kn">import</span> <span class="n">get_graph_node_names</span>
-<span class="kn">from</span> <span class="nn">torchvision.models.feature_extraction</span> <span class="kn">import</span> <span class="n">create_feature_extractor</span>
-<span class="kn">from</span> <span class="nn">torchvision.models.detection.mask_rcnn</span> <span class="kn">import</span> <span class="n">MaskRCNN</span>
-<span class="kn">from</span> <span class="nn">torchvision.models.detection.backbone_utils</span> <span class="kn">import</span> <span class="n">LastLevelMaxPool</span>
-<span class="kn">from</span> <span class="nn">torchvision.ops.feature_pyramid_network</span> <span class="kn">import</span> <span class="n">FeaturePyramidNetwork</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">resnet50</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.feature_extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_graph_node_names</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.feature_extraction</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_feature_extractor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.detection.mask_rcnn</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaskRCNN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.detection.backbone_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">LastLevelMaxPool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.ops.feature_pyramid_network</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeaturePyramidNetwork</span>
 
 
 <span class="c1"># To assist you in designing the feature extractor you may want to print out</span>
@@ -510,8 +510,8 @@ disambiguate.</p></li>
 <span class="c1"># Let&#39;s put all that together to wrap resnet50 with MaskRCNN</span>
 
 <span class="c1"># MaskRCNN requires a backbone with an attached FPN</span>
-<span class="k">class</span> <span class="nc">Resnet50WithFPN</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Resnet50WithFPN</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">Resnet50WithFPN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="c1"># Get a resnet50 backbone</span>
         <span class="n">m</span> <span class="o">=</span> <span class="n">resnet50</span><span class="p">()</span>
@@ -531,7 +531,7 @@ disambiguate.</p></li>
             <span class="n">in_channels_list</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span>
             <span class="n">extra_blocks</span><span class="o">=</span><span class="n">LastLevelMaxPool</span><span class="p">())</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">body</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fpn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">x</span>

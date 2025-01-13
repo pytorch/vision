@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,19 +393,19 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.transforms.v2.functional._geometry</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">import</span> <span class="nn">numbers</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">PIL.Image</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch.nn.functional</span> <span class="kn">import</span> <span class="n">grid_sample</span><span class="p">,</span> <span class="n">interpolate</span><span class="p">,</span> <span class="n">pad</span> <span class="k">as</span> <span class="n">torch_pad</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">PIL.Image</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">grid_sample</span><span class="p">,</span> <span class="n">interpolate</span><span class="p">,</span> <span class="n">pad</span> <span class="k">as</span> <span class="n">torch_pad</span>
 
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms</span> <span class="kn">import</span> <span class="n">_functional_pil</span> <span class="k">as</span> <span class="n">_FP</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms._functional_tensor</span> <span class="kn">import</span> <span class="n">_pad_symmetric</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms.functional</span> <span class="kn">import</span> <span class="p">(</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">tv_tensors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">_functional_pil</span> <span class="k">as</span> <span class="n">_FP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms._functional_tensor</span><span class="w"> </span><span class="kn">import</span> <span class="n">_pad_symmetric</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.functional</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">_compute_resized_output_size</span> <span class="k">as</span> <span class="n">__compute_resized_output_size</span><span class="p">,</span>
     <span class="n">_get_perspective_coeffs</span><span class="p">,</span>
     <span class="n">_interpolation_modes_from_int</span><span class="p">,</span>
@@ -415,14 +415,14 @@
     <span class="n">to_pil_image</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
-<span class="kn">from</span> <span class="nn">._meta</span> <span class="kn">import</span> <span class="n">_get_size_image_pil</span><span class="p">,</span> <span class="n">clamp_bounding_boxes</span><span class="p">,</span> <span class="n">convert_bounding_box_format</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_size_image_pil</span><span class="p">,</span> <span class="n">clamp_bounding_boxes</span><span class="p">,</span> <span class="n">convert_bounding_box_format</span>
 
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_FillTypeJIT</span><span class="p">,</span> <span class="n">_get_kernel</span><span class="p">,</span> <span class="n">_register_five_ten_crop_kernel_internal</span><span class="p">,</span> <span class="n">_register_kernel_internal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_FillTypeJIT</span><span class="p">,</span> <span class="n">_get_kernel</span><span class="p">,</span> <span class="n">_register_five_ten_crop_kernel_internal</span><span class="p">,</span> <span class="n">_register_kernel_internal</span>
 
 
-<span class="k">def</span> <span class="nf">_check_interpolation</span><span class="p">(</span><span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">InterpolationMode</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_interpolation</span><span class="p">(</span><span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">InterpolationMode</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">interpolation</span><span class="p">)</span>
     <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">InterpolationMode</span><span class="p">):</span>
@@ -433,7 +433,7 @@
     <span class="k">return</span> <span class="n">interpolation</span>
 
 
-<div class="viewcode-block" id="horizontal_flip"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.horizontal_flip.html#torchvision.transforms.v2.functional.horizontal_flip">[docs]</a><span class="k">def</span> <span class="nf">horizontal_flip</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="horizontal_flip"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.horizontal_flip.html#torchvision.transforms.v2.functional.horizontal_flip">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">horizontal_flip</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.RandomHorizontalFlip` for details.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">horizontal_flip_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span>
@@ -446,21 +446,21 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">horizontal_flip_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">horizontal_flip_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">image</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_horizontal_flip_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_horizontal_flip_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">_FP</span><span class="o">.</span><span class="n">hflip</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">horizontal_flip_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">horizontal_flip_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">horizontal_flip_image</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">horizontal_flip_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">horizontal_flip_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">shape</span>
@@ -478,7 +478,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_horizontal_flip_bounding_boxes_dispatch</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_horizontal_flip_bounding_boxes_dispatch</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">horizontal_flip_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span>
     <span class="p">)</span>
@@ -486,11 +486,11 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">horizontal_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">horizontal_flip_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">horizontal_flip_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">horizontal_flip_image</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="vertical_flip"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.vertical_flip.html#torchvision.transforms.v2.functional.vertical_flip">[docs]</a><span class="k">def</span> <span class="nf">vertical_flip</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="vertical_flip"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.vertical_flip.html#torchvision.transforms.v2.functional.vertical_flip">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">vertical_flip</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.RandomVerticalFlip` for details.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">vertical_flip_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span>
@@ -503,21 +503,21 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">vertical_flip_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">vertical_flip_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">image</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_vertical_flip_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_vertical_flip_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">_FP</span><span class="o">.</span><span class="n">vflip</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">vertical_flip_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">vertical_flip_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">vertical_flip_image</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">vertical_flip_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">vertical_flip_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">shape</span>
@@ -535,7 +535,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_vertical_flip_bounding_boxes_dispatch</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_vertical_flip_bounding_boxes_dispatch</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">vertical_flip_bounding_boxes</span><span class="p">(</span>
         <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span>
     <span class="p">)</span>
@@ -543,7 +543,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">vertical_flip</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">vertical_flip_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">vertical_flip_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">vertical_flip_image</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
 
 
@@ -553,7 +553,7 @@
 <span class="n">vflip</span> <span class="o">=</span> <span class="n">vertical_flip</span>
 
 
-<span class="k">def</span> <span class="nf">_compute_resized_output_size</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_resized_output_size</span><span class="p">(</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
@@ -566,7 +566,7 @@
     <span class="k">return</span> <span class="n">__compute_resized_output_size</span><span class="p">(</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span><span class="p">,</span> <span class="n">allow_size_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="resize"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.resize.html#torchvision.transforms.v2.functional.resize">[docs]</a><span class="k">def</span> <span class="nf">resize</span><span class="p">(</span>
+<div class="viewcode-block" id="resize"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.resize.html#torchvision.transforms.v2.functional.resize">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">resize</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -587,7 +587,7 @@
 <span class="c1"># inside resize_image due to torchscript.</span>
 <span class="c1"># uint8 dtype support for bilinear and bicubic is limited to cpu and</span>
 <span class="c1"># according to our benchmarks on eager, non-AVX CPUs should still prefer u8-&gt;f32-&gt;interpolate-&gt;u8 path for bilinear</span>
-<span class="k">def</span> <span class="nf">_do_native_uint8_resize_on_cpu</span><span class="p">(</span><span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_do_native_uint8_resize_on_cpu</span><span class="p">(</span><span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">interpolation</span> <span class="o">==</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">is_compiling</span><span class="p">():</span>
             <span class="k">return</span> <span class="kc">True</span>
@@ -599,7 +599,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">resize_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resize_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -671,7 +671,7 @@
     <span class="k">return</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">num_channels</span><span class="p">,</span> <span class="n">new_height</span><span class="p">,</span> <span class="n">new_width</span><span class="p">))</span>
 
 
-<span class="k">def</span> <span class="nf">_resize_image_pil</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_resize_image_pil</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -693,7 +693,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">__resize_image_pil_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">__resize_image_pil_dispatch</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -705,7 +705,7 @@
     <span class="k">return</span> <span class="n">_resize_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">resize_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resize_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">needs_squeeze</span> <span class="o">=</span> <span class="kc">True</span>
@@ -721,14 +721,14 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_resize_mask_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_resize_mask_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">resize_mask</span><span class="p">(</span><span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">size</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">resize_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resize_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
@@ -750,7 +750,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_resize_bounding_boxes_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_resize_bounding_boxes_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">resize_bounding_boxes</span><span class="p">(</span>
@@ -760,7 +760,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">resize_video</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resize_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -770,7 +770,7 @@
     <span class="k">return</span> <span class="n">resize_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span><span class="p">,</span> <span class="n">antialias</span><span class="o">=</span><span class="n">antialias</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="affine"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.affine.html#torchvision.transforms.v2.functional.affine">[docs]</a><span class="k">def</span> <span class="nf">affine</span><span class="p">(</span>
+<div class="viewcode-block" id="affine"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.affine.html#torchvision.transforms.v2.functional.affine">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">affine</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
@@ -808,7 +808,7 @@
     <span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_affine_parse_args</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_affine_parse_args</span><span class="p">(</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -861,7 +861,7 @@
     <span class="k">return</span> <span class="n">angle</span><span class="p">,</span> <span class="n">translate</span><span class="p">,</span> <span class="n">shear</span><span class="p">,</span> <span class="n">center</span>
 
 
-<span class="k">def</span> <span class="nf">_get_inverse_affine_matrix</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_inverse_affine_matrix</span><span class="p">(</span>
     <span class="n">center</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">shear</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">inverted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
     <span class="c1"># Helper method to compute inverse matrix for affine transformation</span>
@@ -922,14 +922,14 @@
     <span class="k">return</span> <span class="n">matrix</span>
 
 
-<span class="k">def</span> <span class="nf">_compute_affine_output_size</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_affine_output_size</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">is_compiling</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">_compute_affine_output_size_python</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_compute_affine_output_size_tensor</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_compute_affine_output_size_tensor</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_affine_output_size_tensor</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="c1"># Inspired of PIL implementation:</span>
     <span class="c1"># https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054</span>
 
@@ -964,7 +964,7 @@
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># w, h</span>
 
 
-<span class="k">def</span> <span class="nf">_compute_affine_output_size_python</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_affine_output_size_python</span><span class="p">(</span><span class="n">matrix</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="c1"># Mostly copied from PIL implementation:</span>
     <span class="c1"># The only difference is with transformed points as input matrix has zero translation part here and</span>
     <span class="c1"># PIL has a centered translation part.</span>
@@ -987,7 +987,7 @@
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">nw</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">nh</span><span class="p">)</span>  <span class="c1"># w, h</span>
 
 
-<span class="k">def</span> <span class="nf">_apply_grid_transform</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">grid</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fill</span><span class="p">:</span> <span class="n">_FillTypeJIT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_grid_transform</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">grid</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">fill</span><span class="p">:</span> <span class="n">_FillTypeJIT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">input_shape</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">output_height</span><span class="p">,</span> <span class="n">output_width</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
     <span class="n">num_channels</span><span class="p">,</span> <span class="n">input_height</span><span class="p">,</span> <span class="n">input_width</span> <span class="o">=</span> <span class="n">input_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:]</span>
@@ -1034,7 +1034,7 @@
     <span class="k">return</span> <span class="n">img</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">output_shape</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_assert_grid_transform_inputs</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_assert_grid_transform_inputs</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">matrix</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -1067,7 +1067,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Interpolation mode &#39;</span><span class="si">{</span><span class="n">interpolation</span><span class="si">}</span><span class="s2">&#39; is unsupported with Tensor input&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_affine_grid</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_affine_grid</span><span class="p">(</span>
     <span class="n">theta</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1096,7 +1096,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">affine_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">affine_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
@@ -1129,7 +1129,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_affine_image_pil</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_affine_image_pil</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
@@ -1153,7 +1153,7 @@
     <span class="k">return</span> <span class="n">_FP</span><span class="o">.</span><span class="n">affine</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">pil_modes_mapping</span><span class="p">[</span><span class="n">interpolation</span><span class="p">],</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_affine_bounding_boxes_with_expand</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_affine_bounding_boxes_with_expand</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -1242,7 +1242,7 @@
     <span class="k">return</span> <span class="n">out_bboxes</span><span class="p">,</span> <span class="n">canvas_size</span>
 
 
-<span class="k">def</span> <span class="nf">affine_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">affine_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -1267,7 +1267,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_affine_bounding_boxes_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_affine_bounding_boxes_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
@@ -1289,7 +1289,7 @@
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">affine_mask</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">affine_mask</span><span class="p">(</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
@@ -1322,7 +1322,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_affine_mask_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_affine_mask_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
@@ -1345,7 +1345,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">affine</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">affine_video</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">affine_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
     <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
@@ -1367,7 +1367,7 @@
     <span class="p">)</span>
 
 
-<div class="viewcode-block" id="rotate"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.rotate.html#torchvision.transforms.v2.functional.rotate">[docs]</a><span class="k">def</span> <span class="nf">rotate</span><span class="p">(</span>
+<div class="viewcode-block" id="rotate"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.rotate.html#torchvision.transforms.v2.functional.rotate">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">rotate</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
@@ -1387,7 +1387,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">rotate_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotate_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
@@ -1435,7 +1435,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_rotate_image_pil</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_rotate_image_pil</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
@@ -1450,7 +1450,7 @@
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">rotate_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotate_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -1472,7 +1472,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_rotate_bounding_boxes_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_rotate_bounding_boxes_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">rotate_bounding_boxes</span><span class="p">(</span>
@@ -1486,7 +1486,7 @@
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">rotate_mask</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotate_mask</span><span class="p">(</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1515,7 +1515,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_rotate_mask_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_rotate_mask_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1528,7 +1528,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">rotate</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">rotate_video</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotate_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
@@ -1539,7 +1539,7 @@
     <span class="k">return</span> <span class="n">rotate_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="n">expand</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="pad"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.pad.html#torchvision.transforms.v2.functional.pad">[docs]</a><span class="k">def</span> <span class="nf">pad</span><span class="p">(</span>
+<div class="viewcode-block" id="pad"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.pad.html#torchvision.transforms.v2.functional.pad">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">pad</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1555,7 +1555,7 @@
     <span class="k">return</span> <span class="n">kernel</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="n">padding_mode</span><span class="o">=</span><span class="n">padding_mode</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_parse_pad_padding</span><span class="p">(</span><span class="n">padding</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_pad_padding</span><span class="p">(</span><span class="n">padding</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">padding</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="n">pad_left</span> <span class="o">=</span> <span class="n">pad_right</span> <span class="o">=</span> <span class="n">pad_top</span> <span class="o">=</span> <span class="n">pad_bottom</span> <span class="o">=</span> <span class="n">padding</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">padding</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
@@ -1581,7 +1581,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">pad_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pad_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1609,7 +1609,7 @@
         <span class="k">return</span> <span class="n">_pad_with_vector_fill</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">torch_padding</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="n">padding_mode</span><span class="o">=</span><span class="n">padding_mode</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_pad_with_scalar_fill</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_pad_with_scalar_fill</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">torch_padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
@@ -1655,7 +1655,7 @@
 
 
 <span class="c1"># TODO: This should be removed once torch_pad supports non-scalar padding values</span>
-<span class="k">def</span> <span class="nf">_pad_with_vector_fill</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_pad_with_vector_fill</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">torch_padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
@@ -1687,7 +1687,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">pad_mask</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pad_mask</span><span class="p">(</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1713,7 +1713,7 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
-<span class="k">def</span> <span class="nf">pad_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pad_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -1741,7 +1741,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_pad_bounding_boxes_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_pad_bounding_boxes_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">padding_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">pad_bounding_boxes</span><span class="p">(</span>
@@ -1755,7 +1755,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">pad_video</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pad_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">padding</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1764,7 +1764,7 @@
     <span class="k">return</span> <span class="n">pad_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="n">padding_mode</span><span class="o">=</span><span class="n">padding_mode</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="crop"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.crop.html#torchvision.transforms.v2.functional.crop">[docs]</a><span class="k">def</span> <span class="nf">crop</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="crop"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.crop.html#torchvision.transforms.v2.functional.crop">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">crop</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.RandomCrop` for details.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">crop_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">)</span>
@@ -1777,7 +1777,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">crop_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">crop_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
 
     <span class="n">right</span> <span class="o">=</span> <span class="n">left</span> <span class="o">+</span> <span class="n">width</span>
@@ -1799,7 +1799,7 @@
 <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_crop_image_pil</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">crop_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">crop_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1821,7 +1821,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_crop_bounding_boxes_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_crop_bounding_boxes_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">crop_bounding_boxes</span><span class="p">(</span>
@@ -1831,7 +1831,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">crop_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">crop_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">needs_squeeze</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1847,11 +1847,11 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">crop_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">crop_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">crop_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="perspective"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.perspective.html#torchvision.transforms.v2.functional.perspective">[docs]</a><span class="k">def</span> <span class="nf">perspective</span><span class="p">(</span>
+<div class="viewcode-block" id="perspective"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.perspective.html#torchvision.transforms.v2.functional.perspective">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">perspective</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
@@ -1883,7 +1883,7 @@
     <span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_perspective_grid</span><span class="p">(</span><span class="n">coeffs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">ow</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">oh</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_perspective_grid</span><span class="p">(</span><span class="n">coeffs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">ow</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">oh</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="c1"># https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/</span>
     <span class="c1"># src/libImaging/Geometry.c#L394</span>
 
@@ -1913,7 +1913,7 @@
     <span class="k">return</span> <span class="n">output_grid</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">oh</span><span class="p">,</span> <span class="n">ow</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_perspective_coefficients</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_perspective_coefficients</span><span class="p">(</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">coefficients</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
@@ -1932,7 +1932,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">perspective_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">perspective_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
@@ -1959,7 +1959,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_perspective_image_pil</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_perspective_image_pil</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
@@ -1972,7 +1972,7 @@
     <span class="k">return</span> <span class="n">_FP</span><span class="o">.</span><span class="n">perspective</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">perspective_coeffs</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">pil_modes_mapping</span><span class="p">[</span><span class="n">interpolation</span><span class="p">],</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">perspective_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">perspective_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -2067,7 +2067,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_perspective_bounding_boxes_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_perspective_bounding_boxes_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
@@ -2085,7 +2085,7 @@
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">perspective_mask</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">perspective_mask</span><span class="p">(</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
@@ -2109,7 +2109,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_perspective_mask_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_perspective_mask_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
@@ -2128,7 +2128,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">perspective</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">perspective_video</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">perspective_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
@@ -2141,7 +2141,7 @@
     <span class="p">)</span>
 
 
-<div class="viewcode-block" id="elastic"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.elastic.html#torchvision.transforms.v2.functional.elastic">[docs]</a><span class="k">def</span> <span class="nf">elastic</span><span class="p">(</span>
+<div class="viewcode-block" id="elastic"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.elastic.html#torchvision.transforms.v2.functional.elastic">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">elastic</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -2162,7 +2162,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">elastic_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">elastic_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -2203,7 +2203,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_elastic_image_pil</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_elastic_image_pil</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
     <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -2214,7 +2214,7 @@
     <span class="k">return</span> <span class="n">to_pil_image</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_create_identity_grid</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_create_identity_grid</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">sy</span><span class="p">,</span> <span class="n">sx</span> <span class="o">=</span> <span class="n">size</span>
     <span class="n">base_grid</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
     <span class="n">x_grid</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">((</span><span class="o">-</span><span class="n">sx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">sx</span><span class="p">,</span> <span class="p">(</span><span class="n">sx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">sx</span><span class="p">,</span> <span class="n">sx</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
@@ -2226,7 +2226,7 @@
     <span class="k">return</span> <span class="n">base_grid</span>
 
 
-<span class="k">def</span> <span class="nf">elastic_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">elastic_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -2284,7 +2284,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_elastic_bounding_boxes_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_elastic_bounding_boxes_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">elastic_bounding_boxes</span><span class="p">(</span>
@@ -2293,7 +2293,7 @@
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">elastic_mask</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">elastic_mask</span><span class="p">(</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">fill</span><span class="p">:</span> <span class="n">_FillTypeJIT</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2313,7 +2313,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_elastic_mask_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_elastic_mask_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">fill</span><span class="p">:</span> <span class="n">_FillTypeJIT</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">elastic_mask</span><span class="p">(</span><span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">displacement</span><span class="o">=</span><span class="n">displacement</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span>
@@ -2321,7 +2321,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">elastic</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">elastic_video</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">elastic_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">interpolation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">InterpolationMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
@@ -2330,7 +2330,7 @@
     <span class="k">return</span> <span class="n">elastic_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">displacement</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="center_crop"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.center_crop.html#torchvision.transforms.v2.functional.center_crop">[docs]</a><span class="k">def</span> <span class="nf">center_crop</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="center_crop"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.center_crop.html#torchvision.transforms.v2.functional.center_crop">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">center_crop</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.RandomCrop` for details.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">center_crop_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">output_size</span><span class="o">=</span><span class="n">output_size</span><span class="p">)</span>
@@ -2341,7 +2341,7 @@
     <span class="k">return</span> <span class="n">kernel</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">output_size</span><span class="o">=</span><span class="n">output_size</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_center_crop_parse_output_size</span><span class="p">(</span><span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_center_crop_parse_output_size</span><span class="p">(</span><span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_size</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
         <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">output_size</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span>
@@ -2351,7 +2351,7 @@
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">output_size</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_center_crop_compute_padding</span><span class="p">(</span><span class="n">crop_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">crop_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_center_crop_compute_padding</span><span class="p">(</span><span class="n">crop_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">crop_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="k">return</span> <span class="p">[</span>
         <span class="p">(</span><span class="n">crop_width</span> <span class="o">-</span> <span class="n">image_width</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">crop_width</span> <span class="o">&gt;</span> <span class="n">image_width</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
         <span class="p">(</span><span class="n">crop_height</span> <span class="o">-</span> <span class="n">image_height</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">crop_height</span> <span class="o">&gt;</span> <span class="n">image_height</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
@@ -2360,7 +2360,7 @@
     <span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">_center_crop_compute_crop_anchor</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_center_crop_compute_crop_anchor</span><span class="p">(</span>
     <span class="n">crop_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">crop_width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_width</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="n">crop_top</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="n">image_height</span> <span class="o">-</span> <span class="n">crop_height</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">))</span>
@@ -2370,7 +2370,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">center_crop_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">center_crop_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">crop_height</span><span class="p">,</span> <span class="n">crop_width</span> <span class="o">=</span> <span class="n">_center_crop_parse_output_size</span><span class="p">(</span><span class="n">output_size</span><span class="p">)</span>
     <span class="n">shape</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -2390,7 +2390,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_center_crop_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_center_crop_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
     <span class="n">crop_height</span><span class="p">,</span> <span class="n">crop_width</span> <span class="o">=</span> <span class="n">_center_crop_parse_output_size</span><span class="p">(</span><span class="n">output_size</span><span class="p">)</span>
     <span class="n">image_height</span><span class="p">,</span> <span class="n">image_width</span> <span class="o">=</span> <span class="n">_get_size_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
 
@@ -2406,7 +2406,7 @@
     <span class="k">return</span> <span class="n">_crop_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">crop_top</span><span class="p">,</span> <span class="n">crop_left</span><span class="p">,</span> <span class="n">crop_height</span><span class="p">,</span> <span class="n">crop_width</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">center_crop_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">center_crop_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -2420,7 +2420,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_center_crop_bounding_boxes_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_center_crop_bounding_boxes_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">center_crop_bounding_boxes</span><span class="p">(</span>
@@ -2430,7 +2430,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">center_crop_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">center_crop_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">needs_squeeze</span> <span class="o">=</span> <span class="kc">True</span>
@@ -2446,11 +2446,11 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">center_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">center_crop_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">center_crop_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">center_crop_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">output_size</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="resized_crop"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.resized_crop.html#torchvision.transforms.v2.functional.resized_crop">[docs]</a><span class="k">def</span> <span class="nf">resized_crop</span><span class="p">(</span>
+<div class="viewcode-block" id="resized_crop"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.resized_crop.html#torchvision.transforms.v2.functional.resized_crop">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">resized_crop</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -2490,7 +2490,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">resized_crop_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resized_crop_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -2504,7 +2504,7 @@
     <span class="k">return</span> <span class="n">resize_image</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">antialias</span><span class="o">=</span><span class="n">antialias</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_resized_crop_image_pil</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_resized_crop_image_pil</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -2518,7 +2518,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_resized_crop_image_pil_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_resized_crop_image_pil_dispatch</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -2541,7 +2541,7 @@
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">resized_crop_bounding_boxes</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resized_crop_bounding_boxes</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -2555,7 +2555,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_resized_crop_bounding_boxes_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_resized_crop_bounding_boxes_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">resized_crop_bounding_boxes</span><span class="p">(</span>
@@ -2564,7 +2564,7 @@
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">resized_crop_mask</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resized_crop_mask</span><span class="p">(</span>
     <span class="n">mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -2577,7 +2577,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_resized_crop_mask_dispatch</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_resized_crop_mask_dispatch</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">resized_crop_mask</span><span class="p">(</span>
@@ -2587,7 +2587,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">resized_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">resized_crop_video</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">resized_crop_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -2602,7 +2602,7 @@
     <span class="p">)</span>
 
 
-<div class="viewcode-block" id="five_crop"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.five_crop.html#torchvision.transforms.v2.functional.five_crop">[docs]</a><span class="k">def</span> <span class="nf">five_crop</span><span class="p">(</span>
+<div class="viewcode-block" id="five_crop"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.five_crop.html#torchvision.transforms.v2.functional.five_crop">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">five_crop</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.FiveCrop` for details.&quot;&quot;&quot;</span>
@@ -2615,7 +2615,7 @@
     <span class="k">return</span> <span class="n">kernel</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">_parse_five_crop_size</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_five_crop_size</span><span class="p">(</span><span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">):</span>
         <span class="n">s</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
         <span class="n">size</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span>
@@ -2631,7 +2631,7 @@
 
 <span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">five_crop</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">five_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">five_crop_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">five_crop_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
     <span class="n">crop_height</span><span class="p">,</span> <span class="n">crop_width</span> <span class="o">=</span> <span class="n">_parse_five_crop_size</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
@@ -2650,7 +2650,7 @@
 
 
 <span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">five_crop</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_five_crop_image_pil</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_five_crop_image_pil</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">]:</span>
     <span class="n">crop_height</span><span class="p">,</span> <span class="n">crop_width</span> <span class="o">=</span> <span class="n">_parse_five_crop_size</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
@@ -2669,13 +2669,13 @@
 
 
 <span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">five_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">five_crop_video</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">five_crop_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
     <span class="k">return</span> <span class="n">five_crop_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="ten_crop"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.ten_crop.html#torchvision.transforms.v2.functional.ten_crop">[docs]</a><span class="k">def</span> <span class="nf">ten_crop</span><span class="p">(</span>
+<div class="viewcode-block" id="ten_crop"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.ten_crop.html#torchvision.transforms.v2.functional.ten_crop">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">ten_crop</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">vertical_flip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -2701,7 +2701,7 @@
 
 <span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">ten_crop</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">ten_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">ten_crop_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ten_crop_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">vertical_flip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -2728,7 +2728,7 @@
 
 
 <span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">ten_crop</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_ten_crop_image_pil</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ten_crop_image_pil</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">vertical_flip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
     <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
@@ -2755,7 +2755,7 @@
 
 
 <span class="nd">@_register_five_ten_crop_kernel_internal</span><span class="p">(</span><span class="n">ten_crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">ten_crop_video</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">ten_crop_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">vertical_flip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>

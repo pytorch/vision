@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,19 +393,19 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.transforms.autoaugment</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span><span class="p">,</span> <span class="n">InterpolationMode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span><span class="p">,</span> <span class="n">InterpolationMode</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;AutoAugmentPolicy&quot;</span><span class="p">,</span> <span class="s2">&quot;AutoAugment&quot;</span><span class="p">,</span> <span class="s2">&quot;RandAugment&quot;</span><span class="p">,</span> <span class="s2">&quot;TrivialAugmentWide&quot;</span><span class="p">,</span> <span class="s2">&quot;AugMix&quot;</span><span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">_apply_op</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_apply_op</span><span class="p">(</span>
     <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="p">,</span> <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
 <span class="p">):</span>
     <span class="k">if</span> <span class="n">op_name</span> <span class="o">==</span> <span class="s2">&quot;ShearX&quot;</span><span class="p">:</span>
@@ -485,7 +485,7 @@
     <span class="k">return</span> <span class="n">img</span>
 
 
-<div class="viewcode-block" id="AutoAugmentPolicy"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AutoAugmentPolicy.html#torchvision.transforms.AutoAugmentPolicy">[docs]</a><span class="k">class</span> <span class="nc">AutoAugmentPolicy</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<div class="viewcode-block" id="AutoAugmentPolicy"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AutoAugmentPolicy.html#torchvision.transforms.AutoAugmentPolicy">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AutoAugmentPolicy</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;AutoAugment policies learned on different datasets.</span>
 <span class="sd">    Available policies are IMAGENET, CIFAR10 and SVHN.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -496,7 +496,7 @@
 
 
 <span class="c1"># FIXME: Eliminate copy-pasted code for fill standardization and _augmentation_space() by moving stuff on a base class</span>
-<div class="viewcode-block" id="AutoAugment"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AutoAugment.html#torchvision.transforms.AutoAugment">[docs]</a><span class="k">class</span> <span class="nc">AutoAugment</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="AutoAugment"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AutoAugment.html#torchvision.transforms.AutoAugment">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AutoAugment</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;AutoAugment data augmentation method based on</span>
 <span class="sd">    `&quot;AutoAugment: Learning Augmentation Strategies from Data&quot; &lt;https://arxiv.org/pdf/1805.09501.pdf&gt;`_.</span>
 <span class="sd">    If the image is torch Tensor, it should be of type torch.uint8, and it is expected</span>
@@ -513,7 +513,7 @@
 <span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">policy</span><span class="p">:</span> <span class="n">AutoAugmentPolicy</span> <span class="o">=</span> <span class="n">AutoAugmentPolicy</span><span class="o">.</span><span class="n">IMAGENET</span><span class="p">,</span>
         <span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
@@ -525,7 +525,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">policies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_policies</span><span class="p">(</span><span class="n">policy</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_policies</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_policies</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">policy</span><span class="p">:</span> <span class="n">AutoAugmentPolicy</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]]:</span>
         <span class="k">if</span> <span class="n">policy</span> <span class="o">==</span> <span class="n">AutoAugmentPolicy</span><span class="o">.</span><span class="n">IMAGENET</span><span class="p">:</span>
@@ -615,7 +615,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The provided policy </span><span class="si">{</span><span class="n">policy</span><span class="si">}</span><span class="s2"> is not recognized.&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_augmentation_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_augmentation_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="c1"># op_name: (magnitudes, signed)</span>
             <span class="s2">&quot;ShearX&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">),</span> <span class="kc">True</span><span class="p">),</span>
@@ -635,7 +635,7 @@
         <span class="p">}</span>
 
 <div class="viewcode-block" id="AutoAugment.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.v2.AutoAugment.html#torchvision.transforms.AutoAugment.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">transform_num</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_params</span><span class="p">(</span><span class="n">transform_num</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get parameters for autoaugment transformation</span>
 
 <span class="sd">        Returns:</span>
@@ -647,7 +647,7 @@
 
         <span class="k">return</span> <span class="n">policy_id</span><span class="p">,</span> <span class="n">probs</span><span class="p">,</span> <span class="n">signs</span></div>
 
-<div class="viewcode-block" id="AutoAugment.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AutoAugment.html#torchvision.transforms.AutoAugment.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="AutoAugment.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AutoAugment.html#torchvision.transforms.AutoAugment.forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be transformed.</span>
 
@@ -675,11 +675,11 @@
 
         <span class="k">return</span> <span class="n">img</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(policy=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">policy</span><span class="si">}</span><span class="s2">, fill=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
-<div class="viewcode-block" id="RandAugment"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandAugment.html#torchvision.transforms.RandAugment">[docs]</a><span class="k">class</span> <span class="nc">RandAugment</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="RandAugment"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandAugment.html#torchvision.transforms.RandAugment">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RandAugment</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;RandAugment data augmentation method based on</span>
 <span class="sd">    `&quot;RandAugment: Practical automated data augmentation with a reduced search space&quot;</span>
 <span class="sd">    &lt;https://arxiv.org/abs/1909.13719&gt;`_.</span>
@@ -698,7 +698,7 @@
 <span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">num_ops</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">magnitude</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">9</span><span class="p">,</span>
@@ -713,7 +713,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
-    <span class="k">def</span> <span class="nf">_augmentation_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_augmentation_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="c1"># op_name: (magnitudes, signed)</span>
             <span class="s2">&quot;Identity&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="kc">False</span><span class="p">),</span>
@@ -732,7 +732,7 @@
             <span class="s2">&quot;Equalize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="kc">False</span><span class="p">),</span>
         <span class="p">}</span>
 
-<div class="viewcode-block" id="RandAugment.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandAugment.html#torchvision.transforms.RandAugment.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="RandAugment.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandAugment.html#torchvision.transforms.RandAugment.forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be transformed.</span>
 
@@ -759,7 +759,7 @@
 
         <span class="k">return</span> <span class="n">img</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">s</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;num_ops=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ops</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -772,7 +772,7 @@
         <span class="k">return</span> <span class="n">s</span></div>
 
 
-<div class="viewcode-block" id="TrivialAugmentWide"><a class="viewcode-back" href="../../../generated/torchvision.transforms.TrivialAugmentWide.html#torchvision.transforms.TrivialAugmentWide">[docs]</a><span class="k">class</span> <span class="nc">TrivialAugmentWide</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="TrivialAugmentWide"><a class="viewcode-back" href="../../../generated/torchvision.transforms.TrivialAugmentWide.html#torchvision.transforms.TrivialAugmentWide">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TrivialAugmentWide</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Dataset-independent data-augmentation with TrivialAugment Wide, as described in</span>
 <span class="sd">    `&quot;TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation&quot; &lt;https://arxiv.org/abs/2103.10158&gt;`_.</span>
 <span class="sd">    If the image is torch Tensor, it should be of type torch.uint8, and it is expected</span>
@@ -788,7 +788,7 @@
 <span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">num_magnitude_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">31</span><span class="p">,</span>
         <span class="n">interpolation</span><span class="p">:</span> <span class="n">InterpolationMode</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
@@ -799,7 +799,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
-    <span class="k">def</span> <span class="nf">_augmentation_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_augmentation_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="c1"># op_name: (magnitudes, signed)</span>
             <span class="s2">&quot;Identity&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="kc">False</span><span class="p">),</span>
@@ -818,7 +818,7 @@
             <span class="s2">&quot;Equalize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="kc">False</span><span class="p">),</span>
         <span class="p">}</span>
 
-<div class="viewcode-block" id="TrivialAugmentWide.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.TrivialAugmentWide.html#torchvision.transforms.TrivialAugmentWide.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="TrivialAugmentWide.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.TrivialAugmentWide.html#torchvision.transforms.TrivialAugmentWide.forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be transformed.</span>
 
@@ -847,7 +847,7 @@
 
         <span class="k">return</span> <span class="n">_apply_op</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">op_name</span><span class="p">,</span> <span class="n">magnitude</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">s</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;num_magnitude_bins=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_magnitude_bins</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -858,7 +858,7 @@
         <span class="k">return</span> <span class="n">s</span></div>
 
 
-<div class="viewcode-block" id="AugMix"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AugMix.html#torchvision.transforms.AugMix">[docs]</a><span class="k">class</span> <span class="nc">AugMix</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="AugMix"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AugMix.html#torchvision.transforms.AugMix">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">AugMix</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;AugMix data augmentation method based on</span>
 <span class="sd">    `&quot;AugMix: A Simple Data Processing Method to Improve Robustness and Uncertainty&quot; &lt;https://arxiv.org/abs/1912.02781&gt;`_.</span>
 <span class="sd">    If the image is torch Tensor, it should be of type torch.uint8, and it is expected</span>
@@ -879,7 +879,7 @@
 <span class="sd">            image. If given a number, the value is used for all bands respectively.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">severity</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
         <span class="n">mixture_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
@@ -901,7 +901,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">=</span> <span class="n">interpolation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
-    <span class="k">def</span> <span class="nf">_augmentation_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_augmentation_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
         <span class="n">s</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># op_name: (magnitudes, signed)</span>
             <span class="s2">&quot;ShearX&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="n">num_bins</span><span class="p">),</span> <span class="kc">True</span><span class="p">),</span>
@@ -926,18 +926,18 @@
         <span class="k">return</span> <span class="n">s</span>
 
     <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span>
-    <span class="k">def</span> <span class="nf">_pil_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_pil_to_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">pil_to_tensor</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
 
     <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span>
-    <span class="k">def</span> <span class="nf">_tensor_to_pil</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_tensor_to_pil</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">to_pil_image</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_sample_dirichlet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sample_dirichlet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># Must be on a separate method so that we can overwrite it in tests.</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">_sample_dirichlet</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
 
-<div class="viewcode-block" id="AugMix.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AugMix.html#torchvision.transforms.AugMix.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orig_img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="AugMix.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AugMix.html#torchvision.transforms.AugMix.forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orig_img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be transformed.</span>
 
@@ -995,7 +995,7 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tensor_to_pil</span><span class="p">(</span><span class="n">mix</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">mix</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">s</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;severity=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">severity</span><span class="si">}</span><span class="s2">&quot;</span>

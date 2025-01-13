@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,20 +393,20 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.regnet</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
 
-<span class="kn">from</span> <span class="nn">..ops.misc</span> <span class="kn">import</span> <span class="n">Conv2dNormActivation</span><span class="p">,</span> <span class="n">SqueezeExcitation</span>
-<span class="kn">from</span> <span class="nn">..transforms._presets</span> <span class="kn">import</span> <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">InterpolationMode</span>
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
-<span class="kn">from</span> <span class="nn">._api</span> <span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
-<span class="kn">from</span> <span class="nn">._meta</span> <span class="kn">import</span> <span class="n">_IMAGENET_CATEGORIES</span>
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_make_divisible</span><span class="p">,</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..ops.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conv2dNormActivation</span><span class="p">,</span> <span class="n">SqueezeExcitation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..transforms._presets</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">InterpolationMode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._api</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_IMAGENET_CATEGORIES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_make_divisible</span><span class="p">,</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -444,10 +444,10 @@
 <span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">SimpleStemIN</span><span class="p">(</span><span class="n">Conv2dNormActivation</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SimpleStemIN</span><span class="p">(</span><span class="n">Conv2dNormActivation</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple stem for ImageNet: 3x3, BN, ReLU.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">width_in</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">width_out</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -459,10 +459,10 @@
         <span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">BottleneckTransform</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BottleneckTransform</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Bottleneck transformation: 1x1, 3x3 [+SE], 1x1.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">width_in</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">width_out</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -500,10 +500,10 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">ResBottleneckBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ResBottleneckBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Residual bottleneck block: x + F(x), F = bottleneck transform.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">width_in</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">width_out</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -535,7 +535,7 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">activation_layer</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -543,10 +543,10 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">AnyStage</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AnyStage</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;AnyNet stage (sequence of blocks w/ the same output shape).&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">width_in</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">width_out</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -577,8 +577,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;block</span><span class="si">{</span><span class="n">stage_index</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">BlockParams</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BlockParams</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">depths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -595,7 +595,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">se_ratio</span> <span class="o">=</span> <span class="n">se_ratio</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_init_params</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_init_params</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">w_0</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -667,11 +667,11 @@
             <span class="n">se_ratio</span><span class="o">=</span><span class="n">se_ratio</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_get_expanded_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_expanded_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">strides</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">depths</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_widths</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_multipliers</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">_adjust_widths_groups_compatibilty</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_adjust_widths_groups_compatibilty</span><span class="p">(</span>
         <span class="n">stage_widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">bottleneck_ratios</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">group_widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -688,8 +688,8 @@
         <span class="k">return</span> <span class="n">stage_widths</span><span class="p">,</span> <span class="n">group_widths_min</span>
 
 
-<span class="k">class</span> <span class="nc">RegNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RegNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block_params</span><span class="p">:</span> <span class="n">BlockParams</span><span class="p">,</span>
         <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
@@ -768,7 +768,7 @@
                 <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stem</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trunk_output</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
@@ -779,7 +779,7 @@
         <span class="k">return</span> <span class="n">x</span>
 
 
-<span class="k">def</span> <span class="nf">_regnet</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_regnet</span><span class="p">(</span>
     <span class="n">block_params</span><span class="p">:</span> <span class="n">BlockParams</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">WeightsEnum</span><span class="p">],</span>
     <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
@@ -809,7 +809,7 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="RegNet_Y_400MF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_400mf.html#torchvision.models.RegNet_Y_400MF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_Y_400MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_Y_400MF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_400mf.html#torchvision.models.RegNet_Y_400MF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_Y_400MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_400mf-c65dace8.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -853,7 +853,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_Y_800MF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_800mf.html#torchvision.models.RegNet_Y_800MF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_Y_800MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_Y_800MF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_800mf.html#torchvision.models.RegNet_Y_800MF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_Y_800MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_800mf-1b27b58c.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -897,7 +897,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_Y_1_6GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_1_6gf.html#torchvision.models.RegNet_Y_1_6GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_Y_1_6GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_Y_1_6GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_1_6gf.html#torchvision.models.RegNet_Y_1_6GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_Y_1_6GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_1_6gf-b11a554e.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -941,7 +941,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_Y_3_2GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_3_2gf.html#torchvision.models.RegNet_Y_3_2GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_Y_3_2GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_Y_3_2GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_3_2gf.html#torchvision.models.RegNet_Y_3_2GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_Y_3_2GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_3_2gf-b5a9779c.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -985,7 +985,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_Y_8GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_8gf.html#torchvision.models.RegNet_Y_8GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_Y_8GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_Y_8GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_8gf.html#torchvision.models.RegNet_Y_8GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_Y_8GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_8gf-d0d0e4a8.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -1029,7 +1029,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_Y_16GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_16gf.html#torchvision.models.RegNet_Y_16GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_Y_16GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_Y_16GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_16gf.html#torchvision.models.RegNet_Y_16GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_Y_16GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_16gf-9e6ed7dd.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -1118,7 +1118,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_Y_32GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_32gf.html#torchvision.models.RegNet_Y_32GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_Y_32GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_Y_32GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_32gf.html#torchvision.models.RegNet_Y_32GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_Y_32GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_32gf-4dee3f7a.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -1207,7 +1207,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_Y_128GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_128gf.html#torchvision.models.RegNet_Y_128GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_Y_128GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_Y_128GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_128gf.html#torchvision.models.RegNet_Y_128GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_Y_128GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_SWAG_E2E_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_128gf_swag-c8ce3e52.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
@@ -1256,7 +1256,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_SWAG_E2E_V1</span></div>
 
 
-<div class="viewcode-block" id="RegNet_X_400MF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_400mf.html#torchvision.models.RegNet_X_400MF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_X_400MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_X_400MF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_400mf.html#torchvision.models.RegNet_X_400MF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_X_400MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_400mf-adf1edd5.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -1300,7 +1300,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_X_800MF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_800mf.html#torchvision.models.RegNet_X_800MF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_X_800MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_X_800MF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_800mf.html#torchvision.models.RegNet_X_800MF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_X_800MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_800mf-ad17e45c.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -1344,7 +1344,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_X_1_6GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_1_6gf.html#torchvision.models.RegNet_X_1_6GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_X_1_6GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_X_1_6GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_1_6gf.html#torchvision.models.RegNet_X_1_6GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_X_1_6GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_1_6gf-e3633e7f.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -1388,7 +1388,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_X_3_2GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_3_2gf.html#torchvision.models.RegNet_X_3_2GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_X_3_2GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_X_3_2GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_3_2gf.html#torchvision.models.RegNet_X_3_2GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_X_3_2GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_3_2gf-f342aeae.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -1432,7 +1432,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_X_8GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_8gf.html#torchvision.models.RegNet_X_8GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_X_8GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_X_8GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_8gf.html#torchvision.models.RegNet_X_8GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_X_8GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_8gf-03ceed89.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -1476,7 +1476,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_X_16GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_16gf.html#torchvision.models.RegNet_X_16GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_X_16GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_X_16GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_16gf.html#torchvision.models.RegNet_X_16GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_X_16GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_16gf-2007eb11.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -1520,7 +1520,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="RegNet_X_32GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_32gf.html#torchvision.models.RegNet_X_32GF_Weights">[docs]</a><span class="k">class</span> <span class="nc">RegNet_X_32GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="RegNet_X_32GF_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_32gf.html#torchvision.models.RegNet_X_32GF_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RegNet_X_32GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_32gf-9d47f8d0.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -1566,7 +1566,7 @@
 
 <div class="viewcode-block" id="regnet_y_400mf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_400mf.html#torchvision.models.regnet_y_400mf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_400MF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_y_400mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_400MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_y_400mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_400MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_400MF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1592,7 +1592,7 @@
 
 <div class="viewcode-block" id="regnet_y_800mf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_800mf.html#torchvision.models.regnet_y_800mf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_800MF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_y_800mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_800MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_y_800mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_800MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_800MF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1618,7 +1618,7 @@
 
 <div class="viewcode-block" id="regnet_y_1_6gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_1_6gf.html#torchvision.models.regnet_y_1_6gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_1_6GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_y_1_6gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_1_6GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_y_1_6gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_1_6GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_1.6GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1646,7 +1646,7 @@
 
 <div class="viewcode-block" id="regnet_y_3_2gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_3_2gf.html#torchvision.models.regnet_y_3_2gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_3_2GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_y_3_2gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_3_2GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_y_3_2gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_3_2GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_3.2GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1674,7 +1674,7 @@
 
 <div class="viewcode-block" id="regnet_y_8gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_8gf.html#torchvision.models.regnet_y_8gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_8GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_y_8gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_8GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_y_8gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_8GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_8GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1702,7 +1702,7 @@
 
 <div class="viewcode-block" id="regnet_y_16gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_16gf.html#torchvision.models.regnet_y_16gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_16GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_y_16gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_16GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_y_16gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_16GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_16GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1730,7 +1730,7 @@
 
 <div class="viewcode-block" id="regnet_y_32gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_32gf.html#torchvision.models.regnet_y_32gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_32GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_y_32gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_32GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_y_32gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_32GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_32GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1758,7 +1758,7 @@
 
 <div class="viewcode-block" id="regnet_y_128gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_y_128gf.html#torchvision.models.regnet_y_128gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_y_128gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_128GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_y_128gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_128GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_128GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1786,7 +1786,7 @@
 
 <div class="viewcode-block" id="regnet_x_400mf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_400mf.html#torchvision.models.regnet_x_400mf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_400MF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_x_400mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_400MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_x_400mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_400MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_400MF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1812,7 +1812,7 @@
 
 <div class="viewcode-block" id="regnet_x_800mf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_800mf.html#torchvision.models.regnet_x_800mf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_800MF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_x_800mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_800MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_x_800mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_800MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_800MF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1838,7 +1838,7 @@
 
 <div class="viewcode-block" id="regnet_x_1_6gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_1_6gf.html#torchvision.models.regnet_x_1_6gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_1_6GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_x_1_6gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_1_6GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_x_1_6gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_1_6GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_1.6GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1864,7 +1864,7 @@
 
 <div class="viewcode-block" id="regnet_x_3_2gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_3_2gf.html#torchvision.models.regnet_x_3_2gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_3_2GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_x_3_2gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_3_2GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_x_3_2gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_3_2GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_3.2GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1890,7 +1890,7 @@
 
 <div class="viewcode-block" id="regnet_x_8gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_8gf.html#torchvision.models.regnet_x_8gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_8GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_x_8gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_8GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_x_8gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_8GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_8GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1916,7 +1916,7 @@
 
 <div class="viewcode-block" id="regnet_x_16gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_16gf.html#torchvision.models.regnet_x_16gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_16GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_x_16gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_16GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_x_16gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_16GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_16GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
@@ -1942,7 +1942,7 @@
 
 <div class="viewcode-block" id="regnet_x_32gf"><a class="viewcode-back" href="../../../models/generated/torchvision.models.regnet_x_32gf.html#torchvision.models.regnet_x_32gf">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_32GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">regnet_x_32gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_32GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">regnet_x_32gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_32GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_32GF architecture from</span>
 <span class="sd">    `Designing Network Design Spaces &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>

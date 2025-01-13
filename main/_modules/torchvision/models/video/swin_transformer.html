@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -396,22 +396,22 @@
 <span></span><span class="c1"># Modified from 2d Swin Transformers in torchvision:</span>
 <span class="c1"># https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py</span>
 
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
 
-<span class="kn">from</span> <span class="nn">...transforms._presets</span> <span class="kn">import</span> <span class="n">VideoClassification</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...transforms._presets</span><span class="w"> </span><span class="kn">import</span> <span class="n">VideoClassification</span>
 
-<span class="kn">from</span> <span class="nn">...utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
-<span class="kn">from</span> <span class="nn">.._api</span> <span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._api</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
 
-<span class="kn">from</span> <span class="nn">.._meta</span> <span class="kn">import</span> <span class="n">_KINETICS400_CATEGORIES</span>
-<span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
-<span class="kn">from</span> <span class="nn">..swin_transformer</span> <span class="kn">import</span> <span class="n">PatchMerging</span><span class="p">,</span> <span class="n">SwinTransformerBlock</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_KINETICS400_CATEGORIES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..swin_transformer</span><span class="w"> </span><span class="kn">import</span> <span class="n">PatchMerging</span><span class="p">,</span> <span class="n">SwinTransformerBlock</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;SwinTransformer3d&quot;</span><span class="p">,</span>
@@ -424,7 +424,7 @@
 <span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">_get_window_and_shift_size</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_window_and_shift_size</span><span class="p">(</span>
     <span class="n">shift_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">size_dhw</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">window_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
@@ -439,7 +439,7 @@
 <span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;_get_window_and_shift_size&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_get_relative_position_bias</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_relative_position_bias</span><span class="p">(</span>
     <span class="n">relative_position_bias_table</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">relative_position_index</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">window_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="n">window_vol</span> <span class="o">=</span> <span class="n">window_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">window_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">window_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
@@ -455,7 +455,7 @@
 <span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;_get_relative_position_bias&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_compute_pad_size_3d</span><span class="p">(</span><span class="n">size_dhw</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">patch_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_pad_size_3d</span><span class="p">(</span><span class="n">size_dhw</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">patch_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="n">pad_size</span> <span class="o">=</span> <span class="p">[(</span><span class="n">patch_size</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">size_dhw</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">%</span> <span class="n">patch_size</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">%</span> <span class="n">patch_size</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
     <span class="k">return</span> <span class="n">pad_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pad_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">pad_size</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
 
@@ -463,7 +463,7 @@
 <span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;_compute_pad_size_3d&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_compute_attention_mask_3d</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_compute_attention_mask_3d</span><span class="p">(</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">size_dhw</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">window_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
@@ -507,7 +507,7 @@
 <span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;_compute_attention_mask_3d&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">shifted_window_attention_3d</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">shifted_window_attention_3d</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">qkv_weight</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">proj_weight</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -622,12 +622,12 @@
 <span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;shifted_window_attention_3d&quot;</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">ShiftedWindowAttention3d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ShiftedWindowAttention3d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    See :func:`shifted_window_attention_3d`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">window_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -654,7 +654,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">define_relative_position_bias_table</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">define_relative_position_index</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">define_relative_position_bias_table</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">define_relative_position_bias_table</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># define a parameter table of relative position bias</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">relative_position_bias_table</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
@@ -664,7 +664,7 @@
         <span class="p">)</span>  <span class="c1"># 2*Wd-1 * 2*Wh-1 * 2*Ww-1, nH</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">trunc_normal_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relative_position_bias_table</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">define_relative_position_index</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">define_relative_position_index</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># get pair-wise relative position index for each token inside the window</span>
         <span class="n">coords_dhw</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
         <span class="n">coords</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
@@ -683,10 +683,10 @@
         <span class="n">relative_position_index</span> <span class="o">=</span> <span class="n">relative_coords</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Wd*Wh*Ww, Wd*Wh*Ww</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">&quot;relative_position_index&quot;</span><span class="p">,</span> <span class="n">relative_position_index</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">get_relative_position_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">window_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_relative_position_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">window_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_get_relative_position_bias</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relative_position_bias_table</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relative_position_index</span><span class="p">,</span> <span class="n">window_size</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">size_dhw</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">]</span>
         <span class="n">window_size</span><span class="p">,</span> <span class="n">shift_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">shift_size</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -713,7 +713,7 @@
 
 <span class="c1"># Modified from:</span>
 <span class="c1"># https://github.com/SwinTransformer/Video-Swin-Transformer/blob/master/mmaction/models/backbones/swin_transformer.py</span>
-<span class="k">class</span> <span class="nc">PatchEmbed3d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PatchEmbed3d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Video to Patch Embedding.</span>
 
 <span class="sd">    Args:</span>
@@ -723,7 +723,7 @@
 <span class="sd">        norm_layer (nn.Module, optional): Normalization layer. Default: None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">patch_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
@@ -745,7 +745,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward function.&quot;&quot;&quot;</span>
         <span class="c1"># padding</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
@@ -758,7 +758,7 @@
         <span class="k">return</span> <span class="n">x</span>
 
 
-<span class="k">class</span> <span class="nc">SwinTransformer3d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SwinTransformer3d</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implements 3D Swin Transformer from the `&quot;Video Swin Transformer&quot; &lt;https://arxiv.org/abs/2106.13230&gt;`_ paper.</span>
 <span class="sd">    Args:</span>
@@ -778,7 +778,7 @@
 <span class="sd">        patch_embed (nn.Module, optional): Patch Embedding layer. Default: None.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">patch_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">embed_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -854,7 +854,7 @@
                 <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># x: B C T H W</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_embed</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># B _T _H _W C</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_drop</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -867,7 +867,7 @@
         <span class="k">return</span> <span class="n">x</span>
 
 
-<span class="k">def</span> <span class="nf">_swin_transformer3d</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_swin_transformer3d</span><span class="p">(</span>
     <span class="n">patch_size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">embed_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">depths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -904,7 +904,7 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="Swin3D_T_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_t.html#torchvision.models.video.Swin3D_T_Weights">[docs]</a><span class="k">class</span> <span class="nc">Swin3D_T_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="Swin3D_T_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_t.html#torchvision.models.video.Swin3D_T_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Swin3D_T_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">KINETICS400_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/swin3d_t-7615ae03.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
@@ -935,7 +935,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">KINETICS400_V1</span></div>
 
 
-<div class="viewcode-block" id="Swin3D_S_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_s.html#torchvision.models.video.Swin3D_S_Weights">[docs]</a><span class="k">class</span> <span class="nc">Swin3D_S_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="Swin3D_S_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_s.html#torchvision.models.video.Swin3D_S_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Swin3D_S_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">KINETICS400_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/swin3d_s-da41c237.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
@@ -966,7 +966,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">KINETICS400_V1</span></div>
 
 
-<div class="viewcode-block" id="Swin3D_B_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_b.html#torchvision.models.video.Swin3D_B_Weights">[docs]</a><span class="k">class</span> <span class="nc">Swin3D_B_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="Swin3D_B_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_b.html#torchvision.models.video.Swin3D_B_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Swin3D_B_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">KINETICS400_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/swin3d_b_1k-24f7c7c6.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
@@ -1026,7 +1026,7 @@
 
 <div class="viewcode-block" id="swin3d_t"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_t.html#torchvision.models.video.swin3d_t">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin3D_T_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">swin3d_t</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin3D_T_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer3d</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">swin3d_t</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin3D_T_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer3d</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_tiny architecture from</span>
 <span class="sd">    `Video Swin Transformer &lt;https://arxiv.org/abs/2106.13230&gt;`_.</span>
@@ -1064,7 +1064,7 @@
 
 <div class="viewcode-block" id="swin3d_s"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_s.html#torchvision.models.video.swin3d_s">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin3D_S_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">swin3d_s</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin3D_S_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer3d</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">swin3d_s</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin3D_S_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer3d</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_small architecture from</span>
 <span class="sd">    `Video Swin Transformer &lt;https://arxiv.org/abs/2106.13230&gt;`_.</span>
@@ -1102,7 +1102,7 @@
 
 <div class="viewcode-block" id="swin3d_b"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.swin3d_b.html#torchvision.models.video.swin3d_b">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Swin3D_B_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">swin3d_b</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin3D_B_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer3d</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">swin3d_b</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Swin3D_B_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SwinTransformer3d</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a swin_base architecture from</span>
 <span class="sd">    `Video Swin Transformer &lt;https://arxiv.org/abs/2106.13230&gt;`_.</span>

@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,20 +393,20 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.transforms.v2.functional._augment</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">io</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
 
-<span class="kn">import</span> <span class="nn">PIL.Image</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">PIL.Image</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
-<span class="kn">from</span> <span class="nn">torchvision.io</span> <span class="kn">import</span> <span class="n">decode_jpeg</span><span class="p">,</span> <span class="n">encode_jpeg</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms.functional</span> <span class="kn">import</span> <span class="n">pil_to_tensor</span><span class="p">,</span> <span class="n">to_pil_image</span>
-<span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">tv_tensors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">decode_jpeg</span><span class="p">,</span> <span class="n">encode_jpeg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">pil_to_tensor</span><span class="p">,</span> <span class="n">to_pil_image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_get_kernel</span><span class="p">,</span> <span class="n">_register_kernel_internal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_kernel</span><span class="p">,</span> <span class="n">_register_kernel_internal</span>
 
 
-<div class="viewcode-block" id="erase"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.erase.html#torchvision.transforms.v2.functional.erase">[docs]</a><span class="k">def</span> <span class="nf">erase</span><span class="p">(</span>
+<div class="viewcode-block" id="erase"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.erase.html#torchvision.transforms.v2.functional.erase">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">erase</span><span class="p">(</span>
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">j</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -427,7 +427,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">erase</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">erase</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">erase_image</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">erase_image</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
@@ -438,7 +438,7 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">erase</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_erase_image_pil</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_erase_image_pil</span><span class="p">(</span>
     <span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
     <span class="n">t_img</span> <span class="o">=</span> <span class="n">pil_to_tensor</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
@@ -447,13 +447,13 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">erase</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">erase_video</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">erase_video</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">j</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">w</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">erase_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">=</span><span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="jpeg"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.jpeg.html#torchvision.transforms.v2.functional.jpeg">[docs]</a><span class="k">def</span> <span class="nf">jpeg</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="jpeg"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.jpeg.html#torchvision.transforms.v2.functional.jpeg">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">jpeg</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.JPEG` for details.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">jpeg_image</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">quality</span><span class="p">)</span>
@@ -466,7 +466,7 @@
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">jpeg</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">jpeg</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">jpeg_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">jpeg_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">original_shape</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">view</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:])</span>
 
@@ -487,12 +487,12 @@
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">jpeg</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">jpeg_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">jpeg_video</span><span class="p">(</span><span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">jpeg_image</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">quality</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">jpeg</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_jpeg_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_jpeg_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
     <span class="n">raw_jpeg</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
     <span class="n">image</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">raw_jpeg</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;JPEG&quot;</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">quality</span><span class="p">)</span>
 

@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,30 +393,30 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.ops.roi_align</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">functools</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torch.fx</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torch._dynamo.utils</span> <span class="kn">import</span> <span class="n">is_compile_supported</span>
-<span class="kn">from</span> <span class="nn">torch.jit.annotations</span> <span class="kn">import</span> <span class="n">BroadcastingList2</span>
-<span class="kn">from</span> <span class="nn">torch.nn.modules.utils</span> <span class="kn">import</span> <span class="n">_pair</span>
-<span class="kn">from</span> <span class="nn">torchvision.extension</span> <span class="kn">import</span> <span class="n">_assert_has_ops</span><span class="p">,</span> <span class="n">_has_ops</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.fx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch._dynamo.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_compile_supported</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.jit.annotations</span><span class="w"> </span><span class="kn">import</span> <span class="n">BroadcastingList2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn.modules.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_pair</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.extension</span><span class="w"> </span><span class="kn">import</span> <span class="n">_assert_has_ops</span><span class="p">,</span> <span class="n">_has_ops</span>
 
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">check_roi_boxes_shape</span><span class="p">,</span> <span class="n">convert_boxes_to_roi_format</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_roi_boxes_shape</span><span class="p">,</span> <span class="n">convert_boxes_to_roi_format</span>
 
 
-<span class="k">def</span> <span class="nf">lazy_compile</span><span class="p">(</span><span class="o">**</span><span class="n">compile_kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">lazy_compile</span><span class="p">(</span><span class="o">**</span><span class="n">compile_kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Lazily wrap a function with torch.compile on the first call</span>
 
 <span class="sd">    This avoids eagerly importing dynamo.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">decorate_fn</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decorate_fn</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
         <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
-        <span class="k">def</span> <span class="nf">compile_hook</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">compile_hook</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
             <span class="n">compiled_fn</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">compile_kwargs</span><span class="p">)</span>
             <span class="nb">globals</span><span class="p">()[</span><span class="n">fn</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">fn</span><span class="p">)(</span><span class="n">compiled_fn</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">compiled_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -427,7 +427,7 @@
 
 
 <span class="c1"># NB: all inputs are tensors</span>
-<span class="k">def</span> <span class="nf">_bilinear_interpolate</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_bilinear_interpolate</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">,</span>  <span class="c1"># [N, C, H, W]</span>
     <span class="n">roi_batch_ind</span><span class="p">,</span>  <span class="c1"># [K]</span>
     <span class="n">y</span><span class="p">,</span>  <span class="c1"># [K, PH, IY]</span>
@@ -458,7 +458,7 @@
     <span class="c1"># do bilinear interpolation, but respect the masking!</span>
     <span class="c1"># TODO: It&#39;s possible the masking here is unnecessary if y and</span>
     <span class="c1"># x were clamped appropriately; hard to tell</span>
-    <span class="k">def</span> <span class="nf">masked_index</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">masked_index</span><span class="p">(</span>
         <span class="n">y</span><span class="p">,</span>  <span class="c1"># [K, PH, IY]</span>
         <span class="n">x</span><span class="p">,</span>  <span class="c1"># [K, PW, IX]</span>
     <span class="p">):</span>
@@ -479,7 +479,7 @@
     <span class="n">v4</span> <span class="o">=</span> <span class="n">masked_index</span><span class="p">(</span><span class="n">y_high</span><span class="p">,</span> <span class="n">x_high</span><span class="p">)</span>
 
     <span class="c1"># all ws preemptively [K, C, PH, PW, IY, IX]</span>
-    <span class="k">def</span> <span class="nf">outer_prod</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">outer_prod</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">y</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
 
     <span class="n">w1</span> <span class="o">=</span> <span class="n">outer_prod</span><span class="p">(</span><span class="n">hy</span><span class="p">,</span> <span class="n">hx</span><span class="p">)</span>
@@ -493,7 +493,7 @@
 
 <span class="c1"># TODO: this doesn&#39;t actually cache</span>
 <span class="c1"># TODO: main library should make this easier to do</span>
-<span class="k">def</span> <span class="nf">maybe_cast</span><span class="p">(</span><span class="n">tensor</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">maybe_cast</span><span class="p">(</span><span class="n">tensor</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_autocast_enabled</span><span class="p">()</span> <span class="ow">and</span> <span class="n">tensor</span><span class="o">.</span><span class="n">is_cuda</span> <span class="ow">and</span> <span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">double</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">tensor</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
@@ -507,7 +507,7 @@
 <span class="c1"># It is transcribed directly off of the roi_align CUDA kernel, see</span>
 <span class="c1"># https://dev-discuss.pytorch.org/t/a-pure-python-implementation-of-roi-align-that-looks-just-like-its-cuda-kernel/1266</span>
 <span class="nd">@lazy_compile</span><span class="p">(</span><span class="n">dynamic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">_roi_align</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">rois</span><span class="p">,</span> <span class="n">spatial_scale</span><span class="p">,</span> <span class="n">pooled_height</span><span class="p">,</span> <span class="n">pooled_width</span><span class="p">,</span> <span class="n">sampling_ratio</span><span class="p">,</span> <span class="n">aligned</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_roi_align</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">rois</span><span class="p">,</span> <span class="n">spatial_scale</span><span class="p">,</span> <span class="n">pooled_height</span><span class="p">,</span> <span class="n">pooled_width</span><span class="p">,</span> <span class="n">sampling_ratio</span><span class="p">,</span> <span class="n">aligned</span><span class="p">):</span>
     <span class="n">orig_dtype</span> <span class="o">=</span> <span class="nb">input</span><span class="o">.</span><span class="n">dtype</span>
 
     <span class="nb">input</span> <span class="o">=</span> <span class="n">maybe_cast</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
@@ -564,7 +564,7 @@
         <span class="n">ymask</span> <span class="o">=</span> <span class="n">iy</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&lt;</span> <span class="n">roi_bin_grid_h</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># [K, IY]</span>
         <span class="n">xmask</span> <span class="o">=</span> <span class="n">ix</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">&lt;</span> <span class="n">roi_bin_grid_w</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># [K, IX]</span>
 
-    <span class="k">def</span> <span class="nf">from_K</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_K</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">t</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
 
     <span class="n">y</span> <span class="o">=</span> <span class="p">(</span>
@@ -596,7 +596,7 @@
 
 
 <div class="viewcode-block" id="roi_align"><a class="viewcode-back" href="../../../generated/torchvision.ops.roi_align.html#torchvision.ops.roi_align">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span>
-<span class="k">def</span> <span class="nf">roi_align</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">roi_align</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">boxes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]],</span>
     <span class="n">output_size</span><span class="p">:</span> <span class="n">BroadcastingList2</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -654,12 +654,12 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="RoIAlign"><a class="viewcode-back" href="../../../generated/torchvision.ops.RoIAlign.html#torchvision.ops.RoIAlign">[docs]</a><span class="k">class</span> <span class="nc">RoIAlign</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="RoIAlign"><a class="viewcode-back" href="../../../generated/torchvision.ops.RoIAlign.html#torchvision.ops.RoIAlign">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">RoIAlign</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    See :func:`roi_align`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">output_size</span><span class="p">:</span> <span class="n">BroadcastingList2</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">spatial_scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -673,10 +673,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sampling_ratio</span> <span class="o">=</span> <span class="n">sampling_ratio</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">aligned</span> <span class="o">=</span> <span class="n">aligned</span>
 
-<div class="viewcode-block" id="RoIAlign.forward"><a class="viewcode-back" href="../../../generated/torchvision.ops.RoIAlign.html#torchvision.ops.RoIAlign.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">rois</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="RoIAlign.forward"><a class="viewcode-back" href="../../../generated/torchvision.ops.RoIAlign.html#torchvision.ops.RoIAlign.forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">rois</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">roi_align</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">rois</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">spatial_scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_ratio</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">aligned</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">s</span> <span class="o">=</span> <span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
             <span class="sa">f</span><span class="s2">&quot;output_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="si">}</span><span class="s2">&quot;</span>

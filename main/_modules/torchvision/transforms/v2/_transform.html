@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,23 +393,23 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.transforms.v2._transform</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span> <span class="nn">enum</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">PIL.Image</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
-<span class="kn">from</span> <span class="nn">torch.utils._pytree</span> <span class="kn">import</span> <span class="n">tree_flatten</span><span class="p">,</span> <span class="n">tree_unflatten</span>
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms.v2._utils</span> <span class="kn">import</span> <span class="n">check_type</span><span class="p">,</span> <span class="n">has_any</span><span class="p">,</span> <span class="n">is_pure_tensor</span>
-<span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">PIL.Image</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils._pytree</span><span class="w"> </span><span class="kn">import</span> <span class="n">tree_flatten</span><span class="p">,</span> <span class="n">tree_unflatten</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">tv_tensors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_type</span><span class="p">,</span> <span class="n">has_any</span><span class="p">,</span> <span class="n">is_pure_tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
-<span class="kn">from</span> <span class="nn">.functional._utils</span> <span class="kn">import</span> <span class="n">_get_kernel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.functional._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_kernel</span>
 
 
-<div class="viewcode-block" id="Transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform">[docs]</a><span class="k">class</span> <span class="nc">Transform</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Transform</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class to implement your own v2 transforms.</span>
 
 <span class="sd">    See  :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` for</span>
@@ -420,11 +420,11 @@
     <span class="c1"># We support both Types and callables that are able to do further checks on the type of the input.</span>
     <span class="n">_transformed_types</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">pass</span>
 
     <span class="c1"># When v2 was introduced, this method was private and called</span>
@@ -433,23 +433,23 @@
     <span class="c1"># methods for v2 transforms: it&#39;s the v1&#39;s `get_params()` that we have  to</span>
     <span class="c1"># keep in order to guarantee 100% BC with v1. (It&#39;s defined in</span>
     <span class="c1"># __init_subclass__ below).</span>
-<div class="viewcode-block" id="Transform.make_params"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.make_params">[docs]</a>    <span class="k">def</span> <span class="nf">make_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<div class="viewcode-block" id="Transform.make_params"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.make_params">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">make_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to override for custom transforms.</span>
 
 <span class="sd">        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">_call_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">functional</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_call_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">functional</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="n">kernel</span> <span class="o">=</span> <span class="n">_get_kernel</span><span class="p">(</span><span class="n">functional</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">),</span> <span class="n">allow_passthrough</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">kernel</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Transform.transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<div class="viewcode-block" id="Transform.transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to override for custom transforms.</span>
 
 <span class="sd">        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="Transform.forward"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<div class="viewcode-block" id="Transform.forward"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Do not override this! Use ``transform()`` instead.&quot;&quot;&quot;</span>
         <span class="n">flat_inputs</span><span class="p">,</span> <span class="n">spec</span> <span class="o">=</span> <span class="n">tree_flatten</span><span class="p">(</span><span class="n">inputs</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
@@ -467,7 +467,7 @@
 
         <span class="k">return</span> <span class="n">tree_unflatten</span><span class="p">(</span><span class="n">flat_outputs</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">_needs_transform_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_needs_transform_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
         <span class="c1"># Below is a heuristic on how to deal with pure tensor inputs:</span>
         <span class="c1"># 1. Pure tensors, i.e. tensors that are not a tv_tensor, are passed through if there is an explicit image</span>
         <span class="c1">#    (`tv_tensors.Image` or `PIL.Image.Image`) or video (`tv_tensors.Video`) in the sample.</span>
@@ -499,7 +499,7 @@
             <span class="n">needs_transform_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">needs_transform</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">needs_transform_list</span>
 
-<div class="viewcode-block" id="Transform.extra_repr"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.extra_repr">[docs]</a>    <span class="k">def</span> <span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<div class="viewcode-block" id="Transform.extra_repr"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.extra_repr">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">extra</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">:</span>
@@ -519,13 +519,13 @@
     <span class="c1">#    for details.</span>
     <span class="n">_v1_transform_cls</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="nf">__init_subclass__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__init_subclass__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Since `get_params` is a `@staticmethod`, we have to bind it to the class itself rather than to an instance.</span>
         <span class="c1"># This method is called after subclassing has happened, i.e. `cls` is the subclass, e.g. `Resize`.</span>
         <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_v1_transform_cls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_v1_transform_cls</span><span class="p">,</span> <span class="s2">&quot;get_params&quot;</span><span class="p">):</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">get_params</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_v1_transform_cls</span><span class="o">.</span><span class="n">get_params</span><span class="p">)</span>  <span class="c1"># type: ignore[attr-defined]</span>
 
-    <span class="k">def</span> <span class="nf">_extract_params_for_v1_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_params_for_v1_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="c1"># This method is called by `__prepare_scriptable__` to instantiate the equivalent v1 transform from the current</span>
         <span class="c1"># v2 transform instance. It extracts all available public attributes that are specific to that transform and</span>
         <span class="c1"># not `nn.Module` in general.</span>
@@ -538,7 +538,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">common_attrs</span>
         <span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">__prepare_scriptable__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__prepare_scriptable__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
         <span class="c1"># This method is called early on when `torch.jit.script`&#39;ing an `nn.Module` instance. If it succeeds, the return</span>
         <span class="c1"># value is used for scripting over the original object that should have been scripted. Since the v1 transforms</span>
         <span class="c1"># are JIT scriptable, and we made sure that for single image inputs v1 and v2 are equivalent, we just return the</span>
@@ -555,15 +555,15 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v1_transform_cls</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_extract_params_for_v1_transform</span><span class="p">())</span></div>
 
 
-<span class="k">class</span> <span class="nc">_RandomApplyTransform</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_RandomApplyTransform</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`p` should be a floating point value in the interval [0.0, 1.0].&quot;</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="c1"># We need to almost duplicate `Transform.forward()` here since we always want to check the inputs, but return</span>
         <span class="c1"># early afterwards in case the random check triggers. The same result could be achieved by calling</span>
         <span class="c1"># `super().forward()` after the random check, but that would call `self.check_inputs` twice.</span>

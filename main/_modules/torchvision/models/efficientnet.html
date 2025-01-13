@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,22 +393,22 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.efficientnet</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">StochasticDepth</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">StochasticDepth</span>
 
-<span class="kn">from</span> <span class="nn">..ops.misc</span> <span class="kn">import</span> <span class="n">Conv2dNormActivation</span><span class="p">,</span> <span class="n">SqueezeExcitation</span>
-<span class="kn">from</span> <span class="nn">..transforms._presets</span> <span class="kn">import</span> <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">InterpolationMode</span>
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
-<span class="kn">from</span> <span class="nn">._api</span> <span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
-<span class="kn">from</span> <span class="nn">._meta</span> <span class="kn">import</span> <span class="n">_IMAGENET_CATEGORIES</span>
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_make_divisible</span><span class="p">,</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..ops.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Conv2dNormActivation</span><span class="p">,</span> <span class="n">SqueezeExcitation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..transforms._presets</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">InterpolationMode</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._api</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_IMAGENET_CATEGORIES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_make_divisible</span><span class="p">,</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -439,7 +439,7 @@
 
 
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">_MBConvConfig</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_MBConvConfig</span><span class="p">:</span>
     <span class="n">expand_ratio</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span>
@@ -449,13 +449,13 @@
     <span class="n">block</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">adjust_channels</span><span class="p">(</span><span class="n">channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width_mult</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">min_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adjust_channels</span><span class="p">(</span><span class="n">channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width_mult</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">min_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_make_divisible</span><span class="p">(</span><span class="n">channels</span> <span class="o">*</span> <span class="n">width_mult</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="n">min_value</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">MBConvConfig</span><span class="p">(</span><span class="n">_MBConvConfig</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MBConvConfig</span><span class="p">(</span><span class="n">_MBConvConfig</span><span class="p">):</span>
     <span class="c1"># Stores information listed at Table 1 of the EfficientNet paper &amp; Table 4 of the EfficientNetV2 paper</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">expand_ratio</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">kernel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -475,13 +475,13 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">expand_ratio</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">input_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">adjust_depth</span><span class="p">(</span><span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">depth_mult</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">adjust_depth</span><span class="p">(</span><span class="n">num_layers</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">depth_mult</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">num_layers</span> <span class="o">*</span> <span class="n">depth_mult</span><span class="p">))</span>
 
 
-<span class="k">class</span> <span class="nc">FusedMBConvConfig</span><span class="p">(</span><span class="n">_MBConvConfig</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FusedMBConvConfig</span><span class="p">(</span><span class="n">_MBConvConfig</span><span class="p">):</span>
     <span class="c1"># Stores information listed at Table 4 of the EfficientNetV2 paper</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">expand_ratio</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">kernel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -496,8 +496,8 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">expand_ratio</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">input_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">MBConv</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MBConv</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cnf</span><span class="p">:</span> <span class="n">MBConvConfig</span><span class="p">,</span>
         <span class="n">stochastic_depth_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -555,7 +555,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span> <span class="o">=</span> <span class="n">StochasticDepth</span><span class="p">(</span><span class="n">stochastic_depth_prob</span><span class="p">,</span> <span class="s2">&quot;row&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span> <span class="o">=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">out_channels</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_res_connect</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
@@ -563,8 +563,8 @@
         <span class="k">return</span> <span class="n">result</span>
 
 
-<span class="k">class</span> <span class="nc">FusedMBConv</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FusedMBConv</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cnf</span><span class="p">:</span> <span class="n">FusedMBConvConfig</span><span class="p">,</span>
         <span class="n">stochastic_depth_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -616,7 +616,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span> <span class="o">=</span> <span class="n">StochasticDepth</span><span class="p">(</span><span class="n">stochastic_depth_prob</span><span class="p">,</span> <span class="s2">&quot;row&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span> <span class="o">=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">out_channels</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_res_connect</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
@@ -624,8 +624,8 @@
         <span class="k">return</span> <span class="n">result</span>
 
 
-<span class="k">class</span> <span class="nc">EfficientNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">inverted_residual_setting</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">MBConvConfig</span><span class="p">,</span> <span class="n">FusedMBConvConfig</span><span class="p">]],</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
@@ -724,7 +724,7 @@
                 <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="o">-</span><span class="n">init_range</span><span class="p">,</span> <span class="n">init_range</span><span class="p">)</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_forward_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_forward_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -734,11 +734,11 @@
 
         <span class="k">return</span> <span class="n">x</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_impl</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_efficientnet</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_efficientnet</span><span class="p">(</span>
     <span class="n">inverted_residual_setting</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">MBConvConfig</span><span class="p">,</span> <span class="n">FusedMBConvConfig</span><span class="p">]],</span>
     <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">last_channel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
@@ -757,7 +757,7 @@
     <span class="k">return</span> <span class="n">model</span>
 
 
-<span class="k">def</span> <span class="nf">_efficientnet_conf</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_efficientnet_conf</span><span class="p">(</span>
     <span class="n">arch</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">MBConvConfig</span><span class="p">,</span> <span class="n">FusedMBConvConfig</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
@@ -831,7 +831,7 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="EfficientNet_B0_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b0.html#torchvision.models.EfficientNet_B0_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B0_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_B0_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b0.html#torchvision.models.EfficientNet_B0_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_B0_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/rwightman/pytorch-image-models/</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b0_rwightman-7f5810bc.pth&quot;</span><span class="p">,</span>
@@ -855,7 +855,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
-<div class="viewcode-block" id="EfficientNet_B1_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b1.html#torchvision.models.EfficientNet_B1_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B1_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_B1_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b1.html#torchvision.models.EfficientNet_B1_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_B1_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/rwightman/pytorch-image-models/</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b1_rwightman-bac287d4.pth&quot;</span><span class="p">,</span>
@@ -903,7 +903,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<div class="viewcode-block" id="EfficientNet_B2_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b2.html#torchvision.models.EfficientNet_B2_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B2_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_B2_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b2.html#torchvision.models.EfficientNet_B2_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_B2_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/rwightman/pytorch-image-models/</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b2_rwightman-c35c1473.pth&quot;</span><span class="p">,</span>
@@ -927,7 +927,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
-<div class="viewcode-block" id="EfficientNet_B3_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b3.html#torchvision.models.EfficientNet_B3_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B3_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_B3_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b3.html#torchvision.models.EfficientNet_B3_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_B3_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/rwightman/pytorch-image-models/</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b3_rwightman-b3899882.pth&quot;</span><span class="p">,</span>
@@ -951,7 +951,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
-<div class="viewcode-block" id="EfficientNet_B4_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b4.html#torchvision.models.EfficientNet_B4_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B4_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_B4_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b4.html#torchvision.models.EfficientNet_B4_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_B4_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/rwightman/pytorch-image-models/</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b4_rwightman-23ab8bcd.pth&quot;</span><span class="p">,</span>
@@ -975,7 +975,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
-<div class="viewcode-block" id="EfficientNet_B5_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b5.html#torchvision.models.EfficientNet_B5_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B5_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_B5_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b5.html#torchvision.models.EfficientNet_B5_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_B5_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b5_lukemelas-1a07897c.pth&quot;</span><span class="p">,</span>
@@ -999,7 +999,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
-<div class="viewcode-block" id="EfficientNet_B6_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b6.html#torchvision.models.EfficientNet_B6_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B6_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_B6_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b6.html#torchvision.models.EfficientNet_B6_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_B6_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b6_lukemelas-24a108a5.pth&quot;</span><span class="p">,</span>
@@ -1023,7 +1023,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
-<div class="viewcode-block" id="EfficientNet_B7_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b7.html#torchvision.models.EfficientNet_B7_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_B7_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_B7_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b7.html#torchvision.models.EfficientNet_B7_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_B7_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_b7_lukemelas-c5b4e57e.pth&quot;</span><span class="p">,</span>
@@ -1047,7 +1047,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
-<div class="viewcode-block" id="EfficientNet_V2_S_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_v2_s.html#torchvision.models.EfficientNet_V2_S_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_V2_S_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_V2_S_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_v2_s.html#torchvision.models.EfficientNet_V2_S_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_V2_S_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_v2_s-dd5fe13b.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
@@ -1077,7 +1077,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
-<div class="viewcode-block" id="EfficientNet_V2_M_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_v2_m.html#torchvision.models.EfficientNet_V2_M_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_V2_M_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_V2_M_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_v2_m.html#torchvision.models.EfficientNet_V2_M_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_V2_M_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_v2_m-dc08266a.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
@@ -1107,7 +1107,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
-<div class="viewcode-block" id="EfficientNet_V2_L_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.EfficientNet_V2_L_Weights">[docs]</a><span class="k">class</span> <span class="nc">EfficientNet_V2_L_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="EfficientNet_V2_L_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.EfficientNet_V2_L_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EfficientNet_V2_L_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="c1"># Weights ported from https://github.com/google/automl/tree/master/efficientnetv2</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/efficientnet_v2_l-59c71312.pth&quot;</span><span class="p">,</span>
@@ -1138,7 +1138,7 @@
 
 <div class="viewcode-block" id="efficientnet_b0"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b0.html#torchvision.models.efficientnet_b0">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_B0_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_b0</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_b0</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_B0_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;EfficientNet B0 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional</span>
@@ -1169,7 +1169,7 @@
 
 <div class="viewcode-block" id="efficientnet_b1"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b1.html#torchvision.models.efficientnet_b1">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_B1_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_b1</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_b1</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_B1_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;EfficientNet B1 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional</span>
@@ -1200,7 +1200,7 @@
 
 <div class="viewcode-block" id="efficientnet_b2"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b2.html#torchvision.models.efficientnet_b2">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_B2_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_b2</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_b2</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_B2_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;EfficientNet B2 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional</span>
@@ -1231,7 +1231,7 @@
 
 <div class="viewcode-block" id="efficientnet_b3"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b3.html#torchvision.models.efficientnet_b3">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_B3_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_b3</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_b3</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_B3_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;EfficientNet B3 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional</span>
@@ -1267,7 +1267,7 @@
 
 <div class="viewcode-block" id="efficientnet_b4"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b4.html#torchvision.models.efficientnet_b4">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_B4_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_b4</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_b4</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_B4_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;EfficientNet B4 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional</span>
@@ -1303,7 +1303,7 @@
 
 <div class="viewcode-block" id="efficientnet_b5"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b5.html#torchvision.models.efficientnet_b5">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_B5_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_b5</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_b5</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_B5_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;EfficientNet B5 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional</span>
@@ -1340,7 +1340,7 @@
 
 <div class="viewcode-block" id="efficientnet_b6"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b6.html#torchvision.models.efficientnet_b6">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_B6_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_b6</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_b6</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_B6_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;EfficientNet B6 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional</span>
@@ -1377,7 +1377,7 @@
 
 <div class="viewcode-block" id="efficientnet_b7"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_b7.html#torchvision.models.efficientnet_b7">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_B7_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_b7</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_b7</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_B7_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;EfficientNet B7 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional</span>
@@ -1414,7 +1414,7 @@
 
 <div class="viewcode-block" id="efficientnet_v2_s"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_v2_s.html#torchvision.models.efficientnet_v2_s">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_V2_S_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_v2_s</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_v2_s</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_V2_S_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1452,7 +1452,7 @@
 
 <div class="viewcode-block" id="efficientnet_v2_m"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_v2_m.html#torchvision.models.efficientnet_v2_m">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_V2_M_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_v2_m</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_v2_m</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_V2_M_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1490,7 +1490,7 @@
 
 <div class="viewcode-block" id="efficientnet_v2_l"><a class="viewcode-back" href="../../../models/generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.efficientnet_v2_l">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">EfficientNet_V2_L_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">efficientnet_v2_l</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficientnet_v2_l</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EfficientNet_V2_L_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EfficientNet</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>

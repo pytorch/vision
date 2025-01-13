@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,21 +393,21 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.segmentation.deeplabv3</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
-<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
 
-<span class="kn">from</span> <span class="nn">...transforms._presets</span> <span class="kn">import</span> <span class="n">SemanticSegmentation</span>
-<span class="kn">from</span> <span class="nn">.._api</span> <span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
-<span class="kn">from</span> <span class="nn">.._meta</span> <span class="kn">import</span> <span class="n">_VOC_CATEGORIES</span>
-<span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">_ovewrite_value_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span><span class="p">,</span> <span class="n">IntermediateLayerGetter</span>
-<span class="kn">from</span> <span class="nn">..mobilenetv3</span> <span class="kn">import</span> <span class="n">mobilenet_v3_large</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="p">,</span> <span class="n">MobileNetV3</span>
-<span class="kn">from</span> <span class="nn">..resnet</span> <span class="kn">import</span> <span class="n">ResNet</span><span class="p">,</span> <span class="n">resnet101</span><span class="p">,</span> <span class="n">ResNet101_Weights</span><span class="p">,</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_SimpleSegmentationModel</span>
-<span class="kn">from</span> <span class="nn">.fcn</span> <span class="kn">import</span> <span class="n">FCNHead</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...transforms._presets</span><span class="w"> </span><span class="kn">import</span> <span class="n">SemanticSegmentation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._api</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_VOC_CATEGORIES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ovewrite_value_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span><span class="p">,</span> <span class="n">IntermediateLayerGetter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..mobilenetv3</span><span class="w"> </span><span class="kn">import</span> <span class="n">mobilenet_v3_large</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="p">,</span> <span class="n">MobileNetV3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..resnet</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResNet</span><span class="p">,</span> <span class="n">resnet101</span><span class="p">,</span> <span class="n">ResNet101_Weights</span><span class="p">,</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_SimpleSegmentationModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.fcn</span><span class="w"> </span><span class="kn">import</span> <span class="n">FCNHead</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -421,7 +421,7 @@
 <span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">DeepLabV3</span><span class="p">(</span><span class="n">_SimpleSegmentationModel</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeepLabV3</span><span class="p">(</span><span class="n">_SimpleSegmentationModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implements DeepLabV3 model from</span>
 <span class="sd">    `&quot;Rethinking Atrous Convolution for Semantic Image Segmentation&quot;</span>
@@ -440,8 +440,8 @@
     <span class="k">pass</span>
 
 
-<span class="k">class</span> <span class="nc">DeepLabHead</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atrous_rates</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">36</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DeepLabHead</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atrous_rates</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">36</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">ASPP</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">atrous_rates</span><span class="p">),</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
@@ -451,8 +451,8 @@
         <span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">ASPPConv</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dilation</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ASPPConv</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">dilation</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">modules</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">out_channels</span><span class="p">),</span>
@@ -461,8 +461,8 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">modules</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">ASPPPooling</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ASPPPooling</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
             <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
@@ -470,15 +470,15 @@
             <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="n">size</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
         <span class="k">for</span> <span class="n">mod</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">mod</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;bilinear&quot;</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">ASPP</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atrous_rates</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ASPP</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atrous_rates</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">modules</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">modules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -500,7 +500,7 @@
             <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="n">_res</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">conv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">convs</span><span class="p">:</span>
             <span class="n">_res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
@@ -508,7 +508,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_deeplabv3_resnet</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_deeplabv3_resnet</span><span class="p">(</span>
     <span class="n">backbone</span><span class="p">:</span> <span class="n">ResNet</span><span class="p">,</span>
     <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">aux</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span>
@@ -533,7 +533,7 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="DeepLabV3_ResNet50_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.segmentation.deeplabv3_resnet50.html#torchvision.models.segmentation.DeepLabV3_ResNet50_Weights">[docs]</a><span class="k">class</span> <span class="nc">DeepLabV3_ResNet50_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="DeepLabV3_ResNet50_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.segmentation.deeplabv3_resnet50.html#torchvision.models.segmentation.DeepLabV3_ResNet50_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">DeepLabV3_ResNet50_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_WITH_VOC_LABELS_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">SemanticSegmentation</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">520</span><span class="p">),</span>
@@ -554,7 +554,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_WITH_VOC_LABELS_V1</span></div>
 
 
-<div class="viewcode-block" id="DeepLabV3_ResNet101_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.segmentation.deeplabv3_resnet101.html#torchvision.models.segmentation.DeepLabV3_ResNet101_Weights">[docs]</a><span class="k">class</span> <span class="nc">DeepLabV3_ResNet101_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="DeepLabV3_ResNet101_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.segmentation.deeplabv3_resnet101.html#torchvision.models.segmentation.DeepLabV3_ResNet101_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">DeepLabV3_ResNet101_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_WITH_VOC_LABELS_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">SemanticSegmentation</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">520</span><span class="p">),</span>
@@ -575,7 +575,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_WITH_VOC_LABELS_V1</span></div>
 
 
-<div class="viewcode-block" id="DeepLabV3_MobileNet_V3_Large_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.segmentation.deeplabv3_mobilenet_v3_large.html#torchvision.models.segmentation.DeepLabV3_MobileNet_V3_Large_Weights">[docs]</a><span class="k">class</span> <span class="nc">DeepLabV3_MobileNet_V3_Large_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="DeepLabV3_MobileNet_V3_Large_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.segmentation.deeplabv3_mobilenet_v3_large.html#torchvision.models.segmentation.DeepLabV3_MobileNet_V3_Large_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">DeepLabV3_MobileNet_V3_Large_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_WITH_VOC_LABELS_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">SemanticSegmentation</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">520</span><span class="p">),</span>
@@ -596,7 +596,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_WITH_VOC_LABELS_V1</span></div>
 
 
-<span class="k">def</span> <span class="nf">_deeplabv3_mobilenetv3</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_deeplabv3_mobilenetv3</span><span class="p">(</span>
     <span class="n">backbone</span><span class="p">:</span> <span class="n">MobileNetV3</span><span class="p">,</span>
     <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">aux</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span>
@@ -624,7 +624,7 @@
     <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">DeepLabV3_ResNet50_Weights</span><span class="o">.</span><span class="n">COCO_WITH_VOC_LABELS_V1</span><span class="p">),</span>
     <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">deeplabv3_resnet50</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">deeplabv3_resnet50</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeepLabV3_ResNet50_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -680,7 +680,7 @@
     <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">DeepLabV3_ResNet101_Weights</span><span class="o">.</span><span class="n">COCO_WITH_VOC_LABELS_V1</span><span class="p">),</span>
     <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">ResNet101_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">deeplabv3_resnet101</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">deeplabv3_resnet101</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeepLabV3_ResNet101_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -736,7 +736,7 @@
     <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">DeepLabV3_MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">COCO_WITH_VOC_LABELS_V1</span><span class="p">),</span>
     <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">deeplabv3_mobilenet_v3_large</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">deeplabv3_mobilenet_v3_large</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeepLabV3_MobileNet_V3_Large_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>

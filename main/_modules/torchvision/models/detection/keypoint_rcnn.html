@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,21 +393,21 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.detection.keypoint_rcnn</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
-<span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">MultiScaleRoIAlign</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiScaleRoIAlign</span>
 
-<span class="kn">from</span> <span class="nn">...ops</span> <span class="kn">import</span> <span class="n">misc</span> <span class="k">as</span> <span class="n">misc_nn_ops</span>
-<span class="kn">from</span> <span class="nn">...transforms._presets</span> <span class="kn">import</span> <span class="n">ObjectDetection</span>
-<span class="kn">from</span> <span class="nn">.._api</span> <span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
-<span class="kn">from</span> <span class="nn">.._meta</span> <span class="kn">import</span> <span class="n">_COCO_PERSON_CATEGORIES</span><span class="p">,</span> <span class="n">_COCO_PERSON_KEYPOINT_NAMES</span>
-<span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">_ovewrite_value_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
-<span class="kn">from</span> <span class="nn">..resnet</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">overwrite_eps</span>
-<span class="kn">from</span> <span class="nn">.backbone_utils</span> <span class="kn">import</span> <span class="n">_resnet_fpn_extractor</span><span class="p">,</span> <span class="n">_validate_trainable_layers</span>
-<span class="kn">from</span> <span class="nn">.faster_rcnn</span> <span class="kn">import</span> <span class="n">FasterRCNN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">misc</span> <span class="k">as</span> <span class="n">misc_nn_ops</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...transforms._presets</span><span class="w"> </span><span class="kn">import</span> <span class="n">ObjectDetection</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._api</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_model</span><span class="p">,</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._meta</span><span class="w"> </span><span class="kn">import</span> <span class="n">_COCO_PERSON_CATEGORIES</span><span class="p">,</span> <span class="n">_COCO_PERSON_KEYPOINT_NAMES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ovewrite_value_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..resnet</span><span class="w"> </span><span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">overwrite_eps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.backbone_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_resnet_fpn_extractor</span><span class="p">,</span> <span class="n">_validate_trainable_layers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.faster_rcnn</span><span class="w"> </span><span class="kn">import</span> <span class="n">FasterRCNN</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -417,7 +417,7 @@
 <span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">KeypointRCNN</span><span class="p">(</span><span class="n">FasterRCNN</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">KeypointRCNN</span><span class="p">(</span><span class="n">FasterRCNN</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implements Keypoint R-CNN.</span>
 
@@ -556,7 +556,7 @@
 <span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">backbone</span><span class="p">,</span>
         <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -665,8 +665,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">roi_heads</span><span class="o">.</span><span class="n">keypoint_predictor</span> <span class="o">=</span> <span class="n">keypoint_predictor</span>
 
 
-<span class="k">class</span> <span class="nc">KeypointRCNNHeads</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">layers</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">KeypointRCNNHeads</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">layers</span><span class="p">):</span>
         <span class="n">d</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">next_feature</span> <span class="o">=</span> <span class="n">in_channels</span>
         <span class="k">for</span> <span class="n">out_channels</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
@@ -680,8 +680,8 @@
                 <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">KeypointRCNNPredictor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">num_keypoints</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">KeypointRCNNPredictor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">num_keypoints</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">input_features</span> <span class="o">=</span> <span class="n">in_channels</span>
         <span class="n">deconv_kernel</span> <span class="o">=</span> <span class="mi">4</span>
@@ -697,7 +697,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">up_scale</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span> <span class="o">=</span> <span class="n">num_keypoints</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kps_score_lowres</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span>
             <span class="n">x</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">up_scale</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;bilinear&quot;</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">recompute_scale_factor</span><span class="o">=</span><span class="kc">False</span>
@@ -711,7 +711,7 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="KeypointRCNN_ResNet50_FPN_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.keypointrcnn_resnet50_fpn.html#torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights">[docs]</a><span class="k">class</span> <span class="nc">KeypointRCNN_ResNet50_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="KeypointRCNN_ResNet50_FPN_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.keypointrcnn_resnet50_fpn.html#torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">KeypointRCNN_ResNet50_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_LEGACY</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
@@ -764,7 +764,7 @@
     <span class="p">),</span>
     <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
 <span class="p">)</span>
-<span class="k">def</span> <span class="nf">keypointrcnn_resnet50_fpn</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">keypointrcnn_resnet50_fpn</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">KeypointRCNN_ResNet50_FPN_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>

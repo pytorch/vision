@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,14 +393,14 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.io.image</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
-<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
-<span class="kn">from</span> <span class="nn">..extension</span> <span class="kn">import</span> <span class="n">_load_library</span>
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..extension</span><span class="w"> </span><span class="kn">import</span> <span class="n">_load_library</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
 
 <span class="k">try</span><span class="p">:</span>
@@ -414,7 +414,7 @@
     <span class="p">)</span>
 
 
-<div class="viewcode-block" id="ImageReadMode"><a class="viewcode-back" href="../../../generated/torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode">[docs]</a><span class="k">class</span> <span class="nc">ImageReadMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<div class="viewcode-block" id="ImageReadMode"><a class="viewcode-back" href="../../../generated/torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ImageReadMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Allow automatic conversion to RGB, RGBA, etc while decoding.</span>
 
 <span class="sd">    .. note::</span>
@@ -444,7 +444,7 @@
     <span class="n">RGBA</span> <span class="o">=</span> <span class="n">RGB_ALPHA</span>  <span class="c1"># Alias for convenience</span></div>
 
 
-<div class="viewcode-block" id="read_file"><a class="viewcode-back" href="../../../generated/torchvision.io.read_file.html#torchvision.io.read_file">[docs]</a><span class="k">def</span> <span class="nf">read_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="read_file"><a class="viewcode-back" href="../../../generated/torchvision.io.read_file.html#torchvision.io.read_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">read_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return the bytes contents of a file as a uint8 1D Tensor.</span>
 
@@ -460,7 +460,7 @@
     <span class="k">return</span> <span class="n">data</span></div>
 
 
-<div class="viewcode-block" id="write_file"><a class="viewcode-back" href="../../../generated/torchvision.io.write_file.html#torchvision.io.write_file">[docs]</a><span class="k">def</span> <span class="nf">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="write_file"><a class="viewcode-back" href="../../../generated/torchvision.io.write_file.html#torchvision.io.write_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Write the content of an uint8 1D tensor to a file.</span>
 
@@ -473,7 +473,7 @@
     <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">write_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">decode_png</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">decode_png</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
     <span class="n">apply_exif_orientation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -509,7 +509,7 @@
     <span class="k">return</span> <span class="n">output</span>
 
 
-<div class="viewcode-block" id="encode_png"><a class="viewcode-back" href="../../../generated/torchvision.io.encode_png.html#torchvision.io.encode_png">[docs]</a><span class="k">def</span> <span class="nf">encode_png</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="encode_png"><a class="viewcode-back" href="../../../generated/torchvision.io.encode_png.html#torchvision.io.encode_png">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">encode_png</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Takes an input tensor in CHW layout and returns a buffer with the contents</span>
 <span class="sd">    of its corresponding PNG file.</span>
@@ -530,7 +530,7 @@
     <span class="k">return</span> <span class="n">output</span></div>
 
 
-<div class="viewcode-block" id="write_png"><a class="viewcode-back" href="../../../generated/torchvision.io.write_png.html#torchvision.io.write_png">[docs]</a><span class="k">def</span> <span class="nf">write_png</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">):</span>
+<div class="viewcode-block" id="write_png"><a class="viewcode-back" href="../../../generated/torchvision.io.write_png.html#torchvision.io.write_png">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_png</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Takes an input tensor in CHW layout (or HW in the case of grayscale images)</span>
 <span class="sd">    and saves it in a PNG file.</span>
@@ -548,7 +548,7 @@
     <span class="n">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="decode_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_jpeg.html#torchvision.io.decode_jpeg">[docs]</a><span class="k">def</span> <span class="nf">decode_jpeg</span><span class="p">(</span>
+<div class="viewcode-block" id="decode_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_jpeg.html#torchvision.io.decode_jpeg">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_jpeg</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
     <span class="n">device</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
@@ -619,7 +619,7 @@
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="encode_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg">[docs]</a><span class="k">def</span> <span class="nf">encode_jpeg</span><span class="p">(</span>
+<div class="viewcode-block" id="encode_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">encode_jpeg</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">75</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.</span>
@@ -655,7 +655,7 @@
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">encode_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">quality</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="write_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg">[docs]</a><span class="k">def</span> <span class="nf">write_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">75</span><span class="p">):</span>
+<div class="viewcode-block" id="write_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">75</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Takes an input tensor in CHW layout and saves it in a JPEG file.</span>
 
@@ -673,7 +673,7 @@
     <span class="n">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="decode_image"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_image.html#torchvision.io.decode_image">[docs]</a><span class="k">def</span> <span class="nf">decode_image</span><span class="p">(</span>
+<div class="viewcode-block" id="decode_image"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_image.html#torchvision.io.decode_image">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_image</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
     <span class="n">apply_exif_orientation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -720,7 +720,7 @@
     <span class="k">return</span> <span class="n">output</span></div>
 
 
-<div class="viewcode-block" id="read_image"><a class="viewcode-back" href="../../../generated/torchvision.io.read_image.html#torchvision.io.read_image">[docs]</a><span class="k">def</span> <span class="nf">read_image</span><span class="p">(</span>
+<div class="viewcode-block" id="read_image"><a class="viewcode-back" href="../../../generated/torchvision.io.read_image.html#torchvision.io.read_image">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">read_image</span><span class="p">(</span>
     <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
     <span class="n">apply_exif_orientation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -732,7 +732,7 @@
     <span class="k">return</span> <span class="n">decode_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="o">=</span><span class="n">apply_exif_orientation</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="decode_gif"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_gif.html#torchvision.io.decode_gif">[docs]</a><span class="k">def</span> <span class="nf">decode_gif</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="decode_gif"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_gif.html#torchvision.io.decode_gif">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_gif</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decode a GIF image into a 3 or 4 dimensional RGB Tensor.</span>
 
@@ -752,7 +752,7 @@
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_gif</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="decode_webp"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_webp.html#torchvision.io.decode_webp">[docs]</a><span class="k">def</span> <span class="nf">decode_webp</span><span class="p">(</span>
+<div class="viewcode-block" id="decode_webp"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_webp.html#torchvision.io.decode_webp">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_webp</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -800,13 +800,13 @@
 <span class="n">_EXTRA_DECODERS_ALREADY_LOADED</span> <span class="o">=</span> <span class="kc">False</span>
 
 
-<span class="k">def</span> <span class="nf">_load_extra_decoders_once</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_extra_decoders_once</span><span class="p">():</span>
     <span class="k">global</span> <span class="n">_EXTRA_DECODERS_ALREADY_LOADED</span>
     <span class="k">if</span> <span class="n">_EXTRA_DECODERS_ALREADY_LOADED</span><span class="p">:</span>
         <span class="k">return</span>
 
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">import</span> <span class="nn">torchvision_extra_decoders</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">torchvision_extra_decoders</span>
 
         <span class="c1"># torchvision-extra-decoders only supports linux for now. BUT, users on</span>
         <span class="c1"># e.g. MacOS can still install it: they will get the pure-python</span>
@@ -824,7 +824,7 @@
             <span class="s2">&quot;This is only supported on Linux, and this feature is still in BETA stage. &quot;</span>
             <span class="s2">&quot;Please let us know of any issue: https://github.com/pytorch/vision/issues/new/choose. &quot;</span>
             <span class="s2">&quot;Note that `torchvision-extra-decoders` is released under the LGPL license. &quot;</span>
-        <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
     <span class="c1"># This will expose torch.ops.extra_decoders_ns.decode_avif and torch.ops.extra_decoders_ns.decode_heic</span>
     <span class="n">torchvision_extra_decoders</span><span class="o">.</span><span class="n">expose_extra_decoders</span><span class="p">()</span>
@@ -832,7 +832,7 @@
     <span class="n">_EXTRA_DECODERS_ALREADY_LOADED</span> <span class="o">=</span> <span class="kc">True</span>
 
 
-<div class="viewcode-block" id="decode_avif"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_avif.html#torchvision.io.decode_avif">[docs]</a><span class="k">def</span> <span class="nf">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="decode_avif"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_avif.html#torchvision.io.decode_avif">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode an AVIF image into a 3 dimensional RGB[A] Tensor.</span>
 
 <span class="sd">    .. warning::</span>
@@ -869,7 +869,7 @@
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">extra_decoders_ns</span><span class="o">.</span><span class="n">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="decode_heic"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_heic.html#torchvision.io.decode_heic">[docs]</a><span class="k">def</span> <span class="nf">decode_heic</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="decode_heic"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_heic.html#torchvision.io.decode_heic">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_heic</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode an HEIC image into a 3 dimensional RGB[A] Tensor.</span>
 
 <span class="sd">    .. warning::</span>

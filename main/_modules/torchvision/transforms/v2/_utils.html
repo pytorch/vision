@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,27 +393,27 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.transforms.v2._utils</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span> <span class="nn">collections.abc</span>
-<span class="kn">import</span> <span class="nn">numbers</span>
-<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">suppress</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections.abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numbers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">suppress</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span> <span class="nn">PIL.Image</span>
-<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">PIL.Image</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">tv_tensors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">tv_tensors</span>
 
-<span class="kn">from</span> <span class="nn">torchvision._utils</span> <span class="kn">import</span> <span class="n">sequence_to_str</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">sequence_to_str</span>
 
-<span class="kn">from</span> <span class="nn">torchvision.transforms.transforms</span> <span class="kn">import</span> <span class="n">_check_sequence_input</span><span class="p">,</span> <span class="n">_setup_angle</span><span class="p">,</span> <span class="n">_setup_size</span>  <span class="c1"># noqa: F401</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms.v2.functional</span> <span class="kn">import</span> <span class="n">get_dimensions</span><span class="p">,</span> <span class="n">get_size</span><span class="p">,</span> <span class="n">is_pure_tensor</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms.v2.functional._utils</span> <span class="kn">import</span> <span class="n">_FillType</span><span class="p">,</span> <span class="n">_FillTypeJIT</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">_check_sequence_input</span><span class="p">,</span> <span class="n">_setup_angle</span><span class="p">,</span> <span class="n">_setup_size</span>  <span class="c1"># noqa: F401</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_dimensions</span><span class="p">,</span> <span class="n">get_size</span><span class="p">,</span> <span class="n">is_pure_tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2.functional._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_FillType</span><span class="p">,</span> <span class="n">_FillTypeJIT</span>
 
 
-<span class="k">def</span> <span class="nf">_setup_number_or_seq</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_setup_number_or_seq</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> should be a number or a sequence of numbers. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
@@ -433,7 +433,7 @@
     <span class="k">return</span> <span class="n">arg</span>
 
 
-<span class="k">def</span> <span class="nf">_check_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">_FillType</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">_FillType</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">_FillType</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">_FillType</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fill</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">fill</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">_check_fill_arg</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -442,7 +442,7 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Got inappropriate fill arg, only Numbers, tuples, lists and dicts are allowed.&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_convert_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">:</span> <span class="n">_FillType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_FillTypeJIT</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_convert_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">:</span> <span class="n">_FillType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_FillTypeJIT</span><span class="p">:</span>
     <span class="c1"># Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517</span>
     <span class="c1"># So, we can&#39;t reassign fill to 0</span>
     <span class="c1"># if fill is None:</span>
@@ -455,7 +455,7 @@
     <span class="k">return</span> <span class="n">fill</span>  <span class="c1"># type: ignore[return-value]</span>
 
 
-<span class="k">def</span> <span class="nf">_setup_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">_FillType</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">_FillType</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">_FillTypeJIT</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_setup_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">_FillType</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">_FillType</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">_FillTypeJIT</span><span class="p">]:</span>
     <span class="n">_check_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fill</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
@@ -466,7 +466,7 @@
         <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;others&quot;</span><span class="p">:</span> <span class="n">_convert_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">)}</span>
 
 
-<span class="k">def</span> <span class="nf">_get_fill</span><span class="p">(</span><span class="n">fill_dict</span><span class="p">,</span> <span class="n">inpt_type</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_fill</span><span class="p">(</span><span class="n">fill_dict</span><span class="p">,</span> <span class="n">inpt_type</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">inpt_type</span> <span class="ow">in</span> <span class="n">fill_dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">fill_dict</span><span class="p">[</span><span class="n">inpt_type</span><span class="p">]</span>
     <span class="k">elif</span> <span class="s2">&quot;others&quot;</span> <span class="ow">in</span> <span class="n">fill_dict</span><span class="p">:</span>
@@ -475,7 +475,7 @@
         <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;This should never happen, please open an issue on the torchvision repo if you hit this.&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_check_padding_arg</span><span class="p">(</span><span class="n">padding</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_padding_arg</span><span class="p">(</span><span class="n">padding</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">padding</span><span class="p">,</span> <span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Got inappropriate padding arg&quot;</span><span class="p">)</span>
 
@@ -485,12 +485,12 @@
 
 <span class="c1"># TODO: let&#39;s use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)</span>
 <span class="c1"># https://github.com/pytorch/vision/issues/6250</span>
-<span class="k">def</span> <span class="nf">_check_padding_mode_arg</span><span class="p">(</span><span class="n">padding_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;constant&quot;</span><span class="p">,</span> <span class="s2">&quot;edge&quot;</span><span class="p">,</span> <span class="s2">&quot;reflect&quot;</span><span class="p">,</span> <span class="s2">&quot;symmetric&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_padding_mode_arg</span><span class="p">(</span><span class="n">padding_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;constant&quot;</span><span class="p">,</span> <span class="s2">&quot;edge&quot;</span><span class="p">,</span> <span class="s2">&quot;reflect&quot;</span><span class="p">,</span> <span class="s2">&quot;symmetric&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">padding_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;constant&quot;</span><span class="p">,</span> <span class="s2">&quot;edge&quot;</span><span class="p">,</span> <span class="s2">&quot;reflect&quot;</span><span class="p">,</span> <span class="s2">&quot;symmetric&quot;</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Padding mode should be either constant, edge, reflect or symmetric&quot;</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_find_labels_default_heuristic</span><span class="p">(</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_find_labels_default_heuristic</span><span class="p">(</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This heuristic covers three cases:</span>
 
@@ -534,7 +534,7 @@
     <span class="k">return</span> <span class="n">inputs</span><span class="p">[</span><span class="n">candidate_key</span><span class="p">]</span>
 
 
-<span class="k">def</span> <span class="nf">_parse_labels_getter</span><span class="p">(</span><span class="n">labels_getter</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_labels_getter</span><span class="p">(</span><span class="n">labels_getter</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
     <span class="k">if</span> <span class="n">labels_getter</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_find_labels_default_heuristic</span>
     <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">labels_getter</span><span class="p">):</span>
@@ -545,7 +545,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;labels_getter should either be &#39;default&#39;, a callable, or None, but got </span><span class="si">{</span><span class="n">labels_getter</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="get_bounding_boxes"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.get_bounding_boxes.html#torchvision.transforms.v2.get_bounding_boxes">[docs]</a><span class="k">def</span> <span class="nf">get_bounding_boxes</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
+<div class="viewcode-block" id="get_bounding_boxes"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.get_bounding_boxes.html#torchvision.transforms.v2.get_bounding_boxes">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_bounding_boxes</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the Bounding Boxes in the input.</span>
 
 <span class="sd">    Assumes only one ``BoundingBoxes`` object is present.</span>
@@ -557,7 +557,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No bounding boxes were found in the sample&quot;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="query_chw"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.query_chw.html#torchvision.transforms.v2.query_chw">[docs]</a><span class="k">def</span> <span class="nf">query_chw</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<div class="viewcode-block" id="query_chw"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.query_chw.html#torchvision.transforms.v2.query_chw">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">query_chw</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return Channel, Height, and Width.&quot;&quot;&quot;</span>
     <span class="n">chws</span> <span class="o">=</span> <span class="p">{</span>
         <span class="nb">tuple</span><span class="p">(</span><span class="n">get_dimensions</span><span class="p">(</span><span class="n">inpt</span><span class="p">))</span>
@@ -572,7 +572,7 @@
     <span class="k">return</span> <span class="n">c</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span></div>
 
 
-<div class="viewcode-block" id="query_size"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.query_size.html#torchvision.transforms.v2.query_size">[docs]</a><span class="k">def</span> <span class="nf">query_size</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<div class="viewcode-block" id="query_size"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.query_size.html#torchvision.transforms.v2.query_size">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">query_size</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return Height and Width.&quot;&quot;&quot;</span>
     <span class="n">sizes</span> <span class="o">=</span> <span class="p">{</span>
         <span class="nb">tuple</span><span class="p">(</span><span class="n">get_size</span><span class="p">(</span><span class="n">inpt</span><span class="p">))</span>
@@ -597,21 +597,21 @@
     <span class="k">return</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span></div>
 
 
-<span class="k">def</span> <span class="nf">check_type</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">types_or_checks</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]],</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_type</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">types_or_checks</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]],</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">type_or_check</span> <span class="ow">in</span> <span class="n">types_or_checks</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">type_or_check</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">type_or_check</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="k">else</span> <span class="n">type_or_check</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="kc">False</span>
 
 
-<span class="k">def</span> <span class="nf">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="n">types_or_checks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="n">types_or_checks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">inpt</span> <span class="ow">in</span> <span class="n">flat_inputs</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">check_type</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">types_or_checks</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">True</span>
     <span class="k">return</span> <span class="kc">False</span>
 
 
-<span class="k">def</span> <span class="nf">has_all</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="n">types_or_checks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">has_all</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="n">types_or_checks</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">type_or_check</span> <span class="ow">in</span> <span class="n">types_or_checks</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">inpt</span> <span class="ow">in</span> <span class="n">flat_inputs</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">type_or_check</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">type_or_check</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="k">else</span> <span class="n">type_or_check</span><span class="p">(</span><span class="n">inpt</span><span class="p">):</span>

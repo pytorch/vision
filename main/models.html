@@ -270,7 +270,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -427,7 +427,7 @@ may not preserve the historic behaviour. Refer to the following
 <h3>Initializing pre-trained models<a class="headerlink" href="#initializing-pre-trained-models" title="Permalink to this heading">¶</a></h3>
 <p>As of v0.13, TorchVision offers a new <a class="reference external" href="https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/">Multi-weight support API</a>
 for loading different weights to the existing model builder methods:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
 
 <span class="c1"># Old weights with accuracy 76.130%</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">)</span>
@@ -447,7 +447,7 @@ for loading different weights to the existing model builder methods:</p>
 </pre></div>
 </div>
 <p>Migrating to the new API is very straightforward. The following method calls between the 2 APIs are all equivalent:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
 
 <span class="c1"># Using pretrained weights:</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">)</span>
@@ -542,18 +542,22 @@ use them:</p>
 <section id="using-models-from-hub">
 <h3>Using models from Hub<a class="headerlink" href="#using-models-from-hub" title="Permalink to this heading">¶</a></h3>
 <p>Most pre-trained models can be accessed directly via PyTorch Hub without having TorchVision installed:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 <span class="c1"># Option 1: passing weights param as string</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span> <span class="s2">&quot;resnet50&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;IMAGENET1K_V2&quot;</span><span class="p">)</span>
 
 <span class="c1"># Option 2: passing weights param as enum</span>
-<span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span> <span class="s2">&quot;get_weight&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;ResNet50_Weights.IMAGENET1K_V2&quot;</span><span class="p">)</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+    <span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;get_weight&quot;</span><span class="p">,</span>
+    <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;ResNet50_Weights.IMAGENET1K_V2&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span> <span class="s2">&quot;resnet50&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>You can also retrieve all the available weights of a specific model via PyTorch Hub by doing:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 <span class="n">weight_enum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span> <span class="s2">&quot;get_model_weights&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;resnet50&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">([</span><span class="n">weight</span> <span class="k">for</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">weight_enum</span><span class="p">])</span>
@@ -596,8 +600,8 @@ weights:</p>
 <div class="line"><br /></div>
 </div>
 <p>Here is an example of how to use the pre-trained image classification models:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io</span> <span class="kn">import</span> <span class="n">decode_image</span>
-<span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">decode_image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
 
 <span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">&quot;test/assets/encode_jpeg/grace_hopper_517x606.jpg&quot;</span><span class="p">)</span>
 
@@ -1470,8 +1474,8 @@ pre-trained weights:</p>
 <div class="line"><br /></div>
 </div>
 <p>Here is an example of how to use the pre-trained quantized image classification models:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io</span> <span class="kn">import</span> <span class="n">decode_image</span>
-<span class="kn">from</span> <span class="nn">torchvision.models.quantization</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_QuantizedWeights</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">decode_image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.quantization</span><span class="w"> </span><span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_QuantizedWeights</span>
 
 <span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">&quot;test/assets/encode_jpeg/grace_hopper_517x606.jpg&quot;</span><span class="p">)</span>
 
@@ -1639,9 +1643,9 @@ pre-trained weights:</p>
 <div class="line"><br /></div>
 </div>
 <p>Here is an example of how to use the pre-trained semantic segmentation models:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io.image</span> <span class="kn">import</span> <span class="n">decode_image</span>
-<span class="kn">from</span> <span class="nn">torchvision.models.segmentation</span> <span class="kn">import</span> <span class="n">fcn_resnet50</span><span class="p">,</span> <span class="n">FCN_ResNet50_Weights</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms.functional</span> <span class="kn">import</span> <span class="n">to_pil_image</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io.image</span><span class="w"> </span><span class="kn">import</span> <span class="n">decode_image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.segmentation</span><span class="w"> </span><span class="kn">import</span> <span class="n">fcn_resnet50</span><span class="p">,</span> <span class="n">FCN_ResNet50_Weights</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_pil_image</span>
 
 <span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">&quot;gallery/assets/dog1.jpg&quot;</span><span class="p">)</span>
 
@@ -1761,10 +1765,10 @@ weights:</p>
 <div class="line"><br /></div>
 </div>
 <p>Here is an example of how to use the pre-trained object detection models:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io.image</span> <span class="kn">import</span> <span class="n">decode_image</span>
-<span class="kn">from</span> <span class="nn">torchvision.models.detection</span> <span class="kn">import</span> <span class="n">fasterrcnn_resnet50_fpn_v2</span><span class="p">,</span> <span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span>
-<span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">draw_bounding_boxes</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms.functional</span> <span class="kn">import</span> <span class="n">to_pil_image</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io.image</span><span class="w"> </span><span class="kn">import</span> <span class="n">decode_image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.detection</span><span class="w"> </span><span class="kn">import</span> <span class="n">fasterrcnn_resnet50_fpn_v2</span><span class="p">,</span> <span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">draw_bounding_boxes</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_pil_image</span>
 
 <span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">&quot;test/assets/encode_jpeg/grace_hopper_517x606.jpg&quot;</span><span class="p">)</span>
 
@@ -1998,8 +2002,8 @@ pre-trained weights:</p>
 <div class="line"><br /></div>
 </div>
 <p>Here is an example of how to use the pre-trained video classification models:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io.video</span> <span class="kn">import</span> <span class="n">read_video</span>
-<span class="kn">from</span> <span class="nn">torchvision.models.video</span> <span class="kn">import</span> <span class="n">r3d_18</span><span class="p">,</span> <span class="n">R3D_18_Weights</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io.video</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_video</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.video</span><span class="w"> </span><span class="kn">import</span> <span class="n">r3d_18</span><span class="p">,</span> <span class="n">R3D_18_Weights</span>
 
 <span class="n">vid</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">read_video</span><span class="p">(</span><span class="s2">&quot;test/assets/videos/v_SoccerJuggling_g23_c01.avi&quot;</span><span class="p">,</span> <span class="n">output_format</span><span class="o">=</span><span class="s2">&quot;TCHW&quot;</span><span class="p">)</span>
 <span class="n">vid</span> <span class="o">=</span> <span class="n">vid</span><span class="p">[:</span><span class="mi">32</span><span class="p">]</span>  <span class="c1"># optionally shorten duration</span>

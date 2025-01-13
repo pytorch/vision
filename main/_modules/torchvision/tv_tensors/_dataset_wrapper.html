@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -397,23 +397,23 @@
   <h1>Source code for torchvision.tv_tensors._dataset_wrapper</h1><div class="highlight"><pre>
 <span></span><span class="c1"># type: ignore</span>
 
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">import</span> <span class="nn">collections.abc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">collections.abc</span>
 
-<span class="kn">import</span> <span class="nn">contextlib</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">copy</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
-<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">tv_tensors</span>
-<span class="kn">from</span> <span class="nn">torchvision.transforms.v2</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">datasets</span><span class="p">,</span> <span class="n">tv_tensors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;wrap_dataset_for_transforms_v2&quot;</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="wrap_dataset_for_transforms_v2"><a class="viewcode-back" href="../../../generated/torchvision.datasets.wrap_dataset_for_transforms_v2.html#torchvision.datasets.wrap_dataset_for_transforms_v2">[docs]</a><span class="k">def</span> <span class="nf">wrap_dataset_for_transforms_v2</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="wrap_dataset_for_transforms_v2"><a class="viewcode-back" href="../../../generated/torchvision.datasets.wrap_dataset_for_transforms_v2.html#torchvision.datasets.wrap_dataset_for_transforms_v2">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">wrap_dataset_for_transforms_v2</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap a ``torchvision.dataset`` for usage with :mod:`torchvision.transforms.v2`.</span>
 
 <span class="sd">    Example:</span>
@@ -505,9 +505,9 @@
     <span class="k">return</span> <span class="n">wrapped_dataset_cls</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">WrapperFactories</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_cls</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">wrapper_factory</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WrapperFactories</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_cls</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">wrapper_factory</span><span class="p">):</span>
             <span class="bp">self</span><span class="p">[</span><span class="n">dataset_cls</span><span class="p">]</span> <span class="o">=</span> <span class="n">wrapper_factory</span>
             <span class="k">return</span> <span class="n">wrapper_factory</span>
 
@@ -521,8 +521,8 @@
 <span class="n">WRAPPER_FACTORIES</span> <span class="o">=</span> <span class="n">WrapperFactories</span><span class="p">()</span>
 
 
-<span class="k">class</span> <span class="nc">VisionDatasetTVTensorWrapper</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VisionDatasetTVTensorWrapper</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
         <span class="n">dataset_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">datasets</span><span class="o">.</span><span class="n">VisionDataset</span><span class="p">):</span>
@@ -571,13 +571,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span><span class="p">,</span> <span class="n">dataset</span><span class="o">.</span><span class="n">target_transform</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">target_transform</span><span class="p">,</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">,</span> <span class="n">dataset</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">transforms</span><span class="p">,</span> <span class="kc">None</span>
 
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
         <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">suppress</span><span class="p">(</span><span class="ne">AttributeError</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__getattribute__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="c1"># This gets us the raw sample since we disabled the transforms for the underlying dataset in the constructor</span>
         <span class="c1"># of this class</span>
         <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dataset</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
@@ -591,11 +591,11 @@
 
         <span class="k">return</span> <span class="n">sample</span>
 
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset</span><span class="p">)</span>
 
     <span class="c1"># TODO: maybe we should use __getstate__ and __setstate__ instead of __reduce__, as recommended in the docs.</span>
-    <span class="k">def</span> <span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__reduce__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># __reduce__ gets called when we try to pickle the dataset.</span>
         <span class="c1"># In a DataLoader with spawn context, this gets called `num_workers` times from the main process.</span>
 
@@ -609,29 +609,29 @@
         <span class="k">return</span> <span class="n">wrap_dataset_for_transforms_v2</span><span class="p">,</span> <span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_keys</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">raise_not_supported</span><span class="p">(</span><span class="n">description</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">raise_not_supported</span><span class="p">(</span><span class="n">description</span><span class="p">):</span>
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2"> is currently not supported by this wrapper. &quot;</span>
         <span class="sa">f</span><span class="s2">&quot;If this would be helpful for you, please open an issue at https://github.com/pytorch/vision/issues.&quot;</span>
     <span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">identity</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">identity</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">item</span>
 
 
-<span class="k">def</span> <span class="nf">identity_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">identity_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">sample</span>
 
     <span class="k">return</span> <span class="n">wrapper</span>
 
 
-<span class="k">def</span> <span class="nf">pil_image_to_mask</span><span class="p">(</span><span class="n">pil_image</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pil_image_to_mask</span><span class="p">(</span><span class="n">pil_image</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">(</span><span class="n">pil_image</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">parse_target_keys</span><span class="p">(</span><span class="n">target_keys</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">available</span><span class="p">,</span> <span class="n">default</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_target_keys</span><span class="p">(</span><span class="n">target_keys</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">available</span><span class="p">,</span> <span class="n">default</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">target_keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">target_keys</span> <span class="o">=</span> <span class="n">default</span>
     <span class="k">if</span> <span class="n">target_keys</span> <span class="o">==</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
@@ -645,7 +645,7 @@
     <span class="k">return</span> <span class="n">target_keys</span>
 
 
-<span class="k">def</span> <span class="nf">list_of_dicts_to_dict_of_lists</span><span class="p">(</span><span class="n">list_of_dicts</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">list_of_dicts_to_dict_of_lists</span><span class="p">(</span><span class="n">list_of_dicts</span><span class="p">):</span>
     <span class="n">dict_of_lists</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">dct</span> <span class="ow">in</span> <span class="n">list_of_dicts</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">dct</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -653,7 +653,7 @@
     <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">dict_of_lists</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">wrap_target_by_type</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">target_types</span><span class="p">,</span> <span class="n">type_wrappers</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">wrap_target_by_type</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">target_types</span><span class="p">,</span> <span class="n">type_wrappers</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
         <span class="n">target</span> <span class="o">=</span> <span class="p">[</span><span class="n">target</span><span class="p">]</span>
 
@@ -667,7 +667,7 @@
     <span class="k">return</span> <span class="n">wrapped_target</span>
 
 
-<span class="k">def</span> <span class="nf">classification_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">classification_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
     <span class="k">return</span> <span class="n">identity_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">)</span>
 
 
@@ -686,8 +686,8 @@
     <span class="n">WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">dataset_cls</span><span class="p">)(</span><span class="n">classification_wrapper_factory</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">segmentation_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">segmentation_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="n">image</span><span class="p">,</span> <span class="n">mask</span> <span class="o">=</span> <span class="n">sample</span>
         <span class="k">return</span> <span class="n">image</span><span class="p">,</span> <span class="n">pil_image_to_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
 
@@ -700,14 +700,14 @@
     <span class="n">WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">dataset_cls</span><span class="p">)(</span><span class="n">segmentation_wrapper_factory</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">video_classification_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">video_classification_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">dataset</span><span class="o">.</span><span class="n">video_clips</span><span class="o">.</span><span class="n">output_format</span> <span class="o">==</span> <span class="s2">&quot;THWC&quot;</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> with `output_format=&#39;THWC&#39;` is not supported by this wrapper, &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;since it is not compatible with the transformations. Please use `output_format=&#39;TCHW&#39;` instead.&quot;</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="n">video</span><span class="p">,</span> <span class="n">audio</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">sample</span>
 
         <span class="n">video</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">(</span><span class="n">video</span><span class="p">)</span>
@@ -726,7 +726,7 @@
 
 
 <span class="nd">@WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">datasets</span><span class="o">.</span><span class="n">Caltech101</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">caltech101_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">caltech101_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
     <span class="k">if</span> <span class="s2">&quot;annotation&quot;</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">target_type</span><span class="p">:</span>
         <span class="n">raise_not_supported</span><span class="p">(</span><span class="s2">&quot;Caltech101 dataset with `target_type=[&#39;annotation&#39;, ...]`&quot;</span><span class="p">)</span>
 
@@ -734,7 +734,7 @@
 
 
 <span class="nd">@WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">datasets</span><span class="o">.</span><span class="n">CocoDetection</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">coco_dectection_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">coco_dectection_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
     <span class="n">target_keys</span> <span class="o">=</span> <span class="n">parse_target_keys</span><span class="p">(</span>
         <span class="n">target_keys</span><span class="p">,</span>
         <span class="n">available</span><span class="o">=</span><span class="p">{</span>
@@ -753,8 +753,8 @@
         <span class="n">default</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;image_id&quot;</span><span class="p">,</span> <span class="s2">&quot;boxes&quot;</span><span class="p">,</span> <span class="s2">&quot;labels&quot;</span><span class="p">},</span>
     <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">segmentation_to_mask</span><span class="p">(</span><span class="n">segmentation</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">):</span>
-        <span class="kn">from</span> <span class="nn">pycocotools</span> <span class="kn">import</span> <span class="n">mask</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">segmentation_to_mask</span><span class="p">(</span><span class="n">segmentation</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">pycocotools</span><span class="w"> </span><span class="kn">import</span> <span class="n">mask</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">segmentation</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="c1"># if counts is a string, it is already an encoded RLE mask</span>
@@ -766,7 +766,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;COCO segmentation expected to be a dict or a list, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">segmentation</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">segmentation</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="n">image_id</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">ids</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
 
         <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">sample</span>
@@ -843,7 +843,7 @@
 
 
 <span class="nd">@WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">datasets</span><span class="o">.</span><span class="n">VOCDetection</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">voc_detection_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">voc_detection_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
     <span class="n">target_keys</span> <span class="o">=</span> <span class="n">parse_target_keys</span><span class="p">(</span>
         <span class="n">target_keys</span><span class="p">,</span>
         <span class="n">available</span><span class="o">=</span><span class="p">{</span>
@@ -856,7 +856,7 @@
         <span class="n">default</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;boxes&quot;</span><span class="p">,</span> <span class="s2">&quot;labels&quot;</span><span class="p">},</span>
     <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">sample</span>
 
         <span class="n">batched_instances</span> <span class="o">=</span> <span class="n">list_of_dicts_to_dict_of_lists</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="s2">&quot;annotation&quot;</span><span class="p">][</span><span class="s2">&quot;object&quot;</span><span class="p">])</span>
@@ -885,7 +885,7 @@
 
 
 <span class="nd">@WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">datasets</span><span class="o">.</span><span class="n">SBDataset</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">sbd_wrapper</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sbd_wrapper</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">dataset</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;boundaries&quot;</span><span class="p">:</span>
         <span class="n">raise_not_supported</span><span class="p">(</span><span class="s2">&quot;SBDataset with mode=&#39;boundaries&#39;&quot;</span><span class="p">)</span>
 
@@ -893,11 +893,11 @@
 
 
 <span class="nd">@WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">datasets</span><span class="o">.</span><span class="n">CelebA</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">celeba_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">celeba_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">target_type</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">target_type</span> <span class="k">for</span> <span class="n">target_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;attr&quot;</span><span class="p">,</span> <span class="s2">&quot;landmarks&quot;</span><span class="p">]):</span>
         <span class="n">raise_not_supported</span><span class="p">(</span><span class="s2">&quot;`CelebA` dataset with `target_type=[&#39;attr&#39;, &#39;landmarks&#39;, ...]`&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">sample</span>
 
         <span class="n">target</span> <span class="o">=</span> <span class="n">wrap_target_by_type</span><span class="p">(</span>
@@ -925,7 +925,7 @@
 
 
 <span class="nd">@WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">datasets</span><span class="o">.</span><span class="n">Kitti</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">kitti_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">kitti_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
     <span class="n">target_keys</span> <span class="o">=</span> <span class="n">parse_target_keys</span><span class="p">(</span>
         <span class="n">target_keys</span><span class="p">,</span>
         <span class="n">available</span><span class="o">=</span><span class="p">{</span>
@@ -945,7 +945,7 @@
         <span class="n">default</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;boxes&quot;</span><span class="p">,</span> <span class="s2">&quot;labels&quot;</span><span class="p">},</span>
     <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">sample</span>
 
         <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -973,8 +973,8 @@
 
 
 <span class="nd">@WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">datasets</span><span class="o">.</span><span class="n">OxfordIIITPet</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">oxford_iiit_pet_wrapper_factor</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">oxford_iiit_pet_wrapper_factor</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">sample</span>
 
         <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -992,11 +992,11 @@
 
 
 <span class="nd">@WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">datasets</span><span class="o">.</span><span class="n">Cityscapes</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">cityscapes_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cityscapes_wrapper_factory</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">target_type</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">target_type</span> <span class="k">for</span> <span class="n">target_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;polygon&quot;</span><span class="p">,</span> <span class="s2">&quot;color&quot;</span><span class="p">]):</span>
         <span class="n">raise_not_supported</span><span class="p">(</span><span class="s2">&quot;`Cityscapes` dataset with `target_type=[&#39;polygon&#39;, &#39;color&#39;, ...]`&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">instance_segmentation_wrapper</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">instance_segmentation_wrapper</span><span class="p">(</span><span class="n">mask</span><span class="p">):</span>
         <span class="c1"># See https://github.com/mcordts/cityscapesScripts/blob/8da5dd00c9069058ccc134654116aac52d4f6fa2/cityscapesscripts/preparation/json2instanceImg.py#L7-L21</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">pil_image_to_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
         <span class="n">masks</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1009,7 +1009,7 @@
             <span class="n">labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">masks</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">masks</span><span class="p">)),</span> <span class="n">labels</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">labels</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">sample</span>
 
         <span class="n">target</span> <span class="o">=</span> <span class="n">wrap_target_by_type</span><span class="p">(</span>
@@ -1027,7 +1027,7 @@
 
 
 <span class="nd">@WRAPPER_FACTORIES</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">datasets</span><span class="o">.</span><span class="n">WIDERFace</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">widerface_wrapper</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">widerface_wrapper</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">target_keys</span><span class="p">):</span>
     <span class="n">target_keys</span> <span class="o">=</span> <span class="n">parse_target_keys</span><span class="p">(</span>
         <span class="n">target_keys</span><span class="p">,</span>
         <span class="n">available</span><span class="o">=</span><span class="p">{</span>
@@ -1042,7 +1042,7 @@
         <span class="n">default</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">sample</span><span class="p">):</span>
         <span class="n">image</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">sample</span>
 
         <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

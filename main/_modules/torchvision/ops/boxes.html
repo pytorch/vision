@@ -267,7 +267,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d3beb52) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+06a925c) &#x25BC</a>
     </div>
     
 
@@ -393,19 +393,19 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.ops.boxes</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
 
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">torchvision</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
-<span class="kn">from</span> <span class="nn">torchvision.extension</span> <span class="kn">import</span> <span class="n">_assert_has_ops</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torchvision</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.extension</span><span class="w"> </span><span class="kn">import</span> <span class="n">_assert_has_ops</span>
 
-<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
-<span class="kn">from</span> <span class="nn">._box_convert</span> <span class="kn">import</span> <span class="n">_box_cxcywh_to_xyxy</span><span class="p">,</span> <span class="n">_box_xywh_to_xyxy</span><span class="p">,</span> <span class="n">_box_xyxy_to_cxcywh</span><span class="p">,</span> <span class="n">_box_xyxy_to_xywh</span>
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_upcast</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._box_convert</span><span class="w"> </span><span class="kn">import</span> <span class="n">_box_cxcywh_to_xyxy</span><span class="p">,</span> <span class="n">_box_xywh_to_xyxy</span><span class="p">,</span> <span class="n">_box_xyxy_to_cxcywh</span><span class="p">,</span> <span class="n">_box_xyxy_to_xywh</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_upcast</span>
 
 
-<div class="viewcode-block" id="nms"><a class="viewcode-back" href="../../../generated/torchvision.ops.nms.html#torchvision.ops.nms">[docs]</a><span class="k">def</span> <span class="nf">nms</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">scores</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="nms"><a class="viewcode-back" href="../../../generated/torchvision.ops.nms.html#torchvision.ops.nms">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">nms</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">scores</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs non-maximum suppression (NMS) on the boxes according</span>
 <span class="sd">    to their intersection-over-union (IoU).</span>
@@ -436,7 +436,7 @@
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">torchvision</span><span class="o">.</span><span class="n">nms</span><span class="p">(</span><span class="n">boxes</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="batched_nms"><a class="viewcode-back" href="../../../generated/torchvision.ops.batched_nms.html#torchvision.ops.batched_nms">[docs]</a><span class="k">def</span> <span class="nf">batched_nms</span><span class="p">(</span>
+<div class="viewcode-block" id="batched_nms"><a class="viewcode-back" href="../../../generated/torchvision.ops.batched_nms.html#torchvision.ops.batched_nms">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">batched_nms</span><span class="p">(</span>
     <span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">scores</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -471,7 +471,7 @@
 
 
 <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">_script_if_tracing</span>
-<span class="k">def</span> <span class="nf">_batched_nms_coordinate_trick</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_batched_nms_coordinate_trick</span><span class="p">(</span>
     <span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">scores</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -491,7 +491,7 @@
 
 
 <span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">_script_if_tracing</span>
-<span class="k">def</span> <span class="nf">_batched_nms_vanilla</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_batched_nms_vanilla</span><span class="p">(</span>
     <span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">scores</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">idxs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
@@ -507,7 +507,7 @@
     <span class="k">return</span> <span class="n">keep_indices</span><span class="p">[</span><span class="n">scores</span><span class="p">[</span><span class="n">keep_indices</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">]]</span>
 
 
-<div class="viewcode-block" id="remove_small_boxes"><a class="viewcode-back" href="../../../generated/torchvision.ops.remove_small_boxes.html#torchvision.ops.remove_small_boxes">[docs]</a><span class="k">def</span> <span class="nf">remove_small_boxes</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">min_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="remove_small_boxes"><a class="viewcode-back" href="../../../generated/torchvision.ops.remove_small_boxes.html#torchvision.ops.remove_small_boxes">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">remove_small_boxes</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">min_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Remove every box from ``boxes`` which contains at least one side length</span>
 <span class="sd">    that is smaller than ``min_size``.</span>
@@ -533,7 +533,7 @@
     <span class="k">return</span> <span class="n">keep</span></div>
 
 
-<div class="viewcode-block" id="clip_boxes_to_image"><a class="viewcode-back" href="../../../generated/torchvision.ops.clip_boxes_to_image.html#torchvision.ops.clip_boxes_to_image">[docs]</a><span class="k">def</span> <span class="nf">clip_boxes_to_image</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="clip_boxes_to_image"><a class="viewcode-back" href="../../../generated/torchvision.ops.clip_boxes_to_image.html#torchvision.ops.clip_boxes_to_image">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">clip_boxes_to_image</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Clip boxes so that they lie inside an image of size ``size``.</span>
 
@@ -569,7 +569,7 @@
     <span class="k">return</span> <span class="n">clipped_boxes</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="box_convert"><a class="viewcode-back" href="../../../generated/torchvision.ops.box_convert.html#torchvision.ops.box_convert">[docs]</a><span class="k">def</span> <span class="nf">box_convert</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">in_fmt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">out_fmt</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="box_convert"><a class="viewcode-back" href="../../../generated/torchvision.ops.box_convert.html#torchvision.ops.box_convert">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">box_convert</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">in_fmt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">out_fmt</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts :class:`torch.Tensor` boxes from a given ``in_fmt`` to ``out_fmt``.</span>
 
@@ -627,7 +627,7 @@
     <span class="k">return</span> <span class="n">boxes</span></div>
 
 
-<div class="viewcode-block" id="box_area"><a class="viewcode-back" href="../../../generated/torchvision.ops.box_area.html#torchvision.ops.box_area">[docs]</a><span class="k">def</span> <span class="nf">box_area</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="box_area"><a class="viewcode-back" href="../../../generated/torchvision.ops.box_area.html#torchvision.ops.box_area">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">box_area</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the area of a set of bounding boxes, which are specified by their</span>
 <span class="sd">    (x1, y1, x2, y2) coordinates.</span>
@@ -648,7 +648,7 @@
 
 <span class="c1"># implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py</span>
 <span class="c1"># with slight modifications</span>
-<span class="k">def</span> <span class="nf">_box_inter_union</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_box_inter_union</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
     <span class="n">area1</span> <span class="o">=</span> <span class="n">box_area</span><span class="p">(</span><span class="n">boxes1</span><span class="p">)</span>
     <span class="n">area2</span> <span class="o">=</span> <span class="n">box_area</span><span class="p">(</span><span class="n">boxes2</span><span class="p">)</span>
 
@@ -663,7 +663,7 @@
     <span class="k">return</span> <span class="n">inter</span><span class="p">,</span> <span class="n">union</span>
 
 
-<div class="viewcode-block" id="box_iou"><a class="viewcode-back" href="../../../generated/torchvision.ops.box_iou.html#torchvision.ops.box_iou">[docs]</a><span class="k">def</span> <span class="nf">box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="box_iou"><a class="viewcode-back" href="../../../generated/torchvision.ops.box_iou.html#torchvision.ops.box_iou">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return intersection-over-union (Jaccard index) between two sets of boxes.</span>
 
@@ -685,7 +685,7 @@
 
 
 <span class="c1"># Implementation adapted from https://github.com/facebookresearch/detr/blob/master/util/box_ops.py</span>
-<div class="viewcode-block" id="generalized_box_iou"><a class="viewcode-back" href="../../../generated/torchvision.ops.generalized_box_iou.html#torchvision.ops.generalized_box_iou">[docs]</a><span class="k">def</span> <span class="nf">generalized_box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="generalized_box_iou"><a class="viewcode-back" href="../../../generated/torchvision.ops.generalized_box_iou.html#torchvision.ops.generalized_box_iou">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">generalized_box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return generalized intersection-over-union (Jaccard index) between two sets of boxes.</span>
 
@@ -715,7 +715,7 @@
     <span class="k">return</span> <span class="n">iou</span> <span class="o">-</span> <span class="p">(</span><span class="n">areai</span> <span class="o">-</span> <span class="n">union</span><span class="p">)</span> <span class="o">/</span> <span class="n">areai</span></div>
 
 
-<div class="viewcode-block" id="complete_box_iou"><a class="viewcode-back" href="../../../generated/torchvision.ops.complete_box_iou.html#torchvision.ops.complete_box_iou">[docs]</a><span class="k">def</span> <span class="nf">complete_box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-7</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="complete_box_iou"><a class="viewcode-back" href="../../../generated/torchvision.ops.complete_box_iou.html#torchvision.ops.complete_box_iou">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">complete_box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-7</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return complete intersection-over-union (Jaccard index) between two sets of boxes.</span>
 <span class="sd">    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with</span>
@@ -748,7 +748,7 @@
     <span class="k">return</span> <span class="n">diou</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">v</span></div>
 
 
-<div class="viewcode-block" id="distance_box_iou"><a class="viewcode-back" href="../../../generated/torchvision.ops.distance_box_iou.html#torchvision.ops.distance_box_iou">[docs]</a><span class="k">def</span> <span class="nf">distance_box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-7</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="distance_box_iou"><a class="viewcode-back" href="../../../generated/torchvision.ops.distance_box_iou.html#torchvision.ops.distance_box_iou">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">distance_box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-7</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return distance intersection-over-union (Jaccard index) between two sets of boxes.</span>
 
@@ -773,7 +773,7 @@
     <span class="k">return</span> <span class="n">diou</span></div>
 
 
-<span class="k">def</span> <span class="nf">_box_diou_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-7</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_box_diou_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-7</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
 
     <span class="n">iou</span> <span class="o">=</span> <span class="n">box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">)</span>
     <span class="n">lti</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>
@@ -794,7 +794,7 @@
     <span class="k">return</span> <span class="n">iou</span> <span class="o">-</span> <span class="p">(</span><span class="n">centers_distance_squared</span> <span class="o">/</span> <span class="n">diagonal_distance_squared</span><span class="p">),</span> <span class="n">iou</span>
 
 
-<div class="viewcode-block" id="masks_to_boxes"><a class="viewcode-back" href="../../../generated/torchvision.ops.masks_to_boxes.html#torchvision.ops.masks_to_boxes">[docs]</a><span class="k">def</span> <span class="nf">masks_to_boxes</span><span class="p">(</span><span class="n">masks</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="masks_to_boxes"><a class="viewcode-back" href="../../../generated/torchvision.ops.masks_to_boxes.html#torchvision.ops.masks_to_boxes">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">masks_to_boxes</span><span class="p">(</span><span class="n">masks</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the bounding boxes around the provided masks.</span>
 
