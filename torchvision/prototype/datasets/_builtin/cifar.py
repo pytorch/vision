@@ -5,7 +5,6 @@ import pickle
 from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
@@ -25,7 +24,7 @@ class CifarFileReader(IterDataPipe[Tuple[np.ndarray, int]]):
         self.datapipe = datapipe
         self.labels_key = labels_key
 
-    def __iter__(self) -> Iterator[Tuple[npt.NDArray, int]]:
+    def __iter__(self) -> Iterator[Tuple[np.ndarray, int]]:
         for mapping in self.datapipe:
             image_arrays = mapping["data"].reshape((-1, 3, 32, 32))
             category_idcs = mapping[self.labels_key]
@@ -68,7 +67,7 @@ class _CifarBase(Dataset):
         file.close()
         return content
 
-    def _prepare_sample(self, data: Tuple[npt.NDArray, int]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[np.ndarray, int]) -> Dict[str, Any]:
         image_array, category_idx = data
         return dict(
             image=Image(image_array),

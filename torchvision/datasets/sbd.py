@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 from PIL import Image
 
 from .utils import download_and_extract_archive, download_url, verify_str_arg
@@ -103,7 +102,7 @@ class SBDataset(VisionDataset):
         mat = self._loadmat(filepath)
         return Image.fromarray(mat["GTcls"][0]["Segmentation"][0])
 
-    def _get_boundaries_target(self, filepath: str) -> npt.NDArray:
+    def _get_boundaries_target(self, filepath: str) -> np.ndarray:
         mat = self._loadmat(filepath)
         return np.concatenate(
             [np.expand_dims(mat["GTcls"][0]["Boundaries"][0][i][0].toarray(), axis=0) for i in range(self.num_classes)],

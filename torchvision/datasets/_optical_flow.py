@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 import torch
 from PIL import Image
 
@@ -165,7 +164,7 @@ class Sintel(FlowDataset):
         """
         return super().__getitem__(index)
 
-    def _read_flow(self, file_name: str) -> npt.NDArray:
+    def _read_flow(self, file_name: str) -> np.ndarray:
         return _read_flo(file_name)
 
 
@@ -226,7 +225,7 @@ class KittiFlow(FlowDataset):
         """
         return super().__getitem__(index)
 
-    def _read_flow(self, file_name: str) -> Tuple[npt.NDArray, npt.NDArray]:
+    def _read_flow(self, file_name: str) -> Tuple[np.ndarray, np.ndarray]:
         return _read_16bits_png_with_flow_and_valid_mask(file_name)
 
 
@@ -294,7 +293,7 @@ class FlyingChairs(FlowDataset):
         """
         return super().__getitem__(index)
 
-    def _read_flow(self, file_name: str) -> npt.NDArray:
+    def _read_flow(self, file_name: str) -> np.ndarray:
         return _read_flo(file_name)
 
 
@@ -392,7 +391,7 @@ class FlyingThings3D(FlowDataset):
         """
         return super().__getitem__(index)
 
-    def _read_flow(self, file_name: str) -> npt.NDArray:
+    def _read_flow(self, file_name: str) -> np.ndarray:
         return _read_pfm(file_name)
 
 
@@ -444,7 +443,7 @@ class HD1K(FlowDataset):
                 "Could not find the HD1K images. Please make sure the directory structure is correct."
             )
 
-    def _read_flow(self, file_name: str) -> Tuple[npt.NDArray, npt.NDArray]:
+    def _read_flow(self, file_name: str) -> Tuple[np.ndarray, np.ndarray]:
         return _read_16bits_png_with_flow_and_valid_mask(file_name)
 
     def __getitem__(self, index: int) -> Union[T1, T2]:
@@ -463,7 +462,7 @@ class HD1K(FlowDataset):
         return super().__getitem__(index)
 
 
-def _read_flo(file_name: str) -> npt.NDArray:
+def _read_flo(file_name: str) -> np.ndarray:
     """Read .flo file in Middlebury format"""
     # Code adapted from:
     # http://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy
@@ -480,7 +479,7 @@ def _read_flo(file_name: str) -> npt.NDArray:
         return data.reshape(h, w, 2).transpose(2, 0, 1)
 
 
-def _read_16bits_png_with_flow_and_valid_mask(file_name: str) -> Tuple[npt.NDArray, npt.NDArray]:
+def _read_16bits_png_with_flow_and_valid_mask(file_name: str) -> Tuple[np.ndarray, np.ndarray]:
 
     flow_and_valid = decode_png(read_file(file_name)).to(torch.float32)
     flow, valid_flow_mask = flow_and_valid[:2, :, :], flow_and_valid[2, :, :]

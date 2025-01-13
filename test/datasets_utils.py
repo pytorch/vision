@@ -18,7 +18,6 @@ from collections import defaultdict
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 
 import PIL
 import PIL.Image
@@ -826,8 +825,8 @@ def create_image_folder(
 def shape_test_for_stereo(
     left: PIL.Image.Image,
     right: PIL.Image.Image,
-    disparity: Optional[npt.NDArray] = None,
-    valid_mask: Optional[npt.NDArray] = None,
+    disparity: Optional[np.ndarray] = None,
+    valid_mask: Optional[np.ndarray] = None,
 ):
     left_dims = get_dimensions(left)
     right_dims = get_dimensions(right)
