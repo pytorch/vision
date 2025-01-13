@@ -194,6 +194,22 @@ BUILTIN_MODELS = {}
 
 
 def register_model(name: Optional[str] = None) -> Callable[[Callable[..., M]], Callable[..., M]]:
+    """Registers a model builder method in the BUILTIN_MODELS dictionary.
+
+    The decorator allows the model builder method to be registered under a specific name. If no name is provided, the
+    function name is used instead.
+
+    Args:
+        name (str, optional): The name under which the model will be registered. If None, the function name is used.
+
+    Returns:
+        fn (Callable): The model builder method.
+
+    Raises:
+        ValueError: If an entry (model builder) is already registered under the name.
+
+    """
+
     def wrapper(fn: Callable[..., M]) -> Callable[..., M]:
         key = name if name is not None else fn.__name__
         if key in BUILTIN_MODELS:
