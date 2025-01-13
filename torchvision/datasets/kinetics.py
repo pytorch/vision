@@ -166,10 +166,7 @@ class Kinetics(VisionDataset):
             RuntimeError: if download folder exists, break to prevent downloading entire dataset again.
         """
         if path.exists(self.split_folder):
-            raise RuntimeError(
-                f"The directory {self.split_folder} already exists. "
-                f"If you want to re-download or re-extract the images, delete the directory."
-            )
+            return
         tar_path = path.join(self.root, "tars")
         file_list_path = path.join(self.root, "files")
 
