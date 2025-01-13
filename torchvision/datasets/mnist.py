@@ -181,19 +181,20 @@ class MNIST(VisionDataset):
 
         # download files
         for filename, md5 in self.resources:
+            errors = []
             for mirror in self.mirrors:
                 url = f"{mirror}{filename}"
                 try:
-                    print(f"Downloading {url}")
                     download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
-                except URLError as error:
-                    print(f"Failed to download (trying next):\n{error}")
+                except URLError as e:
+                    errors.append(e)
                     continue
-                finally:
-                    print()
                 break
             else:
-                raise RuntimeError(f"Error downloading {filename}")
+                s = f"Error downloading {filename}:\n"
+                for mirror, err in zip(self.mirrors, errors):
+                    s += f"Tried {mirror}, got:\n{str(err)}\n"
+                raise RuntimeError(s)
 
     def extra_repr(self) -> str:
         split = "Train" if self.train is True else "Test"
