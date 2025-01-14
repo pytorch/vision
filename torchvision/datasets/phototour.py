@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import torch
 from PIL import Image
 
@@ -183,7 +184,7 @@ class PhotoTour(VisionDataset):
 def read_image_file(data_dir: str, image_ext: str, n: int) -> torch.Tensor:
     """Return a Tensor containing the patches"""
 
-    def PIL2array(_img: Image.Image) -> np.ndarray:
+    def PIL2array(_img: Image.Image) -> npt.NDArray:
         """Convert PIL image type to numpy 2D array"""
         return np.array(_img.getdata(), dtype=np.uint8).reshape(64, 64)
 

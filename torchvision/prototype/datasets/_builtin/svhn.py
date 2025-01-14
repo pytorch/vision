@@ -2,6 +2,7 @@ import pathlib
 from typing import Any, BinaryIO, Dict, List, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 from torchdata.datapipes.iter import IterDataPipe, Mapper, UnBatcher
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, read_mat
@@ -50,7 +51,7 @@ class SVHN(Dataset):
 
         return [data]
 
-    def _read_images_and_labels(self, data: Tuple[str, BinaryIO]) -> List[Tuple[np.ndarray, np.ndarray]]:
+    def _read_images_and_labels(self, data: Tuple[str, BinaryIO]) -> List[Tuple[npt.NDArray, npt.NDArray]]:
         _, buffer = data
         content = read_mat(buffer)
         return list(
@@ -60,7 +61,7 @@ class SVHN(Dataset):
             )
         )
 
-    def _prepare_sample(self, data: Tuple[np.ndarray, np.ndarray]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[npt.NDArray, npt.NDArray]) -> Dict[str, Any]:
         image_array, label_array = data
 
         return dict(
