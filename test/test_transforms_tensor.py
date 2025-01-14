@@ -206,7 +206,7 @@ class TestColorJitter:
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize("m", ["constant", "edge", "reflect", "symmetric"])
+@pytest.mark.parametrize("m", ["constant", "edge", "reflect", "symmetric", "circular"])
 @pytest.mark.parametrize("mul", [1, -1])
 def test_pad(m, mul, device):
     fill = 127 if m == "constant" else 0
@@ -264,6 +264,7 @@ def test_crop(device):
         {"padding_mode": "constant", "fill": 10},
         {"padding_mode": "edge"},
         {"padding_mode": "reflect"},
+        {"padding_mode": "circular"},
     ],
 )
 @pytest.mark.parametrize("pad_if_needed", [True, False])
