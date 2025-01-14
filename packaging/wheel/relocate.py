@@ -191,6 +191,7 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
             new_library_path = patch_new_path(library_path, new_libraries_path)
             print(f"{library} -> {new_library_path}")
             shutil.copyfile(library_path, new_library_path)
+            shutil.copymode(library_path, new_library_path)
             new_names[library] = new_library_path
 
     print("Updating dependency names by new files")
@@ -274,6 +275,7 @@ def relocate_dll_library(dumpbin, output_dir, output_library, binary):
             new_library_path = osp.join(package_dir, library)
             print(f"{library} -> {new_library_path}")
             shutil.copyfile(library_path, new_library_path)
+            shutil.copymode(library_path, new_library_path)
 
 
 def compress_wheel(output_dir, wheel, wheel_dir, wheel_name):
