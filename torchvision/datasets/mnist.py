@@ -237,13 +237,13 @@ class KMNIST(MNIST):
             and  ``KMNIST/raw/t10k-images-idx3-ubyte`` exist.
         train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
             otherwise from ``t10k-images-idx3-ubyte``.
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
         transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        download (bool, optional): If True, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
     """
 
     mirrors = ["http://codh.rois.ac.jp/kmnist/dataset/kmnist/"]
