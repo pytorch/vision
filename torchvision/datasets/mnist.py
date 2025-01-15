@@ -358,6 +358,9 @@ class QMNIST(MNIST):
             for each example is class number (for compatibility with
             the MNIST dataloader) or a torch vector containing the
             full qmnist information. Default=True.
+        train (bool,optional,compatibility): When argument 'what' is
+            not specified, this boolean decides whether to load the
+            training set or the testing set.  Default: True.
         download (bool, optional): If True, downloads the dataset from
             the internet and puts it in root directory. If dataset is
             already downloaded, it is not downloaded again.
@@ -366,9 +369,6 @@ class QMNIST(MNIST):
             version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform
             that takes in the target and transforms it.
-        train (bool,optional,compatibility): When argument 'what' is
-            not specified, this boolean decides whether to load the
-            training set or the testing set.  Default: True.
     """
 
     subsets = {"train": "train", "test": "test", "test10k": "test", "test50k": "test", "nist": "nist"}
