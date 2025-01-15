@@ -47,5 +47,5 @@ class ToTensor(Transform):
         )
         super().__init__()
 
-    def _transform(self, inpt: Union[PIL.Image.Image, npt.NDArray], params: Dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: Union[PIL.Image.Image, npt.NDArray], params: Dict[str, Any]) -> torch.Tensor:
         return _F.to_tensor(inpt)

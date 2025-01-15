@@ -21,7 +21,7 @@ class PILToTensor(Transform):
 
     _transformed_types = (PIL.Image.Image,)
 
-    def _transform(self, inpt: PIL.Image.Image, params: Dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: PIL.Image.Image, params: Dict[str, Any]) -> torch.Tensor:
         return F.pil_to_tensor(inpt)
 
 
@@ -34,7 +34,7 @@ class ToImage(Transform):
 
     _transformed_types = (is_pure_tensor, PIL.Image.Image, np.ndarray)
 
-    def _transform(
+    def transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, npt.NDArray], params: Dict[str, Any]
     ) -> tv_tensors.Image:
         return F.to_image(inpt)
@@ -67,7 +67,7 @@ class ToPILImage(Transform):
         super().__init__()
         self.mode = mode
 
-    def _transform(
+    def transform(
         self, inpt: Union[torch.Tensor, PIL.Image.Image, npt.NDArray], params: Dict[str, Any]
     ) -> PIL.Image.Image:
         return F.to_pil_image(inpt, mode=self.mode)
@@ -81,5 +81,5 @@ class ToPureTensor(Transform):
 
     _transformed_types = (tv_tensors.TVTensor,)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
         return inpt.as_subclass(torch.Tensor)
