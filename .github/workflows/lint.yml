@@ -66,6 +66,9 @@ jobs:
 
   python-types:
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
     with:
       repository: pytorch/vision
       test-infra-ref: main
