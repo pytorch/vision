@@ -21,6 +21,9 @@ jobs:
             gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
