@@ -88,7 +88,7 @@ class StanfordCars(VisionDataset):
     def __len__(self) -> int:
         return len(self._samples)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         """Returns pil_image and class_id for given index"""
         image_path, target = self._samples[idx]
         pil_image = Image.open(image_path).convert("RGB")

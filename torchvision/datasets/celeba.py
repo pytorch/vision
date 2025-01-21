@@ -66,7 +66,7 @@ class CelebA(VisionDataset):
         self,
         root: Union[str, Path],
         split: str = "train",
-        target_type: Union[List[str], str] = "attr",
+        target_type: Union[list[str], str] = "attr",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
@@ -155,7 +155,7 @@ class CelebA(VisionDataset):
 
         extract_archive(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"))
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))
 
         target: Any = []
