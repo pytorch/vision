@@ -35,7 +35,7 @@ class BoundingBoxFormat(Enum):
 class BoundingBoxes(TVTensor):
     """:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``. 
     Where ``N`` is the number of bounding boxes 
-    and ``K`` is either 4 for unrotated boxes or 5 for rotated boxes.
+    and ``K`` is 4 for unrotated boxes, and 5 or 8 for rotated boxes.
 
     .. note::
         There should be only one :class:`~torchvision.tv_tensors.BoundingBoxes`
