@@ -9,18 +9,12 @@ from ..utils import _log_api_usage_once
 from ._box_convert import (
     _box_cxcywh_to_xyxy,
     _box_cxcywhr_to_xywhr,
-    _box_cxcywhr_to_xyxy,
-    _box_cxcywhr_to_xyxyr,
     _box_cxcywhr_to_xyxyxyxy,
     _box_xywh_to_xyxy,
     _box_xywhr_to_cxcywhr,
-    _box_xywhr_to_xyxyr,
     _box_xyxy_to_cxcywh,
-    _box_xyxy_to_cxcywhr,
     _box_xyxy_to_xywh,
-    _box_xyxyr_to_cxcywhr,
-    _box_xyxyr_to_xywhr,
-    _box_xyxyxyxy_to_xyxyr,
+    _box_xyxyxyxy_to_cxcywhr,
 )
 from ._utils import _upcast
 
@@ -209,9 +203,6 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     ``'cxcywh'``: boxes are represented via centre, width and height, cx, cy being center of box, w, h
     being width and height.
 
-    ``'xyxyr'``: boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
-    r is rotation angle w.r.t to the box center by :math:`|r|` degrees counter clock wise in the image plan
-
     ``'xywhr'``: boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
     r is rotation angle w.r.t to the box center by :math:`|r|` degrees counter clock wise in the image plan
 
@@ -224,8 +215,8 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
 
     Args:
         boxes (Tensor[N, K]): boxes which will be converted. K is the number of coordinates (4 for unrotated bounding boxes or 5 for rotated bounding boxes)
-        in_fmt (str): Input format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh', 'xyxyr', 'xywhr', 'cxcywhr', 'xyxyxyxy'].
-        out_fmt (str): Output format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh', 'xyxyr', 'xywhr', 'cxcywhr', 'xyxyxyxy']
+        in_fmt (str): Input format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh', 'xywhr', 'cxcywhr', 'xyxyxyxy'].
+        out_fmt (str): Output format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh', 'xywhr', 'cxcywhr', 'xyxyxyxy']
 
     Returns:
         Tensor[N, K]: Boxes into converted format.
@@ -236,7 +227,6 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
         "xyxy",
         "xywh",
         "cxcywh",
-        "xyxyr",
         "xywhr",
         "cxcywhr",
         "xyxyxyxy",
@@ -263,38 +253,20 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     elif e ==  ("cxcywh", "xywh"):
         boxes = _box_cxcywh_to_xyxy(boxes)
         boxes = _box_xyxy_to_xywh(boxes)
-    elif e == ("xyxy", "cxcywhr"):
-        boxes = _box_xyxy_to_cxcywhr(boxes)
-    elif e == ("cxcywhr", "xyxyr"):
-        boxes = _box_cxcywhr_to_xyxyr(boxes)
-    elif e == ("xywhr", "xyxyr"):
-        boxes = _box_xywhr_to_xyxyr(boxes)
-    elif e == ("xyxyr", "cxcywhr"):
-        boxes = _box_xyxyr_to_cxcywhr(boxes)
-    elif e == ("xyxyr", "xywhr"):
-        boxes = _box_xyxyr_to_xywhr(boxes)
-    elif e == ("cxcywhr", "xyxy"):
-        boxes = _box_cxcywhr_to_xyxy(boxes)
     elif e == ("cxcywhr", "xywhr"):
         boxes = _box_cxcywhr_to_xywhr(boxes)
     elif e == ("xywhr", "cxcywhr"):
         boxes = _box_xywhr_to_cxcywhr(boxes)
     elif e == ("cxcywhr", "xyxyxyxy"):
         boxes = _box_cxcywhr_to_xyxyxyxy(boxes)
-    elif e == ("xyxyxyxy", "xyxyr"):
-        boxes = _box_xyxyxyxy_to_xyxyr(boxes)
     elif e == ("xywhr", "xyxyxyxy"):
         boxes = _box_xywhr_to_cxcywhr(boxes)
         boxes = _box_cxcywhr_to_xyxyxyxy(boxes)
-    elif e == ("xyxyr", "xyxyxyxy"):
-        boxes = _box_xyxyr_to_cxcywhr(boxes)
-        boxes = _box_cxcywhr_to_xyxyxyxy(boxes)
     elif e == ("xyxyxyxy", "cxcywhr"):
-        boxes = _box_xyxyxyxy_to_xyxyr(boxes)
-        boxes = _box_xyxyr_to_cxcywhr(boxes)
+        boxes = _box_xyxyxyxy_to_cxcywhr(boxes)
     elif e == ("xyxyxyxy", "xywhr"):
-        boxes = _box_xyxyxyxy_to_xyxyr(boxes)
-        boxes = _box_xyxyr_to_xywhr(boxes)
+        boxes = _box_xyxyxyxy_to_cxcywhr(boxes)
+        boxes = _box_cxcywhr_to_xywhr(boxes)
     else:
         raise NotImplementedError(
             f"Unsupported Bounding Box Conversions for given in_fmt {e[0]} and out_fmt {e[1]}"
