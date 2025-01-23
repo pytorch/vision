@@ -52,14 +52,73 @@ def deform_conv2d(
         >>> weight = torch.rand(5, 3, kh, kw)
         >>> # offset and mask should have the same spatial size as the output
         >>> # of the convolution. In this case, for an input of 10, stride of 1
-        >>> # and kernel size of 3, without padding, the output size is 8
+        >>> # and kernel size of 3, without padding, the output size is 8.
+        >>> # For the simplest case, 1 channel 3x3 kernel, at each valid (consider padding) input feature position:
+        >>> # [[p0 p1 p2],
+        >>> #  [p3 p4 p5],
+        >>> #  [p6 p7 p8]]
+        >>> # The 18 corresponding offsets will be:
+        >>> # [p0_offset_h, p0_offset_w, p1_offset_h, p1_offset_w, p2_offset_h, ..., p8_offset_w]
+        >>> # ``_h`` means pixel offset in the height direction (i.e. p0 -> p3 -> p6),
+        >>> # ``_w`` means pixel offset in the width direction (i.e. p0 -> p1 -> p2).
         >>> offset = torch.rand(4, 2 * kh * kw, 8, 8)
         >>> mask = torch.rand(4, kh * kw, 8, 8)
         >>> out = deform_conv2d(input, offset, weight, mask=mask)
         >>> print(out.shape)
         >>> # returns
         >>>  torch.Size([4, 5, 8, 8])
+
+    More complex examples::
+
+        h = w = 3
+        # batch_size, num_channels, out_height, out_width
+        x = torch.arange(h * w * 3, dtype=torch.float32).reshape(1, 3, h, w)
+
+        # to show the effect of offset more intuitively, only the case of kh=kw=1 is considered here
+        # and we use the same offset for each local neighborhood in the single channel
+        offset = torch.FloatTensor(
+            [  # create our predefined offset with offset_groups = 3
+                0, -1,  # sample the left pixel of the centroid pixel
+                0, 1,  # sample the right pixel of the centroid pixel
+                -1, 0,  # sample the top pixel of the centroid pixel
+            ]  # here, we divide the input channels into offset_groups groups with different offsets.
+        ).reshape(1, 2 * 3 * 1 * 1, 1, 1)
+        # so we repeat the offset to the whole space: batch_size, 2 * offset_groups * kh * kw, out_height, out_width
+        offset = offset.repeat(1, 1, h, w)
+
+        weight = torch.FloatTensor(
+            [
+                [1, 0, 0],  # only extract the first channel of the input tensor
+                [0, 1, 0],  # only extract the second channel of the input tensor
+                [1, 1, 0],  # add the first and the second channels of the input tensor
+                [0, 0, 1],  # only extract the third channel of the input tensor
+                [0, 1, 0],  # only extract the second channel of the input tensor
+            ]
+        ).reshape(5, 3, 1, 1)
+        deconv_shift = deform_conv2d(x, offset=offset, weight=weight)
+        print(deconv_shift)
+
+        tensor([[[[ 0.,  0.,  1.],  # offset=(0, -1) the first channel of the input tensor
+                [ 0.,  3.,  4.],  # output hw indices (1, 2) => (1, 2-1) => input indices (1, 1)
+                [ 0.,  6.,  7.]], # output hw indices (2, 1) => (2, 1-1) => input indices (2, 0)
+
+                [[10., 11.,  0.],  # offset=(0, 1) the second channel of the input tensor
+                [13., 14.,  0.],  # output hw indices (1, 1) => (1, 1+1) => input indices (1, 2)
+                [16., 17.,  0.]], # output hw indices (2, 0) => (2, 0+1) => input indices (2, 1)
+
+                [[10., 11.,  1.],  # offset=[(0, -1), (0, 1)], accumulate the first and second channels after being sampled with an offset.
+                [13., 17.,  4.],
+                [16., 23.,  7.]],
+
+                [[ 0.,  0.,  0.],  # offset=(-1, 0) the third channel of the input tensor
+                [18., 19., 20.],  # output hw indices (1, 1) => (1-1, 1) => input indices (0, 1)
+                [21., 22., 23.]], # output hw indices (2, 2) => (2-1, 2) => input indices (1, 2)
+
+                [[10., 11.,  0.],  # offset=(0, 1) the second channel of the input tensor
+                [13., 14.,  0.],  # output hw indices (1, 1) => (1, 1+1) => input indices (1, 2)
+                [16., 17.,  0.]]]])  # output hw indices (2, 0) => (2, 0+1) => input indices (2, 1)
     """
+
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(deform_conv2d)
     _assert_has_ops()
