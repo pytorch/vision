@@ -136,7 +136,7 @@ def main() -> None:
         smoke_test_torchvision_resnet50_classify("cuda")
 
         #  torch.compile is not supported on Python 3.14+ and Python built with GIL disabled
-        if sys.version_info < (3, 14, 0) and sysconfig.get_config_var("Py_GIL_DISABLED") == 0:
+        if sys.version_info < (3, 14, 0) and not sysconfig.get_config_var("Py_GIL_DISABLED"):
             smoke_test_compile()
 
     if torch.backends.mps.is_available():
