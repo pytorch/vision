@@ -176,6 +176,33 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xyxy
 
 
+def _cxcywhr_to_xywhr(cxcywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        cxcywhr = cxcywhr.clone()
+
+    half_wh = cxcywhr[..., 2:-1].div(-2, rounding_mode=None if cxcywhr.is_floating_point() else "floor").abs_()
+    r_rad = cxcywhr[..., 4].mul(torch.pi).div(180.0)
+    # (cx - width / 2 * cos - height / 2 * sin) = x1
+    cxcywhr[..., 0].sub_(half_wh[..., 0].mul(r_rad.cos()).add(half_wh[..., 1].mul(r_rad.sin())).to(cxcywhr.dtype))
+    # (cy + width / 2 * sin - height / 2 * cos) = y1
+    cxcywhr[..., 1].add_(half_wh[..., 0].mul(r_rad.sin()).sub(half_wh[..., 1].mul(r_rad.cos())).to(cxcywhr.dtype))
+
+    return cxcywhr
+
+
+def _xywhr_to_cxcywhr(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        xywhr = xywhr.clone()
+
+    half_wh = xywhr[..., 2:-1].div(-2, rounding_mode=None if xywhr.is_floating_point() else "floor").abs_()
+    r_rad = xywhr[..., 4].mul(torch.pi).div(180.0)
+    # (x1 + width / 2 * cos + height / 2 * sin) = cx
+    xywhr[..., 0].add_(half_wh[..., 0].mul(r_rad.cos()).add(half_wh[..., 1].mul(r_rad.sin())).to(xywhr.dtype))
+    # (y1 - width / 2 * sin + height / 2 * cos) = cy 
+    xywhr[..., 1].add_(half_wh[..., 1].mul(r_rad.cos()).sub(half_wh[..., 0].mul(r_rad.sin())).to(xywhr.dtype))
+
+    return xywhr
+
 def _convert_bounding_box_format(
     bounding_boxes: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
@@ -188,11 +215,15 @@ def _convert_bounding_box_format(
         bounding_boxes = _xywh_to_xyxy(bounding_boxes, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:
         bounding_boxes = _cxcywh_to_xyxy(bounding_boxes, inplace)
+    elif old_format == BoundingBoxFormat.CXCYWHR:
+        bounding_boxes = _cxcywhr_to_xywhr(bounding_boxes, inplace)
 
     if new_format == BoundingBoxFormat.XYWH:
         bounding_boxes = _xyxy_to_xywh(bounding_boxes, inplace)
     elif new_format == BoundingBoxFormat.CXCYWH:
         bounding_boxes = _xyxy_to_cxcywh(bounding_boxes, inplace)
+    elif new_format == BoundingBoxFormat.CXCYWHR:
+        bounding_boxes = _xywhr_to_cxcywhr(bounding_boxes, inplace)
 
     return bounding_boxes
 
