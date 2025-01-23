@@ -421,6 +421,7 @@ def make_bounding_boxes(
     dtype = dtype or torch.float32
 
     h, w = [torch.randint(1, s, (num_boxes,)) for s in canvas_size]
+    r = -360 * torch.rand((num_boxes,)) + 180
     y = sample_position(h, canvas_size[0])
     x = sample_position(w, canvas_size[1])
 
@@ -435,6 +436,12 @@ def make_bounding_boxes(
         cx = x + w / 2
         cy = y + h / 2
         parts = (cx, cy, w, h)
+    elif format is tv_tensors.BoundingBoxFormat.XYWHR:
+        parts = (x, y, w, h, r)
+    elif format is tv_tensors.BoundingBoxFormat.CXCYWHR:
+        cx = x + w / 2
+        cy = y + h / 2
+        parts = (cx, cy, w, h, r)
     else:
         raise ValueError(f"Format {format} is not supported")
 
