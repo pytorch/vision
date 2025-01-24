@@ -21,6 +21,7 @@ info.
 
     Image
     Video
+    KeyPoints
     BoundingBoxFormat
     BoundingBoxes
     Mask
