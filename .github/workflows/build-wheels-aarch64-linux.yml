@@ -2,6 +2,8 @@ name: Build Aarch64 Linux Wheels
 
 on:
   pull_request:
+    paths:
+      - packaging/post_build_script.sh
   push:
     branches:
       - nightly
