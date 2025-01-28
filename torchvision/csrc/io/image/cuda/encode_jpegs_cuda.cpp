@@ -94,12 +94,12 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
 
   cudaJpegEncoder->set_quality(quality);
   std::vector<torch::Tensor> encoded_images;
-  at::cuda::CUDAEvent event;
-  event.record(cudaJpegEncoder->stream);
   for (const auto& image : contig_images) {
     auto encoded_image = cudaJpegEncoder->encode_jpeg(image);
     encoded_images.push_back(encoded_image);
   }
+  at::cuda::CUDAEvent event;
+  event.record(cudaJpegEncoder->stream);
 
   // We use a dedicated stream to do the encoding and even though the results
   // may be ready on that stream we cannot assume that they are also available
