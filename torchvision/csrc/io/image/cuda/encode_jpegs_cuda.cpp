@@ -251,7 +251,7 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
       nv_enc_state,
       encoded_image.data_ptr<uint8_t>(),
       &length,
-      0);
+      stream);
   TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to retrieve encoded image: ",
