@@ -622,6 +622,45 @@ def test_encode_jpeg_cuda(img_path, scripted, contiguous):
     abs_mean_diff = (decoded_jpeg_cuda_tv.float() - decoded_image_tv.float()).abs().mean().item()
     assert abs_mean_diff < 3
 
+@needs_cuda
+def test_encode_jpeg_cuda_sync():
+    """
+    Attempts to reproduce an intermittent CUDA stream synchronization bug
+    by randomly creating small images and round-tripping them via encode_jpeg
+    and decode_jpeg on the GPU. Fails if the mean difference in u8 range exceeds 5.0.
+
+    https://github.com/pytorch/vision/issues/8587
+    """
+    np.random.seed(42)
+    torch.manual_seed(42)
+
+    # manual testing shows this bug appearing often in iterations between 50 and 100
+    # as a synchronization bug, this can't be reliably reproduced
+    max_iterations = 200
+    threshold = 5.0  # in [0..255]
+
+    device = torch.device("cuda")
+
+    for iteration in range(max_iterations):
+        # Randomly pick a small square image size in [1..64]
+        size = np.random.randint(1, 65)
+        height, width = size, size
+
+        image = torch.linspace(0, 1, steps=height * width, device=device)
+        image = image.view(1, height, width).expand(3, -1, -1)
+
+        image_uint8 = (image * 255).clamp(0, 255).to(torch.uint8)
+        jpeg_bytes = encode_jpeg(image_uint8, quality=100)
+
+        decoded_image = decode_jpeg(jpeg_bytes.cpu(), device=device).float() / 255.0
+        mean_difference = (image - decoded_image).abs().mean().item() * 255
+
+        if mean_difference > threshold:
+            pytest.fail(
+                f"Encode/decode mismatch at iteration={iteration}, "
+                f"size={height}x{width}, mean diff={mean_difference:.2f}"
+            )
+
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("scripted", (True, False))
