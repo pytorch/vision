@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.feature_extraction
+
+
+get_graph_node_names
+====================
+
+.. autofunction:: get_graph_node_names

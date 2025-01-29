@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.detection
+
+
+ssdlite320_mobilenet_v3_large
+=============================
+
+.. autofunction:: ssdlite320_mobilenet_v3_large

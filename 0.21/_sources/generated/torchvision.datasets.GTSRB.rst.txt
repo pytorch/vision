@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+GTSRB
+=====
+
+.. autoclass:: GTSRB
+    :members:
+        __getitem__,
+        
+    :special-members:
