@@ -210,7 +210,7 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     being width and height.
     r is rotation angle w.r.t to the box center by :math:`|r|` degrees counter clock wise in the image plan
 
-    ``'xyxyxyxy'``: boxes are represented via corners, x1, y1 being top left, x2, y2 bottom right, 
+    ``'xyxyxyxy'``: boxes are represented via corners, x1, y1 being top left, x2, y2 bottom right,
     x3, y3 bottom left, and x4, y4 top right.
 
     Args:
@@ -232,25 +232,23 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
         "xyxyxyxy",
     )
     if in_fmt not in allowed_fmts or out_fmt not in allowed_fmts:
-        raise ValueError(
-            f"Unsupported Bounding Box Conversions for given in_fmt {in_fmt} and out_fmt {out_fmt}"
-        )
+        raise ValueError(f"Unsupported Bounding Box Conversions for given in_fmt {in_fmt} and out_fmt {out_fmt}")
 
     if in_fmt == out_fmt:
         return boxes.clone()
     e = (in_fmt, out_fmt)
-    if e ==  ("xywh", "xyxy"):
+    if e == ("xywh", "xyxy"):
         boxes = _box_xywh_to_xyxy(boxes)
-    elif e ==  ("cxcywh", "xyxy"):
+    elif e == ("cxcywh", "xyxy"):
         boxes = _box_cxcywh_to_xyxy(boxes)
-    elif e ==  ("xyxy", "xywh"):
+    elif e == ("xyxy", "xywh"):
         boxes = _box_xyxy_to_xywh(boxes)
-    elif e ==  ("xyxy", "cxcywh"):
+    elif e == ("xyxy", "cxcywh"):
         boxes = _box_xyxy_to_cxcywh(boxes)
-    elif e ==  ("xywh", "cxcywh"):
+    elif e == ("xywh", "cxcywh"):
         boxes = _box_xywh_to_xyxy(boxes)
         boxes = _box_xyxy_to_cxcywh(boxes)
-    elif e ==  ("cxcywh", "xywh"):
+    elif e == ("cxcywh", "xywh"):
         boxes = _box_cxcywh_to_xyxy(boxes)
         boxes = _box_xyxy_to_xywh(boxes)
     elif e == ("cxcywhr", "xywhr"):
@@ -268,9 +266,7 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
         boxes = _box_xyxyxyxy_to_cxcywhr(boxes)
         boxes = _box_cxcywhr_to_xywhr(boxes)
     else:
-        raise NotImplementedError(
-            f"Unsupported Bounding Box Conversions for given in_fmt {e[0]} and out_fmt {e[1]}"
-        )
+        raise NotImplementedError(f"Unsupported Bounding Box Conversions for given in_fmt {e[0]} and out_fmt {e[1]}")
 
     return boxes
 

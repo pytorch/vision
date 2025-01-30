@@ -191,4 +191,3 @@ def _box_xyxyxyxy_to_cxcywhr(boxes: Tensor) -> Tensor:
     boxes = torch.stack((cx, cy, w, h, r), dim=-1)
 
     return boxes
-

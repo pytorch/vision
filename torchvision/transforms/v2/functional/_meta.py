@@ -183,9 +183,13 @@ def _cxcywhr_to_xywhr(cxcywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
     half_wh = cxcywhr[..., 2:-1].div(-2, rounding_mode=None if cxcywhr.is_floating_point() else "floor").abs_()
     r_rad = cxcywhr[..., 4].mul(torch.pi).div(180.0)
     # (cx - width / 2 * cos - height / 2 * sin) = x1
-    cxcywhr[..., 0].sub_(half_wh[..., 0].mul(r_rad.cos()).to(cxcywhr.dtype)).sub_(half_wh[..., 1].mul(r_rad.sin()).to(cxcywhr.dtype))
+    cxcywhr[..., 0].sub_(half_wh[..., 0].mul(r_rad.cos()).to(cxcywhr.dtype)).sub_(
+        half_wh[..., 1].mul(r_rad.sin()).to(cxcywhr.dtype)
+    )
     # (cy + width / 2 * sin - height / 2 * cos) = y1
-    cxcywhr[..., 1].add_(half_wh[..., 0].mul(r_rad.sin()).to(cxcywhr.dtype)).sub_(half_wh[..., 1].mul(r_rad.cos()).to(cxcywhr.dtype))
+    cxcywhr[..., 1].add_(half_wh[..., 0].mul(r_rad.sin()).to(cxcywhr.dtype)).sub_(
+        half_wh[..., 1].mul(r_rad.cos()).to(cxcywhr.dtype)
+    )
 
     return cxcywhr
 
@@ -197,11 +201,16 @@ def _xywhr_to_cxcywhr(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
     half_wh = xywhr[..., 2:-1].div(-2, rounding_mode=None if xywhr.is_floating_point() else "floor").abs_()
     r_rad = xywhr[..., 4].mul(torch.pi).div(180.0)
     # (x1 + width / 2 * cos + height / 2 * sin) = cx
-    xywhr[..., 0].add_(half_wh[..., 0].mul(r_rad.cos()).to(xywhr.dtype)).add_(half_wh[..., 1].mul(r_rad.sin()).to(xywhr.dtype))
-    # (y1 - width / 2 * sin + height / 2 * cos) = cy 
-    xywhr[..., 1].sub_(half_wh[..., 0].mul(r_rad.sin()).to(xywhr.dtype)).add_(half_wh[..., 1].mul(r_rad.cos()).to(xywhr.dtype))
+    xywhr[..., 0].add_(half_wh[..., 0].mul(r_rad.cos()).to(xywhr.dtype)).add_(
+        half_wh[..., 1].mul(r_rad.sin()).to(xywhr.dtype)
+    )
+    # (y1 - width / 2 * sin + height / 2 * cos) = cy
+    xywhr[..., 1].sub_(half_wh[..., 0].mul(r_rad.sin()).to(xywhr.dtype)).add_(
+        half_wh[..., 1].mul(r_rad.cos()).to(xywhr.dtype)
+    )
 
     return xywhr
+
 
 def _convert_bounding_box_format(
     bounding_boxes: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
