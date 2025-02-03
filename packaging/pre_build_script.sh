@@ -30,6 +30,8 @@ else
   if [[ "$ARCH" == "aarch64" ]]; then
     conda install libpng -yq
     conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch-nightly
+
+    ffmpeg -version
   fi
 
   conda install libwebp -yq
