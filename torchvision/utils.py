@@ -8,6 +8,8 @@ from typing import Any, BinaryIO, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
+
+import PIL
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
 
@@ -184,7 +186,9 @@ def draw_bounding_boxes(
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
             also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
             `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
-        font_size (int): The requested font size in points.
+        font_size (int): The requested font size in points. When using the default font (font=None), 
+        this parameter requires PIL version 10.1.0 or higher. For older PIL versions, the default 
+        font size will be used and a warning will be issued.
         label_colors (color or list of colors, optional): Colors for the label text.  See the description of the
             `colors` argument for details.  Defaults to the same colors used for the boxes.
 
@@ -230,8 +234,14 @@ def draw_bounding_boxes(
 
     if font is None:
         if font_size is not None:
-            warnings.warn("Argument 'font_size' will be ignored since 'font' is not set.")
-        txt_font = ImageFont.load_default()
+            try: 
+                txt_font = ImageFont.load_default(size=font_size) # can set `size` parameter for default fonts as of PIL 10.1.0
+            except TypeError:
+                # Fallback for older PIL versions
+                warnings.warn(f"The current version of PIL ({PIL.__version__}) does not support setting the `size` parameter for default font. PIL version 10.1.0+ required.")
+                txt_font = ImageFont.load_default()
+        else:
+            txt_font = ImageFont.load_default()
     else:
         txt_font = ImageFont.truetype(font=font, size=font_size or 10)
 
