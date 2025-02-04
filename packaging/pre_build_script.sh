@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CONDA_CHANNEL=""
-if [["$PYTHON_VERSION" == "3.13t" ]]; then
+if [[ "$PYTHON_VERSION" == "3.13t" ]]; then
   CONDA_CHANNEL="-c conda-forge"
 fi
 
