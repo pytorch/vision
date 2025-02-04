@@ -1,7 +1,9 @@
 #!/bin/bash
 
 CONDA_CHANNEL=""
-if [[ "$PYTHON_VERSION" == "3.13t" ]]; then
+
+# python python-freethreading build use conda-forge
+if [[ "${PYTHON_VERSION: -1}" == "t" ]]; then
   CONDA_CHANNEL="-c conda-forge"
 fi
 
