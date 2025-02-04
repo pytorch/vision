@@ -1,5 +1,10 @@
 #!/bin/bash
 
+CONDA_CHANNEL=""
+if [["$PYTHON_VERSION" == "3.13t" ]]; then
+  CONDA_CHANNEL="-c conda-forge"
+fi
+
 if [[ "$(uname)" == Darwin ]]; then
   # Uninstall Conflicting jpeg brew formulae
   jpeg_packages=$(brew list | grep jpeg)
@@ -32,7 +37,7 @@ else
     conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch-nightly
   fi
 
-  conda install libwebp -yq
+  conda install -y libwebp ${CONDA_CHANNEL}
   conda install libjpeg-turbo -c pytorch
   yum install -y freetype gnutls
   pip install auditwheel
