@@ -18,7 +18,7 @@ if [[ "$(uname)" == Darwin ]]; then
 fi
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
-  conda install libpng libwebp -yq
+  conda install -yv libpng libwebp ${CONDA_CHANNEL}
   # Installing webp also installs a non-turbo jpeg, so we uninstall jpeg stuff
   # before re-installing them
   conda uninstall libjpeg-turbo libjpeg -y
@@ -33,7 +33,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
 else
 
   if [[ "$ARCH" == "aarch64" ]]; then
-    conda install libpng -yq
+    conda install -yv libpng ${CONDA_CHANNEL}
     conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch-nightly
   fi
 
