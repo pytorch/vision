@@ -1382,7 +1382,7 @@ class TestBoxConvert:
 
         assert exp_xyxyxyxy.size() == torch.Size([1, 8])
         box_xyxyxyxy = ops.box_convert(box_tensor, in_fmt="cxcywhr", out_fmt="xyxyxyxy")
-        assert_equal(box_xyxyxyxy, exp_xyxyxyxy)
+        torch.testing.assert_close(box_xyxyxyxy, exp_xyxyxyxy)
 
     def test_bbox_xywhr_to_xyxyxyxy(self):
         box_tensor = torch.tensor([[4, 5, 4, 2, 90]], dtype=torch.float)
@@ -1390,7 +1390,7 @@ class TestBoxConvert:
 
         assert exp_xyxyxyxy.size() == torch.Size([1, 8])
         box_xyxyxyxy = ops.box_convert(box_tensor, in_fmt="xywhr", out_fmt="xyxyxyxy")
-        assert_equal(box_xyxyxyxy, exp_xyxyxyxy)
+        torch.testing.assert_close(box_xyxyxyxy, exp_xyxyxyxy)
 
     @pytest.mark.parametrize("inv_infmt", ["xwyh", "cxwyh", "xwyhr", "cxwyhr", "xxxxyyyy"])
     @pytest.mark.parametrize("inv_outfmt", ["xwcx", "xhwcy", "xwcxr", "xhwcyr", "xyxyxxyy"])

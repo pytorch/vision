@@ -9,12 +9,12 @@ from ..utils import _log_api_usage_once
 from ._box_convert import (
     _box_cxcywh_to_xyxy,
     _box_cxcywhr_to_xywhr,
-    _box_cxcywhr_to_xyxyxyxy,
     _box_xywh_to_xyxy,
     _box_xywhr_to_cxcywhr,
+    _box_xywhr_to_xyxyxyxy,
     _box_xyxy_to_cxcywh,
     _box_xyxy_to_xywh,
-    _box_xyxyxyxy_to_cxcywhr,
+    _box_xyxyxyxy_to_xywhr,
 )
 from ._utils import _upcast
 
@@ -214,7 +214,7 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     x3, y3 bottom left, and x4, y4 top right.
 
     Args:
-        boxes (Tensor[N, K]): boxes which will be converted. K is the number of coordinates (4 for unrotated bounding boxes or 5 for rotated bounding boxes)
+        boxes (Tensor[N, K]): boxes which will be converted. K is the number of coordinates (4 for unrotated bounding boxes, 5 or 8 for rotated bounding boxes)
         in_fmt (str): Input format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh', 'xywhr', 'cxcywhr', 'xyxyxyxy'].
         out_fmt (str): Output format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh', 'xywhr', 'cxcywhr', 'xyxyxyxy']
 
@@ -256,15 +256,15 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     elif e == ("xywhr", "cxcywhr"):
         boxes = _box_xywhr_to_cxcywhr(boxes)
     elif e == ("cxcywhr", "xyxyxyxy"):
-        boxes = _box_cxcywhr_to_xyxyxyxy(boxes)
-    elif e == ("xywhr", "xyxyxyxy"):
-        boxes = _box_xywhr_to_cxcywhr(boxes)
-        boxes = _box_cxcywhr_to_xyxyxyxy(boxes)
+        boxes = _box_cxcywhr_to_xywhr(boxes).to(boxes.dtype)
+        boxes = _box_xywhr_to_xyxyxyxy(boxes)
     elif e == ("xyxyxyxy", "cxcywhr"):
-        boxes = _box_xyxyxyxy_to_cxcywhr(boxes)
+        boxes = _box_xyxyxyxy_to_xywhr(boxes).to(boxes.dtype)
+        boxes = _box_xywhr_to_cxcywhr(boxes)
+    elif e == ("xywhr", "xyxyxyxy"):
+        boxes = _box_xywhr_to_xyxyxyxy(boxes)
     elif e == ("xyxyxyxy", "xywhr"):
-        boxes = _box_xyxyxyxy_to_cxcywhr(boxes)
-        boxes = _box_cxcywhr_to_xywhr(boxes)
+        boxes = _box_xyxyxyxy_to_xywhr(boxes)
     else:
         raise NotImplementedError(f"Unsupported Bounding Box Conversions for given in_fmt {e[0]} and out_fmt {e[1]}")
 

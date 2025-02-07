@@ -128,10 +128,10 @@ def _box_xywhr_to_cxcywhr(boxes: Tensor) -> Tensor:
     return boxes
 
 
-def _box_cxcywhr_to_xyxyxyxy(boxes: Tensor) -> Tensor:
+def _box_xywhr_to_xyxyxyxy(boxes: Tensor) -> Tensor:
     """
-    Converts rotated bounding boxes from (cx, cy, w, h, r) format to (x1, y1, x3, y3, x2, y2, x4, y4) format.
-    (cx, cy) refers to center of the rotated bounding box
+    Converts rotated bounding boxes from (x1, y1, w, h, r) format to (x1, y1, x3, y3, x2, y2, x4, y4) format.
+    (x1, y1) refer to top left of bounding box
     (w, h) are width and height of the rotated bounding box
     r is rotation angle w.r.t to the box center by :math:`|r|` degrees counter clock wise in the image plan
 
@@ -145,30 +145,27 @@ def _box_cxcywhr_to_xyxyxyxy(boxes: Tensor) -> Tensor:
     Returns:
         boxes (Tensor(N, 8)): rotated boxes in (x1, y1, x3, y3, x2, y2, x4, y4) format.
     """
-    cx, cy, w, h, r = boxes.unbind(-1)
+    x1, y1, w, h, r = boxes.unbind(-1)
     r_rad = r * torch.pi / 180.0
     cos, sin = torch.cos(r_rad), torch.sin(r_rad)
 
-    x1 = cx - w / 2 * cos - h / 2 * sin
-    y1 = cy - h / 2 * cos + w / 2 * sin
-    x3 = cx + w / 2 * cos - h / 2 * sin
-    y3 = cy - h / 2 * cos - w / 2 * sin
-    x2 = cx + w / 2 * cos + h / 2 * sin
-    y2 = cy + h / 2 * cos - w / 2 * sin
-    x4 = cx - w / 2 * cos + h / 2 * sin
-    y4 = cy + h / 2 * cos + w / 2 * sin
+    x3 = x1 + w * cos
+    y3 = y1 - w * sin
+    x2 = x3 + h * sin
+    y2 = y3 + h * cos
+    x4 = x1 + h * sin
+    y4 = y1 + h * cos
 
     return torch.stack((x1, y1, x3, y3, x2, y2, x4, y4), dim=-1)
 
 
-def _box_xyxyxyxy_to_cxcywhr(boxes: Tensor) -> Tensor:
+def _box_xyxyxyxy_to_xywhr(boxes: Tensor) -> Tensor:
     """
-    Converts rotated bounding boxes from (x1, y1, x3, y3, x2, y2, x4, y4) format to (x1, y1, x2, y2, r) format.
+    Converts rotated bounding boxes from (x1, y1, x3, y3, x2, y2, x4, y4) format to (x1, y1, w, h, r) format.
     (x1, y1) refer to top left of the rotated bounding box
     (x3, y3) refer to bottom left of the rotated bounding box
     (x2, y2) refer to bottom right of the rotated bounding box
     (x4, y4) refer to top right of the rotated bounding box
-    (cx, cy) refers to center of bounding box
     (w, h) refers to width and height of rotated bounding box
     r is rotation angle w.r.t to the box center by :math:`|r|` degrees counter clock wise in the image plan
 
@@ -176,18 +173,16 @@ def _box_xyxyxyxy_to_cxcywhr(boxes: Tensor) -> Tensor:
         boxes (Tensor(N, 8)): rotated boxes in (x1, y1, x3, y3, x2, y2, x4, y4) format.
 
     Returns:
-        boxes (Tensor[N, 5]): rotated boxes in (cx, cy, w, h, r) format.
+        boxes (Tensor[N, 5]): rotated boxes in (x1, y1, w, h, r) format.
     """
     x1, y1, x3, y3, x2, y2, x4, y4 = boxes.unbind(-1)
     r_rad = torch.atan2(y1 - y3, x3 - x1)
     r = r_rad * 180 / torch.pi
     cos, sin = torch.cos(r_rad), torch.sin(r_rad)
 
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
     w = (x2 - x1) * cos + (y1 - y2) * sin
     h = (x2 - x1) * sin + (y2 - y1) * cos
 
-    boxes = torch.stack((cx, cy, w, h, r), dim=-1)
+    boxes = torch.stack((x1, y1, w, h, r), dim=-1)
 
     return boxes

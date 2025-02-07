@@ -60,7 +60,7 @@ from torchvision.transforms.v2.functional._utils import _get_kernel, _register_k
 # In the future, this global variable will be replaced with `list(tv_tensors.BoundingBoxFormat)`
 # to support all available formats.
 SUPPORTED_BOX_FORMATS = [tv_tensors.BoundingBoxFormat[x] for x in ["XYXY", "XYWH", "CXCYWH"]]
-NEW_BOX_FORMATS = [tv_tensors.BoundingBoxFormat[x] for x in ["XYWHR", "CXCYWHR"]]  # XYXYR
+NEW_BOX_FORMATS = [tv_tensors.BoundingBoxFormat[x] for x in ["XYWHR", "CXCYWHR", "XYXYXYXY"]]  # XYXYR
 
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
@@ -3518,7 +3518,6 @@ class TestAutoAugmentTransforms:
 class TestConvertBoundingBoxFormat:
     old_new_formats = list(itertools.permutations(SUPPORTED_BOX_FORMATS, 2))
     old_new_formats += list(itertools.permutations(NEW_BOX_FORMATS, 2))
-    # old_new_formats = list(itertools.permutations(NEW_BOX_FORMATS, 2))
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_kernel(self, old_format, new_format):
@@ -3553,9 +3552,11 @@ class TestConvertBoundingBoxFormat:
         output_inplace = F.convert_bounding_box_format(
             input, old_format=old_format, new_format=new_format, inplace=True
         )
-        assert output_inplace.data_ptr() == input.data_ptr()
-        assert output_inplace._version > input_version
-        assert output_inplace is input
+        if old_format != tv_tensors.BoundingBoxFormat.XYXYXYXY and new_format != tv_tensors.BoundingBoxFormat.XYXYXYXY:
+            # NOTE: BoundingBox format conversion from and to XYXYXYXY format cannot modify the input tensor inplace as it requires a dimension change.
+            assert output_inplace.data_ptr() == input.data_ptr()
+            assert output_inplace._version > input_version
+            assert output_inplace is input
 
         assert_equal(output_inplace, output_out_of_place)
 
@@ -3614,7 +3615,10 @@ class TestConvertBoundingBoxFormat:
         actual = fn(bounding_boxes)
         expected = self._reference_convert_bounding_box_format(bounding_boxes, new_format)
 
+        # try:
         assert_equal(actual, expected)
+        # except:
+        #     import pdb; pdb.set_trace()
 
     def test_errors(self):
         input_tv_tensor = make_bounding_boxes()
