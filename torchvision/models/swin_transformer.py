@@ -603,7 +603,16 @@ class SwinTransformer(nn.Module):
                 nn.init.trunc_normal_(m.weight, std=0.02)
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
-
+    
+    def forward_features(self, x):
+        multiscale_features = []
+        for layer in self.features:
+            if isinstance(layer, PatchMergingV2) or isinstance(layer, PatchMerging):
+                multiscale_features.append(self.permute(x))
+            x = layer(x)
+        multiscale_features.append(self.permute(x))
+        return multiscale_features
+    
     def forward(self, x):
         x = self.features(x)
         x = self.norm(x)
