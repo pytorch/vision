@@ -85,7 +85,7 @@ class Imagenette(VisionDataset):
 
         download_and_extract_archive(self._url, self.root, md5=self._md5)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         path, label = self._samples[idx]
         image = Image.open(path).convert("RGB")
 

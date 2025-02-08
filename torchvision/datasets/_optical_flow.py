@@ -13,8 +13,8 @@ from ..io.image import decode_png, read_file
 from .utils import _read_pfm, verify_str_arg
 from .vision import VisionDataset
 
-T1 = Tuple[Image.Image, Image.Image, Optional[np.ndarray], Optional[np.ndarray]]
-T2 = Tuple[Image.Image, Image.Image, Optional[np.ndarray]]
+T1 = tuple[Image.Image, Image.Image, Optional[np.ndarray], Optional[np.ndarray]]
+T2 = tuple[Image.Image, Image.Image, Optional[np.ndarray]]
 
 
 __all__ = (
@@ -37,8 +37,8 @@ class FlowDataset(ABC, VisionDataset):
         super().__init__(root=root)
         self.transforms = transforms
 
-        self._flow_list: List[str] = []
-        self._image_list: List[List[str]] = []
+        self._flow_list: list[str] = []
+        self._image_list: list[list[str]] = []
 
     def _read_img(self, file_name: str) -> Image.Image:
         img = Image.open(file_name)
@@ -225,7 +225,7 @@ class KittiFlow(FlowDataset):
         """
         return super().__getitem__(index)
 
-    def _read_flow(self, file_name: str) -> Tuple[np.ndarray, np.ndarray]:
+    def _read_flow(self, file_name: str) -> tuple[np.ndarray, np.ndarray]:
         return _read_16bits_png_with_flow_and_valid_mask(file_name)
 
 
@@ -443,7 +443,7 @@ class HD1K(FlowDataset):
                 "Could not find the HD1K images. Please make sure the directory structure is correct."
             )
 
-    def _read_flow(self, file_name: str) -> Tuple[np.ndarray, np.ndarray]:
+    def _read_flow(self, file_name: str) -> tuple[np.ndarray, np.ndarray]:
         return _read_16bits_png_with_flow_and_valid_mask(file_name)
 
     def __getitem__(self, index: int) -> Union[T1, T2]:
@@ -479,7 +479,7 @@ def _read_flo(file_name: str) -> np.ndarray:
         return data.reshape(h, w, 2).transpose(2, 0, 1)
 
 
-def _read_16bits_png_with_flow_and_valid_mask(file_name: str) -> Tuple[np.ndarray, np.ndarray]:
+def _read_16bits_png_with_flow_and_valid_mask(file_name: str) -> tuple[np.ndarray, np.ndarray]:
 
     flow_and_valid = decode_png(read_file(file_name)).to(torch.float32)
     flow, valid_flow_mask = flow_and_valid[:2, :, :], flow_and_valid[2, :, :]
