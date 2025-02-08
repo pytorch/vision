@@ -33,6 +33,11 @@ def sigmoid_focal_loss(
     """
     # Original implementation from https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/focal_loss.py
 
+    if alpha > 1:
+        raise ValueError(
+            f"Invalid alpha value: {alpha}. alpha must be in the range (0,1) or -1 for ignore."
+        )
+
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(sigmoid_focal_loss)
     p = torch.sigmoid(inputs)
