@@ -121,6 +121,11 @@ def get_size_bounding_boxes(bounding_box: tv_tensors.BoundingBoxes) -> List[int]
     return list(bounding_box.canvas_size)
 
 
+@_register_kernel_internal(get_size, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
+def get_size_keypoints(keypoints: tv_tensors.KeyPoints) -> List[int]:
+    return list(keypoints.canvas_size)
+
+
 def get_num_frames(inpt: torch.Tensor) -> int:
     if torch.jit.is_scripting():
         return get_num_frames_video(inpt)
@@ -174,6 +179,28 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     xyxy[..., :2].mul_(2).add_(xyxy[..., 2:]).div_(2, rounding_mode=None if xyxy.is_floating_point() else "floor")
 
     return xyxy
+
+
+def _xyxy_to_points(bounding_boxes: torch.Tensor) -> torch.Tensor:
+    return bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
+
+
+def convert_box_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensors.KeyPoints:
+    """Converts a set of bounding boxes to its edge points.
+
+    Args:
+        bounding_boxes (tv_tensors.BoundingBoxes): A set of ``N`` bounding boxes (of shape ``[N, 4]``)
+
+    Returns:
+        tv_tensors.KeyPoints: The edges, of shape ``[N, 4, 2]``
+    """
+    bbox = _convert_bounding_box_format(
+        bounding_boxes.as_subclass(torch.Tensor),
+        old_format=bounding_boxes.format,
+        new_format=BoundingBoxFormat.XYXY,
+        inplace=False,
+    )
+    return tv_tensors.KeyPoints(_xyxy_to_points(bbox), canvas_size=bounding_boxes.canvas_size)
 
 
 def _convert_bounding_box_format(
@@ -252,6 +279,16 @@ def _clamp_bounding_boxes(
         xyxy_boxes, old_format=BoundingBoxFormat.XYXY, new_format=format, inplace=True
     )
     return out_boxes.to(in_dtype)
+
+
+def clamp_keypoints(inpt: torch.Tensor, canvas_size: Tuple[int, int]) -> torch.Tensor:
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(clamp_bounding_boxes)
+    dtype = inpt.dtype
+    inpt = inpt.float()
+    inpt[..., 0].clamp_(0, canvas_size[1])
+    inpt[..., 1].clamp_(0, canvas_size[0])
+    return inpt.to(dtype=dtype)
 
 
 def clamp_bounding_boxes(
