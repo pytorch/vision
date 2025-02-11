@@ -84,10 +84,10 @@ __global__ static void gather_keep_from_mask(bool *keep,
   const int col_blocks = ceil_div(n_boxes, threadsPerBlock);
   const int thread_id = threadIdx.x;
 
-  // mark the bboxes which have been removed.
+  // Mark the bboxes which have been removed.
   extern __shared__ unsigned long long removed[];
 
-  // initialize removed.
+  // Initialize removed.
   for (int i = thread_id; i < col_blocks; i += blockDim.x) {
     removed[i] = 0;
   }
@@ -101,14 +101,13 @@ __global__ static void gather_keep_from_mask(bool *keep,
     for (int inblock = 0; inblock < threadsPerBlock; inblock++) {
       const int i = i_offset + inblock;
       if (i >= n_boxes) break;
-      // select a candidate, check if it should kept.
+      // Select a candidate, check if it should kept.
       if (!(removed_val & (1ULL << inblock))) {
         if (thread_id == 0) {
-          // mark the output.
           keep[i] = true;
         }
         auto p = dev_mask + i * col_blocks;
-        // remove all bboxes which overlap the candidate.
+        // Remove all bboxes which overlap the candidate.
         for (int j = thread_id; j < col_blocks; j += blockDim.x) {
           if (j >= nblock) removed[j] |= p[j];
         }
@@ -181,10 +180,10 @@ at::Tensor nms_kernel(
       );
 
   // Unwrap the mask to fill keep with proper values
-  // Keeping this unwrap on cuda instead of applying iterative for loops on cpu 
+  // Keeping the unwrap on device instead of applying iterative for loops on cpu 
   // prevents the device -> cpu -> device transfer that could be bottleneck for
   // large number of boxes.
-  // See https://github.com/pytorch/vision/issues/8713 for more details 
+  // See https://github.com/pytorch/vision/issues/8713 for more details.
   gather_keep_from_mask<<<1, min(col_blocks, threadsPerBlock),
                           col_blocks * sizeof(unsigned long long), stream>>>(
       keep.data_ptr<bool>(), (unsigned long long*)mask.data_ptr<int64_t>(),
