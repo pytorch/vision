@@ -35,8 +35,8 @@ class MNIST(VisionDataset):
     """
 
     mirrors = [
-        "http://yann.lecun.com/exdb/mnist/",
         "https://ossci-datasets.s3.amazonaws.com/mnist/",
+        "http://yann.lecun.com/exdb/mnist/",
     ]
 
     resources = [
@@ -514,7 +514,7 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
         data = f.read()
 
     # parse
-    if sys.byteorder == "little":
+    if sys.byteorder == "little" or sys.platform == "aix":
         magic = get_int(data[0:4])
         nd = magic % 256
         ty = magic // 256
@@ -527,7 +527,7 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
     torch_type = SN3_PASCALVINCENT_TYPEMAP[ty]
     s = [get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd)]
 
-    if sys.byteorder == "big":
+    if sys.byteorder == "big" and not sys.platform == "aix":
         for i in range(len(s)):
             s[i] = int.from_bytes(s[i].to_bytes(4, byteorder="little"), byteorder="big", signed=False)
 
