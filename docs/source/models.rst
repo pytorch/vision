@@ -172,7 +172,11 @@ Most pre-trained models can be accessed directly via PyTorch Hub without having 
     model = torch.hub.load("pytorch/vision", "resnet50", weights="IMAGENET1K_V2")
 
     # Option 2: passing weights param as enum
-    weights = torch.hub.load("pytorch/vision", "get_weight", weights="ResNet50_Weights.IMAGENET1K_V2")
+    weights = torch.hub.load(
+        "pytorch/vision",
+        "get_weight",
+        weights="ResNet50_Weights.IMAGENET1K_V2",
+    )
     model = torch.hub.load("pytorch/vision", "resnet50", weights=weights)
 
 You can also retrieve all the available weights of a specific model via PyTorch Hub by doing:
