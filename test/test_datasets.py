@@ -532,7 +532,8 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         self._create_bbox_txt(base_folder, num_images)
         self._create_landmarks_txt(base_folder, num_images)
 
-        return dict(num_examples=num_images_per_split[config["split"]], attr_names=attr_names)
+        num_samples = num_images_per_split.get(config["split"], 0) if isinstance(config["split"], str) else 0
+        return dict(num_examples=num_samples, attr_names=attr_names)
 
     def _create_split_txt(self, root):
         num_images_per_split = dict(train=4, valid=3, test=2)
@@ -634,6 +635,28 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         for target_type in ["identity", "bbox", ["identity", "bbox"]]:
             with self.create_dataset(target_type=target_type, transform=v2.Resize(size=expected_size)) as (dataset, _):
                 datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
+
+    def test_invalid_split_list(self):
+        with pytest.raises(ValueError, match="Expected type str for argument split, but got type <class 'list'>."):
+            with self.create_dataset(split=[1]):
+                pass
+
+    def test_invalid_split_int(self):
+        with pytest.raises(ValueError, match="Expected type str for argument split, but got type <class 'int'>."):
+            with self.create_dataset(split=1):
+                pass
+
+    def test_invalid_split_value(self):
+        with pytest.raises(
+            ValueError,
+            match="Unknown value '{value}' for argument {arg}. Valid values are {{{valid_values}}}.".format(
+                value="invalid",
+                arg="split",
+                valid_values=("train", "valid", "test", "all"),
+            ),
+        ):
+            with self.create_dataset(split="invalid"):
+                pass
 
 
 class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
