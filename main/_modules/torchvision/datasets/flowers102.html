@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+fab1188) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+a200dac) &#x25BC</a>
     </div>
     
 
@@ -524,7 +524,112 @@
         <span class="p">)</span>
         <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="s2">&quot;setid&quot;</span><span class="p">]:</span>
             <span class="n">filename</span><span class="p">,</span> <span class="n">md5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
-            <span class="n">download_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_download_url_prefix</span> <span class="o">+</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span> <span class="n">md5</span><span class="o">=</span><span class="n">md5</span><span class="p">)</span></div>
+            <span class="n">download_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_download_url_prefix</span> <span class="o">+</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span> <span class="n">md5</span><span class="o">=</span><span class="n">md5</span><span class="p">)</span>
+
+    <span class="n">classes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;pink primrose&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;hard-leaved pocket orchid&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;canterbury bells&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sweet pea&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;english marigold&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tiger lily&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;moon orchid&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;bird of paradise&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;monkshood&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;globe thistle&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;snapdragon&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;colt&#39;s foot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;king protea&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;spear thistle&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;yellow iris&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;globe-flower&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;purple coneflower&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;peruvian lily&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;balloon flower&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;giant white arum lily&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;fire lily&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;pincushion flower&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;fritillary&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;red ginger&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;grape hyacinth&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;corn poppy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;prince of wales feathers&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;stemless gentian&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;artichoke&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sweet william&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;carnation&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;garden phlox&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;love in the mist&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;mexican aster&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;alpine sea holly&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ruby-lipped cattleya&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cape flower&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;great masterwort&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;siam tulip&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lenten rose&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;barbeton daisy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;daffodil&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sword lily&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;poinsettia&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;bolero deep blue&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;wallflower&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;marigold&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;buttercup&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;oxeye daisy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;common dandelion&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;petunia&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;wild pansy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;primula&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sunflower&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;pelargonium&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;bishop of llandaff&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;gaura&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;geranium&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;orange dahlia&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;pink-yellow dahlia?&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cautleya spicata&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;japanese anemone&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;black-eyed susan&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;silverbush&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;californian poppy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;osteospermum&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;spring crocus&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;bearded iris&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;windflower&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tree poppy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;gazania&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;azalea&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;water lily&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rose&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;thorn apple&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;morning glory&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;passion flower&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lotus&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;toad lily&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;anthurium&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;frangipani&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;clematis&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;hibiscus&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;columbine&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;desert-rose&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tree mallow&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;magnolia&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cyclamen&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;watercress&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;canna lily&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;hippeastrum&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;bee balm&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;ball moss&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;foxglove&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;bougainvillea&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;camellia&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;mallow&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;mexican petunia&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;bromelia&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;blanket flower&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;trumpet creeper&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;blackberry lily&quot;</span><span class="p">,</span>
+    <span class="p">]</span></div>
 </pre></div>
 
              </article>
