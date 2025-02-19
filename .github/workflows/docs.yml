@@ -15,6 +15,9 @@ on:
 jobs:
   build:
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
     with:
       repository: pytorch/vision
       upload-artifact: docs
@@ -79,9 +82,10 @@ jobs:
     needs: build
     if: github.repository == 'pytorch/vision' && github.event_name == 'push' &&
         ((github.ref_type == 'branch' && github.ref_name == 'main') || github.ref_type == 'tag')
-    permissions:
-      contents: write
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: write
     with:
       repository: pytorch/vision
       download-artifact: docs
