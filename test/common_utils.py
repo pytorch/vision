@@ -423,6 +423,7 @@ def make_bounding_boxes(
     h, w = [torch.randint(1, s, (num_boxes,)) for s in canvas_size]
     y = sample_position(h, canvas_size[0])
     x = sample_position(w, canvas_size[1])
+    r = -360 * torch.rand((num_boxes,)) + 180
 
     if format is tv_tensors.BoundingBoxFormat.XYWH:
         parts = (x, y, w, h)
@@ -435,6 +436,23 @@ def make_bounding_boxes(
         cx = x + w / 2
         cy = y + h / 2
         parts = (cx, cy, w, h)
+    elif format is tv_tensors.BoundingBoxFormat.XYWHR:
+        parts = (x, y, w, h, r)
+    elif format is tv_tensors.BoundingBoxFormat.CXCYWHR:
+        cx = x + w / 2
+        cy = y + h / 2
+        parts = (cx, cy, w, h, r)
+    elif format is tv_tensors.BoundingBoxFormat.XYXYXYXY:
+        r_rad = r * torch.pi / 180.0
+        cos, sin = torch.cos(r_rad), torch.sin(r_rad)
+        x1, y1 = x, y
+        x3 = x1 + w * cos
+        y3 = y1 - w * sin
+        x2 = x3 + h * sin
+        y2 = y3 + h * cos
+        x4 = x1 + h * sin
+        y4 = y1 + h * cos
+        parts = (x1, y1, x3, y3, x2, y2, x4, y4)
     else:
         raise ValueError(f"Format {format} is not supported")
 
