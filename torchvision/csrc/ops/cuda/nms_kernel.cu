@@ -77,10 +77,12 @@ __global__ void nms_kernel_impl(
   }
 }
 
-__global__ static void gather_keep_from_mask(bool *keep,
-                                             const unsigned long long *dev_mask,
-                                             const int n_boxes) {
-  // Taken and adapted from mmcv https://github.com/open-mmlab/mmcv/blob/03ce9208d18c0a63d7ffa087ea1c2f5661f2441a/mmcv/ops/csrc/common/cuda/nms_cuda_kernel.cuh#L76
+__global__ static void gather_keep_from_mask(
+    bool* keep,
+    const unsigned long long* dev_mask,
+    const int n_boxes) {
+  // Taken and adapted from mmcv
+  // https://github.com/open-mmlab/mmcv/blob/03ce9208d18c0a63d7ffa087ea1c2f5661f2441a/mmcv/ops/csrc/common/cuda/nms_cuda_kernel.cuh#L76
   const int col_blocks = ceil_div(n_boxes, threadsPerBlock);
   const int thread_id = threadIdx.x;
 
@@ -97,10 +99,11 @@ __global__ static void gather_keep_from_mask(bool *keep,
     auto removed_val = removed[nblock];
     __syncthreads();
     const int i_offset = nblock * threadsPerBlock;
-    #pragma unroll
+#pragma unroll
     for (int inblock = 0; inblock < threadsPerBlock; inblock++) {
       const int i = i_offset + inblock;
-      if (i >= n_boxes) break;
+      if (i >= n_boxes)
+        break;
       // Select a candidate, check if it should kept.
       if (!(removed_val & (1ULL << inblock))) {
         if (thread_id == 0) {
@@ -109,7 +112,8 @@ __global__ static void gather_keep_from_mask(bool *keep,
         auto p = dev_mask + i * col_blocks;
         // Remove all bboxes which overlap the candidate.
         for (int j = thread_id; j < col_blocks; j += blockDim.x) {
-          if (j >= nblock) removed[j] |= p[j];
+          if (j >= nblock)
+            removed[j] |= p[j];
         }
         __syncthreads();
         removed_val = removed[nblock];
@@ -174,19 +178,21 @@ at::Tensor nms_kernel(
             (unsigned long long*)mask.data_ptr<int64_t>());
       });
 
-  at::Tensor keep = at::zeros(
-      {dets_num},
-      dets.options().dtype(at::kBool).device(at::kCUDA)
-      );
+  at::Tensor keep =
+      at::zeros({dets_num}, dets.options().dtype(at::kBool).device(at::kCUDA));
 
   // Unwrap the mask to fill keep with proper values
-  // Keeping the unwrap on device instead of applying iterative for loops on cpu 
+  // Keeping the unwrap on device instead of applying iterative for loops on cpu
   // prevents the device -> cpu -> device transfer that could be bottleneck for
   // large number of boxes.
   // See https://github.com/pytorch/vision/issues/8713 for more details.
-  gather_keep_from_mask<<<1, min(col_blocks, threadsPerBlock),
-                          col_blocks * sizeof(unsigned long long), stream>>>(
-      keep.data_ptr<bool>(), (unsigned long long*)mask.data_ptr<int64_t>(),
+  gather_keep_from_mask<<<
+      1,
+      min(col_blocks, threadsPerBlock),
+      col_blocks * sizeof(unsigned long long),
+      stream>>>(
+      keep.data_ptr<bool>(),
+      (unsigned long long*)mask.data_ptr<int64_t>(),
       dets_num);
 
   AT_CUDA_CHECK(cudaGetLastError());
