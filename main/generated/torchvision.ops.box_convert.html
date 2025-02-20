@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+f709766) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+501a2c9) &#x25BC</a>
     </div>
     
 
@@ -434,19 +434,26 @@ This is the format that torchvision utilities expect.</p>
 <p><code class="docutils literal notranslate"><span class="pre">'xywh'</span></code>: boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.</p>
 <p><code class="docutils literal notranslate"><span class="pre">'cxcywh'</span></code>: boxes are represented via centre, width and height, cx, cy being center of box, w, h
 being width and height.</p>
+<p><code class="docutils literal notranslate"><span class="pre">'xywhr'</span></code>: boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
+r is rotation angle w.r.t to the box center by <span class="math notranslate nohighlight">\(|r|\)</span> degrees counter clock wise in the image plan</p>
+<p><code class="docutils literal notranslate"><span class="pre">'cxcywhr'</span></code>: boxes are represented via centre, width and height, cx, cy being center of box, w, h
+being width and height.
+r is rotation angle w.r.t to the box center by <span class="math notranslate nohighlight">\(|r|\)</span> degrees counter clock wise in the image plan</p>
+<p><code class="docutils literal notranslate"><span class="pre">'xyxyxyxy'</span></code>: boxes are represented via corners, x1, y1 being top left, x2, y2 bottom right,
+x3, y3 bottom left, and x4, y4 top right.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>4</em><em>]</em>) – boxes which will be converted.</p></li>
-<li><p><strong>in_fmt</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Input format of given boxes. Supported formats are [‘xyxy’, ‘xywh’, ‘cxcywh’].</p></li>
-<li><p><strong>out_fmt</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Output format of given boxes. Supported formats are [‘xyxy’, ‘xywh’, ‘cxcywh’]</p></li>
+<li><p><strong>boxes</strong> (<em>Tensor</em><em>[</em><em>N</em><em>, </em><em>K</em><em>]</em>) – boxes which will be converted. K is the number of coordinates (4 for unrotated bounding boxes, 5 or 8 for rotated bounding boxes)</p></li>
+<li><p><strong>in_fmt</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Input format of given boxes. Supported formats are [‘xyxy’, ‘xywh’, ‘cxcywh’, ‘xywhr’, ‘cxcywhr’, ‘xyxyxyxy’].</p></li>
+<li><p><strong>out_fmt</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Output format of given boxes. Supported formats are [‘xyxy’, ‘xywh’, ‘cxcywh’, ‘xywhr’, ‘cxcywhr’, ‘xyxyxyxy’]</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Boxes into converted format.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tensor[N, 4]</p>
+<dd class="field-odd"><p>Tensor[N, K]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -519,6 +526,7 @@ being width and height.</p>
          <script src="../_static/doctools.js"></script>
          <script src="../_static/clipboard.min.js"></script>
          <script src="../_static/copybutton.js"></script>
+         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
      
 
   

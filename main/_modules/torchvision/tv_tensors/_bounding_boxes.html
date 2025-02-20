@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+f709766) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+501a2c9) &#x25BC</a>
     </div>
     
 
@@ -427,20 +427,35 @@
 <div class="viewcode-block" id="BoundingBoxFormat"><a class="viewcode-back" href="../../../generated/torchvision.tv_tensors.BoundingBoxFormat.html#torchvision.tv_tensors.BoundingBoxFormat">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BoundingBoxFormat</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Coordinate format of a bounding box.</span>
 
-<span class="sd">    Available formats are</span>
+<span class="sd">    Available formats are:</span>
 
 <span class="sd">    * ``XYXY``</span>
 <span class="sd">    * ``XYWH``</span>
 <span class="sd">    * ``CXCYWH``</span>
+<span class="sd">    * ``XYWHR``: rotated boxes represented via corner, width and height, x1, y1</span>
+<span class="sd">      being top left, w, h being width and height. r is rotation angle in</span>
+<span class="sd">      degrees.</span>
+<span class="sd">    * ``CXCYWHR``: jrotated boxes represented via centre, width and height, cx,</span>
+<span class="sd">      cy being center of box, w, h being width and height. r is rotation angle</span>
+<span class="sd">      in degrees.</span>
+<span class="sd">    * ``XYXYXYXY``: rotated boxes represented via corners, x1, y1 being top</span>
+<span class="sd">      left, x2, y2 being bottom right, x3, y3 being bottom left, x4, y4 being</span>
+<span class="sd">      top right.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">XYXY</span> <span class="o">=</span> <span class="s2">&quot;XYXY&quot;</span>
     <span class="n">XYWH</span> <span class="o">=</span> <span class="s2">&quot;XYWH&quot;</span>
-    <span class="n">CXCYWH</span> <span class="o">=</span> <span class="s2">&quot;CXCYWH&quot;</span></div>
+    <span class="n">CXCYWH</span> <span class="o">=</span> <span class="s2">&quot;CXCYWH&quot;</span>
+    <span class="n">XYWHR</span> <span class="o">=</span> <span class="s2">&quot;XYWHR&quot;</span>
+    <span class="n">CXCYWHR</span> <span class="o">=</span> <span class="s2">&quot;CXCYWHR&quot;</span>
+    <span class="n">XYXYXYXY</span> <span class="o">=</span> <span class="s2">&quot;XYXYXYXY&quot;</span></div>
 
 
 <div class="viewcode-block" id="BoundingBoxes"><a class="viewcode-back" href="../../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BoundingBoxes</span><span class="p">(</span><span class="n">TVTensor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, 4]``.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``.</span>
+
+<span class="sd">    Where ``N`` is the number of bounding boxes</span>
+<span class="sd">    and ``K`` is 4 for unrotated boxes, and 5 or 8 for rotated boxes.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">        There should be only one :class:`~torchvision.tv_tensors.BoundingBoxes`</span>
