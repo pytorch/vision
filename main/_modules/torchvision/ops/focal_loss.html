@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+1604a18) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+f709766) &#x25BC</a>
     </div>
     
 
@@ -433,7 +433,7 @@
 <span class="sd">        targets (Tensor): A float tensor with the same shape as inputs. Stores the binary</span>
 <span class="sd">                classification label for each element in inputs</span>
 <span class="sd">                (0 for the negative class and 1 for the positive class).</span>
-<span class="sd">        alpha (float): Weighting factor in range (0,1) to balance</span>
+<span class="sd">        alpha (float): Weighting factor in range [0, 1] to balance</span>
 <span class="sd">                positive vs negative examples or -1 for ignore. Default: ``0.25``.</span>
 <span class="sd">        gamma (float): Exponent of the modulating factor (1 - p_t) to</span>
 <span class="sd">                balance easy vs hard examples. Default: ``2``.</span>
@@ -445,6 +445,9 @@
 <span class="sd">        Loss tensor with the reduction option applied.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Original implementation from https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/focal_loss.py</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">alpha</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">alpha</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid alpha value: </span><span class="si">{</span><span class="n">alpha</span><span class="si">}</span><span class="s2">. alpha must be in the range [0,1] or -1 for ignore.&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">sigmoid_focal_loss</span><span class="p">)</span>
