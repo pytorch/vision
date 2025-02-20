@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import TypeVar, cast
 
 import torch
 
@@ -9,14 +9,14 @@ from ._torch_function_helpers import set_return_type
 from ._tv_tensor import TVTensor
 from ._video import Video
 
-TVTensorLike = TypeVar("TVTensorLike", TVTensor, BoundingBoxes, Image, Mask, Video)
+TVTensorLike = TypeVar("TVTensorLike", bound=TVTensor, covariant=True)
 
 
 # TODO: Fix this. We skip this method as it leads to
 # RecursionError: maximum recursion depth exceeded while calling a Python object
 # Until `disable` is removed, there will be graph breaks after all calls to functional transforms
 @torch.compiler.disable
-def wrap(wrappee: torch.Tensor, *, like: TVTensorLike, **kwargs) -> TVTensorLike:
+def wrap(wrappee: torch.Tensor, *, like: TVTensorLike, **kwargs) -> TVTensorLike:  # type: ignore
     """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.
 
     If ``like`` is a :class:`~torchvision.tv_tensors.BoundingBoxes`, the ``format`` and ``canvas_size`` of
@@ -30,10 +30,10 @@ def wrap(wrappee: torch.Tensor, *, like: TVTensorLike, **kwargs) -> TVTensorLike
             Ignored otherwise.
     """
     if isinstance(like, BoundingBoxes):
-        return BoundingBoxes._wrap(  # type: ignore
+        return cast(TVTensorLike, BoundingBoxes._wrap(
             wrappee,
             format=kwargs.get("format", like.format),
             canvas_size=kwargs.get("canvas_size", like.canvas_size),
-        )
+        ))
     else:
         return wrappee.as_subclass(type(like))
