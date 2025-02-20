@@ -278,8 +278,6 @@ def _convert_bounding_box_format(
     elif old_format == BoundingBoxFormat.CXCYWHR:
         bounding_boxes = _cxcywhr_to_xywhr(bounding_boxes, inplace)
     elif old_format == BoundingBoxFormat.XYXYXYXY:
-        # bounding_boxes = _xyxyxyxy_to_cxcywhr(bounding_boxes, inplace)
-        # bounding_boxes = _cxcywhr_to_xywhr(bounding_boxes, inplace)
         bounding_boxes = _xyxyxyxy_to_xywhr(bounding_boxes, inplace)
 
     if new_format == BoundingBoxFormat.XYWH:
@@ -289,8 +287,6 @@ def _convert_bounding_box_format(
     elif new_format == BoundingBoxFormat.CXCYWHR:
         bounding_boxes = _xywhr_to_cxcywhr(bounding_boxes, inplace)
     elif new_format == BoundingBoxFormat.XYXYXYXY:
-        # bounding_boxes = _xywhr_to_cxcywhr(bounding_boxes, inplace)
-        # bounding_boxes = _cxcywhr_to_xyxyxyxy(bounding_boxes, inplace)
         bounding_boxes = _xywhr_to_xyxyxyxy(bounding_boxes, inplace)
 
     return bounding_boxes
