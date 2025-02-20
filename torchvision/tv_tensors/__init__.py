@@ -30,7 +30,7 @@ def wrap(wrappee: torch.Tensor, *, like: TVTensorLike, **kwargs) -> TVTensorLike
             Ignored otherwise.
     """
     if isinstance(like, BoundingBoxes):
-        return BoundingBoxes._wrap(
+        return BoundingBoxes._wrap(  # type: ignore
             wrappee,
             format=kwargs.get("format", like.format),
             canvas_size=kwargs.get("canvas_size", like.canvas_size),
