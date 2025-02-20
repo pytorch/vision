@@ -482,7 +482,7 @@ def resize(
 def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,
+    to have [..., H, W] shape, where ... means at most 2 leading dimensions for modes reflect, symmetric, and circular,
     at most 3 leading dimensions for mode edge,
     and an arbitrary number of leading dimensions for mode constant
 
@@ -501,7 +501,7 @@ def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mo
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
             Only int or tuple value is supported for PIL Image.
-        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect, symmetric, or circular.
             Default is constant.
 
             - constant: pads with a constant value, this value is specified with fill
@@ -516,6 +516,10 @@ def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mo
             - symmetric: pads with reflection of image repeating the last value on the edge.
               For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
               will result in [2, 1, 1, 2, 3, 4, 4, 3]
+
+            - circular: pads by repeating the values from the opposite side of the image in order.
+              For example, padding [1, 2, 3, 4] with 2 elements on both sides in circular mode
+              will result in [3, 4, 1, 2, 3, 4, 1, 2]
 
     Returns:
         PIL Image or Tensor: Padded image.
