@@ -79,7 +79,7 @@ def get_version():
 
 def write_version_file(version, sha):
     # Exists for BC, probably completely useless.
-    with open(ROOT_DIR / "torchvision/version.py", "w") as f:
+    with open(ROOT_DIR / "torchvision" / "version.py", "w") as f:
         f.write(f"__version__ = '{version}'\n")
         f.write(f"git_version = {repr(sha)}\n")
         f.write("from torchvision.extension import _check_cuda_version\n")
@@ -194,7 +194,7 @@ def make_C_extension():
 
 def find_libpng():
     # Returns (found, include dir, library dir, library name)
-    if sys.platform in ("linux", "darwin"):
+    if sys.platform in ("linux", "darwin", "aix"):
         libpng_config = shutil.which("libpng-config")
         if libpng_config is None:
             warnings.warn("libpng-config not found")
