@@ -75,13 +75,13 @@ class WIDERFace(VisionDataset):
         if not self._check_integrity():
             raise RuntimeError("Dataset not found or corrupted. You can use download=True to download and prepare it")
 
-        self.img_info: List[Dict[str, Union[str, Dict[str, torch.Tensor]]]] = []
+        self.img_info: list[dict[str, Union[str, dict[str, torch.Tensor]]]] = []
         if self.split in ("train", "val"):
             self.parse_train_val_annotations_file()
         else:
             self.parse_test_annotations_file()
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index

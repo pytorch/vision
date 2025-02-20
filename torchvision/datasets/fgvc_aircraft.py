@@ -42,11 +42,11 @@ class FGVCAircraft(VisionDataset):
 
     def __init__(
         self,
-        root: Union[str, Path],
+        root: str | Path,
         split: str = "trainval",
         annotation_level: str = "variant",
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
+        transform: Callable | None = None,
+        target_transform: Callable | None = None,
         download: bool = False,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
@@ -71,7 +71,7 @@ class FGVCAircraft(VisionDataset):
                 "manufacturer": "manufacturers.txt",
             }[self._annotation_level],
         )
-        with open(annotation_file, "r") as f:
+        with open(annotation_file) as f:
             self.classes = [line.strip() for line in f]
 
         self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
@@ -82,7 +82,7 @@ class FGVCAircraft(VisionDataset):
         self._image_files = []
         self._labels = []
 
-        with open(labels_file, "r") as f:
+        with open(labels_file) as f:
             for line in f:
                 image_name, label_name = line.strip().split(" ", 1)
                 self._image_files.append(os.path.join(image_data_folder, f"{image_name}.jpg"))
@@ -91,7 +91,7 @@ class FGVCAircraft(VisionDataset):
     def __len__(self) -> int:
         return len(self._image_files)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         image_file, label = self._image_files[idx], self._labels[idx]
         image = PIL.Image.open(image_file).convert("RGB")
 
