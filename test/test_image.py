@@ -622,6 +622,7 @@ def test_encode_jpeg_cuda(img_path, scripted, contiguous):
     abs_mean_diff = (decoded_jpeg_cuda_tv.float() - decoded_image_tv.float()).abs().mean().item()
     assert abs_mean_diff < 3
 
+
 @needs_cuda
 def test_encode_jpeg_cuda_sync():
     """
@@ -636,14 +637,13 @@ def test_encode_jpeg_cuda_sync():
 
     # manual testing shows this bug appearing often in iterations between 50 and 100
     # as a synchronization bug, this can't be reliably reproduced
-    max_iterations = 200
+    max_iterations = 100
     threshold = 5.0  # in [0..255]
 
     device = torch.device("cuda")
 
     for iteration in range(max_iterations):
-        # Randomly pick a small square image size in [1..64]
-        size = np.random.randint(1, 65)
+        size = np.random.randint(4000, 5000)
         height, width = size, size
 
         image = torch.linspace(0, 1, steps=height * width, device=device)
