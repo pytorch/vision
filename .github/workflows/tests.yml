@@ -27,6 +27,9 @@ jobs:
             gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
@@ -85,6 +88,9 @@ jobs:
             gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
+    permissions:
+      id-token: write
+      contents: read
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
@@ -96,7 +102,7 @@ jobs:
         set -euxo pipefail
 
         export PYTHON_VERSION=${{ matrix.python-version }}
-        export VC_YEAR=2019
+        export VC_YEAR=2022
         export VSDEVCMD_ARGS=""
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
@@ -105,6 +111,9 @@ jobs:
 
   onnx:
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
     with:
       repository: pytorch/vision
       test-infra-ref: main
@@ -136,6 +145,9 @@ jobs:
 
   unittests-extended:
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
     if: contains(github.event.pull_request.labels.*.name, 'run-extended')
     with:
       repository: pytorch/vision

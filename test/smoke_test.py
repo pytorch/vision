@@ -2,6 +2,7 @@
 
 import os
 import sys
+import sysconfig
 from pathlib import Path
 
 import torch
@@ -134,8 +135,8 @@ def main() -> None:
         smoke_test_torchvision_decode_jpeg("cuda")
         smoke_test_torchvision_resnet50_classify("cuda")
 
-        # TODO: remove once pytorch/pytorch#110436 is resolved
-        if sys.version_info < (3, 12, 0):
+        #  torch.compile is not supported on Python 3.14+ and Python built with GIL disabled
+        if sys.version_info < (3, 14, 0) and not sysconfig.get_config_var("Py_GIL_DISABLED"):
             smoke_test_compile()
 
     if torch.backends.mps.is_available():
