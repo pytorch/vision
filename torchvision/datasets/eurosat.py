@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
-from .folder import ImageFolder
+from .folder import default_loader, ImageFolder
 from .utils import download_and_extract_archive
 
 
@@ -21,6 +21,7 @@ class EuroSAT(ImageFolder):
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again. Default is False.
+        loader (callable, optional): A function to load an image given its path.
     """
 
     def __init__(
@@ -29,6 +30,7 @@ class EuroSAT(ImageFolder):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         self.root = os.path.expanduser(root)
         self._base_folder = os.path.join(self.root, "eurosat")
@@ -40,7 +42,12 @@ class EuroSAT(ImageFolder):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        super().__init__(self._data_folder, transform=transform, target_transform=target_transform)
+        super().__init__(
+            self._data_folder,
+            transform=transform,
+            target_transform=target_transform,
+            loader=loader,
+        )
         self.root = os.path.expanduser(root)
 
     def __len__(self) -> int:
