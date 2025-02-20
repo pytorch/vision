@@ -10,7 +10,6 @@ void* PyInit_image(void) {
 }
 #endif
 
-
 namespace vision {
 namespace image {
 
