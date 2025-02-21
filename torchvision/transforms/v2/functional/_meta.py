@@ -263,8 +263,8 @@ def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xyxyxyxy[..., :5].to(dtype)
 
 
-def is_rotated_bounding_box_format(format_: BoundingBoxFormat) -> bool:
-    return format_.value in [
+def is_rotated_bounding_box_format(format: BoundingBoxFormat) -> bool:
+    return format.value in [
         BoundingBoxFormat.XYWHR.value,
         BoundingBoxFormat.CXCYWHR.value,
         BoundingBoxFormat.XYXYXYXY.value,
