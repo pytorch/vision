@@ -20,7 +20,7 @@ def sigmoid_focal_loss(
         targets (Tensor): A float tensor with the same shape as inputs. Stores the binary
                 classification label for each element in inputs
                 (0 for the negative class and 1 for the positive class).
-        alpha (float): Weighting factor in range (0,1) to balance
+        alpha (float): Weighting factor in range [0, 1] to balance
                 positive vs negative examples or -1 for ignore. Default: ``0.25``.
         gamma (float): Exponent of the modulating factor (1 - p_t) to
                 balance easy vs hard examples. Default: ``2``.
@@ -32,6 +32,9 @@ def sigmoid_focal_loss(
         Loss tensor with the reduction option applied.
     """
     # Original implementation from https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/focal_loss.py
+
+    if not (0 <= alpha <= 1) and alpha != -1:
+        raise ValueError(f"Invalid alpha value: {alpha}. alpha must be in the range [0,1] or -1 for ignore.")
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(sigmoid_focal_loss)

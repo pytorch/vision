@@ -69,4 +69,10 @@ def _must_return_subclass():
 
 
 # For those ops we always want to preserve the original subclass instead of returning a pure Tensor
-_FORCE_TORCHFUNCTION_SUBCLASS = {torch.Tensor.clone, torch.Tensor.to, torch.Tensor.detach, torch.Tensor.requires_grad_}
+_FORCE_TORCHFUNCTION_SUBCLASS = {
+    torch.Tensor.clone,
+    torch.Tensor.to,
+    torch.Tensor.detach,
+    torch.Tensor.requires_grad_,
+    torch.Tensor.pin_memory,
+}
