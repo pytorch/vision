@@ -626,10 +626,11 @@ def test_encode_jpeg_cuda(img_path, scripted, contiguous):
 @needs_cuda
 def test_encode_jpeg_cuda_sync():
     """
+    Non-regression test for https://github.com/pytorch/vision/issues/8587.
     Attempts to reproduce an intermittent CUDA stream synchronization bug
-    by randomly creating small images and round-tripping them via encode_jpeg
-    and decode_jpeg on the GPU. Fails if the mean difference in u8 range exceeds 5.0.
-    https://github.com/pytorch/vision/issues/8587
+    by randomly creating images and round-tripping them via encode_jpeg
+    and decode_jpeg on the GPU. Fails if the mean difference in uint8 range
+    exceeds 5.
     """
     torch.manual_seed(42)
 
@@ -651,7 +652,6 @@ def test_encode_jpeg_cuda_sync():
 
         decoded_image = decode_jpeg(jpeg_bytes.cpu(), device=device)
         mean_difference = (image.float() - decoded_image.float()).abs().mean().item()
-        print(mean_difference)
 
         assert mean_difference <= threshold, (
             f"Encode/decode mismatch at iteration={iteration}, "
