@@ -22,6 +22,8 @@ class EuroSAT(ImageFolder):
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again. Default is False.
         loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     def __init__(

@@ -22,6 +22,8 @@ class Country211(ImageFolder):
         download (bool, optional): If True, downloads the dataset from the internet and puts it into
             ``root/country211/``. If dataset is already downloaded, it is not downloaded again.
         loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     _URL = "https://openaipublic.azureedge.net/clip/data/country211.tgz"
