@@ -10,7 +10,8 @@ from .vision import VisionDataset
 class CocoDetection(VisionDataset):
     """`MS Coco Detection <https://cocodataset.org/#detection-2016>`_ Dataset.
 
-    It requires the `COCO API to be installed <https://github.com/pdollar/coco/tree/master/PythonAPI>`_.
+    It requires the `pycocotools` to be installed <https://github.com/ppwwyyxx/cocoapi>`_.
+    You can install it via ``pip install pycocotools``, ``conda install conda-forge::pycocotools``.
 
     Args:
         root (str or ``pathlib.Path``): Root directory where images are downloaded to.
@@ -65,7 +66,8 @@ class CocoDetection(VisionDataset):
 class CocoCaptions(CocoDetection):
     """`MS Coco Captions <https://cocodataset.org/#captions-2015>`_ Dataset.
 
-    It requires the `COCO API to be installed <https://github.com/pdollar/coco/tree/master/PythonAPI>`_.
+    It requires the `pycocotools` to be installed <https://github.com/ppwwyyxx/cocoapi>`_.
+    You can install it via ``pip install pycocotools``, ``conda install conda-forge::pycocotools``.
 
     Args:
         root (str or ``pathlib.Path``): Root directory where images are downloaded to.
