@@ -405,6 +405,8 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     REQUIRED_PACKAGES = ("scipy",)
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "val"))
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
 
@@ -2308,6 +2310,7 @@ class HD1KTestCase(KittiFlowTestCase):
 class EuroSATTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.EuroSAT
     FEATURE_TYPES = (PIL.Image.Image, int)
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         data_folder = os.path.join(tmpdir, "eurosat", "2750")
@@ -2748,6 +2751,8 @@ class Country211TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Country211
 
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "valid", "test"))
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir: str, config):
         split_folder = pathlib.Path(tmpdir) / "country211" / config["split"]
