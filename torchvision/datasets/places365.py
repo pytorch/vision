@@ -127,8 +127,10 @@ class Places365(VisionDataset):
 
         return sorted(class_to_idx.keys()), class_to_idx
 
-    def load_file_list(self, download: bool = True) -> Tuple[List[Tuple[str, int | None]], List[int | None]]:
-        def process(line: str, sep="/") -> Tuple[str, int | None]:
+    def load_file_list(
+        self, download: bool = True
+    ) -> Tuple[List[Tuple[str, Union[int, None]]], List[Union[int, None]]]:
+        def process(line: str, sep="/") -> Tuple[str, Union[int, None]]:
             image, idx = (line.split() + [None])[:2]
             image = cast(str, image)
             idx = int(idx) if idx is not None else None
