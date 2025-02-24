@@ -611,6 +611,7 @@ class ImageDatasetTestCase(DatasetTestCase):
     """
 
     FEATURE_TYPES = (PIL.Image.Image, int)
+    SUPPORT_TV_IMAGE_DECODE: bool = False
 
     @contextlib.contextmanager
     def create_dataset(
@@ -632,21 +633,33 @@ class ImageDatasetTestCase(DatasetTestCase):
             # This problem only occurs during testing since some tests, e.g. DatasetTestCase.test_feature_types open an
             # image, but never use the underlying data. During normal operation it is reasonable to assume that the
             # user wants to work with the image he just opened rather than deleting the underlying file.
-            with self._force_load_images():
+            with self._force_load_images(loader=(config or {}).get("loader", None)):
                 yield dataset, info
 
     @contextlib.contextmanager
-    def _force_load_images(self):
-        open = PIL.Image.open
+    def _force_load_images(self, loader: Optional[Callable[[str], Any]] = None):
+        open = loader or PIL.Image.open
 
         def new(fp, *args, **kwargs):
             image = open(fp, *args, **kwargs)
-            if isinstance(fp, (str, pathlib.Path)):
+            if isinstance(fp, (str, pathlib.Path)) and isinstance(image, PIL.Image.Image):
                 image.load()
             return image
 
-        with unittest.mock.patch("PIL.Image.open", new=new):
+        with unittest.mock.patch(open.__module__ + "." + open.__qualname__, new=new):
             yield
+
+    def test_tv_decode_image_support(self):
+        if not self.SUPPORT_TV_IMAGE_DECODE:
+            pytest.skip(f"{self.DATASET_CLASS.__name__} does not support torchvision.io.decode_image.")
+
+        with self.create_dataset(
+            config=dict(
+                loader=torchvision.io.decode_image,
+            )
+        ) as (dataset, _):
+            image = dataset[0][0]
+            assert isinstance(image, torch.Tensor)
 
 
 class VideoDatasetTestCase(DatasetTestCase):
