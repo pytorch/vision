@@ -826,11 +826,7 @@ class RoIHeads(nn.Module):
 
         # keep none checks in if conditional so torchscript will conditionally
         # compile each branch
-        if (
-            self.keypoint_roi_pool is not None
-            and self.keypoint_head is not None
-            and self.keypoint_predictor is not None
-        ):
+        if self.has_keypoint():
             keypoint_proposals = [p["boxes"] for p in result]
             if self.training:
                 # during training, only focus on positive boxes
