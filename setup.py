@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import warnings
+import shlex
 from pathlib import Path
 
 import torch
@@ -123,7 +124,7 @@ def get_macros_and_flags():
             if NVCC_FLAGS is None:
                 nvcc_flags = []
             else:
-                nvcc_flags = NVCC_FLAGS.split(" ")
+                nvcc_flags = shlex.split(NVCC_FLAGS)
         extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == "win32":
