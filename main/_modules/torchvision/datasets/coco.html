@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+111aafb) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+aeed08e) &#x25BC</a>
     </div>
     
 
@@ -423,7 +423,8 @@
 <div class="viewcode-block" id="CocoDetection"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CocoDetection.html#torchvision.datasets.CocoDetection">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">CocoDetection</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;`MS Coco Detection &lt;https://cocodataset.org/#detection-2016&gt;`_ Dataset.</span>
 
-<span class="sd">    It requires the `COCO API to be installed &lt;https://github.com/pdollar/coco/tree/master/PythonAPI&gt;`_.</span>
+<span class="sd">    It requires `pycocotools &lt;https://github.com/ppwwyyxx/cocoapi&gt;`_ to be installed,</span>
+<span class="sd">    which could be installed via ``pip install pycocotools`` or ``conda install conda-forge::pycocotools``.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory where images are downloaded to.</span>
@@ -478,7 +479,8 @@
 <div class="viewcode-block" id="CocoCaptions"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CocoCaptions.html#torchvision.datasets.CocoCaptions">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">CocoCaptions</span><span class="p">(</span><span class="n">CocoDetection</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;`MS Coco Captions &lt;https://cocodataset.org/#captions-2015&gt;`_ Dataset.</span>
 
-<span class="sd">    It requires the `COCO API to be installed &lt;https://github.com/pdollar/coco/tree/master/PythonAPI&gt;`_.</span>
+<span class="sd">    It requires `pycocotools &lt;https://github.com/ppwwyyxx/cocoapi&gt;`_ to be installed,</span>
+<span class="sd">    which could be installed via ``pip install pycocotools`` or ``conda install conda-forge::pycocotools``.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory where images are downloaded to.</span>
