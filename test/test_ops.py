@@ -1339,8 +1339,61 @@ class TestBoxConvert:
         box_xywh = ops.box_convert(box_cxcywh, in_fmt="cxcywh", out_fmt="xywh")
         assert_equal(box_xywh, box_tensor)
 
-    @pytest.mark.parametrize("inv_infmt", ["xwyh", "cxwyh"])
-    @pytest.mark.parametrize("inv_outfmt", ["xwcx", "xhwcy"])
+    def test_bbox_xywhr_cxcywhr(self):
+        box_tensor = torch.tensor(
+            [
+                [0, 0, 100, 100, 0],
+                [0, 0, 0, 0, 0],
+                [10, 15, 20, 20, 0],
+                [23, 35, 70, 60, 0],
+                [4, 2, 4, 2, 0],
+                [5, 5, 4, 2, 90],
+                [8, 4, 4, 2, 180],
+                [7, 1, 4, 2, -90],
+            ],
+            dtype=torch.float,
+        )
+
+        exp_cxcywhr = torch.tensor(
+            [
+                [50, 50, 100, 100, 0],
+                [0, 0, 0, 0, 0],
+                [20, 25, 20, 20, 0],
+                [58, 65, 70, 60, 0],
+                [6, 3, 4, 2, 0],
+                [6, 3, 4, 2, 90],
+                [6, 3, 4, 2, 180],
+                [6, 3, 4, 2, -90],
+            ],
+            dtype=torch.float,
+        )
+
+        assert exp_cxcywhr.size() == torch.Size([8, 5])
+        box_cxcywhr = ops.box_convert(box_tensor, in_fmt="xywhr", out_fmt="cxcywhr")
+        torch.testing.assert_close(box_cxcywhr, exp_cxcywhr)
+
+        # Reverse conversion
+        box_xywhr = ops.box_convert(box_cxcywhr, in_fmt="cxcywhr", out_fmt="xywhr")
+        torch.testing.assert_close(box_xywhr, box_tensor)
+
+    def test_bbox_cxcywhr_to_xyxyxyxy(self):
+        box_tensor = torch.tensor([[5, 3, 4, 2, 90]], dtype=torch.float)
+        exp_xyxyxyxy = torch.tensor([[4, 5, 4, 1, 6, 1, 6, 5]], dtype=torch.float)
+
+        assert exp_xyxyxyxy.size() == torch.Size([1, 8])
+        box_xyxyxyxy = ops.box_convert(box_tensor, in_fmt="cxcywhr", out_fmt="xyxyxyxy")
+        torch.testing.assert_close(box_xyxyxyxy, exp_xyxyxyxy)
+
+    def test_bbox_xywhr_to_xyxyxyxy(self):
+        box_tensor = torch.tensor([[4, 5, 4, 2, 90]], dtype=torch.float)
+        exp_xyxyxyxy = torch.tensor([[4, 5, 4, 1, 6, 1, 6, 5]], dtype=torch.float)
+
+        assert exp_xyxyxyxy.size() == torch.Size([1, 8])
+        box_xyxyxyxy = ops.box_convert(box_tensor, in_fmt="xywhr", out_fmt="xyxyxyxy")
+        torch.testing.assert_close(box_xyxyxyxy, exp_xyxyxyxy)
+
+    @pytest.mark.parametrize("inv_infmt", ["xwyh", "cxwyh", "xwyhr", "cxwyhr", "xxxxyyyy"])
+    @pytest.mark.parametrize("inv_outfmt", ["xwcx", "xhwcy", "xwcxr", "xhwcyr", "xyxyxxyy"])
     def test_bbox_invalid(self, inv_infmt, inv_outfmt):
         box_tensor = torch.tensor(
             [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float
