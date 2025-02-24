@@ -2,11 +2,11 @@ import distutils.command.clean
 import distutils.spawn
 import glob
 import os
+import shlex
 import shutil
 import subprocess
 import sys
 import warnings
-import shlex
 from pathlib import Path
 
 import torch
