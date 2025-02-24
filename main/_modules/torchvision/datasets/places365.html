@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+86f8eb0) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+d462da2) &#x25BC</a>
     </div>
     
 
@@ -414,7 +414,7 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="kn">import</span> <span class="n">path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urljoin</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.folder</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_loader</span>
@@ -428,7 +428,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the Places365 dataset.</span>
 <span class="sd">        split (string, optional): The dataset split. Can be one of ``train-standard`` (default), ``train-challenge``,</span>
-<span class="sd">            ``val``.</span>
+<span class="sd">            ``val``, ``test``.</span>
 <span class="sd">        small (bool, optional): If ``True``, uses the small images, i.e. resized to 256 x 256 pixels, instead of the</span>
 <span class="sd">            high resolution ones.</span>
 <span class="sd">        download (bool, optional): If ``True``, downloads the dataset components and places them in ``root``. Already</span>
@@ -449,7 +449,8 @@
 <span class="sd">        RuntimeError: If ``download is False`` and the meta files, i.e. the devkit, are not present or corrupted.</span>
 <span class="sd">        RuntimeError: If ``download is True`` and the image archive is already extracted.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_SPLITS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;train-standard&quot;</span><span class="p">,</span> <span class="s2">&quot;train-challenge&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">)</span>
+
+    <span class="n">_SPLITS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;train-standard&quot;</span><span class="p">,</span> <span class="s2">&quot;train-challenge&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span>
     <span class="n">_BASE_URL</span> <span class="o">=</span> <span class="s2">&quot;http://data.csail.mit.edu/places/places365/&quot;</span>
     <span class="c1"># {variant: (archive, md5)}</span>
     <span class="n">_DEVKIT_META</span> <span class="o">=</span> <span class="p">{</span>
@@ -463,15 +464,18 @@
         <span class="s2">&quot;train-standard&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;places365_train_standard.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;30f37515461640559006b8329efbed1a&quot;</span><span class="p">),</span>
         <span class="s2">&quot;train-challenge&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;places365_train_challenge.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;b2931dc997b8c33c27e7329c073a6b57&quot;</span><span class="p">),</span>
         <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;places365_val.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;e9f2fd57bfd9d07630173f4e8708e4b1&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;places365_test.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;2fce8233fe493576d724142e45d93653&quot;</span><span class="p">),</span>
     <span class="p">}</span>
     <span class="c1"># {(split, small): (file, md5)}</span>
     <span class="n">_IMAGES_META</span> <span class="o">=</span> <span class="p">{</span>
         <span class="p">(</span><span class="s2">&quot;train-standard&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span> <span class="p">(</span><span class="s2">&quot;train_large_places365standard.tar&quot;</span><span class="p">,</span> <span class="s2">&quot;67e186b496a84c929568076ed01a8aa1&quot;</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;train-challenge&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span> <span class="p">(</span><span class="s2">&quot;train_large_places365challenge.tar&quot;</span><span class="p">,</span> <span class="s2">&quot;605f18e68e510c82b958664ea134545f&quot;</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span> <span class="p">(</span><span class="s2">&quot;val_large.tar&quot;</span><span class="p">,</span> <span class="s2">&quot;9b71c4993ad89d2d8bcbdc4aef38042f&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span> <span class="p">(</span><span class="s2">&quot;test_large.tar&quot;</span><span class="p">,</span> <span class="s2">&quot;41a4b6b724b1d2cd862fb3871ed59913&quot;</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;train-standard&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span> <span class="p">(</span><span class="s2">&quot;train_256_places365standard.tar&quot;</span><span class="p">,</span> <span class="s2">&quot;53ca1c756c3d1e7809517cc47c5561c5&quot;</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;train-challenge&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span> <span class="p">(</span><span class="s2">&quot;train_256_places365challenge.tar&quot;</span><span class="p">,</span> <span class="s2">&quot;741915038a5e3471ec7332404dfb64ef&quot;</span><span class="p">),</span>
         <span class="p">(</span><span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span> <span class="p">(</span><span class="s2">&quot;val_256.tar&quot;</span><span class="p">,</span> <span class="s2">&quot;e27b17d8d44f4af9a78502beb927f808&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span> <span class="p">(</span><span class="s2">&quot;test_256.tar&quot;</span><span class="p">,</span> <span class="s2">&quot;f532f6ad7b582262a2ec8009075e186b&quot;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -536,10 +540,14 @@
 
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">class_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="n">class_to_idx</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_file_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-            <span class="n">image</span><span class="p">,</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-            <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images_dir</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="n">sep</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">sep</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_file_list</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]],</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]]:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]:</span>
+            <span class="n">image</span><span class="p">,</span> <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">])[:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">image</span><span class="p">)</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="k">if</span> <span class="n">idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images_dir</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="n">sep</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">sep</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)),</span> <span class="n">idx</span>
 
         <span class="n">file</span><span class="p">,</span> <span class="n">md5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_FILE_LIST_META</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">]</span>
         <span class="n">file</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
