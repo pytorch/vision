@@ -1,7 +1,7 @@
 import os
 from os import path
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
 from urllib.parse import urljoin
 
 from .folder import default_loader
@@ -127,9 +127,10 @@ class Places365(VisionDataset):
 
         return sorted(class_to_idx.keys()), class_to_idx
 
-    def load_file_list(self, download: bool = True) -> Tuple[List[Tuple[str, int]], List[int]]:
-        def process(line: str, sep="/") -> Tuple[str, int]:
+    def load_file_list(self, download: bool = True) -> Tuple[List[Tuple[str, int | None]], List[int | None]]:
+        def process(line: str, sep="/") -> Tuple[str, int | None]:
             image, idx = (line.split() + [None])[:2]
+            image = cast(str, image)
             idx = int(idx) if idx is not None else None
             return path.join(self.images_dir, image.lstrip(sep).replace(sep, os.sep)), idx
 
