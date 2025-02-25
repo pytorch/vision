@@ -36,6 +36,8 @@ class ImageNet(ImageFolder):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
 
      Attributes:
         classes (list): List of the class name tuples.

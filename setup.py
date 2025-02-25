@@ -2,6 +2,7 @@ import distutils.command.clean
 import distutils.spawn
 import glob
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -123,7 +124,7 @@ def get_macros_and_flags():
             if NVCC_FLAGS is None:
                 nvcc_flags = []
             else:
-                nvcc_flags = NVCC_FLAGS.split(" ")
+                nvcc_flags = shlex.split(NVCC_FLAGS)
         extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == "win32":
