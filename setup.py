@@ -99,6 +99,10 @@ def get_requirements():
     if version_pin := os.getenv("PYTORCH_VERSION"):
         pytorch_dep += "==" + version_pin
     elif (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
+        # This branch and the associated env vars exist to help third-party
+        # builds like in https://github.com/pytorch/vision/pull/8936. This is
+        # supported on a best-effort basis, we don't guarantee that this won't
+        # eventually break (and we don't test it.)
         pytorch_dep += f">={version_pin_ge},<{version_pin_lt}"
 
     requirements = [
