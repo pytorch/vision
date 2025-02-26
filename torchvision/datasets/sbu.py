@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, Union
 
-from PIL import Image
+from .folder import default_loader
 
 from .utils import check_integrity, download_and_extract_archive, download_url
 from .vision import VisionDataset
@@ -14,13 +14,16 @@ class SBU(VisionDataset):
     Args:
         root (str or ``pathlib.Path``): Root directory of dataset where tarball
             ``SBUCaptionedPhotoDataset.tar.gz`` exists.
-        transform (callable, optional): A function/transform that takes in a PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     url = "https://www.cs.rice.edu/~vo9/sbucaptions/SBUCaptionedPhotoDataset.tar.gz"
@@ -33,8 +36,10 @@ class SBU(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = True,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
+        self.loader = loader
 
         if download:
             self.download()
@@ -67,7 +72,7 @@ class SBU(VisionDataset):
             tuple: (image, target) where target is a caption for the photo.
         """
         filename = os.path.join(self.root, "dataset", self.photos[index])
-        img = Image.open(filename).convert("RGB")
+        img = self.loader(filename)
         if self.transform is not None:
             img = self.transform(img)
 

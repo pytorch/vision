@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, Union
 
-import PIL.Image
+from .folder import default_loader
 
 from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
@@ -29,13 +29,16 @@ class FGVCAircraft(VisionDataset):
             ``trainval`` and ``test``.
         annotation_level (str, optional): The annotation level, supports ``variant``,
             ``family`` and ``manufacturer``.
-        transform (callable, optional): A function/transform that takes in a PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     _URL = "https://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/archives/fgvc-aircraft-2013b.tar.gz"
@@ -48,6 +51,7 @@ class FGVCAircraft(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "val", "trainval", "test"))
@@ -87,13 +91,14 @@ class FGVCAircraft(VisionDataset):
                 image_name, label_name = line.strip().split(" ", 1)
                 self._image_files.append(os.path.join(image_data_folder, f"{image_name}.jpg"))
                 self._labels.append(self.class_to_idx[label_name])
+        self.loader = loader
 
     def __len__(self) -> int:
         return len(self._image_files)
 
     def __getitem__(self, idx: int) -> Tuple[Any, Any]:
         image_file, label = self._image_files[idx], self._labels[idx]
-        image = PIL.Image.open(image_file).convert("RGB")
+        image = self.loader(image_file)
 
         if self.transform:
             image = self.transform(image)

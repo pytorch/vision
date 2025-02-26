@@ -14,7 +14,7 @@ class EuroSAT(ImageFolder):
 
     Args:
         root (str or ``pathlib.Path``): Root directory of dataset where ``root/eurosat`` exists.
-        transform (callable, optional): A function/transform that takes in a PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.

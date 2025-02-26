@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, Union
 
-import PIL.Image
+from .folder import default_loader
 
 from .utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
 from .vision import VisionDataset
@@ -24,12 +24,15 @@ class Flowers102(VisionDataset):
     Args:
         root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), ``"val"``, or ``"test"``.
-        transform (callable, optional): A function/transform that takes in a PIL image and returns a
-            transformed version. E.g, ``transforms.RandomCrop``.
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     _download_url_prefix = "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/"
@@ -47,6 +50,7 @@ class Flowers102(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "val", "test"))
@@ -73,12 +77,14 @@ class Flowers102(VisionDataset):
             self._labels.append(image_id_to_label[image_id])
             self._image_files.append(self._images_folder / f"image_{image_id:05d}.jpg")
 
+        self.loader = loader
+
     def __len__(self) -> int:
         return len(self._image_files)
 
     def __getitem__(self, idx: int) -> Tuple[Any, Any]:
         image_file, label = self._image_files[idx], self._labels[idx]
-        image = PIL.Image.open(image_file).convert("RGB")
+        image = self.loader(image_file)
 
         if self.transform:
             image = self.transform(image)

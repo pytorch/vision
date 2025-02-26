@@ -16,8 +16,8 @@ class Country211(ImageFolder):
     Args:
         root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), ``"valid"`` and ``"test"``.
-        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
-            version. E.g, ``transforms.RandomCrop``.
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
         download (bool, optional): If True, downloads the dataset from the internet and puts it into
             ``root/country211/``. If dataset is already downloaded, it is not downloaded again.
