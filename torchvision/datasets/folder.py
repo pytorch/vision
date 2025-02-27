@@ -257,7 +257,7 @@ class DatasetFolder(VisionDataset):
 IMG_EXTENSIONS = (".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif", ".tiff", ".webp")
 
 
-def pil_loader(path: str | Path) -> Image.Image:
+def pil_loader(path: Union[str, Path]) -> Image.Image:
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
     with open(path, "rb") as f:
         img = Image.open(f)
@@ -265,7 +265,7 @@ def pil_loader(path: str | Path) -> Image.Image:
 
 
 # TODO: specify the return type
-def accimage_loader(path: str | Path) -> Any:
+def accimage_loader(path: Union[str, Path]) -> Any:
     import accimage
 
     try:
@@ -275,7 +275,7 @@ def accimage_loader(path: str | Path) -> Any:
         return pil_loader(path)
 
 
-def default_loader(path: str | Path) -> Any:
+def default_loader(path: Union[str, Path]) -> Any:
     from torchvision import get_image_backend
 
     if get_image_backend() == "accimage":
