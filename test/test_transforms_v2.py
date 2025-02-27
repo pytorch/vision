@@ -3758,11 +3758,17 @@ class TestResizedCrop:
         with pytest.raises(ValueError, match="provide only two dimensions"):
             transforms.RandomResizedCrop(size=(1, 2, 3))
 
-        with pytest.raises(TypeError, match="Scale should be a sequence"):
+        with pytest.raises(TypeError, match="Scale should be a sequence of two floats."):
             transforms.RandomResizedCrop(size=self.INPUT_SIZE, scale=123)
 
-        with pytest.raises(TypeError, match="Ratio should be a sequence"):
+        with pytest.raises(TypeError, match="Ratio should be a sequence of two floats."):
             transforms.RandomResizedCrop(size=self.INPUT_SIZE, ratio=123)
+
+        with pytest.raises(TypeError, match="Ratio should be a sequence of two floats."):
+            transforms.RandomResizedCrop(size=self.INPUT_SIZE, ratio=[1, 2, 3])
+
+        with pytest.raises(TypeError, match="Scale should be a sequence of two floats."):
+            transforms.RandomResizedCrop(size=self.INPUT_SIZE, scale=[1, 2, 3])
 
         for param in ["scale", "ratio"]:
             with pytest.warns(match="Scale and ratio should be of kind"):
