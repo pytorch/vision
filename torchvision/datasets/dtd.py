@@ -43,7 +43,7 @@ class DTD(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
-        loader: Callable[[str | pathlib.Path], Any] = default_loader,
+        loader: Callable[[Union[str, pathlib.Path]], Any] = default_loader,
     ) -> None:
         self._split = verify_str_arg(split, "split", ("train", "val", "test"))
         if not isinstance(partition, int) and not (1 <= partition <= 10):

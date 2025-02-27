@@ -35,7 +35,7 @@ class SUN397(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
-        loader: Callable[[str | Path], Any] = default_loader,
+        loader: Callable[[Union[str, pathlib.Path]], Any] = default_loader,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._data_dir = Path(self.root) / "SUN397"

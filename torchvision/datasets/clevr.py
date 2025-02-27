@@ -38,7 +38,7 @@ class CLEVRClassification(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
-        loader: Callable[[str | pathlib.Path], Any] = default_loader,
+        loader: Callable[[Union[str, pathlib.Path]], Any] = default_loader,
     ) -> None:
         self._split = verify_str_arg(split, "split", ("train", "val", "test"))
         super().__init__(root, transform=transform, target_transform=target_transform)
