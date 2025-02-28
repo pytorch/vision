@@ -1,0 +1,64 @@
+name: torchvision Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      python_version:
+        description: "Python version"
+        required: true
+        type: choice
+        options:
+          - Python312
+          - Python311
+      msvc_version:
+        description: "MSVC Version"
+        required: true
+        type: choice
+        options:
+          - 'latest'
+          - '14.40'
+          - '14.36'
+      pytorch_build_run_id:
+        description: "PyTorch build run id for downloading the wheel artifact (number at the end of build run URL)"
+        required: true
+        default: ""
+        type: string
+      pytorch_build_artifact_name:
+        description: "Artifact name of PyTorch build run"
+        required: true
+        default: "pytorch-wheel"
+        type: string
+      build_type:
+        description: "Build type"
+        required: true
+        type: choice
+        options:
+          - Release
+          # - Debug (not supported for wheel)
+      repository_name:
+        description: "torchvision repository (username/repo)"
+        required: true
+        default: "pytorch/vision"
+        type: string
+      repository_branch:
+        description: "repository branch"
+        required: true
+        default: "main"
+        type: string
+      build_version:
+        description: "Optional: build version for wheel file name (e.g. 2.6.0); otherwise leave empty for default naming"
+        required: false
+        default: "2.6.0"
+        type: string
+
+jobs:
+  trigger-test-infra:
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_arm64.yml@main
+    with:
+      repository_name: ${{ inputs.repository_name }}
+      repository_branch: ${{ inputs.repository_branch }}
+      python_version: ${{ inputs.python_version }}
+      msvc_version: ${{ inputs.msvc_version }}
+      pytorch_build_run_id: ${{ inputs.pytorch_build_run_id }}
+      build_type: ${{ inputs.build_type }}
+      build_version: ${{ inputs.build_version }}
