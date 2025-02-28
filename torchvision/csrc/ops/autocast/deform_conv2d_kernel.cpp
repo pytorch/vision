@@ -9,6 +9,7 @@ namespace ops {
 
 namespace {
 
+template <c10::DispatchKey autocast_key, c10::DeviceType device_type>
 at::Tensor deform_conv2d_autocast(
     const at::Tensor& input,
     const at::Tensor& weight,
@@ -24,13 +25,13 @@ at::Tensor deform_conv2d_autocast(
     int64_t groups,
     int64_t offset_groups,
     bool use_mask) {
-  c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
+  c10::impl::ExcludeDispatchKeyGuard no_autocast(autocast_key);
   return deform_conv2d(
-             at::autocast::cached_cast(at::kFloat, input),
-             at::autocast::cached_cast(at::kFloat, weight),
-             at::autocast::cached_cast(at::kFloat, offset),
-             at::autocast::cached_cast(at::kFloat, mask),
-             at::autocast::cached_cast(at::kFloat, bias),
+             at::autocast::cached_cast(at::kFloat, input, device_type),
+             at::autocast::cached_cast(at::kFloat, weight, device_type),
+             at::autocast::cached_cast(at::kFloat, offset, device_type),
+             at::autocast::cached_cast(at::kFloat, mask, device_type),
+             at::autocast::cached_cast(at::kFloat, bias, device_type),
              stride_h,
              stride_w,
              pad_h,
@@ -48,7 +49,25 @@ at::Tensor deform_conv2d_autocast(
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::deform_conv2d"),
-      TORCH_FN(deform_conv2d_autocast));
+      TORCH_FN((deform_conv2d_autocast<
+                c10::DispatchKey::Autocast,
+                c10::DeviceType::CUDA>)));
+}
+
+TORCH_LIBRARY_IMPL(torchvision, AutocastCPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::deform_conv2d"),
+      TORCH_FN((deform_conv2d_autocast<
+                c10::DispatchKey::AutocastCPU,
+                c10::DeviceType::CPU>)));
+}
+
+TORCH_LIBRARY_IMPL(torchvision, AutocastXPU, m) {
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::deform_conv2d"),
+      TORCH_FN((deform_conv2d_autocast<
+                c10::DispatchKey::AutocastXPU,
+                c10::DeviceType::XPU>)));
 }
 
 } // namespace ops
