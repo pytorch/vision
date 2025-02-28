@@ -1146,6 +1146,7 @@ class OmniglotTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Omniglot
 
     ADDITIONAL_CONFIGS = combinations_grid(background=(True, False))
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         target_folder = (
@@ -1910,6 +1911,7 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
         target_type=("kingdom", "full", "genus", ["kingdom", "phylum", "class", "order", "family", "genus", "full"]),
         version=("2021_train",),
     )
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         categories = [
