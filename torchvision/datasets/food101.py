@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, Union
 
-import PIL.Image
+from .folder import default_loader
 
 from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
@@ -21,12 +21,15 @@ class Food101(VisionDataset):
     Args:
         root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default) and ``"test"``.
-        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
-            version. E.g, ``transforms.RandomCrop``.
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again. Default is False.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     _URL = "http://data.vision.ee.ethz.ch/cvl/food-101.tar.gz"
@@ -39,6 +42,7 @@ class Food101(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[Union[str, Path]], Any] = default_loader,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "test"))
@@ -65,13 +69,14 @@ class Food101(VisionDataset):
             self._image_files += [
                 self._images_folder.joinpath(*f"{im_rel_path}.jpg".split("/")) for im_rel_path in im_rel_paths
             ]
+        self.loader = loader
 
     def __len__(self) -> int:
         return len(self._image_files)
 
     def __getitem__(self, idx: int) -> Tuple[Any, Any]:
         image_file, label = self._image_files[idx], self._labels[idx]
-        image = PIL.Image.open(image_file).convert("RGB")
+        image = self.loader(image_file)
 
         if self.transform:
             image = self.transform(image)
