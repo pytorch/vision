@@ -2,8 +2,6 @@ name: torchvision Build
 
 on:
   push:
-    branches:
-      - arm64_enablement
   workflow_dispatch:
     inputs:
       python_version:
