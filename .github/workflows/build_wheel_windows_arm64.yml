@@ -1,4 +1,4 @@
-name: torchvision Build
+name: Build Windows Arm64 Wheels
 
 on:
   pull_request:
