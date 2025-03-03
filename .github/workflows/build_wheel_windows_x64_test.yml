@@ -28,11 +28,11 @@ on:
           - 'latest'
           - '14.40'
           - '14.36'
-      pytorch_build_run_id:
-        description: "PyTorch build run id for downloading the wheel artifact (number at the end of build run URL)"
-        required: true
-        default: "13589031393"
-        type: string
+      # pytorch_build_run_id:
+      #   description: "PyTorch build run id for downloading the wheel artifact (number at the end of build run URL)"
+      #   required: true
+      #   default: "13589031393" 
+      #   type: string
       pytorch_build_artifact_name:
         description: "Artifact name of PyTorch build run"
         required: true
@@ -67,12 +67,12 @@ permissions:
 
 jobs:
   trigger-test-infra:
-    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_arm64.yml@winarm64_wheels
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_x64_test.yml@x64windows_test
     with:
       repository_name: ${{ inputs.repository_name }}
       repository_branch: ${{ inputs.repository_branch }}
       python_version: ${{ inputs.python_version || 'Python312' }}
       msvc_version: ${{ inputs.msvc_version || 'latest' }} 
-      pytorch_build_run_id: ${{ inputs.pytorch_build_run_id || '13589031393' }}
+      # pytorch_build_run_id: ${{ inputs.pytorch_build_run_id || '13589031393' }}
       build_type: ${{ inputs.build_type || 'Release' }}
       build_version: ${{ inputs.build_version }}
