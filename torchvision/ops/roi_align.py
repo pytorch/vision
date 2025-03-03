@@ -250,7 +250,8 @@ def roi_align(
         rois = convert_boxes_to_roi_format(rois)
     if not torch.jit.is_scripting():
         if (
-            not _has_ops() or (torch.are_deterministic_algorithms_enabled() and (input.is_cuda or input.is_mps))
+            not _has_ops()
+            or (torch.are_deterministic_algorithms_enabled() and (input.is_cuda or input.is_mps or input.is_xpu))
         ) and is_compile_supported(input.device.type):
             return _roi_align(input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned)
     _assert_has_ops()
