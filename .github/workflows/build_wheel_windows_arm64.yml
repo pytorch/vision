@@ -1,7 +1,16 @@
 name: torchvision Build
 
 on:
+  pull_request:
   push:
+    branches:
+      - nightly
+      - main
+      - release/*
+    tags:
+        # NOTE: Binary build pipelines should only get triggered on release candidate builds
+        # Release candidate tags look like: v1.11.0-rc1
+        - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
     inputs:
       python_version:
@@ -52,6 +61,10 @@ on:
         default: "2.6.0"
         type: string
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   trigger-test-infra:
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_arm64.yml@winarm64_wheels
@@ -60,6 +73,6 @@ jobs:
       repository_branch: ${{ inputs.repository_branch }}
       python_version: ${{ inputs.python_version || 'Python312' }}
       msvc_version: ${{ inputs.msvc_version || 'latest' }} 
-      pytorch_build_run_id: ${{ inputs.pytorch_build_run_id }}
+      pytorch_build_run_id: ${{ inputs.pytorch_build_run_id || '13589031393' }}
       build_type: ${{ inputs.build_type || 'Release' }}
       build_version: ${{ inputs.build_version }}
