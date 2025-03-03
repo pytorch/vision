@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, Union
 
-import PIL.Image
+from .folder import default_loader
 
 from .utils import download_and_extract_archive
 from .vision import VisionDataset
@@ -15,12 +15,15 @@ class SUN397(VisionDataset):
 
     Args:
         root (str or ``pathlib.Path``): Root directory of the dataset.
-        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
-            version. E.g, ``transforms.RandomCrop``.
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     _DATASET_URL = "http://vision.princeton.edu/projects/2010/SUN/SUN397.tar.gz"
@@ -32,6 +35,7 @@ class SUN397(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[Union[str, Path]], Any] = default_loader,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._data_dir = Path(self.root) / "SUN397"
@@ -51,13 +55,14 @@ class SUN397(VisionDataset):
         self._labels = [
             self.class_to_idx["/".join(path.relative_to(self._data_dir).parts[1:-1])] for path in self._image_files
         ]
+        self.loader = loader
 
     def __len__(self) -> int:
         return len(self._image_files)
 
     def __getitem__(self, idx: int) -> Tuple[Any, Any]:
         image_file, label = self._image_files[idx], self._labels[idx]
-        image = PIL.Image.open(image_file).convert("RGB")
+        image = self.loader(image_file)
 
         if self.transform:
             image = self.transform(image)
