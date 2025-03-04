@@ -37,6 +37,59 @@ inline void atomic_add_float(device half* data_ptr, const half val)
   atomic_fetch_add_explicit((device atomic_float*) data_ptr, static_cast<float>(val), memory_order_relaxed);
 }
 
+// ********************** TESTING CPU implementation of bilinear_interpolate **********************
+// This implementation is used by the cpu and cuda implementation of the deform_conv2d kernel
+// and is needed here in order for the pytest operator test not to fail.
+
+template <typename scalar_t, typename integer_t>
+inline scalar_t bilinear_interpolate_2(
+    constant scalar_t* in,
+    integer_t height,
+    integer_t width,
+    scalar_t h,
+    scalar_t w,
+    uint index /* index for debug only*/) {
+  if (h <= -1 || height <= h || w <= -1 || width <= w) {
+    return 0;
+  }
+
+  integer_t h_low = floor(h);
+  integer_t w_low = floor(w);
+  integer_t h_high = h_low + 1;
+  integer_t w_high = w_low + 1;
+
+  scalar_t lh = h - h_low;
+  scalar_t lw = w - w_low;
+  scalar_t hh = 1 - lh, hw = 1 - lw;
+
+  scalar_t v1 = 0;
+  if (h_low >= 0 && w_low >= 0)
+    v1 = in[h_low * width + w_low];
+  scalar_t v2 = 0;
+  if (h_low >= 0 && w_high <= width - 1)
+    v2 = in[h_low * width + w_high];
+  scalar_t v3 = 0;
+  if (h_high <= height - 1 && w_low >= 0)
+    v3 = in[h_high * width + w_low];
+  scalar_t v4 = 0;
+  if (h_high <= height - 1 && w_high <= width - 1)
+    v4 = in[h_high * width + w_high];
+
+  scalar_t w1 = hh * hw, w2 = hh * lw, w3 = lh * hw, w4 = lh * lw;
+
+  scalar_t val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
+  return val;
+}
+
+
+
+
+
+
+
+
+
+
 template <typename T, typename integer_t>
 inline T bilinear_interpolate(
     constant T* input,
@@ -1022,38 +1075,34 @@ kernel void ps_roi_pool_backward<DTYPE, INT_DTYPE>(          \
 /*----------- START OF DEFORM_CONV2D KERNEL IMPLEMENTATION -----------------*/
 
 
-
-
-
-
-
 template <typename scalar_t, typename integer_t>
 kernel void deformable_im2col(
-    constant  int64_t  & n                [[buffer(0)]],
-    constant  scalar_t * input_ptr        [[buffer(1)]],
-    constant  scalar_t * offset_ptr       [[buffer(2)]],
-    constant  scalar_t * mask_ptr         [[buffer(3)]],
-    constant  int64_t  & height           [[buffer(4)]],
-    constant  int64_t  & width            [[buffer(5)]],
-    constant  int64_t  & weight_h         [[buffer(6)]],
-    constant  int64_t  & weight_w         [[buffer(7)]],
-    constant  int64_t  & pad_h            [[buffer(8)]],
-    constant  int64_t  & pad_w            [[buffer(9)]],
-    constant  int64_t  & stride_h         [[buffer(10)]],
-    constant  int64_t  & stride_w         [[buffer(11)]],
-    constant  int64_t  & dilation_h       [[buffer(12)]],
-    constant  int64_t  & dilation_w       [[buffer(13)]],
-    constant  int64_t  & batch_sz         [[buffer(14)]],
-    constant  int64_t  & n_in_channels    [[buffer(15)]],
-    constant  int64_t  & n_offset_grps    [[buffer(16)]],
-    constant  int64_t  & out_h            [[buffer(17)]],
-    constant  int64_t  & out_w            [[buffer(18)]],
-    constant  bool     & use_mask         [[buffer(19)]],
-    device    scalar_t * columns_ptr      [[buffer(20)]],
-    uint2     tgid   [[threadgroup_position_in_grid]],
+    constant  scalar_t * input_ptr        [[buffer(0)]],
+    constant  scalar_t * offset_ptr       [[buffer(1)]],
+    constant  scalar_t * mask_ptr         [[buffer(2)]],
+    device    scalar_t * columns_ptr      [[buffer(3)]],
+    constant  int64_t  & n                [[buffer(4)]],
+    constant  int64_t  & height           [[buffer(5)]],
+    constant  int64_t  & width            [[buffer(6)]],
+    constant  int64_t  & weight_h         [[buffer(7)]],
+    constant  int64_t  & weight_w         [[buffer(8)]],
+    constant  int64_t  & pad_h            [[buffer(9)]],
+    constant  int64_t  & pad_w            [[buffer(10)]],
+    constant  int64_t  & stride_h         [[buffer(11)]],
+    constant  int64_t  & stride_w         [[buffer(12)]],
+    constant  int64_t  & dilation_h       [[buffer(13)]],
+    constant  int64_t  & dilation_w       [[buffer(14)]],
+    constant  int64_t  & batch_sz         [[buffer(15)]],
+    constant  int64_t  & n_in_channels    [[buffer(16)]],
+    constant  int64_t  & n_offset_grps    [[buffer(17)]],
+    constant  int64_t  & out_h            [[buffer(18)]],
+    constant  int64_t  & out_w            [[buffer(19)]],
+    constant  bool     & use_mask         [[buffer(20)]],
+    uint2     tgid   [[threadgroup_position_in_grid]],  
     uint2     tptg   [[threads_per_threadgroup]],
-    uint2     tid2   [[thread_position_in_threadgroup]]) {
-  MPS_1D_KERNEL_LOOP(index, n, 1) {
+    uint2     tid2   [[thread_position_in_threadgroup]],
+    uint2     tgpg    [[threadgroups_per_grid]]) {
+  MPS_1D_KERNEL_LOOP(index, n, tgpg.x) {
     const integer_t out_x = index % out_w;
     const integer_t out_y = (index / out_w) % out_h;
     const integer_t out_b = (index / (out_w * out_h)) % batch_sz;
@@ -1079,6 +1128,7 @@ kernel void deformable_im2col(
           out_h * out_w;
     }
     
+    // For each element in the filter
     for (int i = 0; i < weight_h; ++i) {
       for (int j = 0; j < weight_w; ++j) {
         const integer_t mask_idx = i * weight_w + j;
@@ -1099,7 +1149,7 @@ kernel void deformable_im2col(
         const scalar_t x =
             (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
         *columns_ptr =
-            mask_value * bilinear_interpolate(input_ptr, height, width, y, x, index);
+            mask_value * bilinear_interpolate_2(input_ptr, height, width, y, x, index);
         columns_ptr += batch_sz * out_h * out_w;
       }
     }
@@ -1110,30 +1160,31 @@ kernel void deformable_im2col(
 template                                                    \
 [[host_name("deformable_im2col_" #DTYPE)]]                  \
 kernel void deformable_im2col<DTYPE, INT_DTYPE>(            \
-    constant  int64_t    & n                [[buffer(0)]],  \
-    constant  DTYPE      * input_ptr            [[buffer(1)]],  \
-    constant  DTYPE      * offset_ptr           [[buffer(2)]],  \
-    constant  DTYPE      * mask_ptr             [[buffer(3)]],  \
-    constant  int64_t    & height           [[buffer(4)]],  \
-    constant  int64_t    & width            [[buffer(5)]],  \
-    constant  int64_t    & weight_h         [[buffer(6)]],  \
-    constant  int64_t    & weight_w         [[buffer(7)]],  \
-    constant  int64_t    & pad_h            [[buffer(8)]],  \
-    constant  int64_t    & pad_w            [[buffer(9)]],  \
-    constant  int64_t    & stride_h         [[buffer(10)]], \
-    constant  int64_t    & stride_w         [[buffer(11)]], \
-    constant  int64_t    & dilation_h       [[buffer(12)]], \
-    constant  int64_t    & dilation_w       [[buffer(13)]], \
-    constant  int64_t    & batch_sz         [[buffer(14)]], \
-    constant  int64_t    & n_in_channels    [[buffer(15)]], \
-    constant  int64_t    & n_offset_grps    [[buffer(16)]], \
-    constant  int64_t    & out_h            [[buffer(17)]], \
-    constant  int64_t    & out_w            [[buffer(18)]], \
-    constant  bool       & use_mask         [[buffer(19)]], \
-    device    DTYPE      * columns_ptr      [[buffer(20)]], \
+    constant  DTYPE      * input_ptr        [[buffer(0)]],  \
+    constant  DTYPE      * offset_ptr       [[buffer(1)]],  \
+    constant  DTYPE      * mask_ptr         [[buffer(2)]],  \
+    device    DTYPE      * columns_ptr      [[buffer(3)]], \
+    constant  int64_t    & n                [[buffer(4)]],  \
+    constant  int64_t    & height           [[buffer(5)]],  \
+    constant  int64_t    & width            [[buffer(6)]],  \
+    constant  int64_t    & weight_h         [[buffer(7)]],  \
+    constant  int64_t    & weight_w         [[buffer(8)]],  \
+    constant  int64_t    & pad_h            [[buffer(9)]],  \
+    constant  int64_t    & pad_w            [[buffer(10)]],  \
+    constant  int64_t    & stride_h         [[buffer(11)]], \
+    constant  int64_t    & stride_w         [[buffer(12)]], \
+    constant  int64_t    & dilation_h       [[buffer(13)]], \
+    constant  int64_t    & dilation_w       [[buffer(14)]], \
+    constant  int64_t    & batch_sz         [[buffer(15)]], \
+    constant  int64_t    & n_in_channels    [[buffer(16)]], \
+    constant  int64_t    & n_offset_grps    [[buffer(17)]], \
+    constant  int64_t    & out_h            [[buffer(18)]], \
+    constant  int64_t    & out_w            [[buffer(19)]], \
+    constant  bool       & use_mask         [[buffer(20)]], \
     uint2     tgid   [[threadgroup_position_in_grid]],      \
 	  uint2     tptg   [[threads_per_threadgroup]],           \
-    uint2     tid2   [[thread_position_in_threadgroup]]);
+    uint2     tid2   [[thread_position_in_threadgroup]],    \
+    uint2     tgpg    [[threadgroups_per_grid]]);
                                              
 
 
