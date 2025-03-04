@@ -13,8 +13,9 @@ if [[ "$(uname)" == Darwin ]]; then
 fi
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
-  conda install libpng -y
-  conda install libwebp -y
+  conda list
+  conda install -v libpng -y
+  conda install -v libwebp -y
   # Installing webp also installs a non-turbo jpeg, so we uninstall jpeg stuff
   # before re-installing them
   conda uninstall libjpeg-turbo libjpeg -y
