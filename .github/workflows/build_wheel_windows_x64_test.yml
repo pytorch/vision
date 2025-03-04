@@ -1,4 +1,4 @@
-name: Build Windows X64 Wheels
+name: Build Windows Arm64 Wheels
 
 on:
   pull_request:
@@ -31,7 +31,7 @@ on:
       # pytorch_build_run_id:
       #   description: "PyTorch build run id for downloading the wheel artifact (number at the end of build run URL)"
       #   required: true
-      #   default: "13589031393" 
+      #   default: "13589031393"
       #   type: string
       pytorch_build_artifact_name:
         description: "Artifact name of PyTorch build run"
