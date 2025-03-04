@@ -13,6 +13,7 @@ if [[ "$(uname)" == Darwin ]]; then
 fi
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
+  conda config --show
   conda list
   conda install -v libpng -y
   conda install -v libwebp -y
