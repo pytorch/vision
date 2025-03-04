@@ -94,12 +94,12 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
 
   cudaJpegEncoder->set_quality(quality);
   std::vector<torch::Tensor> encoded_images;
-  at::cuda::CUDAEvent event;
-  event.record(cudaJpegEncoder->stream);
   for (const auto& image : contig_images) {
     auto encoded_image = cudaJpegEncoder->encode_jpeg(image);
     encoded_images.push_back(encoded_image);
   }
+  at::cuda::CUDAEvent event;
+  event.record(cudaJpegEncoder->stream);
 
   // We use a dedicated stream to do the encoding and even though the results
   // may be ready on that stream we cannot assume that they are also available
@@ -108,10 +108,7 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
   // do not want to block the host at this particular point
   // (which is what cudaStreamSynchronize would do.) Events allow us to
   // synchronize the streams without blocking the host.
-  event.block(at::cuda::getCurrentCUDAStream(
-      cudaJpegEncoder->original_device.has_index()
-          ? cudaJpegEncoder->original_device.index()
-          : 0));
+  event.block(cudaJpegEncoder->current_stream);
   return encoded_images;
 }
 
@@ -121,7 +118,11 @@ CUDAJpegEncoder::CUDAJpegEncoder(const torch::Device& target_device)
       stream{
           target_device.has_index()
               ? at::cuda::getStreamFromPool(false, target_device.index())
-              : at::cuda::getStreamFromPool(false)} {
+              : at::cuda::getStreamFromPool(false)},
+      current_stream{
+          original_device.has_index()
+              ? at::cuda::getCurrentCUDAStream(original_device.index())
+              : at::cuda::getCurrentCUDAStream()} {
   nvjpegStatus_t status;
   status = nvjpegCreateSimple(&nvjpeg_handle);
   TORCH_CHECK(
@@ -186,12 +187,17 @@ CUDAJpegEncoder::~CUDAJpegEncoder() {
 }
 
 torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
+  nvjpegStatus_t status;
+  cudaError_t cudaStatus;
+
+  // Ensure that the incoming src_image is safe to use
+  cudaStatus = cudaStreamSynchronize(current_stream);
+  TORCH_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
+
   int channels = src_image.size(0);
   int height = src_image.size(1);
   int width = src_image.size(2);
 
-  nvjpegStatus_t status;
-  cudaError_t cudaStatus;
   status = nvjpegEncoderParamsSetSamplingFactors(
       nv_enc_params, NVJPEG_CSS_444, stream);
   TORCH_CHECK(
@@ -251,7 +257,7 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
       nv_enc_state,
       encoded_image.data_ptr<uint8_t>(),
       &length,
-      0);
+      stream);
   TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to retrieve encoded image: ",
