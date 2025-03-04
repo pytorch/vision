@@ -1,9 +1,7 @@
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple, Union
 
-from PIL import Image
-
-from .folder import find_classes, make_dataset
+from .folder import default_loader, find_classes, make_dataset
 from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
 
@@ -17,9 +15,12 @@ class Imagenette(VisionDataset):
         size (string, optional): The image size. Supports ``"full"`` (default), ``"320px"``, and ``"160px"``.
         download (bool, optional): If ``True``, downloads the dataset components and places them in ``root``. Already
             downloaded archives are not downloaded again.
-        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
-            version, e.g. ``transforms.RandomCrop``.
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
 
      Attributes:
         classes (list): List of the class name tuples.
@@ -54,6 +55,7 @@ class Imagenette(VisionDataset):
         download=False,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
 
@@ -75,6 +77,7 @@ class Imagenette(VisionDataset):
             class_name: idx for wnid, idx in self.wnid_to_idx.items() for class_name in self._WNID_TO_CLASS[wnid]
         }
         self._samples = make_dataset(self._image_root, self.wnid_to_idx, extensions=".jpeg")
+        self.loader = loader
 
     def _check_exists(self) -> bool:
         return self._size_root.exists()
@@ -87,7 +90,7 @@ class Imagenette(VisionDataset):
 
     def __getitem__(self, idx: int) -> Tuple[Any, Any]:
         path, label = self._samples[idx]
-        image = Image.open(path).convert("RGB")
+        image = self.loader(path)
 
         if self.transform is not None:
             image = self.transform(image)
