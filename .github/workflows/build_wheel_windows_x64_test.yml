@@ -1,4 +1,4 @@
-name: Build Windows Arm64 Wheels
+name: Build Windows X64 Wheels
 
 on:
   pull_request:
