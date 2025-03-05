@@ -14,6 +14,7 @@ fi
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   conda --version 
+  conda info
   conda config --show
   conda list
   conda install -v libpng -y
