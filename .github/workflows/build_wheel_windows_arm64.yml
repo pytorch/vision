@@ -60,14 +60,12 @@ permissions:
 
 jobs:
   trigger-test-infra:
-    runs-on: windows-11-arm64
-    steps:
-      - name: Trigger test-infra script
-        uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_arm64.yml@winarm64_wheels
-        with:
-          python_version: ${{ inputs.python_version || 'Python312' }}
-          msvc_version: ${{ inputs.msvc_version || 'latest' }}
-          build_type: ${{ inputs.build_type || 'Release' }}
-          repository_name: ${{ inputs.repository_name || 'pytorch/vision' }}
-          repository_branch: ${{ inputs.repository_branch || 'main' }}
-          build_version: ${{ inputs.build_version || '' }}
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_arm64.yml@winarm64_wheels
+    with:
+      repository_name: ${{ inputs.repository_name }}
+      repository_branch: ${{ inputs.repository_branch }}
+      python_version: ${{ inputs.python_version || 'Python312' }}
+      msvc_version: ${{ inputs.msvc_version || 'latest' }} 
+      pytorch_build_run_id: ${{ inputs.pytorch_build_run_id || '13589031393' }}
+      build_type: ${{ inputs.build_type || 'Release' }}
+      build_version: ${{ inputs.build_version }}
