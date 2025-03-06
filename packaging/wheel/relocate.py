@@ -213,7 +213,7 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
             subprocess.check_output([patchelf, "--print-rpath", new_library_name], cwd=new_libraries_path)
 
     print("Update library dependencies")
-    library_dependencies = binary_dependencies[binary]
+    library_dependencies = binary_dependencies.get(binary, [])
     for dep in library_dependencies:
         new_dep = osp.basename(new_names[dep])
         print(f"{binary}: {dep} -> {new_dep}")
