@@ -55,17 +55,11 @@ void deformable_im2col(const at::Tensor& input,
     
     
     const int64_t num_kernels = (int64_t)n_in_channels * out_h * out_w * parallel_imgs;
-
-    // These function parameters have all been made contiguous by the caller function deform_conv2d_forward_kernel
-    // Check if it is safe to skip the following:
-    auto input_c = input; //.contiguous();
-    auto data_offset_c = data_offset; //.contiguous();
-    auto data_mask_c = data_mask; //.contiguous();
     
     // Get a raw pointer to the underlying data structure of the tensors and cast it as a pointer to an MTLBuffer.
-    id<MTLBuffer> inputBuffer = getMTLBufferStorage(input_c);
-    id<MTLBuffer> data_offsetBuffer = getMTLBufferStorage(data_offset_c);
-    id<MTLBuffer> data_maskBuffer = getMTLBufferStorage(data_mask_c);
+    id<MTLBuffer> inputBuffer = getMTLBufferStorage(input);
+    id<MTLBuffer> data_offsetBuffer = getMTLBufferStorage(data_offset);
+    id<MTLBuffer> data_maskBuffer = getMTLBufferStorage(data_mask);
     id<MTLBuffer> data_colBuffer = getMTLBufferStorage(data_col);
   
     id<MTLDevice> device = MPSDevice::getInstance()->device();
@@ -84,33 +78,33 @@ void deformable_im2col(const at::Tensor& input,
                 1);
 
             // this function call is a no-op if MPS Profiler is not enabled
-            getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input_c, data_offset_c, data_mask_c});
+            getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input, data_offset, data_mask});
             
             id<MTLComputeCommandEncoder> computeEncoder = mpsStream->commandEncoder();
             [computeEncoder setComputePipelineState:visionPSO];
 
-            [computeEncoder setBuffer:inputBuffer offset:input_c.storage_offset() * input_c.element_size() atIndex:1];
-            [computeEncoder setBuffer:data_offsetBuffer offset:data_offset_c.storage_offset() * data_offset_c.element_size() atIndex:2];
-            [computeEncoder setBuffer:data_maskBuffer offset:data_mask_c.storage_offset() * data_mask_c.element_size() atIndex:3];
-            [computeEncoder setBuffer:data_colBuffer offset:data_col.storage_offset() * data_col.element_size() atIndex:20];
+            [computeEncoder setBuffer:inputBuffer offset:input.storage_offset() * input.element_size() atIndex:0];
+            [computeEncoder setBuffer:data_offsetBuffer offset:data_offset.storage_offset() * data_offset.element_size() atIndex:1];
+            [computeEncoder setBuffer:data_maskBuffer offset:data_mask.storage_offset() * data_mask.element_size() atIndex:2];
+            [computeEncoder setBuffer:data_colBuffer offset:data_col.storage_offset() * data_col.element_size() atIndex:3];
         
-            [computeEncoder setBytes:&num_kernels length:sizeof(int64_t) atIndex:0];
-            [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:4];
-            [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:5];
-            [computeEncoder setBytes:&weight_h length:sizeof(int64_t) atIndex:6];
-            [computeEncoder setBytes:&weight_w length:sizeof(int64_t) atIndex:7];
-            [computeEncoder setBytes:&pad_h length:sizeof(int64_t) atIndex:8];
-            [computeEncoder setBytes:&pad_w length:sizeof(int64_t) atIndex:9];
-            [computeEncoder setBytes:&stride_h length:sizeof(int64_t) atIndex:10];
-            [computeEncoder setBytes:&stride_w length:sizeof(int64_t) atIndex:11];
-            [computeEncoder setBytes:&dilation_h length:sizeof(int64_t) atIndex:12];
-            [computeEncoder setBytes:&dilation_w length:sizeof(int64_t) atIndex:13];
-            [computeEncoder setBytes:&parallel_imgs length:sizeof(int64_t) atIndex:14];
-            [computeEncoder setBytes:&n_in_channels length:sizeof(int64_t) atIndex:15];
-            [computeEncoder setBytes:&deformable_group length:sizeof(int64_t) atIndex:16];
-            [computeEncoder setBytes:&out_h length:sizeof(int64_t) atIndex:17];
-            [computeEncoder setBytes:&out_w length:sizeof(int64_t) atIndex:18];
-            [computeEncoder setBytes:&use_mask length:sizeof(bool) atIndex:19];
+            [computeEncoder setBytes:&num_kernels length:sizeof(int64_t) atIndex:4];
+            [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:5];
+            [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:6];
+            [computeEncoder setBytes:&weight_h length:sizeof(int64_t) atIndex:7];
+            [computeEncoder setBytes:&weight_w length:sizeof(int64_t) atIndex:8];
+            [computeEncoder setBytes:&pad_h length:sizeof(int64_t) atIndex:9];
+            [computeEncoder setBytes:&pad_w length:sizeof(int64_t) atIndex:10];
+            [computeEncoder setBytes:&stride_h length:sizeof(int64_t) atIndex:11];
+            [computeEncoder setBytes:&stride_w length:sizeof(int64_t) atIndex:12];
+            [computeEncoder setBytes:&dilation_h length:sizeof(int64_t) atIndex:13];
+            [computeEncoder setBytes:&dilation_w length:sizeof(int64_t) atIndex:14];
+            [computeEncoder setBytes:&parallel_imgs length:sizeof(int64_t) atIndex:15];
+            [computeEncoder setBytes:&n_in_channels length:sizeof(int64_t) atIndex:16];
+            [computeEncoder setBytes:&deformable_group length:sizeof(int64_t) atIndex:17];
+            [computeEncoder setBytes:&out_h length:sizeof(int64_t) atIndex:18];
+            [computeEncoder setBytes:&out_w length:sizeof(int64_t) atIndex:19];
+            [computeEncoder setBytes:&use_mask length:sizeof(bool) atIndex:20];
             
             // A threadGroup is equivalent to a cuda's block.
             NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
