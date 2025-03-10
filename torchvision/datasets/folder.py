@@ -257,7 +257,7 @@ class DatasetFolder(VisionDataset):
 IMG_EXTENSIONS = (".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif", ".tiff", ".webp")
 
 
-def pil_loader(path: str) -> Image.Image:
+def pil_loader(path: Union[str, Path]) -> Image.Image:
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
     with open(path, "rb") as f:
         img = Image.open(f)
@@ -265,7 +265,7 @@ def pil_loader(path: str) -> Image.Image:
 
 
 # TODO: specify the return type
-def accimage_loader(path: str) -> Any:
+def accimage_loader(path: Union[str, Path]) -> Any:
     import accimage
 
     try:
@@ -275,7 +275,7 @@ def accimage_loader(path: str) -> Any:
         return pil_loader(path)
 
 
-def default_loader(path: str) -> Any:
+def default_loader(path: Union[str, Path]) -> Any:
     from torchvision import get_image_backend
 
     if get_image_backend() == "accimage":
@@ -300,7 +300,7 @@ class ImageFolder(DatasetFolder):
 
     Args:
         root (str or ``pathlib.Path``): Root directory path.
-        transform (callable, optional): A function/transform that takes in a PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
@@ -318,7 +318,7 @@ class ImageFolder(DatasetFolder):
 
     def __init__(
         self,
-        root: str,
+        root: Union[str, Path],
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         loader: Callable[[str], Any] = default_loader,

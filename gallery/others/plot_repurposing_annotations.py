@@ -4,7 +4,7 @@ Repurposing masks into bounding boxes
 =====================================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_repurposing_annotations.ipynb>`_
+    Try on `Colab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_repurposing_annotations.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_repurposing_annotations.py>` to download the full example code.
 
 The following example illustrates the operations available
@@ -66,12 +66,12 @@ def show(imgs):
 # We will take images and masks from the `PenFudan Dataset <https://www.cis.upenn.edu/~jshi/ped_html/>`_.
 
 
-from torchvision.io import read_image
+from torchvision.io import decode_image
 
 img_path = os.path.join(ASSETS_DIRECTORY, "FudanPed00054.png")
 mask_path = os.path.join(ASSETS_DIRECTORY, "FudanPed00054_mask.png")
-img = read_image(img_path)
-mask = read_image(mask_path)
+img = decode_image(img_path)
+mask = decode_image(mask_path)
 
 
 # %%
@@ -149,8 +149,8 @@ weights = FasterRCNN_ResNet50_FPN_Weights.DEFAULT
 model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
 print(img.size())
 
-tranforms = weights.transforms()
-img = tranforms(img)
+transforms = weights.transforms()
+img = transforms(img)
 target = {}
 target["boxes"] = boxes
 target["labels"] = labels = torch.ones((masks.size(0),), dtype=torch.int64)
@@ -181,8 +181,8 @@ class SegmentationToDetectionDataset(torch.utils.data.Dataset):
         img_path = os.path.join(self.root, "PNGImages", self.imgs[idx])
         mask_path = os.path.join(self.root, "PedMasks", self.masks[idx])
 
-        img = read_image(img_path)
-        mask = read_image(mask_path)
+        img = decode_image(img_path)
+        mask = decode_image(mask_path)
 
         img = F.convert_image_dtype(img, dtype=torch.float)
         mask = F.convert_image_dtype(mask, dtype=torch.float)

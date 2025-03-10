@@ -45,6 +45,8 @@ def _max_value(dtype: torch.dtype) -> int:
         return 127
     elif dtype == torch.int16:
         return 32767
+    elif dtype == torch.uint16:
+        return 65535
     elif dtype == torch.int32:
         return 2147483647
     elif dtype == torch.int64:

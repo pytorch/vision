@@ -4,7 +4,7 @@ Torchscript support
 ===================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_scripted_tensor_transforms.ipynb>`_
+    Try on `Colab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_scripted_tensor_transforms.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_scripted_tensor_transforms.py>` to download the full example code.
 
 This example illustrates `torchscript
@@ -21,12 +21,12 @@ import torch
 import torch.nn as nn
 
 import torchvision.transforms as v1
-from torchvision.io import read_image
+from torchvision.io import decode_image
 
 plt.rcParams["savefig.bbox"] = 'tight'
 torch.manual_seed(1)
 
-# If you're trying to run that on collab, you can download the assets and the
+# If you're trying to run that on Colab, you can download the assets and the
 # helpers from https://github.com/pytorch/vision/tree/main/gallery/
 import sys
 sys.path += ["../transforms"]
@@ -39,8 +39,8 @@ ASSETS_PATH = Path('../assets')
 # :class:`torch.nn.Sequential` instead of
 # :class:`~torchvision.transforms.v2.Compose`:
 
-dog1 = read_image(str(ASSETS_PATH / 'dog1.jpg'))
-dog2 = read_image(str(ASSETS_PATH / 'dog2.jpg'))
+dog1 = decode_image(str(ASSETS_PATH / 'dog1.jpg'))
+dog2 = decode_image(str(ASSETS_PATH / 'dog2.jpg'))
 
 transforms = torch.nn.Sequential(
     v1.RandomCrop(224),

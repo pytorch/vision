@@ -116,6 +116,21 @@ def test_draw_boxes():
     assert_equal(img, img_cp)
 
 
+@pytest.mark.skipif(PILLOW_VERSION < (10, 1), reason="The reference image is only valid for PIL >= 10.1")
+def test_draw_boxes_with_coloured_labels():
+    img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
+    labels = ["a", "b", "c", "d"]
+    colors = ["green", "#FF00FF", (0, 255, 0), "red"]
+    label_colors = ["green", "red", (0, 255, 0), "#FF00FF"]
+    result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors, fill=True, label_colors=label_colors)
+
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_different_label_colors.png"
+    )
+    expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+    assert_equal(result, expected)
+
+
 @pytest.mark.parametrize("fill", [True, False])
 def test_draw_boxes_dtypes(fill):
     img_uint8 = torch.full((3, 100, 100), 255, dtype=torch.uint8)

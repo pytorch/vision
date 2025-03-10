@@ -4,7 +4,7 @@ Visualization utilities
 =======================
 
 .. note::
-    Try on `collab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_visualization_utils.ipynb>`_
+    Try on `Colab <https://colab.research.google.com/github/pytorch/vision/blob/gh-pages/main/_generated_ipynb_notebooks/plot_visualization_utils.ipynb>`_
     or :ref:`go to the end <sphx_glr_download_auto_examples_others_plot_visualization_utils.py>` to download the full example code.
 
 This example illustrates some of the utilities that torchvision offers for
@@ -42,11 +42,11 @@ def show(imgs):
 # image of dtype ``uint8`` as input.
 
 from torchvision.utils import make_grid
-from torchvision.io import read_image
+from torchvision.io import decode_image
 from pathlib import Path
 
-dog1_int = read_image(str(Path('../assets') / 'dog1.jpg'))
-dog2_int = read_image(str(Path('../assets') / 'dog2.jpg'))
+dog1_int = decode_image(str(Path('../assets') / 'dog1.jpg'))
+dog2_int = decode_image(str(Path('../assets') / 'dog2.jpg'))
 dog_list = [dog1_int, dog2_int]
 
 grid = make_grid(dog_list)
@@ -362,9 +362,9 @@ show(dogs_with_masks)
 #
 
 from torchvision.models.detection import keypointrcnn_resnet50_fpn, KeypointRCNN_ResNet50_FPN_Weights
-from torchvision.io import read_image
+from torchvision.io import decode_image
 
-person_int = read_image(str(Path("../assets") / "person1.jpg"))
+person_int = decode_image(str(Path("../assets") / "person1.jpg"))
 
 weights = KeypointRCNN_ResNet50_FPN_Weights.DEFAULT
 transforms = weights.transforms()

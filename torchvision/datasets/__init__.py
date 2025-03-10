@@ -72,6 +72,7 @@ __all__ = (
     "QMNIST",
     "MNIST",
     "KMNIST",
+    "MovingMNIST",
     "StanfordCars",
     "STL10",
     "SUN397",

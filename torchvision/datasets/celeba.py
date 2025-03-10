@@ -93,7 +93,13 @@ class CelebA(VisionDataset):
             "test": 2,
             "all": None,
         }
-        split_ = split_map[verify_str_arg(split.lower(), "split", ("train", "valid", "test", "all"))]
+        split_ = split_map[
+            verify_str_arg(
+                split.lower() if isinstance(split, str) else split,
+                "split",
+                ("train", "valid", "test", "all"),
+            )
+        ]
         splits = self._load_csv("list_eval_partition.txt")
         identity = self._load_csv("identity_CelebA.txt")
         bbox = self._load_csv("list_bbox_celeba.txt", header=1)
@@ -105,7 +111,7 @@ class CelebA(VisionDataset):
         if mask == slice(None):  # if split == "all"
             self.filename = splits.index
         else:
-            self.filename = [splits.index[i] for i in torch.squeeze(torch.nonzero(mask))]
+            self.filename = [splits.index[i] for i in torch.squeeze(torch.nonzero(mask))]  # type: ignore[arg-type]
         self.identity = identity.data[mask]
         self.bbox = bbox.data[mask]
         self.landmarks_align = landmarks_align.data[mask]
@@ -148,7 +154,6 @@ class CelebA(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
             return
 
         for (file_id, md5, filename) in self.file_list:

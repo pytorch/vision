@@ -1,23 +1,29 @@
 import os
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
-from .folder import ImageFolder
+from .folder import default_loader, ImageFolder
 from .utils import download_and_extract_archive
 
 
 class EuroSAT(ImageFolder):
     """RGB version of the `EuroSAT <https://github.com/phelber/eurosat>`_ Dataset.
 
+    For the MS version of the dataset, see
+    `TorchGeo <https://torchgeo.readthedocs.io/en/stable/api/datasets.html#eurosat>`__.
+
     Args:
         root (str or ``pathlib.Path``): Root directory of dataset where ``root/eurosat`` exists.
-        transform (callable, optional): A function/transform that takes in a PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again. Default is False.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     def __init__(
@@ -26,6 +32,7 @@ class EuroSAT(ImageFolder):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         self.root = os.path.expanduser(root)
         self._base_folder = os.path.join(self.root, "eurosat")
@@ -37,7 +44,12 @@ class EuroSAT(ImageFolder):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        super().__init__(self._data_folder, transform=transform, target_transform=target_transform)
+        super().__init__(
+            self._data_folder,
+            transform=transform,
+            target_transform=target_transform,
+            loader=loader,
+        )
         self.root = os.path.expanduser(root)
 
     def __len__(self) -> int:
@@ -53,7 +65,7 @@ class EuroSAT(ImageFolder):
 
         os.makedirs(self._base_folder, exist_ok=True)
         download_and_extract_archive(
-            "https://madm.dfki.de/files/sentinel/EuroSAT.zip",
+            "https://huggingface.co/datasets/torchgeo/eurosat/resolve/c877bcd43f099cd0196738f714544e355477f3fd/EuroSAT.zip",
             download_root=self._base_folder,
             md5="c8fa014336c82ac7804f0398fcb19387",
         )

@@ -58,7 +58,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
     def _read_img(self, file_path: Union[str, Path]) -> Image.Image:
         img = Image.open(file_path)
         if img.mode != "RGB":
-            img = img.convert("RGB")
+            img = img.convert("RGB")  # type: ignore [assignment]
         return img
 
     def _scan_pairs(
@@ -588,7 +588,6 @@ class Middlebury2014Stereo(StereoMatchingDataset):
                 for calibration in ["perfect", "imperfect"]:
                     scene_name = f"{split_scene}-{calibration}"
                     scene_url = f"{base_url}/{scene_name}.zip"
-                    print(f"Downloading {scene_url}")
                     # download the scene only if it doesn't exist
                     if not (split_root / scene_name).exists():
                         download_and_extract_archive(

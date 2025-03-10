@@ -14,7 +14,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
@@ -22,12 +21,15 @@ jobs:
         runner: ["linux.12xlarge"]
         gpu-arch-type: ["cpu"]
         include:
-          - python-version: 3.8
+          - python-version: 3.9
             runner: linux.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
@@ -48,7 +50,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
@@ -74,7 +75,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.8"
           - "3.9"
           - "3.10"
           - "3.11"
@@ -82,12 +82,15 @@ jobs:
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
         include:
-          - python-version: "3.8"
+          - python-version: "3.9"
             runner: windows.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
+    permissions:
+      id-token: write
+      contents: read
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
@@ -99,7 +102,7 @@ jobs:
         set -euxo pipefail
 
         export PYTHON_VERSION=${{ matrix.python-version }}
-        export VC_YEAR=2019
+        export VC_YEAR=2022
         export VSDEVCMD_ARGS=""
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
@@ -107,14 +110,17 @@ jobs:
         ./.github/scripts/unittest.sh
 
   onnx:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
     with:
       repository: pytorch/vision
       test-infra-ref: main
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.8
+        export PYTHON_VERSION=3.10
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 
@@ -130,7 +136,7 @@ jobs:
         echo '::endgroup::'
 
         echo '::group::Install testing utilities'
-        pip install --progress-bar=off pytest
+        pip install --progress-bar=off pytest "numpy<2"
         echo '::endgroup::'
 
         echo '::group::Run ONNX tests'
@@ -138,14 +144,18 @@ jobs:
         echo '::endgroup::'
 
   unittests-extended:
-    uses: pytorch/test-infra/.github/workflows/linux_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
+    if: contains(github.event.pull_request.labels.*.name, 'run-extended')
     with:
       repository: pytorch/vision
       test-infra-ref: main
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.8
+        export PYTHON_VERSION=3.9
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 

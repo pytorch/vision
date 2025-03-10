@@ -18,11 +18,11 @@ class MovingMNIST(VisionDataset):
         split_ratio (int, optional): The split ratio of number of frames. If ``split="train"``, the first split
             frames ``data[:, :split_ratio]`` is returned. If ``split="test"``, the last split frames ``data[:, split_ratio:]``
             is returned. If ``split=None``, this parameter is ignored and the all frames data is returned.
-        transform (callable, optional): A function/transform that takes in a torch Tensor
-            and returns a transformed version. E.g, ``transforms.RandomCrop``
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+        transform (callable, optional): A function/transform that takes in a torch Tensor
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
     """
 
     _URL = "http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"
@@ -66,7 +66,7 @@ class MovingMNIST(VisionDataset):
     def __getitem__(self, idx: int) -> torch.Tensor:
         """
         Args:
-            index (int): Index
+            idx (int): Index
         Returns:
             torch.Tensor: Video frames (torch Tensor[T, C, H, W]). The `T` is the number of frames.
         """

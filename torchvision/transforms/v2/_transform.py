@@ -15,6 +15,11 @@ from .functional._utils import _get_kernel
 
 
 class Transform(nn.Module):
+    """Base class to implement your own v2 transforms.
+
+    See  :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` for
+    more details.
+    """
 
     # Class attribute defining transformed types. Other types are passed-through without any transformation
     # We support both Types and callables that are able to do further checks on the type of the input.
@@ -24,31 +29,44 @@ class Transform(nn.Module):
         super().__init__()
         _log_api_usage_once(self)
 
-    def _check_inputs(self, flat_inputs: List[Any]) -> None:
+    def check_inputs(self, flat_inputs: List[Any]) -> None:
         pass
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    # When v2 was introduced, this method was private and called
+    # `_get_params()`. Now it's publicly exposed as `make_params()`. It cannot
+    # be exposed as `get_params()` because there is already a `get_params()`
+    # methods for v2 transforms: it's the v1's `get_params()` that we have  to
+    # keep in order to guarantee 100% BC with v1. (It's defined in
+    # __init_subclass__ below).
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+        """Method to override for custom transforms.
+
+        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`"""
         return dict()
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         kernel = _get_kernel(functional, type(inpt), allow_passthrough=True)
         return kernel(inpt, *args, **kwargs)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        """Method to override for custom transforms.
+
+        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`"""
         raise NotImplementedError
 
     def forward(self, *inputs: Any) -> Any:
+        """Do not override this! Use ``transform()`` instead."""
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
-        self._check_inputs(flat_inputs)
+        self.check_inputs(flat_inputs)
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
-        params = self._get_params(
+        params = self.make_params(
             [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
         )
 
         flat_outputs = [
-            self._transform(inpt, params) if needs_transform else inpt
+            self.transform(inpt, params) if needs_transform else inpt
             for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
         ]
 
@@ -153,23 +171,23 @@ class _RandomApplyTransform(Transform):
     def forward(self, *inputs: Any) -> Any:
         # We need to almost duplicate `Transform.forward()` here since we always want to check the inputs, but return
         # early afterwards in case the random check triggers. The same result could be achieved by calling
-        # `super().forward()` after the random check, but that would call `self._check_inputs` twice.
+        # `super().forward()` after the random check, but that would call `self.check_inputs` twice.
 
         inputs = inputs if len(inputs) > 1 else inputs[0]
         flat_inputs, spec = tree_flatten(inputs)
 
-        self._check_inputs(flat_inputs)
+        self.check_inputs(flat_inputs)
 
         if torch.rand(1) >= self.p:
             return inputs
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
-        params = self._get_params(
+        params = self.make_params(
             [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
         )
 
         flat_outputs = [
-            self._transform(inpt, params) if needs_transform else inpt
+            self.transform(inpt, params) if needs_transform else inpt
             for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
         ]
 

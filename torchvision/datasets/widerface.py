@@ -92,7 +92,7 @@ class WIDERFace(VisionDataset):
         """
 
         # stay consistent with other datasets and return a PIL Image
-        img = Image.open(self.img_info[index]["img_path"])
+        img = Image.open(self.img_info[index]["img_path"])  # type: ignore[arg-type]
 
         if self.transform is not None:
             img = self.transform(img)
@@ -182,7 +182,6 @@ class WIDERFace(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
             return
 
         # download and extract image data

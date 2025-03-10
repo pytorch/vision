@@ -84,9 +84,9 @@ def gaussian_blur(inpt: torch.Tensor, kernel_size: List[int], sigma: Optional[Li
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
-    lim = (kernel_size - 1) / (2.0 * math.sqrt(2.0) * sigma)
+    lim = (kernel_size - 1) / (2.0 * math.sqrt(2.0))
     x = torch.linspace(-lim, lim, steps=kernel_size, dtype=dtype, device=device)
-    kernel1d = torch.softmax(x.pow_(2).neg_(), dim=0)
+    kernel1d = torch.softmax(x.div(sigma).pow(2).neg(), dim=0)
     return kernel1d
 
 
@@ -119,7 +119,7 @@ def gaussian_blur_image(
         if isinstance(sigma, (list, tuple)):
             length = len(sigma)
             if length == 1:
-                s = float(sigma[0])
+                s = sigma[0]
                 sigma = [s, s]
             elif length != 2:
                 raise ValueError(f"If sigma is a sequence, its length should be 2. Got {length}")
@@ -237,6 +237,8 @@ def _num_value_bits(dtype: torch.dtype) -> int:
         return 7
     elif dtype == torch.int16:
         return 15
+    elif dtype == torch.uint16:
+        return 16
     elif dtype == torch.int32:
         return 31
     elif dtype == torch.int64:
@@ -293,10 +295,18 @@ def to_dtype_image(image: torch.Tensor, dtype: torch.dtype = torch.float, scale:
         num_value_bits_input = _num_value_bits(image.dtype)
         num_value_bits_output = _num_value_bits(dtype)
 
+        # TODO: Remove if/else inner blocks once uint16 dtype supports bitwise shift operations.
+        shift_by = abs(num_value_bits_input - num_value_bits_output)
         if num_value_bits_input > num_value_bits_output:
-            return image.bitwise_right_shift(num_value_bits_input - num_value_bits_output).to(dtype)
+            if image.dtype == torch.uint16:
+                return (image / 2 ** (shift_by)).to(dtype)
+            else:
+                return image.bitwise_right_shift(shift_by).to(dtype)
         else:
-            return image.to(dtype).bitwise_left_shift_(num_value_bits_output - num_value_bits_input)
+            if dtype == torch.uint16:
+                return image.to(dtype) * 2 ** (shift_by)
+            else:
+                return image.to(dtype).bitwise_left_shift_(shift_by)
 
 
 # We encourage users to use to_dtype() instead but we keep this for BC

@@ -40,7 +40,7 @@ def _make_block_input_shapes(input_size: Tuple[int, int], n_blocks: int) -> List
 
 
 def _get_relative_position_index(height: int, width: int) -> torch.Tensor:
-    coords = torch.stack(torch.meshgrid([torch.arange(height), torch.arange(width)]))
+    coords = torch.stack(torch.meshgrid([torch.arange(height), torch.arange(width)], indexing="ij"))
     coords_flat = torch.flatten(coords, 1)
     relative_coords = coords_flat[:, :, None] - coords_flat[:, None, :]
     relative_coords = relative_coords.permute(1, 2, 0).contiguous()
@@ -688,7 +688,7 @@ class MaxVit(nn.Module):
                     p_stochastic=p_stochastic[p_idx : p_idx + num_layers],
                 ),
             )
-            input_size = self.blocks[-1].grid_size
+            input_size = self.blocks[-1].grid_size  # type: ignore[assignment]
             p_idx += num_layers
 
         # see https://github.com/google-research/maxvit/blob/da76cf0d8a6ec668cc31b399c4126186da7da944/maxvit/models/maxvit.py#L1137-L1158

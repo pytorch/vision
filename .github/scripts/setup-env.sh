@@ -30,10 +30,11 @@ conda create \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
   libpng \
+  libwebp \
   'ffmpeg<4.3'
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
-pip install --progress-bar=off --upgrade setuptools
+pip install --progress-bar=off --upgrade setuptools==72.1.0
 
 # See https://github.com/pytorch/vision/issues/6790
 if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
@@ -44,11 +45,7 @@ echo '::endgroup::'
 
 if [[ "${OS_TYPE}" == windows && "${GPU_ARCH_TYPE}" == cuda ]]; then
   echo '::group::Install VisualStudio CUDA extensions on Windows'
-  if [[ "${VC_YEAR:-}" == "2022" ]]; then
-    TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Microsoft/VC/v170/BuildCustomizations"
-  else
-    TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Microsoft/VC/v160/BuildCustomizations"
-  fi
+  TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Microsoft/VC/v170/BuildCustomizations"
   mkdir -p "${TARGET_DIR}"
   cp -r "${CUDA_HOME}/MSBuildExtensions/"* "${TARGET_DIR}"
   echo '::endgroup::'
@@ -99,6 +96,11 @@ echo '::endgroup::'
 
 echo '::group::Install TorchVision'
 python setup.py develop
+echo '::endgroup::'
+
+echo '::group::Install torchvision-extra-decoders'
+# This can be done after torchvision was built
+pip install torchvision-extra-decoders
 echo '::endgroup::'
 
 echo '::group::Collect environment information'
