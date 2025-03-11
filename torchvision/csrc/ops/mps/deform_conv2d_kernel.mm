@@ -8,6 +8,8 @@
 #include <ATen/native/mps/OperationUtils.h>
 #include "mps_helpers.h"
 #include "mps_kernels.h"
+#include <iostream>
+#include <string>
 
 
 namespace vision {
@@ -15,8 +17,44 @@ namespace ops {
 
 namespace {
 
-const int64_t tkMaxParallelImgs = 32;
+const int tkMaxParallelImgs = 32;
 
+// Helper function to print the tensor content
+void printTensor(const at::Tensor& tensor, int indent = 0) {
+    // Print indentation
+    for (int i = 0; i < indent; ++i) {
+        std::cout << "  ";
+    }
+
+    // Check if the tensor is a scalar
+    if (tensor.dim() == 0) {
+        std::cout << tensor.item<float>() << std::endl;
+        return;
+    }
+
+    // Check if the tensor is 1-dimensional
+    if (tensor.dim() == 1) {
+        std::cout << "[";
+        for (int64_t i = 0; i < tensor.size(0); ++i) {
+            std::cout << tensor[i].item<float>();
+            if (i < tensor.size(0) - 1) {
+                std::cout << ", ";
+            }
+        }
+        std::cout << "]" << std::endl;
+        return;
+    }
+
+    // Handle multi-dimensional tensors
+    std::cout << "[" << std::endl;
+    for (int64_t i = 0; i < tensor.size(0); ++i) {
+        printTensor(tensor[i], indent + 1);
+    }
+    for (int i = 0; i < indent; ++i) {
+        std::cout << "  ";
+    }
+    std::cout << "]" << std::endl;
+}
 
 void deformable_im2col(const at::Tensor& input,
                        const at::Tensor& data_offset,
@@ -818,10 +856,13 @@ at::Tensor deform_conv2d_forward_kernel(
 
         columns = columns.view(
                                {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
+
+        // The use of addmm_ has a bug in pytorch, so we use addmm instead
+        // This needs to be fixed in the future
         for (int g = 0; g < n_weight_grps; g++) {
-            out_buf[b][g] = out_buf[b][g]
-                .flatten(1)
-                .addmm_(weight_c[g].flatten(1), columns[g])
+            out_buf[b][g] = 
+                addmm(out_buf[b][g]
+                    .flatten(1), weight_c[g].flatten(1), columns[g])
                 .view_as(out_buf[b][g]);
         }
         columns =
@@ -864,7 +905,7 @@ deform_conv2d_backward_kernel(
     at::Tensor offset_c = offset.contiguous();
     at::Tensor mask_c = mask.contiguous();
     at::Tensor bias_c = bias.contiguous();
-    
+    std::cout << "\ndeform_conv2d_backward_kernel" << std::endl;
     const int64_t batch_sz = input_c.size(0);
     const int64_t n_parallel_imgs =
     get_greatest_divisor_below_bound(batch_sz, tkMaxParallelImgs);
