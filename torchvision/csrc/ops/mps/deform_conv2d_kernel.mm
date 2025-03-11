@@ -191,10 +191,6 @@ void compute_grad_input(
     
     at::globalContext().alertNotDeterministic("compute_grad_input");
     
-    auto columns_c = columns.contiguous();
-    auto offset_c = offset.contiguous();
-    auto mask_c = mask.contiguous();
-    
     const int64_t out_h =
     (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
     const int64_t out_w =
@@ -203,9 +199,9 @@ void compute_grad_input(
     const int64_t num_kernels =
     (int64_t)channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
     
-    id<MTLBuffer> columnsBuffer = getMTLBufferStorage(columns_c);
-    id<MTLBuffer> offsetBuffer = getMTLBufferStorage(offset_c);
-    id<MTLBuffer> maskBuffer = getMTLBufferStorage(mask_c);
+    id<MTLBuffer> columnsBuffer = getMTLBufferStorage(columns);
+    id<MTLBuffer> offsetBuffer = getMTLBufferStorage(offset);
+    id<MTLBuffer> maskBuffer = getMTLBufferStorage(mask);
     id<MTLBuffer> grad_imBuffer = getMTLBufferStorage(grad_im);
     
     id<MTLDevice> device = MPSDevice::getInstance()->device();
@@ -223,9 +219,9 @@ void compute_grad_input(
             
             [computeEncoder setComputePipelineState:visionPSO];
             
-            [computeEncoder setBuffer:columnsBuffer offset:columns_c.storage_offset() * columns_c.element_size() atIndex:1];
-            [computeEncoder setBuffer:offsetBuffer offset:offset_c.storage_offset() * offset_c.element_size() atIndex:2];
-            [computeEncoder setBuffer:maskBuffer offset:mask_c.storage_offset() * mask_c.element_size() atIndex:3];
+            [computeEncoder setBuffer:columnsBuffer offset:columns.storage_offset() * columns.element_size() atIndex:1];
+            [computeEncoder setBuffer:offsetBuffer offset:offset.storage_offset() * offset.element_size() atIndex:2];
+            [computeEncoder setBuffer:maskBuffer offset:mask.storage_offset() * mask.element_size() atIndex:3];
             [computeEncoder setBuffer:grad_imBuffer
                                offset:grad_im.storage_offset() * grad_im.element_size()
                               atIndex:20];
@@ -291,11 +287,6 @@ void compute_grad_offset_and_mask(
     
     using namespace at::native::mps;
     
-    auto columns_c = columns; //.contiguous();
-    auto input_c = input; //.contiguous();
-    auto offset_c = offset; //.contiguous();
-    auto mask_c = mask; //.contiguous();
-    
     const int64_t out_h =
     (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
     const int64_t out_w =
@@ -305,10 +296,10 @@ void compute_grad_offset_and_mask(
     
     const int64_t offset_channels = 2 * weight_h * weight_w * n_offset_grps;
     
-    id<MTLBuffer> columnsBuffer = getMTLBufferStorage(columns_c);
-    id<MTLBuffer> inputBuffer = getMTLBufferStorage(input_c);
-    id<MTLBuffer> offsetBuffer = getMTLBufferStorage(offset_c);
-    id<MTLBuffer> maskBuffer = getMTLBufferStorage(mask_c);
+    id<MTLBuffer> columnsBuffer = getMTLBufferStorage(columns);
+    id<MTLBuffer> inputBuffer = getMTLBufferStorage(input);
+    id<MTLBuffer> offsetBuffer = getMTLBufferStorage(offset);
+    id<MTLBuffer> maskBuffer = getMTLBufferStorage(mask);
     id<MTLBuffer> grad_offsetBuffer = getMTLBufferStorage(grad_offset);
     id<MTLBuffer> grad_maskBuffer = getMTLBufferStorage(grad_mask);
     
@@ -324,14 +315,14 @@ void compute_grad_offset_and_mask(
             id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
             
             // this function call is a no-op if MPS Profiler is not enabled
-            getMPSProfiler().beginProfileKernel(visionPSO, kernel, {columns_c, input_c, offset_c, mask_c});
+            getMPSProfiler().beginProfileKernel(visionPSO, kernel, {columns, input, offset, mask});
                         
             [computeEncoder setComputePipelineState:visionPSO];
             
-            [computeEncoder setBuffer:columnsBuffer offset:columns_c.storage_offset() * columns_c.element_size() atIndex:1];
-            [computeEncoder setBuffer:inputBuffer offset:input_c.storage_offset() * input_c.element_size() atIndex:2];
-            [computeEncoder setBuffer:offsetBuffer offset:offset_c.storage_offset() * offset_c.element_size() atIndex:3];
-            [computeEncoder setBuffer:maskBuffer offset:mask_c.storage_offset() * mask_c.element_size() atIndex:4];
+            [computeEncoder setBuffer:columnsBuffer offset:columns.storage_offset() * columns.element_size() atIndex:1];
+            [computeEncoder setBuffer:inputBuffer offset:input.storage_offset() * input.element_size() atIndex:2];
+            [computeEncoder setBuffer:offsetBuffer offset:offset.storage_offset() * offset.element_size() atIndex:3];
+            [computeEncoder setBuffer:maskBuffer offset:mask.storage_offset() * mask.element_size() atIndex:4];
             [computeEncoder setBuffer:grad_offsetBuffer
                                offset:grad_offset.storage_offset() * grad_offset.element_size()
                               atIndex:22];
@@ -905,7 +896,7 @@ deform_conv2d_backward_kernel(
     at::Tensor offset_c = offset.contiguous();
     at::Tensor mask_c = mask.contiguous();
     at::Tensor bias_c = bias.contiguous();
-    std::cout << "\ndeform_conv2d_backward_kernel" << std::endl;
+
     const int64_t batch_sz = input_c.size(0);
     const int64_t n_parallel_imgs =
     get_greatest_divisor_below_bound(batch_sz, tkMaxParallelImgs);
