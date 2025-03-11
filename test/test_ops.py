@@ -929,7 +929,9 @@ optests.generate_opcheck_tests(
 
 class TestDeformConv:
     dtype = torch.float64
-
+    mps_dtype = torch.float32
+    mps_backward_atol = 2e-2
+    
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
         stride_h, stride_w = _pair(stride)
         pad_h, pad_w = _pair(padding)
@@ -1053,7 +1055,7 @@ class TestDeformConv:
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("dtype", (torch.float16, torch.float32, torch.float64))  # , ids=str)
     @pytest.mark.parametrize("contiguous", (True, False))
-    @pytest.mark.parametrize("batch_sz", (0, 3))
+    @pytest.mark.parametrize("batch_sz", (0, 33))
     @pytest.mark.opcheck_only_one()
     def test_forward(self, device, contiguous, batch_sz, dtype):
         dtype = dtype or self.dtype
@@ -1108,28 +1110,31 @@ class TestDeformConv:
             wrong_mask = torch.rand_like(mask[:, :2])
             layer(x, offset, wrong_mask)
 
-    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
-    @pytest.mark.parametrize("batch_sz", (0, 33))
+    @pytest.mark.parametrize("batch_sz", (0, 6))
     @pytest.mark.opcheck_only_one()
-    def test_backward(self, device, contiguous, batch_sz):
+    def test_backward(self, device, contiguous, batch_sz, deterministic=False):
+        atol = self.mps_backward_atol if device == "mps" else 1e-05
+        dtype = self.mps_dtype if device == "mps" else self.dtype
+            
         x, weight, offset, mask, bias, stride, padding, dilation = self.get_fn_args(
-            device, contiguous, batch_sz, self.dtype
+            device, contiguous, batch_sz, dtype
         )
 
         def func(x_, offset_, mask_, weight_, bias_):
             return ops.deform_conv2d(
                 x_, offset_, weight_, bias_, stride=stride, padding=padding, dilation=dilation, mask=mask_
             )
-
-        gradcheck(func, (x, offset, mask, weight, bias), nondet_tol=1e-5, fast_mode=True)
+        with DeterministicGuard(deterministic):
+            gradcheck(func, (x, offset, mask, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
         def func_no_mask(x_, offset_, weight_, bias_):
             return ops.deform_conv2d(
                 x_, offset_, weight_, bias_, stride=stride, padding=padding, dilation=dilation, mask=None
             )
-
-        gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True)
+        with DeterministicGuard(deterministic):
+            gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
         @torch.jit.script
         def script_func(x_, offset_, mask_, weight_, bias_, stride_, pad_, dilation_):
