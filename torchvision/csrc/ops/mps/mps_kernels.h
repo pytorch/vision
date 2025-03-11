@@ -1213,10 +1213,12 @@ kernel void deformable_col2im(
     device   scalar_t * grad_im         [[buffer(20)]],
     uint2     tgid   [[threadgroup_position_in_grid]],
     uint2     tptg   [[threads_per_threadgroup]],
-    uint2     tid2   [[thread_position_in_threadgroup]]){
+    uint2     tid2   [[thread_position_in_threadgroup]],
+    uint2     tgpg    [[threadgroups_per_grid]]) {
     const integer_t grad_im_numel = width * height * channels * batch_sz;
 
-  MPS_1D_KERNEL_LOOP(index, n, 1) {
+    
+  MPS_1D_KERNEL_LOOP(index, n, tgpg.x) {
     const integer_t out_x = index % out_w;
     const integer_t out_y = (index / out_w) % out_h;
     const integer_t b = (index / (out_w * out_h)) % batch_sz;
@@ -1300,7 +1302,8 @@ kernel void deformable_col2im<DTYPE, INT_DTYPE>(            \
     device   DTYPE      * grad_im           [[buffer(20)]], \
     uint2     tgid   [[threadgroup_position_in_grid]],      \
     uint2     tptg   [[threads_per_threadgroup]],           \
-    uint2     tid2   [[thread_position_in_threadgroup]]);
+    uint2     tid2   [[thread_position_in_threadgroup]],   \
+    uint2     tgpg    [[threadgroups_per_grid]]);
 
 
 template <typename scalar_t, typename index_t>
@@ -1338,8 +1341,6 @@ scalar_t get_coordinate_weight(
 
 
 
-
-
 template <typename scalar_t, typename integer_t>
 kernel void deformable_col2im_coord(
     constant int64_t  & n                   [[buffer(0)]],
@@ -1368,8 +1369,9 @@ kernel void deformable_col2im_coord(
     device   scalar_t* grad_mask            [[buffer(23)]],
     uint2     tgid   [[threadgroup_position_in_grid]],
     uint2     tptg   [[threads_per_threadgroup]],
-    uint2     tid2   [[thread_position_in_threadgroup]]) {
-    MPS_1D_KERNEL_LOOP(index, n, 1) {
+    uint2     tid2   [[thread_position_in_threadgroup]],
+    uint2     tgpg    [[threadgroups_per_grid]]) {
+  MPS_1D_KERNEL_LOOP(index, n, tgpg.x) {
     scalar_t grad_offset_val = 0;
     scalar_t grad_mask_val = 0;
     integer_t w = index % out_w;
@@ -1432,7 +1434,7 @@ kernel void deformable_col2im_coord(
 
       if (use_mask && is_y_direction) {
         grad_mask_val += col_ptr[col_pos] *
-            bilinear_interpolate(im_ptr, height, width, y, x, index);
+            bilinear_interpolate_2(im_ptr, height, width, y, x, index);
       }
 
       im_ptr += height * width;
@@ -1483,7 +1485,8 @@ kernel void deformable_col2im_coord<DTYPE, INT_DTYPE>(          \
     device   DTYPE      * grad_mask             [[buffer(23)]], \
     uint2     tgid   [[threadgroup_position_in_grid]],          \
     uint2     tptg   [[threads_per_threadgroup]],               \
-    uint2     tid2   [[thread_position_in_threadgroup]]);
+    uint2     tid2   [[thread_position_in_threadgroup]],       \
+    uint2     tgpg    [[threadgroups_per_grid]]);
 
 /* ----------END OF DEFORM_CONV2D KERNELS ----------------------*/
 
