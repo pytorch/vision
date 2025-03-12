@@ -134,7 +134,7 @@ class ColorJitter(Transform):
             raise TypeError(f"{name}={value} should be a single number or a sequence with length 2.")
 
         if not bound[0] <= value[0] <= value[1] <= bound[1]:
-            raise ValueError(f"{name} values should be between {bound}, but got {value}.")
+            raise ValueError(f"{name} values should be between {bound} and increasing, but got {value}.")
 
         return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
 
