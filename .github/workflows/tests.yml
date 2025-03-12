@@ -86,6 +86,8 @@ jobs:
             runner: windows.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
             gpu-arch-version: "11.8"
+          - python-version: "3.12"
+            runner: windows-11-arm64
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     permissions:
