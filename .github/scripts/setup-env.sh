@@ -100,7 +100,7 @@ echo '::endgroup::'
 
 echo '::group::Install torchvision-extra-decoders'
 # This can be done after torchvision was built
-pip install torchvision-extra-decoders
+pip install torchvision-extra-decoders --pre --index-url https://download.pytorch.org/whl/nightly/cpu
 echo '::endgroup::'
 
 echo '::group::Collect environment information'
