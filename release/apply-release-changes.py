@@ -14,8 +14,8 @@ Example:
 """
 
 import os
-import sys
 import pathlib
+import sys
 from typing import Optional
 
 
@@ -28,7 +28,7 @@ def replace_in_file(file_path: pathlib.Path, old_text: str, new_text: str) -> No
             content = file_path.read_text()
         except UnicodeDecodeError:
             # If that fails, try with UTF-8
-            encoding = 'utf-8'
+            encoding = "utf-8"
             content = file_path.read_text(encoding=encoding)
 
         # Perform the replacement
@@ -54,7 +54,7 @@ def find_repo_root() -> Optional[pathlib.Path]:
 
     while current_path != current_path.parent:
         # Check if .git directory exists
-        git_dir = current_path / '.git'
+        git_dir = current_path / ".git"
         if git_dir.exists() and git_dir.is_dir():
             return current_path
 
@@ -86,12 +86,12 @@ def main() -> None:
     print(f"Repository root found at: {repo_root}")
 
     # Get path to workflow directory
-    workflow_dir = repo_root / '.github' / 'workflows'
+    workflow_dir = repo_root / ".github" / "workflows"
 
     # Process all workflow files and perform both replacements on each file
-    for yml_file in workflow_dir.glob('*.yml'):
-        replace_in_file(yml_file, '@main', f'@release/{version}')
-        replace_in_file(yml_file, 'test-infra-ref: main', f'test-infra-ref: release/{version}')
+    for yml_file in workflow_dir.glob("*.yml"):
+        replace_in_file(yml_file, "@main", f"@release/{version}")
+        replace_in_file(yml_file, "test-infra-ref: main", f"test-infra-ref: release/{version}")
 
 
 if __name__ == "__main__":
