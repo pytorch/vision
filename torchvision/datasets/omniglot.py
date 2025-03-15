@@ -23,6 +23,9 @@ class Omniglot(VisionDataset):
         download (bool, optional): If true, downloads the dataset zip files from the internet and
             puts it in root directory. If the zip files are already downloaded, they are not
             downloaded again.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     folder = "omniglot-py"
@@ -39,6 +42,7 @@ class Omniglot(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Optional[Callable[[Union[str, Path]], Any]] = None,
     ) -> None:
         super().__init__(join(root, self.folder), transform=transform, target_transform=target_transform)
         self.background = background
@@ -59,6 +63,7 @@ class Omniglot(VisionDataset):
             for idx, character in enumerate(self._characters)
         ]
         self._flat_character_images: List[Tuple[str, int]] = sum(self._character_images, [])
+        self.loader = loader
 
     def __len__(self) -> int:
         return len(self._flat_character_images)
@@ -73,7 +78,7 @@ class Omniglot(VisionDataset):
         """
         image_name, character_class = self._flat_character_images[index]
         image_path = join(self.target_folder, self._characters[character_class], image_name)
-        image = Image.open(image_path, mode="r").convert("L")
+        image = Image.open(image_path, mode="r").convert("L") if self.loader is None else self.loader(image_path)
 
         if self.transform:
             image = self.transform(image)
