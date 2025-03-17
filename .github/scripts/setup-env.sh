@@ -100,7 +100,7 @@ echo '::endgroup::'
 
 echo '::group::Install torchvision-extra-decoders'
 # This can be done after torchvision was built
-if [[ "$(uname)" == "Linux" ]]; then
+if [[ "$(uname)" == "Linux" && "$ARCH" != "aarch64" ]]; then
     extra_decoders_channel="--pre --index-url https://download.pytorch.org/whl/nightly/cpu"
 else
     extra_decoders_channel=""
