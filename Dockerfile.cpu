@@ -1,0 +1,18 @@
+FROM --platform=linux/amd64 ubuntu:20.04
+
+RUN apt-get update && apt-get install -y libjpeg-dev libpng-dev build-essential git python3 python3-pip
+
+RUN pip3 install --upgrade pip
+RUN pip3 install torch
+RUN pip3 install aiofiles aiohttp auditwheel av defusedxml docutils gdown h5py ipython lmdb matplotlib numpy pandas Pillow pycocotools pytest pytorch_sphinx_theme Requests scipy setuptools Sphinx sphinx_gallery tabulate torch torchdata tqdm
+
+ENV FORCE_CUDA="0"
+ENV TORCH_CUDA_ARCH_LIST=""
+ENV USE_CUDA="0"
+
+COPY . /workspace
+WORKDIR /workspace
+RUN chmod +x /workspace/setup.py
+RUN python3 /workspace/setup.py develop
+
+CMD ["tail", "-f", "/dev/null"]
