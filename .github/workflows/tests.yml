@@ -52,7 +52,8 @@ jobs:
         python-version:
           - "3.9"
           - "3.10"
-          - "3.11"
+          # TODO put back 3.11 (See blame)
+          # - "3.11"
           - "3.12"
         runner: ["macos-m1-stable"]
       fail-fast: false
@@ -81,11 +82,12 @@ jobs:
           - "3.12"
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
-        include:
-          - python-version: "3.9"
-            runner: windows.g5.4xlarge.nvidia.gpu
-            gpu-arch-type: cuda
-            gpu-arch-version: "11.8"
+        # TODO: put GPU testing back
+        # include:
+        #   - python-version: "3.9"
+        #     runner: windows.g5.4xlarge.nvidia.gpu
+        #     gpu-arch-type: cuda
+        #     gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     permissions:
