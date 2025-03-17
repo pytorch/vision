@@ -52,7 +52,8 @@ jobs:
         python-version:
           - "3.9"
           - "3.10"
-          - "3.11"
+          # TODO put back 3.11 (See blame)
+          # - "3.11"
           - "3.12"
         runner: ["macos-m1-stable"]
       fail-fast: false
