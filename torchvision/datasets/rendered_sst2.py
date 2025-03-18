@@ -62,7 +62,7 @@ class RenderedSST2(VisionDataset):
     def __len__(self) -> int:
         return len(self._samples)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         image_file, label = self._samples[idx]
         image = self.loader(image_file)
 

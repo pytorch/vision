@@ -70,7 +70,7 @@ class USPS(VisionDataset):
         self.data = imgs
         self.targets = targets
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index

@@ -87,7 +87,7 @@ class Places365(VisionDataset):
         if download:
             self.download_images()
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         file, target = self.imgs[index]
         image = self.loader(file)
 
@@ -112,8 +112,8 @@ class Places365(VisionDataset):
             dir = f"{self.split}_{size}"
         return path.join(self.root, dir)
 
-    def load_categories(self, download: bool = True) -> Tuple[List[str], Dict[str, int]]:
-        def process(line: str) -> Tuple[str, int]:
+    def load_categories(self, download: bool = True) -> tuple[list[str], dict[str, int]]:
+        def process(line: str) -> tuple[str, int]:
             cls, idx = line.split()
             return cls, int(idx)
 

@@ -68,7 +68,7 @@ def _diou_iou_loss(
     boxes1: torch.Tensor,
     boxes2: torch.Tensor,
     eps: float = 1e-7,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
 
     intsct, union = _loss_inter_union(boxes1, boxes2)
     iou = intsct / (union + eps)
