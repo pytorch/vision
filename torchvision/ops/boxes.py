@@ -148,6 +148,21 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     return keep
 
 
+def _nms_kernel_postprocess(order, iou_keep_out_mask, num_boxes) -> Tensor:
+    """
+    Post-processes the results of the non-maximum suppression (NMS) kernel.
+    Args:
+        order (Tensor): A tensor containing the order of the boxes.
+        iou_keep_out_mask (Tensor): A tensor containing the mask of boxes to keep based on IoU.
+            The datatype is int32.
+        num_boxes (int): The number of boxes.
+    Returns:
+        Tensor: A tensor containing the post-processed results of the NMS kernel.
+    """
+
+    return torch.ops.torchvision.nms_kernel_postprocess(order, iou_keep_out_mask, num_boxes)
+
+
 def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     """
     Clip boxes so that they lie inside an image of size ``size``.
