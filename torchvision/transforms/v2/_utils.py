@@ -84,8 +84,14 @@ def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
     if not isinstance(padding, (numbers.Number, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
 
-    if isinstance(padding, (tuple, list)) and len(padding) not in [1, 2, 4]:
-        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
+    err_msg = "Padding must be an int or a 1, 2, or 4 element of tuple or list, got {value} in {value_type}."
+    if isinstance(padding, numbers.Number):
+        if not isinstance(padding, int):
+            raise ValueError(err_msg.format(value=padding, value_type=type(padding).__name__))
+
+    elif isinstance(padding, (tuple, list)):
+        if len(padding) not in [1, 2, 4] or any(map(lambda x: not isinstance(x, int), padding)):
+            raise ValueError(err_msg.format(value=padding, value_type=type(padding).__name__))
 
 
 # TODO: let's use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)

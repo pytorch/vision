@@ -3028,6 +3028,12 @@ class TestCrop:
         with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
             transforms.RandomCrop([10, 12], padding=[-0.7, 0, 0.7])
 
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
+            transforms.RandomCrop([10, 12], padding=0.5)
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.RandomCrop([10, 12], padding=[0.5, 0.5])
+
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomCrop([10, 12], padding=1, fill="abc")
 
@@ -3887,8 +3893,14 @@ class TestPad:
         with pytest.raises(TypeError, match="Got inappropriate padding arg"):
             transforms.Pad("abc")
 
-        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
             transforms.Pad([-0.7, 0, 0.7])
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
+            transforms.Pad(0.5)
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
+            transforms.Pad(padding=[0.5, 0.5])
 
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.Pad(12, fill="abc")
