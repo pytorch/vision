@@ -254,10 +254,10 @@ class RandomResizedCrop(Transform):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-        if not isinstance(scale, Sequence):
-            raise TypeError("Scale should be a sequence")
-        if not isinstance(ratio, Sequence):
-            raise TypeError("Ratio should be a sequence")
+        if not isinstance(scale, Sequence) or len(scale) != 2:
+            raise TypeError("Scale should be a sequence of two floats.")
+        if not isinstance(ratio, Sequence) or len(ratio) != 2:
+            raise TypeError("Ratio should be a sequence of two floats.")
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")
 

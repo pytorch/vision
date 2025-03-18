@@ -176,6 +176,101 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xyxy
 
 
+def _cxcywhr_to_xywhr(cxcywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        cxcywhr = cxcywhr.clone()
+
+    dtype = cxcywhr.dtype
+    if not cxcywhr.is_floating_point():
+        cxcywhr = cxcywhr.float()
+
+    half_wh = cxcywhr[..., 2:-1].div(-2, rounding_mode=None if cxcywhr.is_floating_point() else "floor").abs_()
+    r_rad = cxcywhr[..., 4].mul(torch.pi).div(180.0)
+    cos, sin = r_rad.cos(), r_rad.sin()
+    # (cx - width / 2 * cos - height / 2 * sin) = x1
+    cxcywhr[..., 0].sub_(half_wh[..., 0].mul(cos)).sub_(half_wh[..., 1].mul(sin))
+    # (cy + width / 2 * sin - height / 2 * cos) = y1
+    cxcywhr[..., 1].add_(half_wh[..., 0].mul(sin)).sub_(half_wh[..., 1].mul(cos))
+
+    return cxcywhr.to(dtype)
+
+
+def _xywhr_to_cxcywhr(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        xywhr = xywhr.clone()
+
+    dtype = xywhr.dtype
+    if not xywhr.is_floating_point():
+        xywhr = xywhr.float()
+
+    half_wh = xywhr[..., 2:-1].div(-2, rounding_mode=None if xywhr.is_floating_point() else "floor").abs_()
+    r_rad = xywhr[..., 4].mul(torch.pi).div(180.0)
+    cos, sin = r_rad.cos(), r_rad.sin()
+    # (x1 + width / 2 * cos + height / 2 * sin) = cx
+    xywhr[..., 0].add_(half_wh[..., 0].mul(cos)).add_(half_wh[..., 1].mul(sin))
+    # (y1 - width / 2 * sin + height / 2 * cos) = cy
+    xywhr[..., 1].sub_(half_wh[..., 0].mul(sin)).add_(half_wh[..., 1].mul(cos))
+
+    return xywhr.to(dtype)
+
+
+def _xywhr_to_xyxyxyxy(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
+    # NOTE: This function cannot modify the input tensor inplace as it requires a dimension change.
+    if not inplace:
+        xywhr = xywhr.clone()
+
+    dtype = xywhr.dtype
+    if not xywhr.is_floating_point():
+        xywhr = xywhr.float()
+
+    wh = xywhr[..., 2:-1]
+    r_rad = xywhr[..., 4].mul(torch.pi).div(180.0)
+    cos, sin = r_rad.cos(), r_rad.sin()
+    xywhr = xywhr[..., :2].tile((1, 4))
+    # x1 + w * cos = x3
+    xywhr[..., 2].add_(wh[..., 0].mul(cos))
+    # y1 - w * sin = y3
+    xywhr[..., 3].sub_(wh[..., 0].mul(sin))
+    # x1 + w * cos + h * sin = x2
+    xywhr[..., 4].add_(wh[..., 0].mul(cos).add(wh[..., 1].mul(sin)))
+    # y1 - w * sin + h * cos = y2
+    xywhr[..., 5].sub_(wh[..., 0].mul(sin).sub(wh[..., 1].mul(cos)))
+    # x1 + h * sin = x4
+    xywhr[..., 6].add_(wh[..., 1].mul(sin))
+    # y1 + h * cos = y4
+    xywhr[..., 7].add_(wh[..., 1].mul(cos))
+    return xywhr.to(dtype)
+
+
+def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
+    # NOTE: This function cannot modify the input tensor inplace as it requires a dimension change.
+    if not inplace:
+        xyxyxyxy = xyxyxyxy.clone()
+
+    dtype = xyxyxyxy.dtype
+    if not xyxyxyxy.is_floating_point():
+        xyxyxyxy = xyxyxyxy.float()
+
+    r_rad = torch.atan2(xyxyxyxy[..., 1].sub(xyxyxyxy[..., 3]), xyxyxyxy[..., 2].sub(xyxyxyxy[..., 0]))
+    cos, sin = r_rad.cos(), r_rad.sin()
+    # x1, y1, x3, y3, (x2 - x1), (y2 - y1) x4, y4
+    xyxyxyxy[..., 4:6].sub_(xyxyxyxy[..., :2])
+    # (x2 - x1) * cos + (y1 - y2) * sin = w
+    xyxyxyxy[..., 2] = xyxyxyxy[..., 4].mul(cos).sub(xyxyxyxy[..., 5].mul(sin))
+    # (x2 - x1) * sin + (y2 - y1) * cos = h
+    xyxyxyxy[..., 3] = xyxyxyxy[..., 5].mul(cos).add(xyxyxyxy[..., 4].mul(sin))
+    xyxyxyxy[..., 4] = r_rad.div_(torch.pi).mul_(180.0)
+    return xyxyxyxy[..., :5].to(dtype)
+
+
+def is_rotated_bounding_box_format(format: BoundingBoxFormat) -> bool:
+    return format.value in [
+        BoundingBoxFormat.XYWHR.value,
+        BoundingBoxFormat.CXCYWHR.value,
+        BoundingBoxFormat.XYXYXYXY.value,
+    ]
+
+
 def _convert_bounding_box_format(
     bounding_boxes: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
@@ -183,16 +278,27 @@ def _convert_bounding_box_format(
     if new_format == old_format:
         return bounding_boxes
 
+    if is_rotated_bounding_box_format(old_format) ^ is_rotated_bounding_box_format(new_format):
+        raise ValueError("Cannot convert between rotated and unrotated bounding boxes.")
+
     # TODO: Add _xywh_to_cxcywh and _cxcywh_to_xywh to improve performance
     if old_format == BoundingBoxFormat.XYWH:
         bounding_boxes = _xywh_to_xyxy(bounding_boxes, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:
         bounding_boxes = _cxcywh_to_xyxy(bounding_boxes, inplace)
+    elif old_format == BoundingBoxFormat.CXCYWHR:
+        bounding_boxes = _cxcywhr_to_xywhr(bounding_boxes, inplace)
+    elif old_format == BoundingBoxFormat.XYXYXYXY:
+        bounding_boxes = _xyxyxyxy_to_xywhr(bounding_boxes, inplace)
 
     if new_format == BoundingBoxFormat.XYWH:
         bounding_boxes = _xyxy_to_xywh(bounding_boxes, inplace)
     elif new_format == BoundingBoxFormat.CXCYWH:
         bounding_boxes = _xyxy_to_cxcywh(bounding_boxes, inplace)
+    elif new_format == BoundingBoxFormat.CXCYWHR:
+        bounding_boxes = _xywhr_to_cxcywhr(bounding_boxes, inplace)
+    elif new_format == BoundingBoxFormat.XYXYXYXY:
+        bounding_boxes = _xywhr_to_xyxyxyxy(bounding_boxes, inplace)
 
     return bounding_boxes
 
