@@ -22,6 +22,7 @@ class CUDAJpegEncoder {
   const torch::Device original_device;
   const torch::Device target_device;
   const c10::cuda::CUDAStream stream;
+  const c10::cuda::CUDAStream current_stream;
 
  protected:
   nvjpegEncoderState_t nv_enc_state;

@@ -93,7 +93,13 @@ class CelebA(VisionDataset):
             "test": 2,
             "all": None,
         }
-        split_ = split_map[verify_str_arg(split.lower(), "split", ("train", "valid", "test", "all"))]
+        split_ = split_map[
+            verify_str_arg(
+                split.lower() if isinstance(split, str) else split,
+                "split",
+                ("train", "valid", "test", "all"),
+            )
+        ]
         splits = self._load_csv("list_eval_partition.txt")
         identity = self._load_csv("identity_CelebA.txt")
         bbox = self._load_csv("list_bbox_celeba.txt", header=1)

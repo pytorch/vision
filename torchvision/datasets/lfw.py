@@ -2,8 +2,7 @@ import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from PIL import Image
-
+from .folder import default_loader
 from .utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
 from .vision import VisionDataset
 
@@ -39,6 +38,7 @@ class _LFW(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         super().__init__(os.path.join(root, self.base_folder), transform=transform, target_transform=target_transform)
 
@@ -57,11 +57,7 @@ class _LFW(VisionDataset):
             raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.images_dir = os.path.join(self.root, images_dir)
-
-    def _loader(self, path: str) -> Image.Image:
-        with open(path, "rb") as f:
-            img = Image.open(f)
-            return img.convert("RGB")
+        self._loader = loader
 
     def _check_integrity(self) -> bool:
         st1 = check_integrity(os.path.join(self.root, self.filename), self.md5)
@@ -101,14 +97,16 @@ class LFWPeople(_LFW):
             ``10fold`` (default).
         image_set (str, optional): Type of image funneling to use, ``original``, ``funneled`` or
             ``deepfunneled``. Defaults to ``funneled``.
-        transform (callable, optional): A function/transform that  takes in a PIL image
-            and returns a transformed version. E.g, ``transforms.RandomRotation``
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
-
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     def __init__(
@@ -119,8 +117,9 @@ class LFWPeople(_LFW):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
-        super().__init__(root, split, image_set, "people", transform, target_transform, download)
+        super().__init__(root, split, image_set, "people", transform, target_transform, download, loader=loader)
 
         self.class_to_idx = self._get_classes()
         self.data, self.targets = self._get_people()
@@ -190,6 +189,9 @@ class LFWPairs(_LFW):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
 
     """
 
@@ -201,8 +203,9 @@ class LFWPairs(_LFW):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
-        super().__init__(root, split, image_set, "pairs", transform, target_transform, download)
+        super().__init__(root, split, image_set, "pairs", transform, target_transform, download, loader=loader)
 
         self.pair_names, self.data, self.targets = self._get_pairs(self.images_dir)
 

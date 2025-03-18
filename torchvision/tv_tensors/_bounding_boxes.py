@@ -12,20 +12,35 @@ from ._tv_tensor import TVTensor
 class BoundingBoxFormat(Enum):
     """Coordinate format of a bounding box.
 
-    Available formats are
+    Available formats are:
 
     * ``XYXY``
     * ``XYWH``
     * ``CXCYWH``
+    * ``XYWHR``: rotated boxes represented via corner, width and height, x1, y1
+      being top left, w, h being width and height. r is rotation angle in
+      degrees.
+    * ``CXCYWHR``: rotated boxes represented via centre, width and height, cx,
+      cy being center of box, w, h being width and height. r is rotation angle
+      in degrees.
+    * ``XYXYXYXY``: rotated boxes represented via corners, x1, y1 being top
+      left, x2, y2 being bottom right, x3, y3 being bottom left, x4, y4 being
+      top right.
     """
 
     XYXY = "XYXY"
     XYWH = "XYWH"
     CXCYWH = "CXCYWH"
+    XYWHR = "XYWHR"
+    CXCYWHR = "CXCYWHR"
+    XYXYXYXY = "XYXYXYXY"
 
 
 class BoundingBoxes(TVTensor):
-    """:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, 4]``.
+    """:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``.
+
+    Where ``N`` is the number of bounding boxes
+    and ``K`` is 4 for unrotated boxes, and 5 or 8 for rotated boxes.
 
     .. note::
         There should be only one :class:`~torchvision.tv_tensors.BoundingBoxes`
