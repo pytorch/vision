@@ -24,6 +24,7 @@ import torch
 import torch.nn.functional as F
 from common_utils import combinations_grid
 from torchvision import datasets
+from torchvision.io import decode_image
 from torchvision.transforms import v2
 
 
@@ -405,6 +406,8 @@ class ImageNetTestCase(datasets_utils.ImageDatasetTestCase):
     REQUIRED_PACKAGES = ("scipy",)
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "val"))
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
 
@@ -532,7 +535,8 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         self._create_bbox_txt(base_folder, num_images)
         self._create_landmarks_txt(base_folder, num_images)
 
-        return dict(num_examples=num_images_per_split[config["split"]], attr_names=attr_names)
+        num_samples = num_images_per_split.get(config["split"], 0) if isinstance(config["split"], str) else 0
+        return dict(num_examples=num_samples, attr_names=attr_names)
 
     def _create_split_txt(self, root):
         num_images_per_split = dict(train=4, valid=3, test=2)
@@ -634,6 +638,28 @@ class CelebATestCase(datasets_utils.ImageDatasetTestCase):
         for target_type in ["identity", "bbox", ["identity", "bbox"]]:
             with self.create_dataset(target_type=target_type, transform=v2.Resize(size=expected_size)) as (dataset, _):
                 datasets_utils.check_transforms_v2_wrapper_spawn(dataset, expected_size=expected_size)
+
+    def test_invalid_split_list(self):
+        with pytest.raises(ValueError, match="Expected type str for argument split, but got type <class 'list'>."):
+            with self.create_dataset(split=[1]):
+                pass
+
+    def test_invalid_split_int(self):
+        with pytest.raises(ValueError, match="Expected type str for argument split, but got type <class 'int'>."):
+            with self.create_dataset(split=1):
+                pass
+
+    def test_invalid_split_value(self):
+        with pytest.raises(
+            ValueError,
+            match="Unknown value '{value}' for argument {arg}. Valid values are {{{valid_values}}}.".format(
+                value="invalid",
+                arg="split",
+                valid_values=("train", "valid", "test", "all"),
+            ),
+        ):
+            with self.create_dataset(split="invalid"):
+                pass
 
 
 class VOCSegmentationTestCase(datasets_utils.ImageDatasetTestCase):
@@ -1150,6 +1176,8 @@ class SBUTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SBU
     FEATURE_TYPES = (PIL.Image.Image, str)
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir, config):
         num_images = 3
 
@@ -1388,6 +1416,8 @@ class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
     _IMAGES_FOLDER = "images"
     _ANNOTATIONS_FILE = "captions.html"
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def dataset_args(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
         root = tmpdir / self._IMAGES_FOLDER
@@ -1456,6 +1486,8 @@ class Flickr30kTestCase(Flickr8kTestCase):
     FEATURE_TYPES = (PIL.Image.Image, list)
 
     _ANNOTATIONS_FILE = "captions.token"
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def _image_file_name(self, idx):
         return f"{idx}.jpg"
@@ -1917,6 +1949,8 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
     _IMAGES_DIR = {"original": "lfw", "funneled": "lfw_funneled", "deepfunneled": "lfw-deepfunneled"}
     _file_id = {"10fold": "", "train": "DevTrain", "test": "DevTest"}
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir) / "lfw-py"
         os.makedirs(tmpdir, exist_ok=True)
@@ -1952,6 +1986,18 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
         part1 = datasets_utils.create_random_string(random.randint(5, 7))
         part2 = datasets_utils.create_random_string(random.randint(4, 7))
         return f"{part1}_{part2}"
+
+    def test_tv_decode_image_support(self):
+        if not self.SUPPORT_TV_IMAGE_DECODE:
+            pytest.skip(f"{self.DATASET_CLASS.__name__} does not support torchvision.io.decode_image.")
+
+        with self.create_dataset(
+            config=dict(
+                loader=decode_image,
+            )
+        ) as (dataset, _):
+            image = dataset[0][0]
+            assert isinstance(image, torch.Tensor)
 
 
 class LFWPairsTestCase(LFWPeopleTestCase):
@@ -2285,6 +2331,7 @@ class HD1KTestCase(KittiFlowTestCase):
 class EuroSATTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.EuroSAT
     FEATURE_TYPES = (PIL.Image.Image, int)
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         data_folder = os.path.join(tmpdir, "eurosat", "2750")
@@ -2308,6 +2355,8 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, int)
 
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "test"))
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir: str, config):
         root_folder = pathlib.Path(tmpdir) / "food-101"
@@ -2345,6 +2394,7 @@ class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
     ADDITIONAL_CONFIGS = combinations_grid(
         split=("train", "val", "trainval", "test"), annotation_level=("variant", "family", "manufacturer")
     )
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir: str, config):
         split = config["split"]
@@ -2394,6 +2444,8 @@ class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
 class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SUN397
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir: str, config):
         data_dir = pathlib.Path(tmpdir) / "SUN397"
         data_dir.mkdir()
@@ -2424,6 +2476,8 @@ class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
 class DTDTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.DTD
     FEATURE_TYPES = (PIL.Image.Image, int)
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     ADDITIONAL_CONFIGS = combinations_grid(
         split=("train", "test", "val"),
@@ -2585,6 +2639,7 @@ class CLEVRClassificationTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, (int, type(None)))
 
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "val", "test"))
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         data_folder = pathlib.Path(tmpdir) / "clevr" / "CLEVR_v1.0"
@@ -2682,6 +2737,8 @@ class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
     REQUIRED_PACKAGES = ("scipy",)
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "test"))
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir, config):
         import scipy.io as io
         from numpy.core.records import fromarrays
@@ -2726,6 +2783,8 @@ class Country211TestCase(datasets_utils.ImageDatasetTestCase):
 
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "valid", "test"))
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir: str, config):
         split_folder = pathlib.Path(tmpdir) / "country211" / config["split"]
         split_folder.mkdir(parents=True, exist_ok=True)
@@ -2753,6 +2812,8 @@ class Flowers102TestCase(datasets_utils.ImageDatasetTestCase):
 
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "val", "test"))
     REQUIRED_PACKAGES = ("scipy",)
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir: str, config):
         base_folder = pathlib.Path(tmpdir) / "flowers-102"
@@ -2811,6 +2872,8 @@ class RenderedSST2TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.RenderedSST2
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "val", "test"))
     SPLIT_TO_FOLDER = {"train": "train", "val": "valid", "test": "test"}
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir: str, config):
         root_folder = pathlib.Path(tmpdir) / "rendered-sst2"
@@ -3471,6 +3534,8 @@ class Middlebury2014StereoTestCase(datasets_utils.ImageDatasetTestCase):
 class ImagenetteTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Imagenette
     ADDITIONAL_CONFIGS = combinations_grid(split=["train", "val"], size=["full", "320px", "160px"])
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     _WNIDS = [
         "n01440764",
