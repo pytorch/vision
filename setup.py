@@ -2,6 +2,7 @@ import distutils.command.clean
 import distutils.spawn
 import glob
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -79,7 +80,7 @@ def get_version():
 
 def write_version_file(version, sha):
     # Exists for BC, probably completely useless.
-    with open(ROOT_DIR / "torchvision/version.py", "w") as f:
+    with open(ROOT_DIR / "torchvision" / "version.py", "w") as f:
         f.write(f"__version__ = '{version}'\n")
         f.write(f"git_version = {repr(sha)}\n")
         f.write("from torchvision.extension import _check_cuda_version\n")
@@ -95,8 +96,14 @@ def get_requirements():
             return None
 
     pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
-    if os.getenv("PYTORCH_VERSION"):
-        pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
+    if version_pin := os.getenv("PYTORCH_VERSION"):
+        pytorch_dep += "==" + version_pin
+    elif (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
+        # This branch and the associated env vars exist to help third-party
+        # builds like in https://github.com/pytorch/vision/pull/8936. This is
+        # supported on a best-effort basis, we don't guarantee that this won't
+        # eventually break (and we don't test it.)
+        pytorch_dep += f">={version_pin_ge},<{version_pin_lt}"
 
     requirements = [
         "numpy",
@@ -123,7 +130,7 @@ def get_macros_and_flags():
             if NVCC_FLAGS is None:
                 nvcc_flags = []
             else:
-                nvcc_flags = NVCC_FLAGS.split(" ")
+                nvcc_flags = shlex.split(NVCC_FLAGS)
         extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == "win32":
@@ -194,7 +201,7 @@ def make_C_extension():
 
 def find_libpng():
     # Returns (found, include dir, library dir, library name)
-    if sys.platform in ("linux", "darwin"):
+    if sys.platform in ("linux", "darwin", "aix"):
         libpng_config = shutil.which("libpng-config")
         if libpng_config is None:
             warnings.warn("libpng-config not found")
@@ -557,7 +564,7 @@ if __name__ == "__main__":
             "scipy": ["scipy"],
         },
         ext_modules=extensions,
-        python_requires=">=3.8",
+        python_requires=">=3.9",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
             "clean": clean,
