@@ -19,7 +19,7 @@ class ConvertBoundingBoxFormat(Transform):
         super().__init__()
         self.format = format
 
-    def _transform(self, inpt: tv_tensors.BoundingBoxes, params: Dict[str, Any]) -> tv_tensors.BoundingBoxes:
+    def transform(self, inpt: tv_tensors.BoundingBoxes, params: Dict[str, Any]) -> tv_tensors.BoundingBoxes:
         return F.convert_bounding_box_format(inpt, new_format=self.format)  # type: ignore[return-value, arg-type]
 
 
@@ -32,5 +32,5 @@ class ClampBoundingBoxes(Transform):
 
     _transformed_types = (tv_tensors.BoundingBoxes,)
 
-    def _transform(self, inpt: tv_tensors.BoundingBoxes, params: Dict[str, Any]) -> tv_tensors.BoundingBoxes:
+    def transform(self, inpt: tv_tensors.BoundingBoxes, params: Dict[str, Any]) -> tv_tensors.BoundingBoxes:
         return F.clamp_bounding_boxes(inpt)  # type: ignore[return-value]

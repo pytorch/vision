@@ -159,7 +159,7 @@ class TestSimpleCopyPaste:
 
 
 class TestFixedSizeCrop:
-    def test__get_params(self, mocker):
+    def test_make_params(self, mocker):
         crop_size = (7, 7)
         batch_shape = (10,)
         canvas_size = (11, 5)
@@ -170,7 +170,7 @@ class TestFixedSizeCrop:
             make_image(size=canvas_size, color_space="RGB"),
             make_bounding_boxes(format=BoundingBoxFormat.XYXY, canvas_size=canvas_size, num_boxes=batch_shape[0]),
         ]
-        params = transform._get_params(flat_inputs)
+        params = transform.make_params(flat_inputs)
 
         assert params["needs_crop"]
         assert params["height"] <= crop_size[0]
@@ -191,7 +191,7 @@ class TestFixedSizeCrop:
 
         is_valid = torch.randint(0, 2, (batch_size,), dtype=torch.bool)
         mocker.patch(
-            "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
+            "torchvision.prototype.transforms._geometry.FixedSizeCrop.make_params",
             return_value=dict(
                 needs_crop=True,
                 top=0,
@@ -229,7 +229,7 @@ class TestFixedSizeCrop:
         canvas_size = (10, 10)
 
         mocker.patch(
-            "torchvision.prototype.transforms._geometry.FixedSizeCrop._get_params",
+            "torchvision.prototype.transforms._geometry.FixedSizeCrop.make_params",
             return_value=dict(
                 needs_crop=True,
                 top=0,

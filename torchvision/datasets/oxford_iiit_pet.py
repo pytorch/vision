@@ -27,6 +27,8 @@ class OxfordIIITPet(VisionDataset):
         transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
+        transforms (callable, optional): A function/transform that takes input sample
+            and its target as entry and returns a transformed version.
         download (bool, optional): If True, downloads the dataset from the internet and puts it into
             ``root/oxford-iiit-pet``. If dataset is already downloaded, it is not downloaded again.
     """
