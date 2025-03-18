@@ -36,7 +36,7 @@ else
   conda install libwebp -y
   conda install libjpeg-turbo -c pytorch
   yum install -y freetype gnutls
-  pip install auditwheel
+  pip install "auditwheel<6.3.0"
 fi
 
 pip install numpy pyyaml future ninja
