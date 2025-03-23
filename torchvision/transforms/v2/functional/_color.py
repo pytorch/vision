@@ -460,6 +460,9 @@ def posterize(inpt: torch.Tensor, bits: int) -> torch.Tensor:
 @_register_kernel_internal(posterize, torch.Tensor)
 @_register_kernel_internal(posterize, tv_tensors.Image)
 def posterize_image(image: torch.Tensor, bits: int) -> torch.Tensor:
+    if (not isinstance(bits, int)) or (bits not in range(0, 9)):
+        raise TypeError(f"bits must be a positive integer in the range [0, 8], get {bits} instead.")
+
     if image.is_floating_point():
         levels = 1 << bits
         return image.mul(levels).floor_().clamp_(0, levels - 1).mul_(1.0 / levels)
