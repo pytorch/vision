@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterator
 import torch
 
 from ..utils import _log_api_usage_once
+from ._video_deprecation_warning import _raise_video_deprecation_warning
 
 from ._video_opt import _HAS_CPU_VIDEO_DECODER
 

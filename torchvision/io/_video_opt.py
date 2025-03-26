@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import torch
 
 from ..extension import _load_library
+from ._video_deprecation_warning import _raise_video_deprecation_warning
 
 
 try:
