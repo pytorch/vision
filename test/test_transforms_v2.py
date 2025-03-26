@@ -6192,6 +6192,11 @@ class TestJPEG:
         with pytest.raises(ValueError, match="quality must be an integer from 1 to 100"):
             transforms.JPEG(quality=quality)
 
+    @pytest.mark.parametrize("quality", [None, True])
+    def test_transform_quality_type_error(self, quality):
+        with pytest.raises(TypeError, match="quality"):
+            transforms.JPEG(quality=quality)
+
 
 class TestUtils:
     # TODO: Still need to test has_all, has_any, check_type and get_bouding_boxes
