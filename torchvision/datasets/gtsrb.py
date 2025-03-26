@@ -62,7 +62,7 @@ class GTSRB(VisionDataset):
     def __len__(self) -> int:
         return len(self._samples)
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
 
         path, target = self._samples[index]
         sample = PIL.Image.open(path).convert("RGB")

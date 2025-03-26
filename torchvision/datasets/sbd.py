@@ -109,7 +109,7 @@ class SBDataset(VisionDataset):
             axis=0,
         )
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         img = Image.open(self.images[index]).convert("RGB")
         target = self._get_target(self.masks[index])
 

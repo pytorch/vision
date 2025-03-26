@@ -16,9 +16,9 @@ def deform_conv2d(
     offset: Tensor,
     weight: Tensor,
     bias: Optional[Tensor] = None,
-    stride: Tuple[int, int] = (1, 1),
-    padding: Tuple[int, int] = (0, 0),
-    dilation: Tuple[int, int] = (1, 1),
+    stride: tuple[int, int] = (1, 1),
+    padding: tuple[int, int] = (0, 0),
+    dilation: tuple[int, int] = (1, 1),
     mask: Optional[Tensor] = None,
 ) -> Tensor:
     r"""

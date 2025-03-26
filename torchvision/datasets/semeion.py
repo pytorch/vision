@@ -51,7 +51,7 @@ class SEMEION(VisionDataset):
         self.data = np.reshape(self.data, (-1, 16, 16))
         self.labels = np.nonzero(data[:, 256:])[1]
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index

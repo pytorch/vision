@@ -63,7 +63,7 @@ class SBU(VisionDataset):
                 self.photos.append(photo)
                 self.captions.append(caption)
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
