@@ -2038,6 +2038,8 @@ class SintelTestCase(datasets_utils.ImageDatasetTestCase):
 
     FLOW_H, FLOW_W = 3, 4
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "Sintel"
 
@@ -2103,6 +2105,8 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.KittiFlow
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "test"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "KittiFlow"
@@ -2223,6 +2227,8 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
 
     FLOW_H, FLOW_W = 3, 4
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "FlyingThings3D"
 
@@ -2288,6 +2294,8 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
 
 class HD1KTestCase(KittiFlowTestCase):
     DATASET_CLASS = datasets.HD1K
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "hd1k"
