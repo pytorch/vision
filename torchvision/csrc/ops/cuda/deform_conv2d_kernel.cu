@@ -499,6 +499,10 @@ __device__ scalar_t get_coordinate_weight(
     scalar_t y,
     scalar_t x,
     bool is_y_direction) {
+  if (y <= -1 || height <= y || x <= -1 || width <= x) {
+    return 0;
+  }
+
   index_t y_l = floor(y);
   index_t x_l = floor(x);
   index_t y_h = y_l + 1;
