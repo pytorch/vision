@@ -362,7 +362,7 @@ class RandAugment(_AutoAugmentBase):
 
     Args:
         num_ops (int, optional): Number of augmentation transformations to apply sequentially,
-            must be non-negative integer.
+            must be non-negative integer. Default: 2.
         magnitude (int, optional): Magnitude for all the transformations.
         num_magnitude_bins (int, optional): The number of different magnitude values.
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
