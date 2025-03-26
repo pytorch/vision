@@ -74,7 +74,7 @@ def write_video(
         DEPRECATED: All the video decoding and encoding capabilities of torchvision
         are deprecated from version 0.22 and will be removed in version 0.24.  We
         recommend that you migrate to
-        `TorchCodec<https://github.com/pytorch/torchcodec>`_, where we'll
+        `TorchCodec<https://github.com/pytorch/torchcodec>`__, where we'll
         consolidate the future decoding/encoding capabilities of PyTorch
 
     This function relies on PyAV (therefore, ultimately FFmpeg) to encode
@@ -86,7 +86,7 @@ def write_video(
 
         In the near future, we intend to centralize PyTorch's video decoding
         capabilities within the `torchcodec
-        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
+        <https://github.com/pytorch/torchcodec>`__ project. We encourage you to
         try it out and share your feedback, as the torchvision video decoders
         will eventually be deprecated.
 
@@ -293,7 +293,7 @@ def read_video(
         DEPRECATED: All the video decoding and encoding capabilities of torchvision
         are deprecated from version 0.22 and will be removed in version 0.24.  We
         recommend that you migrate to
-        `TorchCodec<https://github.com/pytorch/torchcodec>`_, where we'll
+        `TorchCodec<https://github.com/pytorch/torchcodec>`__, where we'll
         consolidate the future decoding/encoding capabilities of PyTorch
 
     Args:
@@ -425,7 +425,7 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
         DEPRECATED: All the video decoding and encoding capabilities of torchvision
         are deprecated from version 0.22 and will be removed in version 0.24.  We
         recommend that you migrate to
-        `TorchCodec<https://github.com/pytorch/torchcodec>`_, where we'll
+        `TorchCodec<https://github.com/pytorch/torchcodec>`__, where we'll
         consolidate the future decoding/encoding capabilities of PyTorch
 
     Note that the function decodes the whole video frame-by-frame.

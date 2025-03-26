@@ -94,7 +94,7 @@ Video
     DEPRECATED: All the video decoding and encoding capabilities of torchvision
     are deprecated from version 0.22 and will be removed in version 0.24.  We
     recommend that you migrate to
-    `TorchCodec<https://github.com/pytorch/torchcodec>`_, where we'll
+    `TorchCodec<https://github.com/pytorch/torchcodec>`__, where we'll
     consolidate the future decoding/encoding capabilities of PyTorch
 
 .. autosummary::
