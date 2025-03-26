@@ -53,15 +53,6 @@ from torchvision.transforms.v2.functional._geometry import _get_perspective_coef
 from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
 
-# While we are working on adjusting transform functions
-# for rotated and oriented bounding boxes formats,
-# we limit the perimeter of tests to formats
-#  for which transform functions are already implemented.
-# In the future, this global variable will be replaced with `list(tv_tensors.BoundingBoxFormat)`
-# to support all available formats.
-SUPPORTED_BOX_FORMATS = [tv_tensors.BoundingBoxFormat[x] for x in ["XYXY", "XYWH", "CXCYWH"]]
-NEW_BOX_FORMATS = [tv_tensors.BoundingBoxFormat[x] for x in ["XYWHR", "CXCYWHR", "XYXYXYXY"]]
-
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
 
@@ -635,7 +626,7 @@ class TestResize:
             check_scripted_vs_eager=not isinstance(size, int),
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
@@ -766,7 +757,7 @@ class TestResize:
             new_canvas_size=(new_height, new_width),
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
@@ -1012,7 +1003,7 @@ class TestHorizontalFlip:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.horizontal_flip_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -1081,7 +1072,7 @@ class TestHorizontalFlip:
 
         return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
@@ -1178,7 +1169,7 @@ class TestAffine:
         shear=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["shear"],
         center=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"],
     )
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
@@ -1327,7 +1318,7 @@ class TestAffine:
             ),
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])
     @pytest.mark.parametrize("scale", _CORRECTNESS_AFFINE_KWARGS["scale"])
@@ -1355,7 +1346,7 @@ class TestAffine:
 
         torch.testing.assert_close(actual, expected)
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, center, seed):
@@ -1462,7 +1453,7 @@ class TestVerticalFlip:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.vertical_flip_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -1529,7 +1520,7 @@ class TestVerticalFlip:
 
         return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
     def test_bounding_boxes_correctness(self, format, fn):
         bounding_boxes = make_bounding_boxes(format=format)
@@ -1598,7 +1589,7 @@ class TestRotate:
         expand=[False, True],
         center=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"],
     )
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
@@ -1769,7 +1760,7 @@ class TestRotate:
             bounding_boxes
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
@@ -1782,7 +1773,7 @@ class TestRotate:
         torch.testing.assert_close(actual, expected)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
@@ -2703,7 +2694,7 @@ class TestElastic:
             check_cuda_vs_cpu=dtype is not torch.float16,
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -2830,7 +2821,7 @@ class TestCrop:
         check_kernel(F.crop_image, make_image(self.INPUT_SIZE, dtype=dtype, device=device), **kwargs)
 
     @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_box(self, kwargs, format, dtype, device):
@@ -2980,7 +2971,7 @@ class TestCrop:
         )
 
     @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_functional_bounding_box_correctness(self, kwargs, format, dtype, device):
@@ -2993,7 +2984,7 @@ class TestCrop:
         assert_equal(F.get_size(actual), F.get_size(expected))
 
     @pytest.mark.parametrize("output_size", [(17, 11), (11, 17), (11, 11)])
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("seed", list(range(5)))
@@ -3516,8 +3507,7 @@ class TestAutoAugmentTransforms:
 
 
 class TestConvertBoundingBoxFormat:
-    old_new_formats = list(itertools.permutations(SUPPORTED_BOX_FORMATS, 2))
-    old_new_formats += list(itertools.permutations(NEW_BOX_FORMATS, 2))
+    old_new_formats = list(itertools.permutations(iter(tv_tensors.BoundingBoxFormat), 2))
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_kernel(self, old_format, new_format):
@@ -3528,7 +3518,7 @@ class TestConvertBoundingBoxFormat:
             old_format=old_format,
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("inplace", [False, True])
     def test_kernel_noop(self, format, inplace):
         input = make_bounding_boxes(format=format).as_subclass(torch.Tensor)
@@ -3552,13 +3542,9 @@ class TestConvertBoundingBoxFormat:
         output_inplace = F.convert_bounding_box_format(
             input, old_format=old_format, new_format=new_format, inplace=True
         )
-        if old_format != tv_tensors.BoundingBoxFormat.XYXYXYXY and new_format != tv_tensors.BoundingBoxFormat.XYXYXYXY:
-            # NOTE: BoundingBox format conversion from and to XYXYXYXY format
-            # cannot modify the input tensor inplace as it requires a dimension
-            # change.
-            assert output_inplace.data_ptr() == input.data_ptr()
-            assert output_inplace._version > input_version
-            assert output_inplace is input
+        assert output_inplace.data_ptr() == input.data_ptr()
+        assert output_inplace._version > input_version
+        assert output_inplace is input
 
         assert_equal(output_inplace, output_out_of_place)
 
@@ -3577,7 +3563,7 @@ class TestConvertBoundingBoxFormat:
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_strings(self, old_format, new_format):
         # Non-regression test for https://github.com/pytorch/vision/issues/8258
-        input = make_bounding_boxes(format=old_format, canvas_size=(50, 50))
+        input = tv_tensors.BoundingBoxes(torch.tensor([[10, 10, 20, 20]]), format=old_format, canvas_size=(50, 50))
         expected = self._reference_convert_bounding_box_format(input, new_format)
 
         old_format = old_format.name
@@ -3742,7 +3728,7 @@ class TestResizedCrop:
             new_canvas_size=size,
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_functional_bounding_boxes_correctness(self, format):
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
 
@@ -3816,7 +3802,7 @@ class TestPad:
             ),
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_kernel_bounding_boxes(self, format):
         bounding_boxes = make_bounding_boxes(format=format)
         check_kernel(
@@ -3935,7 +3921,7 @@ class TestPad:
         )
 
     @pytest.mark.parametrize("padding", CORRECTNESS_PADDINGS)
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
@@ -3964,7 +3950,7 @@ class TestCenterCrop:
         )
 
     @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_kernel_bounding_boxes(self, output_size, format):
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
         check_kernel(
@@ -4043,7 +4029,7 @@ class TestCenterCrop:
         )
 
     @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
@@ -4110,7 +4096,7 @@ class TestPerspective:
         coefficients=COEFFICIENTS,
         start_end_points=START_END_POINTS,
     )
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_kernel_bounding_boxes(self, param, value, format):
         if param == "start_end_points":
             kwargs = dict(zip(["startpoints", "endpoints"], value))
@@ -4286,7 +4272,7 @@ class TestPerspective:
         )
 
     @pytest.mark.parametrize(("startpoints", "endpoints"), START_END_POINTS)
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_correctness_perspective_bounding_boxes(self, startpoints, endpoints, format, dtype, device):
@@ -4493,7 +4479,7 @@ class TestNormalize:
 
 
 class TestClampBoundingBoxes:
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel(self, format, dtype, device):
@@ -4505,7 +4491,7 @@ class TestClampBoundingBoxes:
             canvas_size=bounding_boxes.canvas_size,
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_functional(self, format):
         check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format))
 
