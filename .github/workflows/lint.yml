@@ -99,13 +99,14 @@ jobs:
         mypy --install-types --non-interactive --config-file mypy.ini
         echo '::endgroup::'
 
-  bc:
-    if: github.event.pull_request
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run BC Lint Action
-        uses: pytorch/test-infra/.github/actions/bc-lint@release/2.7
-        with:
-          repo: ${{ github.event.pull_request.head.repo.full_name }}
-          base_sha: ${{ github.event.pull_request.base.sha }}
-          head_sha: ${{ github.event.pull_request.head.sha }}
+  # bc:
+  #   if: github.event.pull_request
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Run BC Lint Action
+  #       uses: pytorch/test-infra/.github/actions/bc-lint@main
+  #       with:
+  #         repo: ${{ github.event.pull_request.head.repo.full_name }}
+  #         base_sha: ${{ github.event.pull_request.base.sha }}
+  #         head_sha: ${{ github.event.pull_request.head.sha }}
+# >>>>>>> 8a06122218 (Deactivate bc linter (#8999))
