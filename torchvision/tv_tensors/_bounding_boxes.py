@@ -20,7 +20,7 @@ class BoundingBoxFormat(Enum):
     * ``XYWHR``: rotated boxes represented via corner, width and height, x1, y1
       being top left, w, h being width and height. r is rotation angle in
       degrees.
-    * ``CXCYWHR``: rotated boxes represented via centre, width and height, cx,
+    * ``CXCYWHR``: jrotated boxes represented via centre, width and height, cx,
       cy being center of box, w, h being width and height. r is rotation angle
       in degrees.
     * ``XYXYXYXY``: rotated boxes represented via corners, x1, y1 being top
