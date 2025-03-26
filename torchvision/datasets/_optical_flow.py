@@ -74,9 +74,9 @@ class FlowDataset(ABC, VisionDataset):
 
         if self._has_builtin_flow_mask or valid_flow_mask is not None:
             # The `or valid_flow_mask is not None` part is here because the mask can be generated within a transform
-            return img1, img2, flow, valid_flow_mask
+            return img1, img2, flow, valid_flow_mask  # type: ignore[return-value]
         else:
-            return img1, img2, flow
+            return img1, img2, flow  # type: ignore[return-value]
 
     def __len__(self) -> int:
         return len(self._image_list)
