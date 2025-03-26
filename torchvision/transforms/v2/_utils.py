@@ -81,17 +81,14 @@ def _get_fill(fill_dict, inpt_type):
 
 
 def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
-    if not isinstance(padding, (numbers.Number, tuple, list)):
-        raise TypeError("Got inappropriate padding arg")
 
-    err_msg = "Padding must be an int or a 1, 2, or 4 element of tuple or list, got {value} in {value_type}."
-    if isinstance(padding, numbers.Number):
-        if not isinstance(padding, int):
-            raise ValueError(err_msg.format(value=padding, value_type=type(padding).__name__))
+    err_msg = f"Padding must be an int or a 1, 2, or 4 element of tuple or list, got {padding}."
+    if isinstance(padding, (tuple, list)):
+        if len(padding) not in [1, 2, 4] or not all(isinstance(p, int) for p in padding):
+            raise ValueError(err_msg)
+    elif not isinstance(padding, int):
+        raise ValueError(err_msg)
 
-    elif isinstance(padding, (tuple, list)):
-        if len(padding) not in [1, 2, 4] or any(map(lambda x: not isinstance(x, int), padding)):
-            raise ValueError(err_msg.format(value=padding, value_type=type(padding).__name__))
 
 
 # TODO: let's use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)
