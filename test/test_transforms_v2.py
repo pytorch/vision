@@ -3505,6 +3505,14 @@ class TestAutoAugmentTransforms:
         with pytest.raises(ValueError, match="severity must be between"):
             transforms.AugMix(severity=severity)
 
+    @pytest.mark.parametrize("num_ops", [-1, 1.1])
+    def test_rand_augment_num_ops_error(self, num_ops):
+        with pytest.raises(
+            ValueError,
+            match=re.escape(f"num_ops should be a non-negative integer, but got {num_ops} instead."),
+        ):
+            transforms.RandAugment(num_ops=num_ops)
+
 
 class TestConvertBoundingBoxFormat:
     old_new_formats = list(itertools.permutations(iter(tv_tensors.BoundingBoxFormat), 2))
