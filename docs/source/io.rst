@@ -86,8 +86,8 @@ IO operations
     read_file
     write_file
 
-Video
------
+Video - DEPREACTED
+------------------
 
 .. warning::
 
