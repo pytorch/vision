@@ -3022,11 +3022,17 @@ class TestCrop:
         with pytest.raises(ValueError, match="Please provide only two dimensions"):
             transforms.RandomCrop([10, 12, 14])
 
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
             transforms.RandomCrop([10, 12], padding="abc")
 
         with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
             transforms.RandomCrop([10, 12], padding=[-0.7, 0, 0.7])
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.RandomCrop([10, 12], padding=0.5)
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.RandomCrop([10, 12], padding=[0.5, 0.5])
 
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomCrop([10, 12], padding=1, fill="abc")
@@ -3892,11 +3898,17 @@ class TestPad:
         check_transform(transforms.Pad(padding=[1]), make_input())
 
     def test_transform_errors(self):
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+        with pytest.raises(ValueError, match="Padding must be"):
             transforms.Pad("abc")
 
-        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
             transforms.Pad([-0.7, 0, 0.7])
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
+            transforms.Pad(0.5)
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
+            transforms.Pad(padding=[0.5, 0.5])
 
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.Pad(12, fill="abc")
@@ -6204,6 +6216,11 @@ class TestJPEG:
     @pytest.mark.parametrize("quality", [-1, 0, 150])
     def test_transform_invalid_quality_error(self, quality):
         with pytest.raises(ValueError, match="quality must be an integer from 1 to 100"):
+            transforms.JPEG(quality=quality)
+
+    @pytest.mark.parametrize("quality", [None, True])
+    def test_transform_quality_type_error(self, quality):
+        with pytest.raises(TypeError, match="quality"):
             transforms.JPEG(quality=quality)
 
 
