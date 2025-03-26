@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:36.950** total execution time for 11 files **from all galleries**:
+**00:38.577** total execution time for 11 files **from all galleries**:
 
 .. container::
 
@@ -33,28 +33,28 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py` (``../../gallery/others/plot_visualization_utils.py``)
-     - 00:13.039
+     - 00:13.494
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py` (``../../gallery/others/plot_optical_flow.py``)
-     - 00:08.607
+     - 00:09.037
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py` (``../../gallery/transforms/plot_transforms_illustrations.py``)
-     - 00:06.361
+     - 00:06.610
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``../../gallery/transforms/plot_transforms_e2e.py``)
-     - 00:04.590
+     - 00:04.947
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py` (``../../gallery/others/plot_repurposing_annotations.py``)
-     - 00:02.108
+     - 00:02.187
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py` (``../../gallery/others/plot_scripted_tensor_transforms.py``)
-     - 00:01.412
+     - 00:01.449
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` (``../../gallery/transforms/plot_transforms_getting_started.py``)
-     - 00:00.623
+     - 00:00.640
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` (``../../gallery/transforms/plot_cutmix_mixup.py``)
-     - 00:00.189
+     - 00:00.193
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` (``../../gallery/transforms/plot_custom_transforms.py``)
      - 00:00.010
@@ -63,5 +63,5 @@ Computation times
      - 00:00.008
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py` (``../../gallery/transforms/plot_custom_tv_tensors.py``)
-     - 00:00.004
+     - 00:00.003
      - 0.0
