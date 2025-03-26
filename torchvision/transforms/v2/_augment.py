@@ -351,7 +351,9 @@ class JPEG(Transform):
 
     def __init__(self, quality: Union[int, Sequence[int]]):
         super().__init__()
-        if isinstance(quality, int) and not isinstance(quality, bool):
+        if isinstance(quality, int):
+            if isinstance(quality, bool):
+                raise TypeError("quality can't be bool")
             quality = [quality, quality]
         else:
             _check_sequence_input(quality, "quality", req_sizes=(2,))

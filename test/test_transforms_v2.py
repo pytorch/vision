@@ -6208,7 +6208,7 @@ class TestJPEG:
 
     @pytest.mark.parametrize("quality", [None, True])
     def test_transform_quality_type_error(self, quality):
-        with pytest.raises(TypeError, match="quality should be a sequence of length 2"):
+        with pytest.raises(TypeError, match="quality"):
             transforms.JPEG(quality=quality)
 
 
