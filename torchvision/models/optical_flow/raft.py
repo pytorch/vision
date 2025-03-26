@@ -394,9 +394,9 @@ class CorrBlock(nn.Module):
     def index_pyramid(self, centroids_coords):
         """Return correlation features by indexing from the pyramid."""
         neighborhood_side_len = 2 * self.radius + 1  # see note in __init__ about out_channels
-        di = torch.linspace(-self.radius, self.radius, neighborhood_side_len)
-        dj = torch.linspace(-self.radius, self.radius, neighborhood_side_len)
-        delta = torch.stack(torch.meshgrid(di, dj, indexing="ij"), dim=-1).to(centroids_coords.device)
+        di = torch.linspace(-self.radius, self.radius, neighborhood_side_len, device=centroids_coords.device)
+        dj = torch.linspace(-self.radius, self.radius, neighborhood_side_len, device=centroids_coords.device)
+        delta = torch.stack(torch.meshgrid(di, dj, indexing="ij"), dim=-1)
         delta = delta.view(1, neighborhood_side_len, neighborhood_side_len, 2)
 
         batch_size, _, h, w = centroids_coords.shape  # _ = 2
@@ -513,8 +513,8 @@ class RAFT(nn.Module):
         hidden_state = torch.tanh(hidden_state)
         context = F.relu(context)
 
-        coords0 = make_coords_grid(batch_size, h // 8, w // 8).to(fmap1.device)
-        coords1 = make_coords_grid(batch_size, h // 8, w // 8).to(fmap1.device)
+        coords0 = make_coords_grid(batch_size, h // 8, w // 8, device=fmap1.device)
+        coords1 = make_coords_grid(batch_size, h // 8, w // 8, device=fmap1.device)
 
         flow_predictions = []
         for _ in range(num_flow_updates):
