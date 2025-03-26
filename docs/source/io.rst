@@ -91,12 +91,11 @@ Video
 
 .. warning::
 
-    Torchvision supports video decoding through different APIs listed below,
-    some of which are still in BETA stage. In the near future, we intend to
-    centralize PyTorch's video decoding capabilities within the `torchcodec
-    <https://github.com/pytorch/torchcodec>`_ project. We encourage you to try
-    it out and share your feedback, as the torchvision video decoders will
-    eventually be deprecated.
+    DEPRECATED: All the video decoding and encoding capabilities of torchvision
+    are deprecated from version 0.22 and will be removed in version 0.24.  We
+    recommend that you migrate to
+    `TorchCodec<https://github.com/pytorch/torchcodec>`_, where we'll
+    consolidate the future decoding/encoding capabilities of PyTorch
 
 .. autosummary::
     :toctree: generated/
