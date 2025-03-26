@@ -100,7 +100,13 @@ echo '::endgroup::'
 
 echo '::group::Install torchvision-extra-decoders'
 # This can be done after torchvision was built
-pip install torchvision-extra-decoders
+if [[ "$(uname)" == "Linux" && "$(uname -m)" != "aarch64" ]]; then
+    extra_decoders_channel="--pre --index-url https://download.pytorch.org/whl/nightly/cpu"
+else
+    extra_decoders_channel=""
+fi
+
+pip install torchvision-extra-decoders $extra_decoders_channel
 echo '::endgroup::'
 
 echo '::group::Collect environment information'
