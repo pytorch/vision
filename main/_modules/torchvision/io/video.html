@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+db831ba) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+923eb03) &#x25BC</a>
     </div>
     
 
@@ -424,6 +424,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">_video_opt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._video_deprecation_warning</span><span class="w"> </span><span class="kn">import</span> <span class="n">_raise_video_deprecation_warning</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">av</span>
@@ -479,20 +480,20 @@
     <span class="n">audio_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Writes a 4d tensor in [T, H, W, C] format in a video file.</span>
+<span class="sd">    [DEPRECATED] Writes a 4d tensor in [T, H, W, C] format in a video file.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        DEPRECATED: All the video decoding and encoding capabilities of torchvision</span>
+<span class="sd">        are deprecated from version 0.22 and will be removed in version 0.24.  We</span>
+<span class="sd">        recommend that you migrate to</span>
+<span class="sd">        `TorchCodec &lt;https://github.com/pytorch/torchcodec&gt;`__, where we&#39;ll</span>
+<span class="sd">        consolidate the future decoding/encoding capabilities of PyTorch</span>
 
 <span class="sd">    This function relies on PyAV (therefore, ultimately FFmpeg) to encode</span>
 <span class="sd">    videos, you can get more fine-grained control by referring to the other</span>
 <span class="sd">    options at your disposal within `the FFMpeg wiki</span>
 <span class="sd">    &lt;http://trac.ffmpeg.org/wiki#Encoding&gt;`_.</span>
-
-<span class="sd">    .. warning::</span>
-
-<span class="sd">        In the near future, we intend to centralize PyTorch&#39;s video decoding</span>
-<span class="sd">        capabilities within the `torchcodec</span>
-<span class="sd">        &lt;https://github.com/pytorch/torchcodec&gt;`_ project. We encourage you to</span>
-<span class="sd">        try it out and share your feedback, as the torchvision video decoders</span>
-<span class="sd">        will eventually be deprecated.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        filename (str): path where the video will be saved</span>
@@ -520,6 +521,7 @@
 <span class="sd">        &gt;&gt;&gt; write_video(&quot;video.mp4&quot;, options = {&quot;crf&quot;: &quot;17&quot;})</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_raise_video_deprecation_warning</span><span class="p">()</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">write_video</span><span class="p">)</span>
     <span class="n">_check_av_available</span><span class="p">()</span>
@@ -689,16 +691,15 @@
     <span class="n">pts_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pts&quot;</span><span class="p">,</span>
     <span class="n">output_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;THWC&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Reads a video from a file, returning both the video frames and the audio frames</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[DEPRECATED] Reads a video from a file, returning both the video frames and the audio frames</span>
 
 <span class="sd">    .. warning::</span>
 
-<span class="sd">        In the near future, we intend to centralize PyTorch&#39;s video decoding</span>
-<span class="sd">        capabilities within the `torchcodec</span>
-<span class="sd">        &lt;https://github.com/pytorch/torchcodec&gt;`_ project. We encourage you to</span>
-<span class="sd">        try it out and share your feedback, as the torchvision video decoders</span>
-<span class="sd">        will eventually be deprecated.</span>
+<span class="sd">        DEPRECATED: All the video decoding and encoding capabilities of torchvision</span>
+<span class="sd">        are deprecated from version 0.22 and will be removed in version 0.24.  We</span>
+<span class="sd">        recommend that you migrate to</span>
+<span class="sd">        `TorchCodec &lt;https://github.com/pytorch/torchcodec&gt;`__, where we&#39;ll</span>
+<span class="sd">        consolidate the future decoding/encoding capabilities of PyTorch</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        filename (str): path to the video file. If using the pyav backend, this can be whatever ``av.open`` accepts.</span>
@@ -715,6 +716,7 @@
 <span class="sd">        aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels and `L` is the number of points</span>
 <span class="sd">        info (Dict): metadata for the video and audio. Can contain the fields video_fps (float) and audio_fps (int)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_raise_video_deprecation_warning</span><span class="p">()</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">read_video</span><span class="p">)</span>
 
@@ -821,16 +823,15 @@
 
 
 <div class="viewcode-block" id="read_video_timestamps"><a class="viewcode-back" href="../../../generated/torchvision.io.read_video_timestamps.html#torchvision.io.read_video_timestamps">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">read_video_timestamps</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pts_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pts&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    List the video frames timestamps.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[DEPREACTED] List the video frames timestamps.</span>
 
 <span class="sd">    .. warning::</span>
 
-<span class="sd">        In the near future, we intend to centralize PyTorch&#39;s video decoding</span>
-<span class="sd">        capabilities within the `torchcodec</span>
-<span class="sd">        &lt;https://github.com/pytorch/torchcodec&gt;`_ project. We encourage you to</span>
-<span class="sd">        try it out and share your feedback, as the torchvision video decoders</span>
-<span class="sd">        will eventually be deprecated.</span>
+<span class="sd">        DEPRECATED: All the video decoding and encoding capabilities of torchvision</span>
+<span class="sd">        are deprecated from version 0.22 and will be removed in version 0.24.  We</span>
+<span class="sd">        recommend that you migrate to</span>
+<span class="sd">        `TorchCodec &lt;https://github.com/pytorch/torchcodec&gt;`__, where we&#39;ll</span>
+<span class="sd">        consolidate the future decoding/encoding capabilities of PyTorch</span>
 
 <span class="sd">    Note that the function decodes the whole video frame-by-frame.</span>
 
@@ -845,6 +846,7 @@
 <span class="sd">        video_fps (float, optional): the frame rate for the video</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_raise_video_deprecation_warning</span><span class="p">()</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">read_video_timestamps</span><span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_video_backend</span>

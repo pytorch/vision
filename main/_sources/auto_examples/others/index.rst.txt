@@ -66,23 +66,6 @@ Others
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the APIs that torchvision offers for videos, together with the examples on how to build datasets and more.">
-
-.. only:: html
-
-  .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_video_api_thumb.png
-    :alt:
-
-  :ref:`sphx_glr_auto_examples_others_plot_video_api.py`
-
-.. raw:: html
-
-      <div class="sphx-glr-thumbnail-title">Video API</div>
-    </div>
-
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, bounding boxes, segmentation masks and keypoints.">
 
 .. only:: html
@@ -111,6 +94,5 @@ Others
    /auto_examples/others/plot_optical_flow
    /auto_examples/others/plot_repurposing_annotations
    /auto_examples/others/plot_scripted_tensor_transforms
-   /auto_examples/others/plot_video_api
    /auto_examples/others/plot_visualization_utils
 

@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+db831ba) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+923eb03) &#x25BC</a>
     </div>
     
 
@@ -492,7 +492,9 @@ single model input.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img1_batch</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_plot_optical_flow_001.png" srcset="../../_images/sphx_glr_plot_optical_flow_001.png" alt="plot optical flow" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/pytorch/vision/torchvision/io/video.py:197: UserWarning: The pts_unit &#39;pts&#39; gives wrong results. Please use pts_unit &#39;sec&#39;.
+<img src="../../_images/sphx_glr_plot_optical_flow_001.png" srcset="../../_images/sphx_glr_plot_optical_flow_001.png" alt="plot optical flow" class = "sphx-glr-single-img"/><div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/pytorch/vision/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we&#39;ll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/pytorch/vision/torchvision/io/video.py:199: UserWarning: The pts_unit &#39;pts&#39; gives wrong results. Please use pts_unit &#39;sec&#39;.
   warnings.warn(&quot;The pts_unit &#39;pts&#39; gives wrong results. Please use pts_unit &#39;sec&#39;.&quot;)
 </pre></div>
 </div>
@@ -616,7 +618,7 @@ too long to run it.</p>
 <p>Once the .jpg flow images are saved, you can convert them into a video or a
 GIF using ffmpeg with e.g.:</p>
 <p>ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 8.988 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 8.927 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-others-plot-optical-flow-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/8c66a0169c2c41937d8db4238842fe5b/plot_optical_flow.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_optical_flow.ipynb</span></code></a></p>
