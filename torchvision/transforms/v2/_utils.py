@@ -90,7 +90,6 @@ def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
         raise ValueError(err_msg)
 
 
-
 # TODO: let's use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)
 # https://github.com/pytorch/vision/issues/6250
 def _check_padding_mode_arg(padding_mode: Literal["constant", "edge", "reflect", "symmetric"]) -> None:
