@@ -203,8 +203,15 @@ html_static_path = ["_static"]
 
 # TODO: remove this once https://github.com/pytorch/pytorch_sphinx_theme/issues/125 is fixed
 html_css_files = [
+    "https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css",
     "css/custom_torchvision.css",
 ]
+
+html_js_files = [
+    "https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js",
+    "js/data_table.js",
+]
+
 
 # -- Options for HTMLHelp output ------------------------------------------
 
@@ -426,6 +433,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             table = tabulate(table, tablefmt="rst")
             lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
             lines += [".. table::", ""]
+
             lines += textwrap.indent(table, " " * 4).split("\n")
             lines.append("")
             lines.append(
@@ -472,6 +480,7 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
     generated_dir.mkdir(exist_ok=True)
     with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
         table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
+        table_file.write(".. rst-class:: datatable\n")
         table_file.write(".. table::\n")
         table_file.write(f"    :widths: {widths_table} \n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
