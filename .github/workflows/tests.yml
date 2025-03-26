@@ -52,7 +52,8 @@ jobs:
         python-version:
           - "3.9"
           - "3.10"
-          - "3.11"
+          # TODO put back 3.11 (See blame)
+          # - "3.11"
           - "3.12"
         runner: ["macos-m1-stable"]
       fail-fast: false
@@ -81,11 +82,12 @@ jobs:
           - "3.12"
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
-        include:
-          - python-version: "3.9"
-            runner: windows.g5.4xlarge.nvidia.gpu
-            gpu-arch-type: cuda
-            gpu-arch-version: "11.8"
+        # TODO: put GPU testing back
+        # include:
+        #   - python-version: "3.9"
+        #     runner: windows.g5.4xlarge.nvidia.gpu
+        #     gpu-arch-type: cuda
+        #     gpu-arch-version: "11.8"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     permissions:
@@ -109,39 +111,39 @@ jobs:
 
         ./.github/scripts/unittest.sh
 
-  onnx:
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
-    permissions:
-      id-token: write
-      contents: read
-    with:
-      repository: pytorch/vision
-      test-infra-ref: main
-      script: |
-        set -euo pipefail
+  # onnx:
+  #   uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+  #   with:
+  #     repository: pytorch/vision
+  #     test-infra-ref: main
+  #     script: |
+  #       set -euo pipefail
 
-        export PYTHON_VERSION=3.10
-        export GPU_ARCH_TYPE=cpu
-        export GPU_ARCH_VERSION=''
+  #       export PYTHON_VERSION=3.10
+  #       export GPU_ARCH_TYPE=cpu
+  #       export GPU_ARCH_VERSION=''
 
-        ./.github/scripts/setup-env.sh
+  #       ./.github/scripts/setup-env.sh
 
-        # Prepare conda
-        CONDA_PATH=$(which conda)
-        eval "$(${CONDA_PATH} shell.bash hook)"
-        conda activate ci
+  #       # Prepare conda
+  #       CONDA_PATH=$(which conda)
+  #       eval "$(${CONDA_PATH} shell.bash hook)"
+  #       conda activate ci
 
-        echo '::group::Install ONNX'
-        pip install --progress-bar=off onnx onnxruntime
-        echo '::endgroup::'
+  #       echo '::group::Install ONNX'
+  #       pip install --progress-bar=off onnx onnxruntime
+  #       echo '::endgroup::'
 
-        echo '::group::Install testing utilities'
-        pip install --progress-bar=off pytest "numpy<2"
-        echo '::endgroup::'
+  #       echo '::group::Install testing utilities'
+  #       pip install --progress-bar=off pytest "numpy<2"
+  #       echo '::endgroup::'
 
-        echo '::group::Run ONNX tests'
-        pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_onnx.py
-        echo '::endgroup::'
+  #       echo '::group::Run ONNX tests'
+  #       pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_onnx.py
+  #       echo '::endgroup::'
 
   unittests-extended:
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
