@@ -558,6 +558,7 @@ if __name__ == "__main__":
         packages=find_packages(exclude=("test",)),
         package_data={package_name: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
         zip_safe=False,
+        # blop
         install_requires=get_requirements(),
         extras_require={
             "gdown": ["gdown>=4.7.3"],
