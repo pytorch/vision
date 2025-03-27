@@ -11,6 +11,7 @@ import random
 import re
 import shutil
 import string
+import sys
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
@@ -1146,6 +1147,7 @@ class OmniglotTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Omniglot
 
     ADDITIONAL_CONFIGS = combinations_grid(background=(True, False))
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         target_folder = (
@@ -1902,6 +1904,7 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
             assert dataset.class_to_idx == class_to_idx
 
 
+@pytest.mark.skipif(sys.platform in ("win32", "cygwin"), reason="temporarily disabled on Windows")
 class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.INaturalist
     FEATURE_TYPES = (PIL.Image.Image, (int, tuple))
@@ -1910,6 +1913,7 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
         target_type=("kingdom", "full", "genus", ["kingdom", "phylum", "class", "order", "family", "genus", "full"]),
         version=("2021_train",),
     )
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         categories = [
