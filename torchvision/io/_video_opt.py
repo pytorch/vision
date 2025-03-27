@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import torch
 
 from ..extension import _load_library
+from ._video_deprecation_warning import _raise_video_deprecation_warning
 
 
 try:
@@ -185,6 +186,7 @@ def _read_video_from_file(
         info (Dict): metadata for the video and audio. Can contain the fields video_fps (float)
             and audio_fps (int)
     """
+    _raise_video_deprecation_warning()
     _validate_pts(video_pts_range)
     _validate_pts(audio_pts_range)
 
@@ -256,6 +258,7 @@ def _probe_video_from_file(filename: str) -> VideoMetaData:
     """
     Probe a video file and return VideoMetaData with info about the video
     """
+    _raise_video_deprecation_warning()
     result = torch.ops.video_reader.probe_video_from_file(filename)
     vtimebase, vfps, vduration, atimebase, asample_rate, aduration = result
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
@@ -331,6 +334,7 @@ def _read_video_from_memory(
             `K` is the number of channels
     """
 
+    _raise_video_deprecation_warning()
     _validate_pts(video_pts_range)
     _validate_pts(audio_pts_range)
 
@@ -405,6 +409,7 @@ def _read_video_timestamps_from_memory(
         0,  # audio_timebase_num
         1,  # audio_timebase_den
     )
+    _raise_video_deprecation_warning()
     _vframes, vframe_pts, vtimebase, vfps, vduration, _aframes, aframe_pts, atimebase, asample_rate, aduration = result
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
 
@@ -420,6 +425,7 @@ def _probe_video_from_memory(
     Probe a video in memory and return VideoMetaData with info about the video
     This function is torchscriptable
     """
+    _raise_video_deprecation_warning()
     if not isinstance(video_data, torch.Tensor):
         with warnings.catch_warnings():
             # Ignore the warning because we actually don't modify the buffer in this function
@@ -437,6 +443,7 @@ def _read_video(
     end_pts: Optional[Union[float, Fraction]] = None,
     pts_unit: str = "pts",
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, float]]:
+    _raise_video_deprecation_warning()
     if end_pts is None:
         end_pts = float("inf")
 
@@ -495,6 +502,7 @@ def _read_video(
 def _read_video_timestamps(
     filename: str, pts_unit: str = "pts"
 ) -> Tuple[Union[List[int], List[Fraction]], Optional[float]]:
+    _raise_video_deprecation_warning()
     if pts_unit == "pts":
         warnings.warn(
             "The pts_unit 'pts' gives wrong results and will be removed in a "
