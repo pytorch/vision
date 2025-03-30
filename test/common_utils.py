@@ -35,7 +35,6 @@ OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't nee
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
     with tempfile.TemporaryDirectory(
-        ignore_cleanup_errors=False,  # todo remove this line once we find why in windows it is not deleting the temp dir
         **kwargs,
     ) as tmp_dir:
         if src is not None:
