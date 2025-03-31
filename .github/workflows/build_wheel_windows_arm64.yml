@@ -18,18 +18,9 @@ on:
         required: true
         type: choice
         options:
-          - Python312
-          - Python311
-        default: Python312
-      msvc_version:
-        description: "MSVC Version"
-        required: true
-        type: choice
-        options:
-          - 'latest'
-          - '14.40'
-          - '14.36'
-        default: 'latest'
+          - "3.12"
+          - "3.11"
+        default: "3.12"
       build_type:
         description: "Build type"
         required: true
@@ -40,19 +31,14 @@ on:
         default: Release
       repository_name:
         description: "torchvision repository (username/repo)"
-        required: true
+        required: false
         type: string
         default: "pytorch/vision"
       repository_branch:
         description: "repository branch"
-        required: true
-        type: string
-        default: "main"
-      build_version:
-        description: "Optional: build version for wheel file name (e.g. 2.6.0); leave empty for default naming"
         required: false
         type: string
-        default: ""
+        default: "main"
 
 permissions:
   id-token: write
@@ -62,7 +48,7 @@ jobs:
   trigger-test-infra:
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_arm64.yml@winarm64_wheels
     with:
-      python_version: ${{ inputs.python_version || 'Python312' }}
+      python_version: ${{ inputs.python_version || '3.12' }}
       msvc_version: ${{ inputs.msvc_version || 'latest' }}
       build_type: ${{ inputs.build_type || 'Release' }}
       repository_name: ${{ inputs.repository_name || 'pytorch/vision' }}
