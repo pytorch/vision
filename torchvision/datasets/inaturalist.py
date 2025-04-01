@@ -113,7 +113,7 @@ class INaturalist(VisionDataset):
             for fname in files:
                 self.index.append((dir_index, fname))
 
-        self.loader = loader or Image.open
+        self.loader = loader
 
     def _init_2021(self) -> None:
         """Initialize based on 2021 layout"""
@@ -184,7 +184,8 @@ class INaturalist(VisionDataset):
         """
 
         cat_id, fname = self.index[index]
-        img = self.loader(os.path.join(self.root, self.all_categories[cat_id], fname))
+        image_path = os.path.join(self.root, self.all_categories[cat_id], fname)
+        img = self.loader(image_path) if self.loader is not None else Image.open(image_path)
 
         target: Any = []
         for t in self.target_type:
