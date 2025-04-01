@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+309bd7a) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.22.0a0+ef4718a) &#x25BC</a>
     </div>
     
 
@@ -591,7 +591,10 @@ semantic segmentation tasks.</p>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>[img.shape for img in imgs] = [torch.Size([3, 512, 512]), torch.Size([3, 409, 493])]
 [type(target) for target in targets] = [&lt;class &#39;dict&#39;&gt;, &lt;class &#39;dict&#39;&gt;]
-loss_classifier     4.722
+/opt/conda/envs/ci/lib/python3.10/site-packages/torch/_tensor.py:1128: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/aten/src/ATen/native/Scalar.cpp:22.)
+  return self.item().__format__(format_spec)
+loss_classifier     4.721
 loss_box_reg        0.006
 loss_mask           0.734
 loss_objectness     0.691
@@ -607,7 +610,7 @@ the actual training scripts we use to train our models.</p>
 need for your own use-cases: this is because we’re supporting different
 backends (PIL, tensors, TVTensors) and different transforms namespaces (v1 and
 v2). So don’t be afraid to simplify and only keep what you need.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 4.771 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 4.847 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-transforms-plot-transforms-e2e-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/fd385b39c48cf3b5eb72e901830b8621/plot_transforms_e2e.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_transforms_e2e.ipynb</span></code></a></p>
