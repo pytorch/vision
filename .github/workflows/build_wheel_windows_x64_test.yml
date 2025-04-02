@@ -17,7 +17,6 @@ on:
         type: choice
         options:
           - Release
-          # - Debug not available
         default: Release
       repository_name:
         description: Torchvision repository (username/repo)
@@ -29,7 +28,7 @@ on:
         required: false
         type: string
         default: main
-        
+
 permissions:
   id-token: write
   contents: read
@@ -38,12 +37,13 @@ jobs:
   trigger-test-infra:
     strategy:
       matrix:
-        python_version: ["3.12"] # only one for now  
+        python_version: ["3.12"]
     runs-on: "windows-latest"
-    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_x64_test.yml@x64windows_test
-    name: Trigger Test Infra workflow
-    with:
-      python_version: ${{ matrix.python_version }}
-      build_type: ${{ inputs.build_type }}
-      repository_name: ${{ inputs.repository_name }}
-      repository_branch: ${{ inputs.repository_branch }}
+    steps:
+      - name: Trigger Test Infra workflow
+        uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_x64_test.yml@x64windows_test
+        with:
+          python_version: ${{ matrix.python_version }}
+          build_type: ${{ inputs.build_type }}
+          repository_name: ${{ inputs.repository_name }}
+          repository_branch: ${{ inputs.repository_branch }}
