@@ -1103,8 +1103,9 @@ class InStereo2k(StereoMatchingDataset):
 
     def _read_disparity(self, file_path: str) -> Tuple[np.ndarray, None]:
         disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
-        # unsqueeze disparity to (C, H, W)
-        disparity_map = disparity_map[None, :, :] / 1024.0
+        # unsqueeze disparity to (C, H, W) and rescale
+        # https://github.com/YuhuaXu/StereoDataset/blob/b9ba15d0380a18a7b974c5dc37d9155acebaff4e/Readme.md?plain=1#L10
+        disparity_map = disparity_map[None, :, :] / 100.0
         valid_mask = None
         return disparity_map, valid_mask
 
