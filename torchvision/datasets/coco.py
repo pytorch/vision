@@ -43,7 +43,10 @@ class CocoDetection(VisionDataset):
         return Image.open(os.path.join(self.root, path)).convert("RGB")
 
     def _load_target(self, id: int) -> List[Any]:
-        return self.coco.loadAnns(self.coco.getAnnIds(id))
+        target = self.coco.loadAnns(self.coco.getAnnIds(id))
+        path = self.coco.loadImgs(id)[0]["file_name"]
+        target[0]["image_path"] = os.path.join(self.root, path)
+        return target
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
 
