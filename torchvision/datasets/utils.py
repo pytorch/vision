@@ -152,6 +152,8 @@ def list_dir(root: Union[str, pathlib.Path], prefix: bool = False) -> List[str]:
     directories = [p for p in os.listdir(root) if os.path.isdir(os.path.join(root, p))]
     if prefix is True:
         directories = [os.path.join(root, d) for d in directories]
+    # sort directories to get deterministic order across OSes
+    directories.sort()
     return directories
 
 
@@ -169,6 +171,8 @@ def list_files(root: Union[str, pathlib.Path], suffix: str, prefix: bool = False
     files = [p for p in os.listdir(root) if os.path.isfile(os.path.join(root, p)) and p.endswith(suffix)]
     if prefix is True:
         files = [os.path.join(root, d) for d in files]
+    # sort filenames to get deterministic order across OSes
+    files.sort()
     return files
 
 
