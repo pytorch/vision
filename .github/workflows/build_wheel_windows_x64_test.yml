@@ -35,5 +35,5 @@ jobs:
     name: Build Windows x64 Torchvision Wheel  
     with:
         python_version: ${{ matrix.python_version }}
-        repository_name: ${{ inputs.repository_name }}
-        repository_branch: ${{ inputs.repository_branch }}
+        repository_name: ${{ inputs.repository_name || 'pytorch/vision' }}
+        repository_branch: ${{ inputs.repository_branch || 'main'}}
