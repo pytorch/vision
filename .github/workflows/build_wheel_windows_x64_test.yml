@@ -1,4 +1,4 @@
-name: Build Windows Arm64 Torchvision Wheel
+name: Build Windows X64 Torchvision Wheel Test
 
 on:
   pull_request: null
