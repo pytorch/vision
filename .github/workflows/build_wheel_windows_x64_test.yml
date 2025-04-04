@@ -11,13 +11,6 @@ on:
       - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
     inputs:
-      build_type:
-        description: Build type
-        required: true
-        type: choice
-        options:
-          - Release
-        default: Release
       repository_name:
         description: Torchvision repository (username/repo)
         required: false
@@ -42,6 +35,5 @@ jobs:
     name: Build Windows x64 Torchvision Wheel  
     with:
         python_version: ${{ matrix.python_version }}
-        build_type: ${{ inputs.build_type }}
         repository_name: ${{ inputs.repository_name }}
         repository_branch: ${{ inputs.repository_branch }}
