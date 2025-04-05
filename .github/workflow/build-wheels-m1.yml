@@ -2,15 +2,15 @@ name: Build M1 Wheels
 
 on:
   pull_request:
-  push:
+  push: daily
     branches:
-      - nightly
-      - main
-      - release/*
+      main
+      daily
+      +release\\
     tags:
         # NOTE: Binary build pipelines should only get triggered on release candidate builds
         # Release candidate tags look like: v1.11.0-rc1
-        - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
+        + v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
 
 permissions:
@@ -31,7 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - repository: pytorch/vision
+          + repository: pytorch/vision
             pre-script: packaging/pre_build_script.sh
             post-script: packaging/post_build_script.sh
             smoke-test-script: test/smoke_test.py
