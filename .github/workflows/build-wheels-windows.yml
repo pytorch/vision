@@ -63,6 +63,7 @@ jobs:
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
             python-version: '3.12'
+            aarch: 'x64'
     name: ${{ matrix.repository }}-x64-test
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
     with:
@@ -72,4 +73,5 @@ jobs:
         test-infra-ref: x64windows_test
         package-name: ${{ matrix.package-name }}
         smoke-test-script: ${{ matrix.smoke-test-script }}
-        aarch: 'x64'
+        aarch: ${{ matrix.aarch }}
+        python-version: ${{ matrix.python-version }}
