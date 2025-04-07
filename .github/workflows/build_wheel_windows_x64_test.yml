@@ -10,17 +10,6 @@ on:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
-    inputs:
-      repository_name:
-        description: Torchvision repository (username/repo)
-        required: false
-        type: string
-        default: pytorch/vision
-      repository_branch:
-        description: Repository branch
-        required: false
-        type: string
-        default: main
 
 permissions:
   id-token: write
@@ -35,5 +24,5 @@ jobs:
     name: Build Windows x64 Torchvision Wheel  
     with:
         python_version: ${{ matrix.python_version }}
-        repository_name: ${{ inputs.repository_name || 'pytorch/vision' }}
-        repository_branch: ${{ inputs.repository_branch || 'main'}}
+        repository_name: 'pytorch/vision'
+        repository_branch: // predefined github branch variable
