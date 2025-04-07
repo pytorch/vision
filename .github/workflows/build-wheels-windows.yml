@@ -72,6 +72,5 @@ jobs:
       test-infra-ref: x64windows_test
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
-      python-version: ${{ matrix.python-version }}
       aarch: ${{ matrix.aarch }}
     
