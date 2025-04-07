@@ -63,7 +63,7 @@ jobs:
             package-name: torchvision
             python-version: 3.12
     name: ${{ matrix.repository }}-x64-test
-    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_x64_test.yml@x64windows_test
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
     with:
         repository: ${{ matrix.repository }}
         ref: ""
