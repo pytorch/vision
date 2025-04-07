@@ -54,22 +54,24 @@ jobs:
       trigger-event: ${{ github.event_name }}
 
   build-x64-test:
-    needs: generate-matrix
     strategy:
       fail-fast: false
       matrix:
         include:
-          - repository: pytorch/vision
-            smoke-test-script: test/smoke_test.py
-            package-name: torchvision
-            python-version: '3.12'
-            aarch: 'x64'
+        - repository: pytorch/vision
+          smoke-test-script: test/smoke_test.py
+          package-name: torchvision
+          python-version: '3.12'
+          aarch: 'x64'
     name: ${{ matrix.repository }}-x64-test
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
     with:
-        repository: ${{ matrix.repository }}
-        ref: ""
-        test-infra-repository: alinpahontu2912/test-infra
-        test-infra-ref: x64windows_test
-        package-name: ${{ matrix.package-name }}
-        smoke-test-script: ${{ matrix.smoke-test-script }}
+      repository: ${{ matrix.repository }}
+      ref: ""
+      test-infra-repository: alinpahontu2912/test-infra
+      test-infra-ref: x64windows_test
+      package-name: ${{ matrix.package-name }}
+      smoke-test-script: ${{ matrix.smoke-test-script }}
+      python-version: ${{ matrix.python-version }}
+      aarch: ${{ matrix.aarch }}
+    
