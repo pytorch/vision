@@ -48,7 +48,7 @@ jobs:
             test-infra-repository: 'alinpahontu2912/test-infra'
             test-infra-ref: 'x64_windowstest'
     name: ${{ matrix.repository }}${{ matrix.aarch && format(' ({0})', matrix.aarch) || '' }}
-    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64_windowstest
     with:
       repository: ${{ matrix.repository }}
       ref: ""
