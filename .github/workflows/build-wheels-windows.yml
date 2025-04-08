@@ -31,13 +31,13 @@ jobs:
     name: test new workflow
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
     with:
-      repository: pytorch/vision
+      repository: ${{ matrix.repository }}
       ref: ""
       test-infra-repository: alinpahontu2912/test-infra
       test-infra-ref: x64windows_test
-      package-name: torchvision
-      smoke-test-script: test/smoke_test.py
-      aarch: 'x64'
+      package-name: ${{ matrix.package-name }}
+      smoke-test-script: ${{ matrix.smoke-test-script }}
+      aarch: ${{ matrix.aarch }}
 
   generate-matrix:
     uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
