@@ -17,6 +17,28 @@ permissions:
   contents: read
 
 jobs:
+  build-x64-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12']
+        include:
+        - repository: pytorch/vision
+          smoke-test-script: test/smoke_test.py
+          package-name: torchvision
+          aarch: 'x64'
+          test-infra-repository: pytorch/test-infra
+          test-infra-ref: main
+    name: test new job
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
+    with:
+      repository: ${{ matrix.repository }}
+      test-infra-repository: ${{ matrix.test-infra-repository }}
+      test-infra-ref: ${{ matrix.test-infra-ref }}
+      package-name: ${{ matrix.package-name }}
+      smoke-test-script: ${{ matrix.smoke-test-script }}
+      build-matrix: ${{ toJson(matrix) }}
+
   generate-matrix:
     uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
     with:
@@ -25,154 +47,29 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       with-xpu: enable
-
   build:
     needs: generate-matrix
     strategy:
       fail-fast: false
       matrix:
-        # Main matrix from generate-matrix job
-        standard-config: [true]
-        
-        # Specific x64 configurations with multiple Python versions
-        python-version: [null, '3.12']
-        aarch: [null, 'x64']
-        
-        # Filter combinations to either use standard config or x64 specific configs
-        exclude:
-          # Exclude null values for standard config
-          - standard-config: true
-            python-version: null
-          - standard-config: true
-            aarch: null
-          # Exclude x64 configs when using standard config
-          - standard-config: true
-            aarch: x64
-        
         include:
-          # Standard matrix configuration details
-          - standard-config: true
-            repository: pytorch/vision
+          - repository: pytorch/vision
             pre-script: packaging/pre_build_script.sh
             env-script: packaging/windows/internal/vc_env_helper.bat
             post-script: "python packaging/wheel/relocate.py"
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
-          
-          # Add common properties to all x64 configurations
-          - aarch: x64
-            repository: pytorch/vision
-            smoke-test-script: test/smoke_test.py
-            package-name: torchvision
-            test-infra-repository: alinpahontu2912/test-infra
-            test-infra-ref: x64windows_test
-            standard-config: false
-    
-    name: ${{ matrix.standard-config && matrix.repository || format('{0} (x64-py{1})', matrix.repository, matrix.python-version) }}
+    name: ${{ matrix.repository }}
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
     with:
       repository: ${{ matrix.repository }}
       ref: ""
-      test-infra-repository: ${{ matrix.test-infra-repository || 'pytorch/test-infra' }}
-      test-infra-ref: ${{ matrix.test-infra-ref || 'main' }}
-      build-matrix: ${{ matrix.standard-config && needs.generate-matrix.outputs.matrix || toJson(matrix) }}
+      test-infra-repository: pytorch/test-infra
+      test-infra-ref: main
+      build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
       env-script: ${{ matrix.env-script }}
       post-script: ${{ matrix.post-script }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
       trigger-event: ${{ github.event_name }}
-      
-  # build:
-  #   needs: generate-matrix
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       include:
-  #         # Standard matrix configuration from the original build job
-  #         - repository: pytorch/vision
-  #           pre-script: packaging/pre_build_script.sh
-  #           env-script: packaging/windows/internal/vc_env_helper.bat
-  #           post-script: "python packaging/wheel/relocate.py"
-  #           smoke-test-script: test/smoke_test.py
-  #           package-name: torchvision
-  #         # Special x64 configuration from the original build-x64-test job
-  #         - repository: pytorch/vision
-  #           smoke-test-script: test/smoke_test.py
-  #           package-name: torchvision
-  #           python-version: '3.12'
-  #           aarch: 'x64'
-  #           test-infra-repository: 'alinpahontu2912/test-infra'
-  #           test-infra-ref: 'x64windows_test'
-  #   name: ${{ matrix.repository }}${{ matrix.aarch && format(' ({0})', matrix.aarch) || '' }}
-  #   uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
-  #   with:
-  #     repository: ${{ matrix.repository }}
-  #     ref: ""
-  #     test-infra-repository: ${{ matrix.test-infra-repository || 'pytorch/test-infra' }}
-  #     test-infra-ref: ${{ matrix.test-infra-ref || 'main' }}
-  #     build-matrix: ${{ !matrix.aarch && needs.generate-matrix.outputs.matrix || toJson(matrix) }}
-  #     pre-script: ${{ matrix.pre-script }}
-  #     env-script: ${{ matrix.env-script }}
-  #     post-script: ${{ matrix.post-script }}
-  #     package-name: ${{ matrix.package-name }}
-  #     smoke-test-script: ${{ matrix.smoke-test-script }}
-  #     trigger-event: ${{ github.event_name }}
-
-# jobs:
-#   build-x64-test:
-#     strategy:
-#       fail-fast: false
-#       matrix:
-#         python-version: ['3.12']
-#         include:
-#         - repository: pytorch/vision
-#           smoke-test-script: test/smoke_test.py
-#           package-name: torchvision
-#           aarch: 'x64'
-#           test-infra-repository: pytorch/test-infra
-#           test-infra-ref: main
-#     name: test new job
-#     uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
-#     with:
-#       repository: ${{ matrix.repository }}
-#       test-infra-repository: ${{ matrix.test-infra-repository }}
-#       test-infra-ref: ${{ matrix.test-infra-ref }}
-#       package-name: ${{ matrix.package-name }}
-#       smoke-test-script: ${{ matrix.smoke-test-script }}
-#       build-matrix: ${{ toJson(matrix) }}
-
-#   generate-matrix:
-#     uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
-#     with:
-#       package-type: wheel
-#       os: windows
-#       test-infra-repository: pytorch/test-infra
-#       test-infra-ref: main
-#       with-xpu: enable
-#   build:
-#     needs: generate-matrix
-#     strategy:
-#       fail-fast: false
-#       matrix:
-#         include:
-#           - repository: pytorch/vision
-#             pre-script: packaging/pre_build_script.sh
-#             env-script: packaging/windows/internal/vc_env_helper.bat
-#             post-script: "python packaging/wheel/relocate.py"
-#             smoke-test-script: test/smoke_test.py
-#             package-name: torchvision
-#     name: ${{ matrix.repository }}
-#     uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
-#     with:
-#       repository: ${{ matrix.repository }}
-#       ref: ""
-#       test-infra-repository: pytorch/test-infra
-#       test-infra-ref: main
-#       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
-#       pre-script: ${{ matrix.pre-script }}
-#       env-script: ${{ matrix.env-script }}
-#       post-script: ${{ matrix.post-script }}
-#       package-name: ${{ matrix.package-name }}
-#       smoke-test-script: ${{ matrix.smoke-test-script }}
-#       trigger-event: ${{ github.event_name }}
