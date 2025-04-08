@@ -21,6 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        python-version: ["3.12"]
         include:
         - repository: pytorch/vision
           smoke-test-script: test/smoke_test.py
@@ -28,7 +29,6 @@ jobs:
           aarch: 'x64'
           test-infra-repository: alinpahontu2912/test-infra
           test-infra-ref: x64windows_test
-          python-version: "3.12"
     name: test new job
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
     with:
