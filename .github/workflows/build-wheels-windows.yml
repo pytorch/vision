@@ -21,7 +21,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.12']
         include:
         - repository: pytorch/vision
           smoke-test-script: test/smoke_test.py
@@ -29,6 +28,7 @@ jobs:
           aarch: 'x64'
           test-infra-repository: alinpahontu2912/test-infra
           test-infra-ref: x64windows_test
+          python-version: "3.12"
     name: test new job
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
     with:
@@ -38,14 +38,15 @@ jobs:
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
       aarch: ${{ matrix.aarch }}
+      matrix: ${{ toJson(matrix) }}
 
   generate-matrix:
     uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
     with:
       package-type: wheel
       os: windows
-      test-infra-repository: pytorch/test-infra
-      test-infra-ref: main
+      test-infra-repository: alinpahontu2912/test-infra
+      test-infra-ref: x64windows_test
       with-xpu: enable
   build:
     needs: generate-matrix
