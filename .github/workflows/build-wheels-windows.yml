@@ -37,7 +37,7 @@ jobs:
       test-infra-ref: ${{ matrix.test-infra-ref }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
-      build-matrix: ${{ toJson(matrix) }}
+      aarch: ${{ matrix.aarch }}
 
   generate-matrix:
     uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
