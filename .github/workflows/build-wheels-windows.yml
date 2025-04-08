@@ -27,8 +27,8 @@ jobs:
           smoke-test-script: test/smoke_test.py
           package-name: torchvision
           aarch: 'x64'
-          test-infra-repository: pytorch/test-infra
-          test-infra-ref: main
+          test-infra-repository: alinpahontu2912/test-infra
+          test-infra-ref: x64windows_test
     name: test new job
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
     with:
@@ -64,8 +64,8 @@ jobs:
     with:
       repository: ${{ matrix.repository }}
       ref: ""
-      test-infra-repository: pytorch/test-infra
-      test-infra-ref: main
+      test-infra-repository: alinpahontu2912/test-infra
+      test-infra-ref: x64windows_test
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
       env-script: ${{ matrix.env-script }}
@@ -73,3 +73,4 @@ jobs:
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
       trigger-event: ${{ github.event_name }}
+      aarch: ""
