@@ -19,28 +19,28 @@ permissions:
   contents: read
 
 jobs:
-  # build-x64-test:
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       include:
-  #       - repository: pytorch/vision
-  #         smoke-test-script: test/smoke_test.py
-  #         package-name: torchvision
-  #         python-version: '3.12'
-  #         aarch: 'x64'
-  #         test-infra-ref: x64windows_test
-  #         test-infra-repository: alinpahontu2912/test-infra
-  #   name: test new workflow
-  #   uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
-  #   with:
-  #     repository: ${{ matrix.repository }}
-  #     ref: ""
-  #     test-infra-repository: ${{ matrix.test-infra-repository }}
-  #     test-infra-ref: ${{ matrix.test-infra-ref }}
-  #     package-name: ${{ matrix.package-name }}
-  #     smoke-test-script: ${{ matrix.smoke-test-script }}
-  #     aarch: ${{ matrix.aarch }}
+  build-x64-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - repository: pytorch/vision
+          smoke-test-script: test/smoke_test.py
+          package-name: torchvision
+          python-version: '3.12'
+          aarch: 'x64'
+          test-infra-ref: x64windows_test
+          test-infra-repository: alinpahontu2912/test-infra
+    name: test new workflow
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
+    with:
+      repository: ${{ matrix.repository }}
+      ref: ""
+      test-infra-repository: ${{ matrix.test-infra-repository }}
+      test-infra-ref: ${{ matrix.test-infra-ref }}
+      package-name: ${{ matrix.package-name }}
+      smoke-test-script: ${{ matrix.smoke-test-script }}
+      build-matrix: ${{ matrix }}
 
   generate-matrix:
     uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
@@ -54,33 +54,25 @@ jobs:
     needs: generate-matrix
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - repository: pytorch/vision
-            pre-script: packaging/pre_build_script.sh
-            env-script: packaging/windows/internal/vc_env_helper.bat
-            post-script: "python packaging/wheel/relocate.py"
-            smoke-test-script: test/smoke_test.py
-            package-name: torchvision
-          - repository: pytorch/vision
-            smoke-test-script: test/smoke_test.py
-            package-name: torchvision
-            python-version: '3.12'
-            aarch: 'x64'
-            test-infra-ref: x64windows_test
-            test-infra-repository: alinpahontu2912/test-infra
+      # matrix:
+      #   include:
+      #     - repository: pytorch/vision
+      #       pre-script: packaging/pre_build_script.sh
+      #       env-script: packaging/windows/internal/vc_env_helper.bat
+      #       post-script: "python packaging/wheel/relocate.py"
+      #       smoke-test-script: test/smoke_test.py
+      #       package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
+    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
     with:
       repository: ${{ matrix.repository }}
       ref: ""
-      test-infra-repository:  ${{ matrix.test-infra-repository || 'pytorch/test-infra' }}
-      test-infra-ref:  ${{ matrix.test-infra-ref || 'main' }}
-      build-matrix: ${{ needs.generate-matrix.outputs.matrix || '{}' }}
+      test-infra-repository: pytorch/test-infra
+      test-infra-ref: main
+      build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
       env-script: ${{ matrix.env-script }}
       post-script: ${{ matrix.post-script }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
       trigger-event: ${{ github.event_name }}
-
