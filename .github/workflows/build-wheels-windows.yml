@@ -46,7 +46,7 @@ jobs:
             python-version: '3.12'
             aarch: 'x64'
             test-infra-repository: 'alinpahontu2912/test-infra'
-            test-infra-ref: 'x64_windowstest'
+            test-infra-ref: 'x64windows_test'
     name: ${{ matrix.repository }}${{ matrix.aarch && format(' ({0})', matrix.aarch) || '' }}
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
     with:
