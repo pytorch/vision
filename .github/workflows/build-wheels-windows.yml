@@ -39,7 +39,7 @@ jobs:
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
       aarch: ${{ matrix.aarch }}
-      build-matrix: ${{ toJson(matrix) }}
+      build-matrix: ${{ matrix }}
 
   generate-matrix:
     uses: alinpahontu2912/test-infra/.github/workflows/generate_binary_build_matrix.yml@x64windows_test
