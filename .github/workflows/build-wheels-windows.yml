@@ -38,13 +38,14 @@ jobs:
       smoke-test-script: ${{ matrix.smoke-test-script }}
 
   generate-matrix:
-    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
+    uses: alinpahontu2912/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
     with:
       package-type: wheel
       os: windows
-      test-infra-repository: pytorch/test-infra
-      test-infra-ref: main
+      test-infra-repository: alinpahontu2912/test-infra
+      test-infra-ref: x64windows_test
       with-xpu: enable
+
   build:
     needs: generate-matrix
     strategy:
