@@ -1,4 +1,5 @@
 name: Build Windows Wheels
+
 on:
   pull_request:
   push:
@@ -16,38 +17,14 @@ permissions:
   id-token: write
   contents: read
 
-
 jobs:
-  build-x64-test:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12"]
-        include:
-        - repository: pytorch/vision
-          smoke-test-script: test/smoke_test.py
-          package-name: torchvision
-          aarch: 'x64'
-          test-infra-repository: alinpahontu2912/test-infra
-          test-infra-ref: x64windows_test
-    name: test new job
-    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
-    with:
-      repository: ${{ matrix.repository }}
-      test-infra-repository: ${{ matrix.test-infra-repository }}
-      test-infra-ref: ${{ matrix.test-infra-ref }}
-      package-name: ${{ matrix.package-name }}
-      smoke-test-script: ${{ matrix.smoke-test-script }}
-      aarch: ${{ matrix.aarch }}
-      python-version: ${{ matrix.python-version }}
-
   generate-matrix:
-    uses: alinpahontu2912/test-infra/.github/workflows/generate_binary_build_matrix.yml@x64windows_test
+    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
     with:
       package-type: wheel
       os: windows
-      test-infra-repository: alinpahontu2912/test-infra
-      test-infra-ref: x64windows_test
+      test-infra-repository: pytorch/test-infra
+      test-infra-ref: main
       with-xpu: enable
   build:
     needs: generate-matrix
@@ -62,12 +39,12 @@ jobs:
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
+    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
     with:
       repository: ${{ matrix.repository }}
       ref: ""
-      test-infra-repository: alinpahontu2912/test-infra
-      test-infra-ref: x64windows_test
+      test-infra-repository: pytorch/test-infra
+      test-infra-ref: main
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
       env-script: ${{ matrix.env-script }}
@@ -75,3 +52,23 @@ jobs:
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
       trigger-event: ${{ github.event_name }}
+
+  build_x64:
+    strategy:
+      matrix:
+        include:
+          - repository: pytorch/vision
+            smoke-test-script: test/smoke_test.py
+            package-name: torchvision
+            python-version: "3.12"
+            iswinarm64: true
+    name: ${{ matrix.repository }}-test-x64
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
+    with:
+      repository: ${{ matrix.repository }}
+      ref: ""
+      test-infra-repository: alinpahontu2912/test-infra
+      test-infra-ref: x64windows_test
+      build-matrix: ${{ matrix }}
+      package-name: ${{ matrix.package-name }}
+      smoke-test-script: ${{ matrix.smoke-test-script }}
