@@ -1,14 +1,16 @@
-name: Build Windows X64 Torchvision Wheel Test
+name: Build Windows Wheels X64 Test
 
 on:
-  pull_request: null
+  pull_request:
   push:
     branches:
       - nightly
       - main
       - release/*
     tags:
-      - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
+        # NOTE: Binary build pipelines should only get triggered on release candidate builds
+        # Release candidate tags look like: v1.11.0-rc1
+        - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
 
 permissions:
@@ -16,13 +18,39 @@ permissions:
   contents: read
 
 jobs:
-  trigger-test-infra:
-    strategy:
-      matrix:
-        python_version: ["3.12"]
-    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_x64_test.yml@x64windows_test
-    name: Build Windows x64 Torchvision Wheel  
+
+  generate-matrix:
+    uses: alinpahontu2912/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
     with:
-        python_version: ${{ matrix.python_version }}
-        repository_name: 'pytorch/vision'
-        repository_branch: // predefined github branch variable
+      package-type: wheel
+      os: windows-arm64
+      test-infra-repository: alinpahontu2912/test-infra
+      test-infra-ref: x64windows_test
+      with-xpu: enable
+
+  build:
+    needs: generate-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repository: pytorch/vision
+            smoke-test-script: test/smoke_test.py
+            package-name: torchvision
+            python-version: ["3.12"]
+            architecture: 'arm64'
+    name: ${{ matrix.repository }}
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
+    with:
+      repository: ${{ matrix.repository }}
+      ref: ""
+      test-infra-repository: alinpahontu2912/test-infra
+      test-infra-ref: x64windows_test
+      build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
+      pre-script: ${{ matrix.pre-script }}
+      env-script: ${{ matrix.env-script }}
+      post-script: ${{ matrix.post-script }}
+      package-name: ${{ matrix.package-name }}
+      smoke-test-script: ${{ matrix.smoke-test-script }}
+      trigger-event: ${{ github.event_name }}
+      architecture: ${{ matrix.architecture }}
