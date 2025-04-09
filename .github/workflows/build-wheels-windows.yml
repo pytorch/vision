@@ -26,49 +26,84 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       with-xpu: enable
+  # build:
+  #   needs: generate-matrix
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - repository: pytorch/vision
+  #           pre-script: packaging/pre_build_script.sh
+  #           env-script: packaging/windows/internal/vc_env_helper.bat
+  #           post-script: "python packaging/wheel/relocate.py"
+  #           smoke-test-script: test/smoke_test.py
+  #           package-name: torchvision
+  #   name: ${{ matrix.repository }}
+  #   uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
+  #   with:
+  #     repository: ${{ matrix.repository }}
+  #     ref: ""
+  #     test-infra-repository: alinpahontu2912/test-infra
+  #     test-infra-ref: x64windows_test
+  #     build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
+  #     pre-script: ${{ matrix.pre-script }}
+  #     env-script: ${{ matrix.env-script }}
+  #     post-script: ${{ matrix.post-script }}
+  #     package-name: ${{ matrix.package-name }}
+  #     smoke-test-script: ${{ matrix.smoke-test-script }}
+  #     trigger-event: ${{ github.event_name }}
+
+  # build_x64:
+  #   strategy:
+  #     matrix:
+  #       python-version: ["3.12"]
+  #       include:
+  #         - repository: pytorch/vision
+  #           smoke-test-script: test/smoke_test.py
+  #           package-name: torchvision
+  #           python-version: "3.12"
+  #           iswinarm64: true
+  #   name: ${{ matrix.repository }}-test-x64
+  #   uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
+  #   with:
+  #     repository: ${{ matrix.repository }}
+  #     ref: ""
+  #     test-infra-repository: alinpahontu2912/test-infra
+  #     test-infra-ref: x64windows_test
+  #     package-name: ${{ matrix.package-name }}
+  #     smoke-test-script: ${{ matrix.smoke-test-script }}
   build:
     needs: generate-matrix
     strategy:
       fail-fast: false
       matrix:
         include:
+          # Regular build configurations
           - repository: pytorch/vision
             pre-script: packaging/pre_build_script.sh
             env-script: packaging/windows/internal/vc_env_helper.bat
             post-script: "python packaging/wheel/relocate.py"
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
-    name: ${{ matrix.repository }}
-    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
-    with:
-      repository: ${{ matrix.repository }}
-      ref: ""
-      test-infra-repository: alinpahontu2912/test-infra
-      test-infra-ref: x64windows_test
-      build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
-      pre-script: ${{ matrix.pre-script }}
-      env-script: ${{ matrix.env-script }}
-      post-script: ${{ matrix.post-script }}
-      package-name: ${{ matrix.package-name }}
-      smoke-test-script: ${{ matrix.smoke-test-script }}
-      trigger-event: ${{ github.event_name }}
-
-  build_x64:
-    strategy:
-      matrix:
-        include:
+            iswinarm64: false
+          # Windows test special configuration
           - repository: pytorch/vision
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
             python-version: "3.12"
             iswinarm64: true
-    name: ${{ matrix.repository }}-test-x64
+    name: ${{ matrix.repository }}${{ matrix.iswinarm64 && '-arm64' || '' }}
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
     with:
       repository: ${{ matrix.repository }}
       ref: ""
-      test-infra-repository: alinpahontu2912/test-infra
-      test-infra-ref: x64windows_test
-      build-matrix: ${{ matrix }}
+      test-infra-repository: ${{ matrix.iswinarm64 && 'alinpahontu2912/test-infra' || 'pytorch/test-infra' }}
+      test-infra-ref: ${{ matrix.iswinarm64 && 'x64windows_test' || 'main' }}
+      build-matrix: ${{ matrix.iswinarm64 && '{0}' || needs.generate-matrix.outputs.matrix }}
+      pre-script: ${{ matrix.iswinarm64 && '' || matrix.pre-script }}
+      env-script: ${{ matrix.iswinarm64 && '' || matrix.env-script }}
+      post-script: ${{ matrix.iswinarm64 && '' || matrix.post-script }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
+      trigger-event: ${{ github.event_name }}
+      # python-version: ${{ matrix.iswinarm64 && matrix.python-version || '' }}
