@@ -16,6 +16,7 @@ permissions:
   id-token: write
   contents: read
 
+  
 jobs:
   build-x64-test:
     strategy:
