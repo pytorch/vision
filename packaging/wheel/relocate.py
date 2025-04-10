@@ -15,7 +15,10 @@ from base64 import urlsafe_b64encode
 
 # Third party imports
 if sys.platform == "linux":
-    from auditwheel.lddtree import lddtree
+    try:
+        from auditwheel.lddtree import lddtree
+    except ImportError:
+        from auditwheel import lddtree
 
 
 ALLOWLIST = {
