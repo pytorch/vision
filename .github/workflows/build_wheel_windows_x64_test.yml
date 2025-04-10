@@ -36,8 +36,6 @@ jobs:
           - repository: pytorch/vision
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
-            channel: "nightly"
-            python-version: ["3.12", "3.11"]
             architecture: "arm64"
     name: ${{ matrix.repository }}
     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
