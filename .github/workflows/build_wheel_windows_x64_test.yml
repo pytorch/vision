@@ -18,7 +18,6 @@ permissions:
   contents: read
 
 jobs:
-
   generate-matrix:
     uses: alinpahontu2912/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
     with:
