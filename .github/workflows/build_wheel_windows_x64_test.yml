@@ -48,9 +48,6 @@ jobs:
       test-infra-repository: alinpahontu2912/test-infra
       test-infra-ref: x64windows_test
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
-      pre-script: ${{ matrix.pre-script }}
-      env-script: ${{ matrix.env-script }}
-      post-script: ${{ matrix.post-script }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
       trigger-event: ${{ github.event_name }}
