@@ -3022,11 +3022,17 @@ class TestCrop:
         with pytest.raises(ValueError, match="Please provide only two dimensions"):
             transforms.RandomCrop([10, 12, 14])
 
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
             transforms.RandomCrop([10, 12], padding="abc")
 
         with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
             transforms.RandomCrop([10, 12], padding=[-0.7, 0, 0.7])
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.RandomCrop([10, 12], padding=0.5)
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.RandomCrop([10, 12], padding=[0.5, 0.5])
 
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomCrop([10, 12], padding=1, fill="abc")
@@ -3514,6 +3520,14 @@ class TestAutoAugmentTransforms:
         with pytest.raises(ValueError, match="severity must be between"):
             transforms.AugMix(severity=severity)
 
+    @pytest.mark.parametrize("num_ops", [-1, 1.1])
+    def test_rand_augment_num_ops_error(self, num_ops):
+        with pytest.raises(
+            ValueError,
+            match=re.escape(f"num_ops should be a non-negative integer, but got {num_ops} instead."),
+        ):
+            transforms.RandAugment(num_ops=num_ops)
+
 
 class TestConvertBoundingBoxFormat:
     old_new_formats = list(itertools.permutations(SUPPORTED_BOX_FORMATS, 2))
@@ -3884,11 +3898,17 @@ class TestPad:
         check_transform(transforms.Pad(padding=[1]), make_input())
 
     def test_transform_errors(self):
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+        with pytest.raises(ValueError, match="Padding must be"):
             transforms.Pad("abc")
 
-        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
             transforms.Pad([-0.7, 0, 0.7])
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
+            transforms.Pad(0.5)
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
+            transforms.Pad(padding=[0.5, 0.5])
 
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.Pad(12, fill="abc")
@@ -4607,6 +4627,14 @@ class TestPosterize:
         expected = F.to_image(F.posterize(F.to_pil_image(image), bits=bits))
 
         assert_equal(actual, expected)
+
+    @pytest.mark.parametrize("bits", [-1, 9, 2.1])
+    def test_error_functional(self, bits):
+        with pytest.raises(
+            TypeError,
+            match=re.escape(f"bits must be a positive integer in the range [0, 8], got {bits} instead."),
+        ):
+            F.posterize(make_image(dtype=torch.uint8), bits=bits)
 
 
 class TestSolarize:
@@ -6188,6 +6216,11 @@ class TestJPEG:
     @pytest.mark.parametrize("quality", [-1, 0, 150])
     def test_transform_invalid_quality_error(self, quality):
         with pytest.raises(ValueError, match="quality must be an integer from 1 to 100"):
+            transforms.JPEG(quality=quality)
+
+    @pytest.mark.parametrize("quality", [None, True])
+    def test_transform_quality_type_error(self, quality):
+        with pytest.raises(TypeError, match="quality"):
             transforms.JPEG(quality=quality)
 
 

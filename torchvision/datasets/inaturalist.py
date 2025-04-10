@@ -62,6 +62,9 @@ class INaturalist(VisionDataset):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     def __init__(
@@ -72,6 +75,7 @@ class INaturalist(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Optional[Callable[[Union[str, Path]], Any]] = None,
     ) -> None:
         self.version = verify_str_arg(version, "version", DATASET_URLS.keys())
 
@@ -108,6 +112,8 @@ class INaturalist(VisionDataset):
             files = os.listdir(os.path.join(self.root, dir_name))
             for fname in files:
                 self.index.append((dir_index, fname))
+
+        self.loader = loader
 
     def _init_2021(self) -> None:
         """Initialize based on 2021 layout"""
@@ -178,7 +184,8 @@ class INaturalist(VisionDataset):
         """
 
         cat_id, fname = self.index[index]
-        img = Image.open(os.path.join(self.root, self.all_categories[cat_id], fname))
+        image_path = os.path.join(self.root, self.all_categories[cat_id], fname)
+        img = self.loader(image_path) if self.loader is not None else Image.open(image_path)
 
         target: Any = []
         for t in self.target_type:
