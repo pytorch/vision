@@ -1,0 +1,51 @@
+name: Build Torchvision Windows ARM64 Wheels
+
+on:
+  pull_request:
+  push:
+    branches:
+      - nightly
+      - main
+      - release/*
+    tags:
+        # NOTE: Binary build pipelines should only get triggered on release candidate builds
+        # Release candidate tags look like: v1.11.0-rc1
+        - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  generate-matrix:
+    uses: alinpahontu2912/test-infra/.github/workflows/generate_binary_build_matrix.yml@winarm64_wheels
+    with:
+      package-type: wheel
+      os: windows-arm64
+      test-infra-repository: alinpahontu2912/test-infra
+      test-infra-ref: winarm64_wheels
+      with-cuda: disable
+
+  build:
+    needs: generate-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repository: pytorch/vision
+            smoke-test-script: test/smoke_test.py
+            package-name: torchvision
+            architecture: arm64
+    name: ${{ matrix.repository }}
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@winarm64_wheels
+    with:
+      repository: ${{ matrix.repository }}
+      ref: ""
+      test-infra-repository: alinpahontu2912/test-infra
+      test-infra-ref: winarm64_wheels
+      build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
+      package-name: ${{ matrix.package-name }}
+      smoke-test-script: ${{ matrix.smoke-test-script }}
+      trigger-event: ${{ github.event_name }}
+      architecture: ${{ matrix.architecture }}
