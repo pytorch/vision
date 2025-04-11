@@ -19,12 +19,12 @@ permissions:
 
 jobs:
   generate-matrix:
-    uses: alinpahontu2912/test-infra/.github/workflows/generate_binary_build_matrix.yml@arm64_enablement
+    uses: alinpahontu2912/test-infra/.github/workflows/generate_binary_build_matrix.yml@winarm64_wheels
     with:
       package-type: wheel
       os: windows-arm64
       test-infra-repository: alinpahontu2912/test-infra
-      test-infra-ref: arm64_enablement
+      test-infra-ref: winarm64_wheels
       with-cuda: disable
 
   build:
@@ -38,12 +38,12 @@ jobs:
             package-name: torchvision
             architecture: arm64
     name: ${{ matrix.repository }}
-    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windoarm64_enablementws_test
+    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@winarm64_wheels
     with:
       repository: ${{ matrix.repository }}
       ref: ""
       test-infra-repository: alinpahontu2912/test-infra
-      test-infra-ref: arm64_enablement
+      test-infra-ref: winarm64_wheels
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
