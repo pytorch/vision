@@ -478,7 +478,7 @@ def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
     """Decode an HEIC image into a 3 dimensional RGB[A] Tensor.
 
     .. warning::
-        In order to enable the AVIF decoding capabilities of torchvision, you
+        In order to enable the HEIC decoding capabilities of torchvision, you
         first need to run ``pip install torchvision-extra-decoders``. Just
         install the package, you don't need to update your code. This is only
         supported on Linux, and this feature is still in BETA stage. Please let
