@@ -41,7 +41,7 @@ powerful, e.g. if you want to encode/decode JPEGs on CUDA.
 
     decode_image
     decode_jpeg
-    encode_png
+    decode_png
     decode_webp
     decode_avif
     decode_heic
