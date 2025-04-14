@@ -162,6 +162,7 @@ def draw_bounding_boxes(
     font: Optional[str] = None,
     font_size: Optional[int] = None,
     label_colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+    fill_labels: Optional[bool] = False,
 ) -> torch.Tensor:
 
     """
@@ -187,6 +188,7 @@ def draw_bounding_boxes(
         font_size (int): The requested font size in points.
         label_colors (color or list of colors, optional): Colors for the label text.  See the description of the
             `colors` argument for details.  Defaults to the same colors used for the boxes.
+        fill_labels (bool): If `True` fills the label background with specified color.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
@@ -259,7 +261,14 @@ def draw_bounding_boxes(
             draw.rectangle(bbox, width=width, outline=color)
 
         if label is not None:
-            margin = width + 1
+            box_margin = 1
+            margin = width + box_margin
+            if fill_labels:
+                left, top, right, bottom = draw.textbbox((bbox[0] + margin, bbox[1] + margin), label, font=txt_font)
+                draw.rectangle(
+                    (left - box_margin, top - box_margin, right + box_margin, bottom + box_margin), fill=color
+                )
+                label_color = "black"
             draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)  # type: ignore[arg-type]
 
     out = F.pil_to_tensor(img_to_draw)
