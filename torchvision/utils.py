@@ -225,8 +225,8 @@ def draw_bounding_boxes(
         )
 
     colors = _parse_colors(colors, num_objects=num_boxes)
-    if label_colors:
-        label_colors = _parse_colors(label_colors, num_objects=num_boxes)  # type: ignore[assignment]
+    if label_colors or fill_labels:
+        label_colors = _parse_colors(label_colors if label_colors else "black", num_objects=num_boxes)  # type: ignore[assignment]
     else:
         label_colors = colors.copy()  # type: ignore[assignment]
 
@@ -268,7 +268,6 @@ def draw_bounding_boxes(
                 draw.rectangle(
                     (left - box_margin, top - box_margin, right + box_margin, bottom + box_margin), fill=color
                 )
-                label_color = "black"
             draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)  # type: ignore[arg-type]
 
     out = F.pil_to_tensor(img_to_draw)
