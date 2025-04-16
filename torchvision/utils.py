@@ -188,7 +188,7 @@ def draw_bounding_boxes(
         font_size (int): The requested font size in points.
         label_colors (color or list of colors, optional): Colors for the label text.  See the description of the
             `colors` argument for details.  Defaults to the same colors used for the boxes.
-        fill_labels (bool): If `True` fills the label background with specified color. Default: False.
+        fill_labels (bool): If `True` fills the label background with specified box color (from the ``colors`` parameter). Default: False.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
