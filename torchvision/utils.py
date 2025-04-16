@@ -187,7 +187,7 @@ def draw_bounding_boxes(
             `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
         font_size (int): The requested font size in points.
         label_colors (color or list of colors, optional): Colors for the label text.  See the description of the
-            `colors` argument for details.  Defaults to the same colors used for the boxes.
+            `colors` argument for details.  Defaults to the same colors used for the boxes, or to black if ``fill_labels`` is True.
         fill_labels (bool): If `True` fills the label background with specified box color (from the ``colors`` parameter). Default: False.
 
     Returns:
