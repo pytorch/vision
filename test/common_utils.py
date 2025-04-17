@@ -29,6 +29,7 @@ IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
 MPS_NOT_AVAILABLE_MSG = "MPS device not available"
+XPU_NOT_AVAILABLE_MSG = "XPU device not available"
 OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't need cuda."
 
 
@@ -137,6 +138,12 @@ def needs_mps(test_func):
     import pytest  # noqa
 
     return pytest.mark.needs_mps(test_func)
+
+
+def needs_xpu(test_func):
+    import pytest  # noqa
+
+    return pytest.mark.needs_xpu(test_func)
 
 
 def _create_data(height=3, width=3, channels=3, device="cpu"):

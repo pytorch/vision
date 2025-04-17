@@ -831,6 +831,7 @@ class TestNMS:
         (
             pytest.param("cuda", marks=pytest.mark.needs_cuda),
             pytest.param("mps", marks=pytest.mark.needs_mps),
+            pytest.param("xpu", marks=pytest.mark.needs_xpu),
         ),
     )
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
