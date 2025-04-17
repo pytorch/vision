@@ -178,10 +178,9 @@ def _box_xyxyxyxy_to_xywhr(boxes: Tensor) -> Tensor:
     x1, y1, x3, y3, x2, y2, x4, y4 = boxes.unbind(-1)
     r_rad = torch.atan2(y1 - y3, x3 - x1)
     r = r_rad * 180 / torch.pi
-    cos, sin = torch.cos(r_rad), torch.sin(r_rad)
 
-    w = (x2 - x1) * cos + (y1 - y2) * sin
-    h = (x2 - x1) * sin + (y2 - y1) * cos
+    w = ((x3 - x1) ** 2 + (y1 - y3) ** 2).sqrt()
+    h = ((x3 - x2) ** 2 + (y3 - y2) ** 2).sqrt()
 
     boxes = torch.stack((x1, y1, w, h, r), dim=-1)
 
