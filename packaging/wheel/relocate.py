@@ -297,6 +297,7 @@ def compress_wheel(output_dir, wheel, wheel_dir, wheel_name):
                     f.write(f"{rel_file},{digest},{size}\n")
 
     print("Compressing wheel")
+    
     base_wheel_name = osp.join(wheel_dir, wheel_name)
     shutil.make_archive(base_wheel_name, "zip", output_dir)
     os.remove(wheel)
@@ -337,6 +338,8 @@ def patch_linux():
             if osp.exists(osp.join(output_library, binary)):
                 relocate_elf_library(patchelf, output_dir, output_library, binary)
 
+        # make sure wheel name is compatible with manylinux_2_28
+        wheel_name = wheel_name.replace("linux_", "manylinux_2_28_")
         compress_wheel(output_dir, wheel, wheel_dir, wheel_name)
 
 
