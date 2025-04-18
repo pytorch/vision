@@ -297,7 +297,6 @@ def compress_wheel(output_dir, wheel, wheel_dir, wheel_name):
                     f.write(f"{rel_file},{digest},{size}\n")
 
     print("Compressing wheel")
-    
     base_wheel_name = osp.join(wheel_dir, wheel_name)
     shutil.make_archive(base_wheel_name, "zip", output_dir)
     os.remove(wheel)
