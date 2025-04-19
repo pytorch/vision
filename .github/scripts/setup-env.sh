@@ -45,11 +45,7 @@ echo '::endgroup::'
 
 if [[ "${OS_TYPE}" == windows && "${GPU_ARCH_TYPE}" == cuda ]]; then
   echo '::group::Install VisualStudio CUDA extensions on Windows'
-  if [[ "${VC_YEAR:-}" == "2022" ]]; then
-    TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Microsoft/VC/v170/BuildCustomizations"
-  else
-    TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Microsoft/VC/v160/BuildCustomizations"
-  fi
+  TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Microsoft/VC/v170/BuildCustomizations"
   mkdir -p "${TARGET_DIR}"
   cp -r "${CUDA_HOME}/MSBuildExtensions/"* "${TARGET_DIR}"
   echo '::endgroup::'
@@ -100,6 +96,17 @@ echo '::endgroup::'
 
 echo '::group::Install TorchVision'
 python setup.py develop
+echo '::endgroup::'
+
+echo '::group::Install torchvision-extra-decoders'
+# This can be done after torchvision was built
+if [[ "$(uname)" == "Linux" && "$(uname -m)" != "aarch64" ]]; then
+    extra_decoders_channel="--pre --index-url https://download.pytorch.org/whl/nightly/cpu"
+else
+    extra_decoders_channel=""
+fi
+
+pip install torchvision-extra-decoders $extra_decoders_channel
 echo '::endgroup::'
 
 echo '::group::Collect environment information'

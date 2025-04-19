@@ -1,8 +1,6 @@
 #pragma once
 
-#include "cpu/decode_avif.h"
 #include "cpu/decode_gif.h"
-#include "cpu/decode_heic.h"
 #include "cpu/decode_image.h"
 #include "cpu/decode_jpeg.h"
 #include "cpu/decode_png.h"

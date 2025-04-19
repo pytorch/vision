@@ -53,6 +53,15 @@ from torchvision.transforms.v2.functional._geometry import _get_perspective_coef
 from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
 
+# While we are working on adjusting transform functions
+# for rotated and oriented bounding boxes formats,
+# we limit the perimeter of tests to formats
+#  for which transform functions are already implemented.
+# In the future, this global variable will be replaced with `list(tv_tensors.BoundingBoxFormat)`
+# to support all available formats.
+SUPPORTED_BOX_FORMATS = [tv_tensors.BoundingBoxFormat[x] for x in ["XYXY", "XYWH", "CXCYWH"]]
+NEW_BOX_FORMATS = [tv_tensors.BoundingBoxFormat[x] for x in ["XYWHR", "CXCYWHR", "XYXYXYXY"]]
+
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
 
@@ -626,7 +635,7 @@ class TestResize:
             check_scripted_vs_eager=not isinstance(size, int),
         )
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
@@ -757,7 +766,7 @@ class TestResize:
             new_canvas_size=(new_height, new_width),
         )
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
@@ -1003,7 +1012,7 @@ class TestHorizontalFlip:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.horizontal_flip_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -1072,7 +1081,7 @@ class TestHorizontalFlip:
 
         return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
@@ -1169,7 +1178,7 @@ class TestAffine:
         shear=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["shear"],
         center=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"],
     )
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
@@ -1318,7 +1327,7 @@ class TestAffine:
             ),
         )
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])
     @pytest.mark.parametrize("scale", _CORRECTNESS_AFFINE_KWARGS["scale"])
@@ -1346,7 +1355,7 @@ class TestAffine:
 
         torch.testing.assert_close(actual, expected)
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, center, seed):
@@ -1355,7 +1364,7 @@ class TestAffine:
         transform = transforms.RandomAffine(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, center=center)
 
         torch.manual_seed(seed)
-        params = transform._get_params([bounding_boxes])
+        params = transform.make_params([bounding_boxes])
 
         torch.manual_seed(seed)
         actual = transform(bounding_boxes)
@@ -1369,14 +1378,14 @@ class TestAffine:
     @pytest.mark.parametrize("scale", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["scale"])
     @pytest.mark.parametrize("shear", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["shear"])
     @pytest.mark.parametrize("seed", list(range(10)))
-    def test_transform_get_params_bounds(self, degrees, translate, scale, shear, seed):
+    def test_transformmake_params_bounds(self, degrees, translate, scale, shear, seed):
         image = make_image()
         height, width = F.get_size(image)
 
         transform = transforms.RandomAffine(degrees=degrees, translate=translate, scale=scale, shear=shear)
 
         torch.manual_seed(seed)
-        params = transform._get_params([image])
+        params = transform.make_params([image])
 
         if isinstance(degrees, (int, float)):
             assert -degrees <= params["angle"] <= degrees
@@ -1453,7 +1462,7 @@ class TestVerticalFlip:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.vertical_flip_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -1520,7 +1529,7 @@ class TestVerticalFlip:
 
         return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
     def test_bounding_boxes_correctness(self, format, fn):
         bounding_boxes = make_bounding_boxes(format=format)
@@ -1589,7 +1598,7 @@ class TestRotate:
         expand=[False, True],
         center=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"],
     )
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
@@ -1760,7 +1769,7 @@ class TestRotate:
             bounding_boxes
         )
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
@@ -1773,7 +1782,7 @@ class TestRotate:
         torch.testing.assert_close(actual, expected)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
@@ -1783,7 +1792,7 @@ class TestRotate:
         transform = transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, expand=expand, center=center)
 
         torch.manual_seed(seed)
-        params = transform._get_params([bounding_boxes])
+        params = transform.make_params([bounding_boxes])
 
         torch.manual_seed(seed)
         actual = transform(bounding_boxes)
@@ -1795,11 +1804,11 @@ class TestRotate:
 
     @pytest.mark.parametrize("degrees", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["degrees"])
     @pytest.mark.parametrize("seed", list(range(10)))
-    def test_transform_get_params_bounds(self, degrees, seed):
+    def test_transformmake_params_bounds(self, degrees, seed):
         transform = transforms.RandomRotation(degrees=degrees)
 
         torch.manual_seed(seed)
-        params = transform._get_params([])
+        params = transform.make_params([])
 
         if isinstance(degrees, (int, float)):
             assert -degrees <= params["angle"] <= degrees
@@ -1843,7 +1852,7 @@ class TestRotate:
 
 class TestContainerTransforms:
     class BuiltinTransform(transforms.Transform):
-        def _transform(self, inpt, params):
+        def transform(self, inpt, params):
             return inpt
 
     class PackedInputTransform(nn.Module):
@@ -2694,7 +2703,7 @@ class TestElastic:
             check_cuda_vs_cpu=dtype is not torch.float16,
         )
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -2821,7 +2830,7 @@ class TestCrop:
         check_kernel(F.crop_image, make_image(self.INPUT_SIZE, dtype=dtype, device=device), **kwargs)
 
     @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_box(self, kwargs, format, dtype, device):
@@ -2971,7 +2980,7 @@ class TestCrop:
         )
 
     @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_functional_bounding_box_correctness(self, kwargs, format, dtype, device):
@@ -2984,7 +2993,7 @@ class TestCrop:
         assert_equal(F.get_size(actual), F.get_size(expected))
 
     @pytest.mark.parametrize("output_size", [(17, 11), (11, 17), (11, 11)])
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("seed", list(range(5)))
@@ -2996,7 +3005,7 @@ class TestCrop:
 
         with freeze_rng_state():
             torch.manual_seed(seed)
-            params = transform._get_params([bounding_boxes])
+            params = transform.make_params([bounding_boxes])
             assert not params.pop("needs_pad")
             del params["padding"]
             assert params.pop("needs_crop")
@@ -3013,11 +3022,17 @@ class TestCrop:
         with pytest.raises(ValueError, match="Please provide only two dimensions"):
             transforms.RandomCrop([10, 12, 14])
 
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
             transforms.RandomCrop([10, 12], padding="abc")
 
         with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
             transforms.RandomCrop([10, 12], padding=[-0.7, 0, 0.7])
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.RandomCrop([10, 12], padding=0.5)
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+            transforms.RandomCrop([10, 12], padding=[0.5, 0.5])
 
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomCrop([10, 12], padding=1, fill="abc")
@@ -3129,9 +3144,9 @@ class TestErase:
 
         with freeze_rng_state():
             torch.manual_seed(seed)
-            # This emulates the random apply check that happens before _get_params is called
+            # This emulates the random apply check that happens before make_params is called
             torch.rand(1)
-            params = transform._get_params([image])
+            params = transform.make_params([image])
 
             torch.manual_seed(seed)
             actual = transform(image)
@@ -3159,7 +3174,7 @@ class TestErase:
         transform = transforms.RandomErasing(value=[1, 2, 3, 4])
 
         with pytest.raises(ValueError, match="If value is a sequence, it should have either a single value"):
-            transform._get_params([make_image()])
+            transform.make_params([make_image()])
 
 
 class TestGaussianBlur:
@@ -3244,9 +3259,9 @@ class TestGaussianBlur:
             transforms.GaussianBlur(3, sigma={})
 
     @pytest.mark.parametrize("sigma", [10.0, [10.0, 12.0], (10, 12.0), [10]])
-    def test__get_params(self, sigma):
+    def test_make_params(self, sigma):
         transform = transforms.GaussianBlur(3, sigma=sigma)
-        params = transform._get_params([])
+        params = transform.make_params([])
 
         if isinstance(sigma, float):
             assert params["sigma"][0] == params["sigma"][1] == sigma
@@ -3505,9 +3520,18 @@ class TestAutoAugmentTransforms:
         with pytest.raises(ValueError, match="severity must be between"):
             transforms.AugMix(severity=severity)
 
+    @pytest.mark.parametrize("num_ops", [-1, 1.1])
+    def test_rand_augment_num_ops_error(self, num_ops):
+        with pytest.raises(
+            ValueError,
+            match=re.escape(f"num_ops should be a non-negative integer, but got {num_ops} instead."),
+        ):
+            transforms.RandAugment(num_ops=num_ops)
+
 
 class TestConvertBoundingBoxFormat:
-    old_new_formats = list(itertools.permutations(iter(tv_tensors.BoundingBoxFormat), 2))
+    old_new_formats = list(itertools.permutations(SUPPORTED_BOX_FORMATS, 2))
+    old_new_formats += list(itertools.permutations(NEW_BOX_FORMATS, 2))
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_kernel(self, old_format, new_format):
@@ -3518,7 +3542,7 @@ class TestConvertBoundingBoxFormat:
             old_format=old_format,
         )
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("inplace", [False, True])
     def test_kernel_noop(self, format, inplace):
         input = make_bounding_boxes(format=format).as_subclass(torch.Tensor)
@@ -3542,9 +3566,13 @@ class TestConvertBoundingBoxFormat:
         output_inplace = F.convert_bounding_box_format(
             input, old_format=old_format, new_format=new_format, inplace=True
         )
-        assert output_inplace.data_ptr() == input.data_ptr()
-        assert output_inplace._version > input_version
-        assert output_inplace is input
+        if old_format != tv_tensors.BoundingBoxFormat.XYXYXYXY and new_format != tv_tensors.BoundingBoxFormat.XYXYXYXY:
+            # NOTE: BoundingBox format conversion from and to XYXYXYXY format
+            # cannot modify the input tensor inplace as it requires a dimension
+            # change.
+            assert output_inplace.data_ptr() == input.data_ptr()
+            assert output_inplace._version > input_version
+            assert output_inplace is input
 
         assert_equal(output_inplace, output_out_of_place)
 
@@ -3563,7 +3591,7 @@ class TestConvertBoundingBoxFormat:
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_strings(self, old_format, new_format):
         # Non-regression test for https://github.com/pytorch/vision/issues/8258
-        input = tv_tensors.BoundingBoxes(torch.tensor([[10, 10, 20, 20]]), format=old_format, canvas_size=(50, 50))
+        input = make_bounding_boxes(format=old_format, canvas_size=(50, 50))
         expected = self._reference_convert_bounding_box_format(input, new_format)
 
         old_format = old_format.name
@@ -3728,7 +3756,7 @@ class TestResizedCrop:
             new_canvas_size=size,
         )
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     def test_functional_bounding_boxes_correctness(self, format):
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
 
@@ -3744,11 +3772,17 @@ class TestResizedCrop:
         with pytest.raises(ValueError, match="provide only two dimensions"):
             transforms.RandomResizedCrop(size=(1, 2, 3))
 
-        with pytest.raises(TypeError, match="Scale should be a sequence"):
+        with pytest.raises(TypeError, match="Scale should be a sequence of two floats."):
             transforms.RandomResizedCrop(size=self.INPUT_SIZE, scale=123)
 
-        with pytest.raises(TypeError, match="Ratio should be a sequence"):
+        with pytest.raises(TypeError, match="Ratio should be a sequence of two floats."):
             transforms.RandomResizedCrop(size=self.INPUT_SIZE, ratio=123)
+
+        with pytest.raises(TypeError, match="Ratio should be a sequence of two floats."):
+            transforms.RandomResizedCrop(size=self.INPUT_SIZE, ratio=[1, 2, 3])
+
+        with pytest.raises(TypeError, match="Scale should be a sequence of two floats."):
+            transforms.RandomResizedCrop(size=self.INPUT_SIZE, scale=[1, 2, 3])
 
         for param in ["scale", "ratio"]:
             with pytest.warns(match="Scale and ratio should be of kind"):
@@ -3796,7 +3830,7 @@ class TestPad:
             ),
         )
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     def test_kernel_bounding_boxes(self, format):
         bounding_boxes = make_bounding_boxes(format=format)
         check_kernel(
@@ -3864,11 +3898,17 @@ class TestPad:
         check_transform(transforms.Pad(padding=[1]), make_input())
 
     def test_transform_errors(self):
-        with pytest.raises(TypeError, match="Got inappropriate padding arg"):
+        with pytest.raises(ValueError, match="Padding must be"):
             transforms.Pad("abc")
 
-        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4"):
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
             transforms.Pad([-0.7, 0, 0.7])
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
+            transforms.Pad(0.5)
+
+        with pytest.raises(ValueError, match="Padding must be an int or a 1, 2, or 4 element of tuple or list"):
+            transforms.Pad(padding=[0.5, 0.5])
 
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.Pad(12, fill="abc")
@@ -3915,7 +3955,7 @@ class TestPad:
         )
 
     @pytest.mark.parametrize("padding", CORRECTNESS_PADDINGS)
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
@@ -3944,7 +3984,7 @@ class TestCenterCrop:
         )
 
     @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     def test_kernel_bounding_boxes(self, output_size, format):
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
         check_kernel(
@@ -4023,7 +4063,7 @@ class TestCenterCrop:
         )
 
     @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
@@ -4090,7 +4130,7 @@ class TestPerspective:
         coefficients=COEFFICIENTS,
         start_end_points=START_END_POINTS,
     )
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     def test_kernel_bounding_boxes(self, param, value, format):
         if param == "start_end_points":
             kwargs = dict(zip(["startpoints", "endpoints"], value))
@@ -4266,7 +4306,7 @@ class TestPerspective:
         )
 
     @pytest.mark.parametrize(("startpoints", "endpoints"), START_END_POINTS)
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_correctness_perspective_bounding_boxes(self, startpoints, endpoints, format, dtype, device):
@@ -4473,7 +4513,7 @@ class TestNormalize:
 
 
 class TestClampBoundingBoxes:
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel(self, format, dtype, device):
@@ -4485,7 +4525,7 @@ class TestClampBoundingBoxes:
             canvas_size=bounding_boxes.canvas_size,
         )
 
-    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     def test_functional(self, format):
         check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format))
 
@@ -4587,6 +4627,14 @@ class TestPosterize:
         expected = F.to_image(F.posterize(F.to_pil_image(image), bits=bits))
 
         assert_equal(actual, expected)
+
+    @pytest.mark.parametrize("bits", [-1, 9, 2.1])
+    def test_error_functional(self, bits):
+        with pytest.raises(
+            TypeError,
+            match=re.escape(f"bits must be a positive integer in the range [0, 8], got {bits} instead."),
+        ):
+            F.posterize(make_image(dtype=torch.uint8), bits=bits)
 
 
 class TestSolarize:
@@ -5251,7 +5299,7 @@ class TestRandomZoomOut:
         input = make_input()
         height, width = F.get_size(input)
 
-        params = transform._get_params([input])
+        params = transform.make_params([input])
         assert "padding" in params
 
         padding = params["padding"]
@@ -5305,13 +5353,13 @@ class TestScaleJitter:
 
         check_transform(transforms.ScaleJitter(self.TARGET_SIZE), make_input(self.INPUT_SIZE, device=device))
 
-    def test__get_params(self):
+    def test_make_params(self):
         input_size = self.INPUT_SIZE
         target_size = self.TARGET_SIZE
         scale_range = (0.5, 1.5)
 
         transform = transforms.ScaleJitter(target_size=target_size, scale_range=scale_range)
-        params = transform._get_params([make_image(input_size)])
+        params = transform.make_params([make_image(input_size)])
 
         assert "size" in params
         size = params["size"]
@@ -5544,7 +5592,7 @@ def test_pure_tensor_heuristic(make_inputs):
         return pure_tensors[0] if pure_tensors else None, pure_tensors[1:], others
 
     class CopyCloneTransform(transforms.Transform):
-        def _transform(self, inpt, params):
+        def transform(self, inpt, params):
             return inpt.clone() if isinstance(inpt, torch.Tensor) else inpt.copy()
 
         @staticmethod
@@ -5580,7 +5628,7 @@ def test_pure_tensor_heuristic(make_inputs):
 class TestRandomIoUCrop:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("options", [[0.5, 0.9], [2.0]])
-    def test__get_params(self, device, options):
+    def test_make_params(self, device, options):
         orig_h, orig_w = size = (24, 32)
         image = make_image(size)
         bboxes = tv_tensors.BoundingBoxes(
@@ -5596,7 +5644,7 @@ class TestRandomIoUCrop:
         n_samples = 5
         for _ in range(n_samples):
 
-            params = transform._get_params(sample)
+            params = transform.make_params(sample)
 
             if options == [2.0]:
                 assert len(params) == 0
@@ -5622,8 +5670,8 @@ class TestRandomIoUCrop:
         bboxes = tv_tensors.BoundingBoxes(torch.tensor([[1, 1, 2, 2]]), format="XYXY", canvas_size=(4, 4))
         label = torch.tensor([1])
         sample = [image, bboxes, label]
-        # Let's mock transform._get_params to control the output:
-        transform._get_params = mocker.MagicMock(return_value={})
+        # Let's mock transform.make_params to control the output:
+        transform.make_params = mocker.MagicMock(return_value={})
         output = transform(sample)
         torch.testing.assert_close(output, sample)
 
@@ -5648,7 +5696,7 @@ class TestRandomIoUCrop:
         is_within_crop_area = torch.tensor([0, 1, 0, 1, 0, 1], dtype=torch.bool)
 
         params = dict(top=1, left=2, height=12, width=12, is_within_crop_area=is_within_crop_area)
-        transform._get_params = mocker.MagicMock(return_value=params)
+        transform.make_params = mocker.MagicMock(return_value=params)
         output = transform(sample)
 
         # check number of bboxes vs number of labels:
@@ -5662,13 +5710,13 @@ class TestRandomIoUCrop:
 
 class TestRandomShortestSize:
     @pytest.mark.parametrize("min_size,max_size", [([5, 9], 20), ([5, 9], None)])
-    def test__get_params(self, min_size, max_size):
+    def test_make_params(self, min_size, max_size):
         canvas_size = (3, 10)
 
         transform = transforms.RandomShortestSize(min_size=min_size, max_size=max_size, antialias=True)
 
         sample = make_image(canvas_size)
-        params = transform._get_params([sample])
+        params = transform.make_params([sample])
 
         assert "size" in params
         size = params["size"]
@@ -5685,14 +5733,14 @@ class TestRandomShortestSize:
 
 
 class TestRandomResize:
-    def test__get_params(self):
+    def test_make_params(self):
         min_size = 3
         max_size = 6
 
         transform = transforms.RandomResize(min_size=min_size, max_size=max_size, antialias=True)
 
         for _ in range(10):
-            params = transform._get_params([])
+            params = transform.make_params([])
 
             assert isinstance(params["size"], list) and len(params["size"]) == 1
             size = params["size"][0]
@@ -6148,12 +6196,12 @@ class TestJPEG:
 
     @pytest.mark.parametrize("quality", [5, (10, 20)])
     @pytest.mark.parametrize("seed", list(range(10)))
-    def test_transform_get_params_bounds(self, quality, seed):
+    def test_transformmake_params_bounds(self, quality, seed):
         transform = transforms.JPEG(quality=quality)
 
         with freeze_rng_state():
             torch.manual_seed(seed)
-            params = transform._get_params([])
+            params = transform.make_params([])
 
         if isinstance(quality, int):
             assert params["quality"] == quality
@@ -6168,6 +6216,11 @@ class TestJPEG:
     @pytest.mark.parametrize("quality", [-1, 0, 150])
     def test_transform_invalid_quality_error(self, quality):
         with pytest.raises(ValueError, match="quality must be an integer from 1 to 100"):
+            transforms.JPEG(quality=quality)
+
+    @pytest.mark.parametrize("quality", [None, True])
+    def test_transform_quality_type_error(self, quality):
+        with pytest.raises(TypeError, match="quality"):
             transforms.JPEG(quality=quality)
 
 

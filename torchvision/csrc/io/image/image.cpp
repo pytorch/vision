@@ -2,14 +2,6 @@
 
 #include <ATen/core/op_registration/op_registration.h>
 
-// If we are in a Windows environment, we need to define
-// initialization functions for the _custom_ops extension
-#ifdef _WIN32
-void* PyInit_image(void) {
-  return nullptr;
-}
-#endif
-
 namespace vision {
 namespace image {
 
@@ -23,10 +15,6 @@ static auto registry =
             &decode_jpeg)
         .op("image::decode_webp(Tensor encoded_data, int mode) -> Tensor",
             &decode_webp)
-        .op("image::decode_heic(Tensor encoded_data, int mode) -> Tensor",
-            &decode_heic)
-        .op("image::decode_avif(Tensor encoded_data, int mode) -> Tensor",
-            &decode_avif)
         .op("image::encode_jpeg", &encode_jpeg)
         .op("image::read_file", &read_file)
         .op("image::write_file", &write_file)

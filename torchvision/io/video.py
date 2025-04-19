@@ -11,6 +11,7 @@ import torch
 
 from ..utils import _log_api_usage_once
 from . import _video_opt
+from ._video_deprecation_warning import _raise_video_deprecation_warning
 
 try:
     import av
@@ -26,6 +27,10 @@ https://github.com/mikeboers/PyAV#installation for instructions on how to
 install PyAV on your system.
 """
         )
+    try:
+        FFmpegError = av.FFmpegError  # from av 14 https://github.com/PyAV-Org/PyAV/blob/main/CHANGELOG.rst
+    except AttributeError:
+        FFmpegError = av.AVError
 except ImportError:
     av = ImportError(
         """\
@@ -62,20 +67,20 @@ def write_video(
     audio_options: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
-    Writes a 4d tensor in [T, H, W, C] format in a video file.
+    [DEPRECATED] Writes a 4d tensor in [T, H, W, C] format in a video file.
+
+    .. warning::
+
+        DEPRECATED: All the video decoding and encoding capabilities of torchvision
+        are deprecated from version 0.22 and will be removed in version 0.24.  We
+        recommend that you migrate to
+        `TorchCodec <https://github.com/pytorch/torchcodec>`__, where we'll
+        consolidate the future decoding/encoding capabilities of PyTorch
 
     This function relies on PyAV (therefore, ultimately FFmpeg) to encode
     videos, you can get more fine-grained control by referring to the other
     options at your disposal within `the FFMpeg wiki
     <http://trac.ffmpeg.org/wiki#Encoding>`_.
-
-    .. warning::
-
-        In the near future, we intend to centralize PyTorch's video decoding
-        capabilities within the `torchcodec
-        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
-        try it out and share your feedback, as the torchvision video decoders
-        will eventually be deprecated.
 
     Args:
         filename (str): path where the video will be saved
@@ -103,6 +108,7 @@ def write_video(
         >>> write_video("video.mp4", options = {"crf": "17"})
 
     """
+    _raise_video_deprecation_warning()
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_video)
     _check_av_available()
@@ -111,7 +117,7 @@ def write_video(
     # PyAV does not support floating point numbers with decimal point
     # and will throw OverflowException in case this is not the case
     if isinstance(fps, float):
-        fps = np.round(fps)
+        fps = int(np.round(fps))
 
     with av.open(filename, mode="w") as container:
         stream = container.add_stream(video_codec, rate=fps)
@@ -155,7 +161,13 @@ def write_video(
 
         for img in video_array:
             frame = av.VideoFrame.from_ndarray(img, format="rgb24")
-            frame.pict_type = "NONE"
+            try:
+                frame.pict_type = "NONE"
+            except TypeError:
+                from av.video.frame import PictureType  # noqa
+
+                frame.pict_type = PictureType.NONE
+
             for packet in stream.encode(frame):
                 container.mux(packet)
 
@@ -215,7 +227,7 @@ def _read_from_stream(
     try:
         # TODO check if stream needs to always be the video stream here or not
         container.seek(seek_offset, any_frame=False, backward=True, stream=stream)
-    except av.AVError:
+    except FFmpegError:
         # TODO add some warnings in this case
         # print("Corrupted file?", container.name)
         return []
@@ -228,7 +240,7 @@ def _read_from_stream(
                     buffer_count += 1
                     continue
                 break
-    except av.AVError:
+    except FFmpegError:
         # TODO add a warning
         pass
     # ensure that the results are sorted wrt the pts
@@ -266,16 +278,15 @@ def read_video(
     pts_unit: str = "pts",
     output_format: str = "THWC",
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
-    """
-    Reads a video from a file, returning both the video frames and the audio frames
+    """[DEPRECATED] Reads a video from a file, returning both the video frames and the audio frames
 
     .. warning::
 
-        In the near future, we intend to centralize PyTorch's video decoding
-        capabilities within the `torchcodec
-        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
-        try it out and share your feedback, as the torchvision video decoders
-        will eventually be deprecated.
+        DEPRECATED: All the video decoding and encoding capabilities of torchvision
+        are deprecated from version 0.22 and will be removed in version 0.24.  We
+        recommend that you migrate to
+        `TorchCodec <https://github.com/pytorch/torchcodec>`__, where we'll
+        consolidate the future decoding/encoding capabilities of PyTorch
 
     Args:
         filename (str): path to the video file. If using the pyav backend, this can be whatever ``av.open`` accepts.
@@ -292,6 +303,7 @@ def read_video(
         aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels and `L` is the number of points
         info (Dict): metadata for the video and audio. Can contain the fields video_fps (float) and audio_fps (int)
     """
+    _raise_video_deprecation_warning()
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_video)
 
@@ -350,7 +362,7 @@ def read_video(
                     )
                     info["audio_fps"] = container.streams.audio[0].rate
 
-        except av.AVError:
+        except FFmpegError:
             # TODO raise a warning?
             pass
 
@@ -398,16 +410,15 @@ def _decode_video_timestamps(container: "av.container.Container") -> List[int]:
 
 
 def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[int], Optional[float]]:
-    """
-    List the video frames timestamps.
+    """[DEPREACTED] List the video frames timestamps.
 
     .. warning::
 
-        In the near future, we intend to centralize PyTorch's video decoding
-        capabilities within the `torchcodec
-        <https://github.com/pytorch/torchcodec>`_ project. We encourage you to
-        try it out and share your feedback, as the torchvision video decoders
-        will eventually be deprecated.
+        DEPRECATED: All the video decoding and encoding capabilities of torchvision
+        are deprecated from version 0.22 and will be removed in version 0.24.  We
+        recommend that you migrate to
+        `TorchCodec <https://github.com/pytorch/torchcodec>`__, where we'll
+        consolidate the future decoding/encoding capabilities of PyTorch
 
     Note that the function decodes the whole video frame-by-frame.
 
@@ -422,6 +433,7 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
         video_fps (float, optional): the frame rate for the video
 
     """
+    _raise_video_deprecation_warning()
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_video_timestamps)
     from torchvision import get_video_backend
@@ -441,10 +453,10 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
                 video_time_base = video_stream.time_base
                 try:
                     pts = _decode_video_timestamps(container)
-                except av.AVError:
+                except FFmpegError:
                     warnings.warn(f"Failed decoding frames for file {filename}")
                 video_fps = float(video_stream.average_rate)
-    except av.AVError as e:
+    except FFmpegError as e:
         msg = f"Failed to open container for {filename}; Caught error: {e}"
         warnings.warn(msg, RuntimeWarning)
 

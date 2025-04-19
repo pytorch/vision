@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
-from .folder import ImageFolder
+from .folder import default_loader, ImageFolder
 from .utils import download_and_extract_archive, verify_str_arg
 
 
@@ -16,11 +16,14 @@ class Country211(ImageFolder):
     Args:
         root (str or ``pathlib.Path``): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), ``"valid"`` and ``"test"``.
-        transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
-            version. E.g, ``transforms.RandomCrop``.
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
         download (bool, optional): If True, downloads the dataset from the internet and puts it into
             ``root/country211/``. If dataset is already downloaded, it is not downloaded again.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     _URL = "https://openaipublic.azureedge.net/clip/data/country211.tgz"
@@ -33,6 +36,7 @@ class Country211(ImageFolder):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         self._split = verify_str_arg(split, "split", ("train", "valid", "test"))
 
@@ -46,7 +50,12 @@ class Country211(ImageFolder):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        super().__init__(str(self._base_folder / self._split), transform=transform, target_transform=target_transform)
+        super().__init__(
+            str(self._base_folder / self._split),
+            transform=transform,
+            target_transform=target_transform,
+            loader=loader,
+        )
         self.root = str(root)
 
     def _check_exists(self) -> bool:

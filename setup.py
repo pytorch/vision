@@ -2,6 +2,7 @@ import distutils.command.clean
 import distutils.spawn
 import glob
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -19,8 +20,6 @@ DEBUG = os.getenv("DEBUG", "0") == "1"
 USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
-USE_HEIC = os.getenv("TORCHVISION_USE_HEIC", "0") == "1"  # TODO enable by default!
-USE_AVIF = os.getenv("TORCHVISION_USE_AVIF", "0") == "1"  # TODO enable by default!
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 # Note: the GPU video decoding stuff used to be called "video codec", which
@@ -51,8 +50,6 @@ print(f"{DEBUG = }")
 print(f"{USE_PNG = }")
 print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
-print(f"{USE_HEIC = }")
-print(f"{USE_AVIF = }")
 print(f"{USE_NVJPEG = }")
 print(f"{NVCC_FLAGS = }")
 print(f"{USE_CPU_VIDEO_DECODER = }")
@@ -83,7 +80,7 @@ def get_version():
 
 def write_version_file(version, sha):
     # Exists for BC, probably completely useless.
-    with open(ROOT_DIR / "torchvision/version.py", "w") as f:
+    with open(ROOT_DIR / "torchvision" / "version.py", "w") as f:
         f.write(f"__version__ = '{version}'\n")
         f.write(f"git_version = {repr(sha)}\n")
         f.write("from torchvision.extension import _check_cuda_version\n")
@@ -99,8 +96,14 @@ def get_requirements():
             return None
 
     pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
-    if os.getenv("PYTORCH_VERSION"):
-        pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
+    if version_pin := os.getenv("PYTORCH_VERSION"):
+        pytorch_dep += "==" + version_pin
+    elif (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
+        # This branch and the associated env vars exist to help third-party
+        # builds like in https://github.com/pytorch/vision/pull/8936. This is
+        # supported on a best-effort basis, we don't guarantee that this won't
+        # eventually break (and we don't test it.)
+        pytorch_dep += f">={version_pin_ge},<{version_pin_lt}"
 
     requirements = [
         "numpy",
@@ -127,7 +130,7 @@ def get_macros_and_flags():
             if NVCC_FLAGS is None:
                 nvcc_flags = []
             else:
-                nvcc_flags = NVCC_FLAGS.split(" ")
+                nvcc_flags = shlex.split(NVCC_FLAGS)
         extra_compile_args["nvcc"] = nvcc_flags
 
     if sys.platform == "win32":
@@ -198,7 +201,7 @@ def make_C_extension():
 
 def find_libpng():
     # Returns (found, include dir, library dir, library name)
-    if sys.platform in ("linux", "darwin"):
+    if sys.platform in ("linux", "darwin", "aix"):
         libpng_config = shutil.which("libpng-config")
         if libpng_config is None:
             warnings.warn("libpng-config not found")
@@ -335,36 +338,6 @@ def make_image_extension():
             define_macros += [("WEBP_FOUND", 1)]
         else:
             warnings.warn("Building torchvision without WEBP support")
-
-    if USE_HEIC:
-        heic_found, heic_include_dir, heic_library_dir = find_library(header="libheif/heif.h")
-        if heic_found:
-            print("Building torchvision with HEIC support")
-            print(f"{heic_include_dir = }")
-            print(f"{heic_library_dir = }")
-            if heic_include_dir is not None and heic_library_dir is not None:
-                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
-                include_dirs.append(heic_include_dir)
-                library_dirs.append(heic_library_dir)
-            libraries.append("heif")
-            define_macros += [("HEIC_FOUND", 1)]
-        else:
-            warnings.warn("Building torchvision without HEIC support")
-
-    if USE_AVIF:
-        avif_found, avif_include_dir, avif_library_dir = find_library(header="avif/avif.h")
-        if avif_found:
-            print("Building torchvision with AVIF support")
-            print(f"{avif_include_dir = }")
-            print(f"{avif_library_dir = }")
-            if avif_include_dir is not None and avif_library_dir is not None:
-                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
-                include_dirs.append(avif_include_dir)
-                library_dirs.append(avif_library_dir)
-            libraries.append("avif")
-            define_macros += [("AVIF_FOUND", 1)]
-        else:
-            warnings.warn("Building torchvision without AVIF support")
 
     if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
@@ -591,7 +564,7 @@ if __name__ == "__main__":
             "scipy": ["scipy"],
         },
         ext_modules=extensions,
-        python_requires=">=3.8",
+        python_requires=">=3.9",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
             "clean": clean,

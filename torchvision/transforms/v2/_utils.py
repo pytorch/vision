@@ -81,11 +81,13 @@ def _get_fill(fill_dict, inpt_type):
 
 
 def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
-    if not isinstance(padding, (numbers.Number, tuple, list)):
-        raise TypeError("Got inappropriate padding arg")
 
-    if isinstance(padding, (tuple, list)) and len(padding) not in [1, 2, 4]:
-        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
+    err_msg = f"Padding must be an int or a 1, 2, or 4 element of tuple or list, got {padding}."
+    if isinstance(padding, (tuple, list)):
+        if len(padding) not in [1, 2, 4] or not all(isinstance(p, int) for p in padding):
+            raise ValueError(err_msg)
+    elif not isinstance(padding, int):
+        raise ValueError(err_msg)
 
 
 # TODO: let's use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)
@@ -151,6 +153,10 @@ def _parse_labels_getter(labels_getter: Union[str, Callable[[Any], Any], None]) 
 
 
 def get_bounding_boxes(flat_inputs: List[Any]) -> tv_tensors.BoundingBoxes:
+    """Return the Bounding Boxes in the input.
+
+    Assumes only one ``BoundingBoxes`` object is present.
+    """
     # This assumes there is only one bbox per sample as per the general convention
     try:
         return next(inpt for inpt in flat_inputs if isinstance(inpt, tv_tensors.BoundingBoxes))
@@ -159,6 +165,7 @@ def get_bounding_boxes(flat_inputs: List[Any]) -> tv_tensors.BoundingBoxes:
 
 
 def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
+    """Return Channel, Height, and Width."""
     chws = {
         tuple(get_dimensions(inpt))
         for inpt in flat_inputs
@@ -173,6 +180,7 @@ def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
 
 
 def query_size(flat_inputs: List[Any]) -> Tuple[int, int]:
+    """Return Height and Width."""
     sizes = {
         tuple(get_size(inpt))
         for inpt in flat_inputs

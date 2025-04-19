@@ -361,7 +361,8 @@ class RandAugment(_AutoAugmentBase):
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
-        num_ops (int, optional): Number of augmentation transformations to apply sequentially.
+        num_ops (int, optional): Number of augmentation transformations to apply sequentially,
+            must be non-negative integer. Default: 2.
         magnitude (int, optional): Magnitude for all the transformations.
         num_magnitude_bins (int, optional): The number of different magnitude values.
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
@@ -407,6 +408,8 @@ class RandAugment(_AutoAugmentBase):
         fill: Union[_FillType, Dict[Union[Type, str], _FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
+        if not isinstance(num_ops, int) or (num_ops < 0):
+            raise ValueError(f"num_ops should be a non-negative integer, but got {num_ops} instead.")
         self.num_ops = num_ops
         self.magnitude = magnitude
         self.num_magnitude_bins = num_magnitude_bins

@@ -14,7 +14,7 @@ from ._utils import _parse_labels_getter, _setup_number_or_seq, _setup_size, get
 
 # TODO: do we want/need to expose this?
 class Identity(Transform):
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return inpt
 
 
@@ -34,7 +34,7 @@ class Lambda(Transform):
         self.lambd = lambd
         self.types = types or self._transformed_types
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(inpt, self.types):
             return self.lambd(inpt)
         else:
@@ -99,11 +99,11 @@ class LinearTransformation(Transform):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def _check_inputs(self, sample: Any) -> Any:
+    def check_inputs(self, sample: Any) -> Any:
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         shape = inpt.shape
         n = shape[-3] * shape[-2] * shape[-1]
         if n != self.transformation_matrix.shape[0]:
@@ -157,11 +157,11 @@ class Normalize(Transform):
         self.std = list(std)
         self.inplace = inplace
 
-    def _check_inputs(self, sample: Any) -> Any:
+    def check_inputs(self, sample: Any) -> Any:
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
@@ -197,11 +197,11 @@ class GaussianBlur(Transform):
         if not 0.0 < self.sigma[0] <= self.sigma[1]:
             raise ValueError(f"sigma values should be positive and of the form (min, max). Got {self.sigma}")
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
         sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
         return dict(sigma=[sigma, sigma])
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.gaussian_blur, inpt, self.kernel_size, **params)
 
 
@@ -228,7 +228,7 @@ class GaussianNoise(Transform):
         self.sigma = sigma
         self.clip = clip
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.gaussian_noise, inpt, mean=self.mean, sigma=self.sigma, clip=self.clip)
 
 
@@ -272,7 +272,7 @@ class ToDtype(Transform):
         self.dtype = dtype
         self.scale = scale
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         if isinstance(self.dtype, torch.dtype):
             # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
             # is a simple torch.dtype
@@ -335,7 +335,7 @@ class ConvertImageDtype(Transform):
         super().__init__()
         self.dtype = dtype
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         return self._call_kernel(F.to_dtype, inpt, dtype=self.dtype, scale=True)
 
 
@@ -432,11 +432,11 @@ class SanitizeBoundingBoxes(Transform):
         )
 
         params = dict(valid=valid, labels=labels)
-        flat_outputs = [self._transform(inpt, params) for inpt in flat_inputs]
+        flat_outputs = [self.transform(inpt, params) for inpt in flat_inputs]
 
         return tree_unflatten(flat_outputs, spec)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
         is_label = params["labels"] is not None and any(inpt is label for label in params["labels"])
         is_bounding_boxes_or_mask = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask))
 
