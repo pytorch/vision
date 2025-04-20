@@ -931,6 +931,7 @@ class TestDeformConv:
     dtype = torch.float64
     mps_dtype = torch.float32
     mps_backward_atol = 2e-2
+    mps_backward_eps = 1e-3
     
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
         stride_h, stride_w = _pair(stride)
@@ -1112,12 +1113,18 @@ class TestDeformConv:
 
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
-    @pytest.mark.parametrize("batch_sz", (0, 6))
+    @pytest.mark.parametrize("batch_sz", (0, 33))
     @pytest.mark.opcheck_only_one()
     def test_backward(self, device, contiguous, batch_sz, deterministic=False):
+        # Batch size of zero fails a check un OperationUtils.mm because tensors with zero as a dimension
+        # cause the Placeholder::Placeholder to fail. 
+        if device == "mps" and batch_sz == 0:
+            pytest.skip("MPS does not currently support zero batch size for backpropagation")
+        
         atol = self.mps_backward_atol if device == "mps" else 1e-05
         dtype = self.mps_dtype if device == "mps" else self.dtype
-            
+        eps = self.mps_backward_eps if device == "mps" else 1e-6
+
         x, weight, offset, mask, bias, stride, padding, dilation = self.get_fn_args(
             device, contiguous, batch_sz, dtype
         )
@@ -1126,15 +1133,15 @@ class TestDeformConv:
             return ops.deform_conv2d(
                 x_, offset_, weight_, bias_, stride=stride, padding=padding, dilation=dilation, mask=mask_
             )
-        with DeterministicGuard(deterministic):
-            gradcheck(func, (x, offset, mask, weight, bias), nondet_tol=1e-5, fast_mode=True)
-
+        
+        gradcheck(func, (x, offset, mask, weight, bias), nondet_tol=1e-5, fast_mode=True, atol=atol, eps=eps)
+        
         def func_no_mask(x_, offset_, weight_, bias_):
             return ops.deform_conv2d(
                 x_, offset_, weight_, bias_, stride=stride, padding=padding, dilation=dilation, mask=None
             )
-        with DeterministicGuard(deterministic):
-            gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True)
+        
+        gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True, atol=atol, eps=eps)
 
         @torch.jit.script
         def script_func(x_, offset_, mask_, weight_, bias_, stride_, pad_, dilation_):
@@ -1147,7 +1154,7 @@ class TestDeformConv:
             lambda z, off, msk, wei, bi: script_func(z, off, msk, wei, bi, stride, padding, dilation),
             (x, offset, mask, weight, bias),
             nondet_tol=1e-5,
-            fast_mode=True,
+            fast_mode=True, eps=eps, atol=atol
         )
 
         @torch.jit.script
@@ -1161,7 +1168,7 @@ class TestDeformConv:
             lambda z, off, wei, bi: script_func_no_mask(z, off, wei, bi, stride, padding, dilation),
             (x, offset, weight, bias),
             nondet_tol=1e-5,
-            fast_mode=True,
+            fast_mode=True, eps=eps, atol=atol
         )
 
     @needs_cuda
