@@ -37,12 +37,12 @@ inline void atomic_add_float(device half* data_ptr, const half val)
   atomic_fetch_add_explicit((device atomic_float*) data_ptr, static_cast<float>(val), memory_order_relaxed);
 }
 
-// ********************** TESTING CPU implementation of bilinear_interpolate **********************
+// ********************** deform_conv2d implementation of bilinear_interpolate **********************
 // This implementation is used by the cpu and cuda implementation of the deform_conv2d kernel
 // and is needed here in order for the pytest operator test not to fail.
 
 template <typename scalar_t, typename integer_t>
-inline scalar_t bilinear_interpolate_2(
+inline scalar_t bilinear_interpolate_deform_conv2d(
     constant scalar_t* in,
     integer_t height,
     integer_t width,
@@ -80,12 +80,6 @@ inline scalar_t bilinear_interpolate_2(
   scalar_t val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
   return val;
 }
-
-
-
-
-
-
 
 
 
@@ -1066,14 +1060,7 @@ kernel void ps_roi_pool_backward<DTYPE, INT_DTYPE>(          \
     
 
 
-
-
-
-
-
-
 /*----------- START OF DEFORM_CONV2D KERNEL IMPLEMENTATION -----------------*/
-
 
 template <typename scalar_t, typename integer_t>
 kernel void deformable_im2col(
@@ -1149,7 +1136,7 @@ kernel void deformable_im2col(
         const scalar_t x =
             (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
         *columns_ptr =
-            mask_value * bilinear_interpolate_2(input_ptr, height, width, y, x, index);
+            mask_value * bilinear_interpolate_deform_conv2d(input_ptr, height, width, y, x, index);
         columns_ptr += batch_sz * out_h * out_w;
       }
     }
@@ -1216,8 +1203,6 @@ kernel void deformable_col2im(
     uint2     tid2   [[thread_position_in_threadgroup]],
     uint2     tgpg    [[threadgroups_per_grid]]) {
     const integer_t grad_im_numel = width * height * channels * batch_sz;
-
-    
   MPS_1D_KERNEL_LOOP(index, n, tgpg.x) {
     const integer_t out_x = index % out_w;
     const integer_t out_y = (index / out_w) % out_h;
@@ -1434,7 +1419,7 @@ kernel void deformable_col2im_coord(
 
       if (use_mask && is_y_direction) {
         grad_mask_val += col_ptr[col_pos] *
-            bilinear_interpolate_2(im_ptr, height, width, y, x, index);
+            bilinear_interpolate_deform_conv2d(im_ptr, height, width, y, x, index);
       }
 
       im_ptr += height * width;
