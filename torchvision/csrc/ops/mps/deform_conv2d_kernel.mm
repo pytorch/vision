@@ -1,6 +1,4 @@
-// vision::ops::
-// deform_conv2d_kernel.mm
-//
+
 
 #include <ATen/ATen.h>
 #include <torch/library.h>
@@ -8,9 +6,6 @@
 #include <ATen/native/mps/OperationUtils.h>
 #include "mps_helpers.h"
 #include "mps_kernels.h"
-#include <iostream>
-#include <string>
-
 
 namespace vision {
 namespace ops {
@@ -18,43 +13,6 @@ namespace ops {
 namespace {
 
 const int tkMaxParallelImgs = 32;
-
-// Helper function to print the tensor content
-void printTensor(const at::Tensor& tensor, int indent = 0) {
-    // Print indentation
-    for (int i = 0; i < indent; ++i) {
-        std::cout << "  ";
-    }
-
-    // Check if the tensor is a scalar
-    if (tensor.dim() == 0) {
-        std::cout << tensor.item<float>() << std::endl;
-        return;
-    }
-
-    // Check if the tensor is 1-dimensional
-    if (tensor.dim() == 1) {
-        std::cout << "[";
-        for (int64_t i = 0; i < tensor.size(0); ++i) {
-            std::cout << tensor[i].item<float>();
-            if (i < tensor.size(0) - 1) {
-                std::cout << ", ";
-            }
-        }
-        std::cout << "]" << std::endl;
-        return;
-    }
-
-    // Handle multi-dimensional tensors
-    std::cout << "[" << std::endl;
-    for (int64_t i = 0; i < tensor.size(0); ++i) {
-        printTensor(tensor[i], indent + 1);
-    }
-    for (int i = 0; i < indent; ++i) {
-        std::cout << "  ";
-    }
-    std::cout << "]" << std::endl;
-}
 
 void deformable_im2col(const at::Tensor& input,
                        const at::Tensor& data_offset,
@@ -78,7 +36,6 @@ void deformable_im2col(const at::Tensor& input,
                        at::Tensor data_col) {
     using namespace at::native::mps;
     
-    // Validate tensors as of type mps.  
     TORCH_CHECK(input.is_mps(),         "input must be a MPS tensor");
     TORCH_CHECK(data_offset.is_mps(),   "data_offset must be a MPS tensor");
     TORCH_CHECK(data_mask.is_mps(),     "data_mask must be a MPS tensor");
@@ -94,7 +51,6 @@ void deformable_im2col(const at::Tensor& input,
     
     const int64_t num_kernels = (int64_t)n_in_channels * out_h * out_w * parallel_imgs;
     
-    // Get a raw pointer to the underlying data structure of the tensors and cast it as a pointer to an MTLBuffer.
     id<MTLBuffer> inputBuffer = getMTLBufferStorage(input);
     id<MTLBuffer> data_offsetBuffer = getMTLBufferStorage(data_offset);
     id<MTLBuffer> data_maskBuffer = getMTLBufferStorage(data_mask);
@@ -115,7 +71,6 @@ void deformable_im2col(const at::Tensor& input,
                 1,
                 1);
 
-            // this function call is a no-op if MPS Profiler is not enabled
             getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input, data_offset, data_mask});
             
             id<MTLComputeCommandEncoder> computeEncoder = mpsStream->commandEncoder();
@@ -144,7 +99,6 @@ void deformable_im2col(const at::Tensor& input,
             [computeEncoder setBytes:&out_w length:sizeof(int64_t) atIndex:19];
             [computeEncoder setBytes:&use_mask length:sizeof(bool) atIndex:20];
             
-            // A threadGroup is equivalent to a cuda's block.
             NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
             if (tgSize > threadsPerBlock) {
                 tgSize = threadsPerBlock;
@@ -175,15 +129,15 @@ void compute_grad_input(
                         int64_t channels,
                         int64_t height,
                         int64_t width,
-                        int64_t weight_h, //kernel_h
-                        int64_t weight_w, //kernel_w
+                        int64_t weight_h,
+                        int64_t weight_w,
                         int64_t pad_h,
                         int64_t pad_w,
                         int64_t stride_h,
                         int64_t stride_w,
                         int64_t dilation_h,
                         int64_t dilation_w,
-                        int64_t parallel_imgs, //batch_sz
+                        int64_t parallel_imgs,
                         int64_t n_offset_grps,
                         bool use_mask,
                         at::Tensor grad_im) {
@@ -214,7 +168,6 @@ void compute_grad_input(
             const std::string kernel = "deformable_col2im_" + scalarToMetalTypeString(columns.scalar_type());
             id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
             
-            // this function call is a no-op if MPS Profiler is not enabled
             getMPSProfiler().beginProfileKernel(visionPSO, kernel, {columns, offset, mask});
             
             [computeEncoder setComputePipelineState:visionPSO];
@@ -244,7 +197,6 @@ void compute_grad_input(
             [computeEncoder setBytes:&out_w length:sizeof(int64_t) atIndex:18];
             [computeEncoder setBytes:&use_mask length:sizeof(bool) atIndex:19];
             
-            // A threadGroup is equivalent to a cuda's block.
             NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
             if (tgSize > threadsPerBlock) {
                 tgSize = threadsPerBlock;
@@ -314,7 +266,6 @@ void compute_grad_offset_and_mask(
             const std::string kernel = "deformable_col2im_coord_" + scalarToMetalTypeString(columns.scalar_type());
             id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
             
-            // this function call is a no-op if MPS Profiler is not enabled
             getMPSProfiler().beginProfileKernel(visionPSO, kernel, {columns, input, offset, mask});
                         
             [computeEncoder setComputePipelineState:visionPSO];
@@ -349,7 +300,6 @@ void compute_grad_offset_and_mask(
             [computeEncoder setBytes:&out_w length:sizeof(int64_t) atIndex:20];
             [computeEncoder setBytes:&use_mask length:sizeof(bool) atIndex:21];
             
-            // A threadGroup is equivalent to a cuda's block.
             NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
             if (tgSize > threadsPerBlock) {
                 tgSize = threadsPerBlock;
@@ -466,7 +416,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
         columns.zero_();
         // Separate into weight groups
         for (int64_t g = 0; g < n_weight_grps; g++) {
-            columns[g] = columns[g].addmm_(
+            columns[g] = addmm(columns[g], 
                                            weight[g].flatten(1).transpose(0, 1), grad_out[elt][g].flatten(1));
         }
         
@@ -627,12 +577,11 @@ at::Tensor backward_gradient_parameters(
                           use_mask,
                           columns);
         
+        // We need to use addmm instead of addmm_ here to avoid zero values for weight group > 1
         for (int64_t g = 0; g < n_weight_grps; g++) {
             grad_weight[g] =
-            grad_weight[g]
-                .flatten(1)
-                .addmm_(
-                        grad_out_buf[elt][g].flatten(1), columns[g].transpose(1, 0))
+                addmm((grad_weight[g].flatten(1)),
+                    grad_out_buf[elt][g].flatten(1), columns[g].transpose(1, 0))
                 .view_as(grad_weight[g]);
         }
     }
@@ -660,7 +609,6 @@ at::Tensor deform_conv2d_forward_kernel(
     int64_t n_weight_grps,
     int64_t n_offset_grps,
     bool use_mask) {
-                                            
     at::Tensor input_c = input.contiguous();
     at::Tensor offset_c = offset.contiguous();
     at::Tensor weight_c = weight.contiguous();
@@ -673,8 +621,6 @@ at::Tensor deform_conv2d_forward_kernel(
     TORCH_CHECK(weight_c.ndimension() == 4);
     TORCH_CHECK(input_c.is_mps(), "input must be a MPS tensor");
     
-   // at::DeviceGuard guard(input_c.device());
-
     int batch_sz = input_c.size(0);
     int in_channels = input_c.size(1);
     int in_h = input_c.size(2);
@@ -848,7 +794,7 @@ at::Tensor deform_conv2d_forward_kernel(
         columns = columns.view(
                                {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
 
-        // The use of addmm_ has a bug in pytorch, so we use addmm instead
+        // The use of in-place .addmm_ has a bug in pytorch, so we use addmm instead
         // This needs to be fixed in the future
         for (int g = 0; g < n_weight_grps; g++) {
             out_buf[b][g] = 
@@ -890,6 +836,15 @@ deform_conv2d_backward_kernel(
                               int64_t n_weight_grps,
                               int64_t n_offset_grps,
                               bool use_mask) {
+
+    TORCH_CHECK(grad_out.is_mps(), "grad must be a MPS tensor");
+    TORCH_CHECK(input.is_mps(), "input must be a MPS tensor");
+    TORCH_CHECK(weight.is_mps(), "weight must be a MPS tensor");
+    TORCH_CHECK(offset.is_mps(), "offset must be a MPS tensor");
+    TORCH_CHECK(mask.is_mps(), "mask must be a MPS tensor");
+    TORCH_CHECK(bias.is_mps(), "bias must be a MPS tensor");
+    TORCH_CHECK(grad_out.scalar_type() != at::kHalf, "MPS does not support deform_conv2 backward with float16 inputs.");
+
     at::Tensor grad_out_c = grad_out.contiguous();
     at::Tensor input_c = input.contiguous();
     at::Tensor weight_c = weight.contiguous();
