@@ -305,7 +305,7 @@ def box_area_center(boxes: Tensor) -> Tensor:
         Tensor[N]: the area for each box
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(box_area)
+        _log_api_usage_once(box_area_center)
     boxes = _upcast(boxes)
     return boxes[:, 2] * boxes[:, 3]
 
