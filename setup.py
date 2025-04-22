@@ -276,8 +276,8 @@ def find_library(header):
         include_dir = HOMEBREW_PATH / "include"
         library_dir = HOMEBREW_PATH / "lib"
         if (include_dir / header).exists():
-                print(f"{searching_for}. Found in {include_dir}.")
-                return True, str(include_dir), str(library_dir)
+            print(f"{searching_for}. Found in {include_dir}.")
+            return True, str(include_dir), str(library_dir)
 
     return False, None, None
 
