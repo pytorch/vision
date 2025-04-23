@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Union
+from typing import Union
 from warnings import warn
 
 import torch
@@ -154,11 +154,11 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
 
 
 def decode_jpeg(
-    input: Union[torch.Tensor, List[torch.Tensor]],
+    input: Union[torch.Tensor, list[torch.Tensor]],
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     device: Union[str, torch.device] = "cpu",
     apply_exif_orientation: bool = False,
-) -> Union[torch.Tensor, List[torch.Tensor]]:
+) -> Union[torch.Tensor, list[torch.Tensor]]:
     """Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.
 
     The values of the output tensor are uint8 between 0 and 255.
@@ -225,8 +225,8 @@ def decode_jpeg(
 
 
 def encode_jpeg(
-    input: Union[torch.Tensor, List[torch.Tensor]], quality: int = 75
-) -> Union[torch.Tensor, List[torch.Tensor]]:
+    input: Union[torch.Tensor, list[torch.Tensor]], quality: int = 75
+) -> Union[torch.Tensor, list[torch.Tensor]]:
     """Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.
 
     .. note::

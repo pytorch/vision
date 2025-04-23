@@ -2,7 +2,7 @@ import math
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import torch
 from torch import nn, Tensor
@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 
-def _sum(x: List[Tensor]) -> Tensor:
+def _sum(x: list[Tensor]) -> Tensor:
     res = x[0]
     for i in x[1:]:
         res = res + i
@@ -73,14 +73,14 @@ class RetinaNetHead(nn.Module):
         self.regression_head = RetinaNetRegressionHead(in_channels, num_anchors, norm_layer=norm_layer)
 
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Dict[str, Tensor]
+        # type: (list[dict[str, Tensor]], dict[str, Tensor], list[Tensor], list[Tensor]) -> dict[str, Tensor]
         return {
             "classification": self.classification_head.compute_loss(targets, head_outputs, matched_idxs),
             "bbox_regression": self.regression_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
         }
 
     def forward(self, x):
-        # type: (List[Tensor]) -> Dict[str, Tensor]
+        # type: (list[Tensor]) -> dict[str, Tensor]
         return {"cls_logits": self.classification_head(x), "bbox_regression": self.regression_head(x)}
 
 
@@ -156,7 +156,7 @@ class RetinaNetClassificationHead(nn.Module):
         )
 
     def compute_loss(self, targets, head_outputs, matched_idxs):
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor]) -> Tensor
+        # type: (list[dict[str, Tensor]], dict[str, Tensor], list[Tensor]) -> Tensor
         losses = []
 
         cls_logits = head_outputs["cls_logits"]
@@ -189,7 +189,7 @@ class RetinaNetClassificationHead(nn.Module):
         return _sum(losses) / len(targets)
 
     def forward(self, x):
-        # type: (List[Tensor]) -> Tensor
+        # type: (list[Tensor]) -> Tensor
         all_cls_logits = []
 
         for features in x:
@@ -270,7 +270,7 @@ class RetinaNetRegressionHead(nn.Module):
         )
 
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Tensor
+        # type: (list[dict[str, Tensor]], dict[str, Tensor], list[Tensor], list[Tensor]) -> Tensor
         losses = []
 
         bbox_regression = head_outputs["bbox_regression"]
@@ -302,7 +302,7 @@ class RetinaNetRegressionHead(nn.Module):
         return _sum(losses) / max(1, len(targets))
 
     def forward(self, x):
-        # type: (List[Tensor]) -> Tensor
+        # type: (list[Tensor]) -> Tensor
         all_bbox_regression = []
 
         for features in x:
@@ -485,14 +485,14 @@ class RetinaNet(nn.Module):
 
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
-        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
+        # type: (dict[str, Tensor], list[dict[str, Tensor]]) -> tuple[dict[str, Tensor], list[dict[str, Tensor]]]
         if self.training:
             return losses
 
         return detections
 
     def compute_loss(self, targets, head_outputs, anchors):
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor]) -> Dict[str, Tensor]
+        # type: (list[dict[str, Tensor]], dict[str, Tensor], list[Tensor]) -> dict[str, Tensor]
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             if targets_per_image["boxes"].numel() == 0:
@@ -507,13 +507,13 @@ class RetinaNet(nn.Module):
         return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
 
     def postprocess_detections(self, head_outputs, anchors, image_shapes):
-        # type: (Dict[str, List[Tensor]], List[List[Tensor]], List[Tuple[int, int]]) -> List[Dict[str, Tensor]]
+        # type: (dict[str, list[Tensor]], list[list[Tensor]], list[tuple[int, int]]) -> list[dict[str, Tensor]]
         class_logits = head_outputs["cls_logits"]
         box_regression = head_outputs["bbox_regression"]
 
         num_images = len(image_shapes)
 
-        detections: List[Dict[str, Tensor]] = []
+        detections: list[dict[str, Tensor]] = []
 
         for index in range(num_images):
             box_regression_per_image = [br[index] for br in box_regression]
@@ -571,7 +571,7 @@ class RetinaNet(nn.Module):
         return detections
 
     def forward(self, images, targets=None):
-        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
+        # type: (list[Tensor], Optional[list[dict[str, Tensor]]]) -> tuple[dict[str, Tensor], list[dict[str, Tensor]]]
         """
         Args:
             images (list[Tensor]): images to be processed
@@ -597,7 +597,7 @@ class RetinaNet(nn.Module):
                     )
 
         # get the original image sizes
-        original_image_sizes: List[Tuple[int, int]] = []
+        original_image_sizes: list[tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
             torch._assert(
@@ -618,7 +618,7 @@ class RetinaNet(nn.Module):
                 if degenerate_boxes.any():
                     # print the first degenerate box
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
-                    degen_bb: List[float] = boxes[bb_idx].tolist()
+                    degen_bb: list[float] = boxes[bb_idx].tolist()
                     torch._assert(
                         False,
                         "All bounding boxes should have positive height and width."
@@ -640,7 +640,7 @@ class RetinaNet(nn.Module):
         anchors = self.anchor_generator(images, features)
 
         losses = {}
-        detections: List[Dict[str, Tensor]] = []
+        detections: list[dict[str, Tensor]] = []
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
@@ -658,7 +658,7 @@ class RetinaNet(nn.Module):
             num_anchors_per_level = [hw * A for hw in num_anchors_per_level]
 
             # split outputs per level
-            split_head_outputs: Dict[str, List[Tensor]] = {}
+            split_head_outputs: dict[str, list[Tensor]] = {}
             for k in head_outputs:
                 split_head_outputs[k] = list(head_outputs[k].split(num_anchors_per_level, dim=1))
             split_anchors = [list(a.split(num_anchors_per_level)) for a in anchors]

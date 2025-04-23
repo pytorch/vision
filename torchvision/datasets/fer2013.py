@@ -1,6 +1,6 @@
 import csv
 import pathlib
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import torch
 from PIL import Image
@@ -92,7 +92,7 @@ class FER2013(VisionDataset):
             else:
                 return None
 
-        with open(data_file, "r", newline="") as file:
+        with open(data_file, newline="") as file:
             rows = (row for row in csv.DictReader(file))
 
             if use_fer_file or use_icml_file:
@@ -104,7 +104,7 @@ class FER2013(VisionDataset):
     def __len__(self) -> int:
         return len(self._samples)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         image_tensor, target = self._samples[idx]
         image = Image.fromarray(image_tensor.numpy())
 

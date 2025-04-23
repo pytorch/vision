@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 import torch
 from torchdata.datapipes.iter import CSVParser, IterDataPipe, Mapper
@@ -14,7 +14,7 @@ NAME = "semeion"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=[str(i) for i in range(10)])
 
 
@@ -29,14 +29,14 @@ class SEMEION(Dataset):
         self._categories = _info()["categories"]
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         data = HttpResource(
             "http://archive.ics.uci.edu/ml/machine-learning-databases/semeion/semeion.data",
             sha256="f43228ae3da5ea6a3c95069d53450b86166770e3b719dcc333182128fe08d4b1",
         )
         return [data]
 
-    def _prepare_sample(self, data: Tuple[str, ...]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[str, ...]) -> dict[str, Any]:
         image_data, label_data = data[:256], data[256:-1]
 
         return dict(
@@ -44,7 +44,7 @@ class SEMEION(Dataset):
             label=OneHotLabel([int(label) for label in label_data], categories=self._categories),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         dp = resource_dps[0]
         dp = CSVParser(dp, delimiter=" ")
         dp = hint_shuffling(dp)

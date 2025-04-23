@@ -4,7 +4,7 @@ import pickle
 import string
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Callable, cast, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Optional, Union
 
 from PIL import Image
 
@@ -31,7 +31,7 @@ class LSUNClass(VisionDataset):
                 self.keys = [key for key in txn.cursor().iternext(keys=True, values=False)]
             pickle.dump(self.keys, open(cache_file, "wb"))
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         img, target = None, None
         env = self.env
         with env.begin(write=False) as txn:
@@ -73,7 +73,7 @@ class LSUN(VisionDataset):
     def __init__(
         self,
         root: Union[str, Path],
-        classes: Union[str, List[str]] = "train",
+        classes: Union[str, list[str]] = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ) -> None:
@@ -93,7 +93,7 @@ class LSUN(VisionDataset):
 
         self.length = count
 
-    def _verify_classes(self, classes: Union[str, List[str]]) -> List[str]:
+    def _verify_classes(self, classes: Union[str, list[str]]) -> list[str]:
         categories = [
             "bedroom",
             "bridge",
@@ -136,7 +136,7 @@ class LSUN(VisionDataset):
 
         return classes
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index

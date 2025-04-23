@@ -2,12 +2,13 @@ import fnmatch
 import importlib
 import inspect
 import sys
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from inspect import signature
 from types import ModuleType
-from typing import Any, Callable, Dict, get_args, Iterable, List, Mapping, Optional, Set, Type, TypeVar, Union
+from typing import Any, Callable, get_args, Optional, TypeVar, Union
 
 from torch import nn
 
@@ -36,7 +37,7 @@ class Weights:
 
     url: str
     transforms: Callable
-    meta: Dict[str, Any]
+    meta: dict[str, Any]
 
     def __eq__(self, other: Any) -> bool:
         # We need this custom implementation for correct deep-copy and deserialization behavior.
@@ -141,7 +142,7 @@ def get_weight(name: str) -> WeightsEnum:
     return weights_enum[value_name]
 
 
-def get_model_weights(name: Union[Callable, str]) -> Type[WeightsEnum]:
+def get_model_weights(name: Union[Callable, str]) -> type[WeightsEnum]:
     """
     Returns the weights enum class associated to the given model.
 
@@ -155,7 +156,7 @@ def get_model_weights(name: Union[Callable, str]) -> Type[WeightsEnum]:
     return _get_enum_from_fn(model)
 
 
-def _get_enum_from_fn(fn: Callable) -> Type[WeightsEnum]:
+def _get_enum_from_fn(fn: Callable) -> type[WeightsEnum]:
     """
     Internal method that gets the weight enum of a specific model builder method.
 
@@ -207,7 +208,7 @@ def list_models(
     module: Optional[ModuleType] = None,
     include: Union[Iterable[str], str, None] = None,
     exclude: Union[Iterable[str], str, None] = None,
-) -> List[str]:
+) -> list[str]:
     """
     Returns a list with the names of registered models.
 
@@ -227,7 +228,7 @@ def list_models(
         k for k, v in BUILTIN_MODELS.items() if module is None or v.__module__.rsplit(".", 1)[0] == module.__name__
     }
     if include:
-        models: Set[str] = set()
+        models: set[str] = set()
         if isinstance(include, str):
             include = [include]
         for include_filter in include:

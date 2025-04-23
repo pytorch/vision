@@ -1,7 +1,8 @@
 import math
 from collections import OrderedDict
+from collections.abc import Sequence
 from functools import partial
-from typing import Any, Callable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Optional
 
 import numpy as np
 import torch
@@ -22,14 +23,14 @@ __all__ = [
 ]
 
 
-def _get_conv_output_shape(input_size: Tuple[int, int], kernel_size: int, stride: int, padding: int) -> Tuple[int, int]:
+def _get_conv_output_shape(input_size: tuple[int, int], kernel_size: int, stride: int, padding: int) -> tuple[int, int]:
     return (
         (input_size[0] - kernel_size + 2 * padding) // stride + 1,
         (input_size[1] - kernel_size + 2 * padding) // stride + 1,
     )
 
 
-def _make_block_input_shapes(input_size: Tuple[int, int], n_blocks: int) -> List[Tuple[int, int]]:
+def _make_block_input_shapes(input_size: tuple[int, int], n_blocks: int) -> list[tuple[int, int]]:
     """Util function to check that the input size is correct for a MaxVit configuration."""
     shapes = []
     block_input_shape = _get_conv_output_shape(input_size, 3, 2, 1)
@@ -306,7 +307,7 @@ class PartitionAttentionLayer(nn.Module):
         partition_type: str,
         # grid size needs to be known at initialization time
         # because we need to know hamy relative offsets there are in the grid
-        grid_size: Tuple[int, int],
+        grid_size: tuple[int, int],
         mlp_ratio: int,
         activation_layer: Callable[..., nn.Module],
         norm_layer: Callable[..., nn.Module],
@@ -423,7 +424,7 @@ class MaxVitLayer(nn.Module):
         p_stochastic_dropout: float,
         # partitioning parameters
         partition_size: int,
-        grid_size: Tuple[int, int],
+        grid_size: tuple[int, int],
     ) -> None:
         super().__init__()
 
@@ -519,10 +520,10 @@ class MaxVitBlock(nn.Module):
         attention_dropout: float,
         # partitioning parameters
         partition_size: int,
-        input_grid_size: Tuple[int, int],
+        input_grid_size: tuple[int, int],
         # number of layers
         n_layers: int,
-        p_stochastic: List[float],
+        p_stochastic: list[float],
     ) -> None:
         super().__init__()
         if not len(p_stochastic) == n_layers:
@@ -589,14 +590,14 @@ class MaxVit(nn.Module):
     def __init__(
         self,
         # input size parameters
-        input_size: Tuple[int, int],
+        input_size: tuple[int, int],
         # stem and task parameters
         stem_channels: int,
         # partitioning parameters
         partition_size: int,
         # block parameters
-        block_channels: List[int],
-        block_layers: List[int],
+        block_channels: list[int],
+        block_layers: list[int],
         # attention head dimensions
         head_dim: int,
         stochastic_depth_prob: float,
@@ -730,8 +731,8 @@ def _maxvit(
     # stem parameters
     stem_channels: int,
     # block parameters
-    block_channels: List[int],
-    block_layers: List[int],
+    block_channels: list[int],
+    block_layers: list[int],
     stochastic_depth_prob: float,
     # partitioning parameters
     partition_size: int,

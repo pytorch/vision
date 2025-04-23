@@ -1,6 +1,6 @@
 import enum
 import pathlib
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, Optional, Union
 
 from torchdata.datapipes.iter import CSVParser, Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
@@ -27,7 +27,7 @@ class DTDDemux(enum.IntEnum):
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=read_categories_file(NAME))
 
 
@@ -55,7 +55,7 @@ class DTD(Dataset):
 
         super().__init__(root, skip_integrity_check=skip_validation_check)
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         archive = HttpResource(
             "https://www.robots.ox.ac.uk/~vgg/data/dtd/download/dtd-r1.0.1.tar.gz",
             sha256="e42855a52a4950a3b59612834602aa253914755c95b0cff9ead6d07395f8e205",
@@ -63,7 +63,7 @@ class DTD(Dataset):
         )
         return [archive]
 
-    def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+    def _classify_archive(self, data: tuple[str, Any]) -> Optional[int]:
         path = pathlib.Path(data[0])
         if path.parent.name == "labels":
             if path.name == "labels_joint_anno.txt":
@@ -75,12 +75,12 @@ class DTD(Dataset):
         else:
             return None
 
-    def _image_key_fn(self, data: Tuple[str, Any]) -> str:
+    def _image_key_fn(self, data: tuple[str, Any]) -> str:
         path = pathlib.Path(data[0])
         # The split files contain hardcoded posix paths for the images, e.g. banded/banded_0001.jpg
         return str(path.relative_to(path.parents[1]).as_posix())
 
-    def _prepare_sample(self, data: Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[tuple[str, list[str]], tuple[str, BinaryIO]]) -> dict[str, Any]:
         (_, joint_categories_data), image_data = data
         _, *joint_categories = joint_categories_data
         path, buffer = image_data
@@ -94,7 +94,7 @@ class DTD(Dataset):
             image=EncodedImage.from_file(buffer),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         archive_dp = resource_dps[0]
 
         splits_dp, joint_categories_dp, images_dp = Demultiplexer(
@@ -124,10 +124,10 @@ class DTD(Dataset):
         )
         return Mapper(dp, self._prepare_sample)
 
-    def _filter_images(self, data: Tuple[str, Any]) -> bool:
+    def _filter_images(self, data: tuple[str, Any]) -> bool:
         return self._classify_archive(data) == DTDDemux.IMAGES
 
-    def _generate_categories(self) -> List[str]:
+    def _generate_categories(self) -> list[str]:
         resources = self._resources()
 
         dp = resources[0].load(self._root)

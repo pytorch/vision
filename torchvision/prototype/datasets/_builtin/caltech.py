@@ -1,6 +1,6 @@
 import pathlib
 import re
-from typing import Any, BinaryIO, Dict, List, Tuple, Union
+from typing import Any, BinaryIO, Union
 
 import numpy as np
 
@@ -21,7 +21,7 @@ from .._api import register_dataset, register_info
 
 
 @register_info("caltech101")
-def _caltech101_info() -> Dict[str, Any]:
+def _caltech101_info() -> dict[str, Any]:
     return dict(categories=read_categories_file("caltech101"))
 
 
@@ -46,7 +46,7 @@ class Caltech101(Dataset):
             skip_integrity_check=skip_integrity_check,
         )
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         images = GDriveResource(
             "137RyRjvTBkBiIfeYBNZBtViDHQ6_Ewsp",
             file_name="101_ObjectCategories.tar.gz",
@@ -69,15 +69,15 @@ class Caltech101(Dataset):
         "Airplanes_Side_2": "airplanes",
     }
 
-    def _is_not_background_image(self, data: Tuple[str, Any]) -> bool:
+    def _is_not_background_image(self, data: tuple[str, Any]) -> bool:
         path = pathlib.Path(data[0])
         return path.parent.name != "BACKGROUND_Google"
 
-    def _is_ann(self, data: Tuple[str, Any]) -> bool:
+    def _is_ann(self, data: tuple[str, Any]) -> bool:
         path = pathlib.Path(data[0])
         return bool(self._ANNS_NAME_PATTERN.match(path.name))
 
-    def _images_key_fn(self, data: Tuple[str, Any]) -> Tuple[str, str]:
+    def _images_key_fn(self, data: tuple[str, Any]) -> tuple[str, str]:
         path = pathlib.Path(data[0])
 
         category = path.parent.name
@@ -85,7 +85,7 @@ class Caltech101(Dataset):
 
         return category, id
 
-    def _anns_key_fn(self, data: Tuple[str, Any]) -> Tuple[str, str]:
+    def _anns_key_fn(self, data: tuple[str, Any]) -> tuple[str, str]:
         path = pathlib.Path(data[0])
 
         category = path.parent.name
@@ -97,8 +97,8 @@ class Caltech101(Dataset):
         return category, id
 
     def _prepare_sample(
-        self, data: Tuple[Tuple[str, str], Tuple[Tuple[str, BinaryIO], Tuple[str, BinaryIO]]]
-    ) -> Dict[str, Any]:
+        self, data: tuple[tuple[str, str], tuple[tuple[str, BinaryIO], tuple[str, BinaryIO]]]
+    ) -> dict[str, Any]:
         key, (image_data, ann_data) = data
         category, _ = key
         image_path, image_buffer = image_data
@@ -120,7 +120,7 @@ class Caltech101(Dataset):
             contour=torch.as_tensor(ann["obj_contour"].T),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         images_dp, anns_dp = resource_dps
 
         images_dp = Filter(images_dp, self._is_not_background_image)
@@ -142,7 +142,7 @@ class Caltech101(Dataset):
     def __len__(self) -> int:
         return 8677
 
-    def _generate_categories(self) -> List[str]:
+    def _generate_categories(self) -> list[str]:
         resources = self._resources()
 
         dp = resources[0].load(self._root)
@@ -152,7 +152,7 @@ class Caltech101(Dataset):
 
 
 @register_info("caltech256")
-def _caltech256_info() -> Dict[str, Any]:
+def _caltech256_info() -> dict[str, Any]:
     return dict(categories=read_categories_file("caltech256"))
 
 
@@ -171,7 +171,7 @@ class Caltech256(Dataset):
 
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         return [
             GDriveResource(
                 "1r6o0pSROcV1_VwT4oSjA2FBUSCWGuxLK",
@@ -180,11 +180,11 @@ class Caltech256(Dataset):
             )
         ]
 
-    def _is_not_rogue_file(self, data: Tuple[str, Any]) -> bool:
+    def _is_not_rogue_file(self, data: tuple[str, Any]) -> bool:
         path = pathlib.Path(data[0])
         return path.name != "RENAME2"
 
-    def _prepare_sample(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[str, BinaryIO]) -> dict[str, Any]:
         path, buffer = data
 
         return dict(
@@ -193,7 +193,7 @@ class Caltech256(Dataset):
             label=Label(int(pathlib.Path(path).parent.name.split(".", 1)[0]) - 1, categories=self._categories),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, self._is_not_rogue_file)
         dp = hint_shuffling(dp)
@@ -203,7 +203,7 @@ class Caltech256(Dataset):
     def __len__(self) -> int:
         return 30607
 
-    def _generate_categories(self) -> List[str]:
+    def _generate_categories(self) -> list[str]:
         resources = self._resources()
 
         dp = resources[0].load(self._root)

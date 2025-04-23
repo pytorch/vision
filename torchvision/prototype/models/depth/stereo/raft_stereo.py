@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional
 
 import torch
 import torch.nn as nn
@@ -34,8 +34,8 @@ class BaseEncoder(raft.FeatureEncoder):
         self,
         *,
         block: Callable[..., nn.Module] = ResidualBlock,
-        layers: Tuple[int, int, int, int] = (64, 64, 96, 128),
-        strides: Tuple[int, int, int, int] = (2, 1, 2, 2),
+        layers: tuple[int, int, int, int] = (64, 64, 96, 128),
+        strides: tuple[int, int, int, int] = (2, 1, 2, 2),
         norm_layer: Callable[..., nn.Module] = nn.BatchNorm2d,
     ):
         # We use layers + (256,) because raft.FeatureEncoder require 5 layers
@@ -106,7 +106,7 @@ class MultiLevelContextEncoder(nn.Module):
     def __init__(
         self,
         base_encoder: nn.Module,
-        out_with_blocks: List[bool],
+        out_with_blocks: list[bool],
         output_dim: int = 256,
         block: Callable[..., nn.Module] = ResidualBlock,
     ):
@@ -145,7 +145,7 @@ class MultiLevelContextEncoder(nn.Module):
         block2 = block(out_channels, out_channels, norm_layer=nn.BatchNorm2d, stride=1)
         return nn.Sequential(block1, block2)
 
-    def forward(self, x: Tensor) -> List[Tensor]:
+    def forward(self, x: Tensor) -> list[Tensor]:
         x = self.base_encoder(x)
         outs = []
         for layer_dict in self.downsample_and_out_layers:
@@ -159,7 +159,7 @@ class ConvGRU(raft.ConvGRU):
 
     # Modified from raft.ConvGRU to accept pre-convolved contexts,
     # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/update.py#L23
-    def forward(self, h: Tensor, x: Tensor, context: List[Tensor]) -> Tensor:  # type: ignore[override]
+    def forward(self, h: Tensor, x: Tensor, context: list[Tensor]) -> Tensor:  # type: ignore[override]
         hx = torch.cat([h, x], dim=1)
         z = torch.sigmoid(self.convz(hx) + context[0])
         r = torch.sigmoid(self.convr(hx) + context[1])
@@ -174,7 +174,7 @@ class MultiLevelUpdateBlock(nn.Module):
     It must expose a ``hidden_dims`` attribute which is the hidden dimension size of its gru blocks
     """
 
-    def __init__(self, *, motion_encoder: MotionEncoder, hidden_dims: List[int]):
+    def __init__(self, *, motion_encoder: MotionEncoder, hidden_dims: list[int]):
         super().__init__()
         self.motion_encoder = motion_encoder
 
@@ -203,12 +203,12 @@ class MultiLevelUpdateBlock(nn.Module):
 
     def forward(
         self,
-        hidden_states: List[Tensor],
-        contexts: List[List[Tensor]],
+        hidden_states: list[Tensor],
+        contexts: list[list[Tensor]],
         corr_features: Tensor,
         disparity: Tensor,
-        level_processed: List[bool],
-    ) -> List[Tensor]:
+        level_processed: list[bool],
+    ) -> list[Tensor]:
         # We call it reverse_i because it has a reversed ordering compared to hidden_states
         # see self.grus on the constructor for more detail
         for reverse_i, gru in enumerate(self.grus):
@@ -265,7 +265,7 @@ class CorrPyramid1d(nn.Module):
         super().__init__()
         self.num_levels = num_levels
 
-    def forward(self, fmap1: Tensor, fmap2: Tensor) -> List[Tensor]:
+    def forward(self, fmap1: Tensor, fmap2: Tensor) -> list[Tensor]:
         """Build the correlation pyramid from two feature maps.
 
         The correlation volume is first computed as the dot product of each pair (pixel_in_fmap1, pixel_in_fmap2) on the same row.
@@ -308,7 +308,7 @@ class CorrBlock1d(nn.Module):
         self.radius = radius
         self.out_channels = num_levels * (2 * radius + 1)
 
-    def forward(self, centroids_coords: Tensor, corr_pyramid: List[Tensor]) -> Tensor:
+    def forward(self, centroids_coords: Tensor, corr_pyramid: list[Tensor]) -> Tensor:
         """Return correlation features by indexing from the pyramid."""
         neighborhood_side_len = 2 * self.radius + 1  # see note in __init__ about out_channels
         di = torch.linspace(-self.radius, self.radius, neighborhood_side_len, device=centroids_coords.device)
@@ -407,7 +407,7 @@ class RaftStereo(nn.Module):
 
     def forward(
         self, left_image: Tensor, right_image: Tensor, flow_init: Optional[Tensor] = None, num_iters: int = 12
-    ) -> List[Tensor]:
+    ) -> list[Tensor]:
         """
         Return disparity predictions on every iteration as a list of Tensor.
         args:
@@ -441,8 +441,8 @@ class RaftStereo(nn.Module):
 
         hidden_dims = self.update_block.hidden_dims
         context_out_channels = [context_outs[i].shape[1] - hidden_dims[i] for i in range(len(context_outs))]
-        hidden_states: List[Tensor] = []
-        contexts: List[List[Tensor]] = []
+        hidden_states: list[Tensor] = []
+        contexts: list[list[Tensor]] = []
         for i, context_conv in enumerate(self.context_convs):
             # As in the original paper, the actual output of the context encoder is split in 2 parts:
             # - one part is used to initialize the hidden state of the recurent units of the update block
@@ -505,25 +505,25 @@ def _raft_stereo(
     progress: bool,
     shared_encoder_weight: bool,
     # Feature encoder
-    feature_encoder_layers: Tuple[int, int, int, int, int],
-    feature_encoder_strides: Tuple[int, int, int, int],
+    feature_encoder_layers: tuple[int, int, int, int, int],
+    feature_encoder_strides: tuple[int, int, int, int],
     feature_encoder_block: Callable[..., nn.Module],
     # Context encoder
-    context_encoder_layers: Tuple[int, int, int, int, int],
-    context_encoder_strides: Tuple[int, int, int, int],
+    context_encoder_layers: tuple[int, int, int, int, int],
+    context_encoder_strides: tuple[int, int, int, int],
     # if the `out_with_blocks` param of the context_encoder is True, then
     # the particular output on that level position will have additional `context_encoder_block` layer
-    context_encoder_out_with_blocks: List[bool],
+    context_encoder_out_with_blocks: list[bool],
     context_encoder_block: Callable[..., nn.Module],
     # Correlation block
     corr_num_levels: int,
     corr_radius: int,
     # Motion encoder
-    motion_encoder_corr_layers: Tuple[int, int],
-    motion_encoder_flow_layers: Tuple[int, int],
+    motion_encoder_corr_layers: tuple[int, int],
+    motion_encoder_flow_layers: tuple[int, int],
     motion_encoder_out_channels: int,
     # Update block
-    update_block_hidden_dims: List[int],
+    update_block_hidden_dims: list[int],
     # Flow Head
     flow_head_hidden_size: int,
     # Mask predictor

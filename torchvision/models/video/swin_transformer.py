@@ -2,7 +2,7 @@
 # https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py
 
 from functools import partial
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import torch
 import torch.nn.functional as F
@@ -30,8 +30,8 @@ __all__ = [
 
 
 def _get_window_and_shift_size(
-    shift_size: List[int], size_dhw: List[int], window_size: List[int]
-) -> Tuple[List[int], List[int]]:
+    shift_size: list[int], size_dhw: list[int], window_size: list[int]
+) -> tuple[list[int], list[int]]:
     for i in range(3):
         if size_dhw[i] <= window_size[i]:
             # In this case, window_size will adapt to the input size, and no need to shift
@@ -45,7 +45,7 @@ torch.fx.wrap("_get_window_and_shift_size")
 
 
 def _get_relative_position_bias(
-    relative_position_bias_table: torch.Tensor, relative_position_index: torch.Tensor, window_size: List[int]
+    relative_position_bias_table: torch.Tensor, relative_position_index: torch.Tensor, window_size: list[int]
 ) -> Tensor:
     window_vol = window_size[0] * window_size[1] * window_size[2]
     # In 3d case we flatten the relative_position_bias
@@ -60,7 +60,7 @@ def _get_relative_position_bias(
 torch.fx.wrap("_get_relative_position_bias")
 
 
-def _compute_pad_size_3d(size_dhw: Tuple[int, int, int], patch_size: Tuple[int, int, int]) -> Tuple[int, int, int]:
+def _compute_pad_size_3d(size_dhw: tuple[int, int, int], patch_size: tuple[int, int, int]) -> tuple[int, int, int]:
     pad_size = [(patch_size[i] - size_dhw[i] % patch_size[i]) % patch_size[i] for i in range(3)]
     return pad_size[0], pad_size[1], pad_size[2]
 
@@ -70,9 +70,9 @@ torch.fx.wrap("_compute_pad_size_3d")
 
 def _compute_attention_mask_3d(
     x: Tensor,
-    size_dhw: Tuple[int, int, int],
-    window_size: Tuple[int, int, int],
-    shift_size: Tuple[int, int, int],
+    size_dhw: tuple[int, int, int],
+    window_size: tuple[int, int, int],
+    shift_size: tuple[int, int, int],
 ) -> Tensor:
     # generate attention mask
     attn_mask = x.new_zeros(*size_dhw)
@@ -117,9 +117,9 @@ def shifted_window_attention_3d(
     qkv_weight: Tensor,
     proj_weight: Tensor,
     relative_position_bias: Tensor,
-    window_size: List[int],
+    window_size: list[int],
     num_heads: int,
-    shift_size: List[int],
+    shift_size: list[int],
     attention_dropout: float = 0.0,
     dropout: float = 0.0,
     qkv_bias: Optional[Tensor] = None,
@@ -235,8 +235,8 @@ class ShiftedWindowAttention3d(nn.Module):
     def __init__(
         self,
         dim: int,
-        window_size: List[int],
-        shift_size: List[int],
+        window_size: list[int],
+        shift_size: list[int],
         num_heads: int,
         qkv_bias: bool = True,
         proj_bias: bool = True,
@@ -288,7 +288,7 @@ class ShiftedWindowAttention3d(nn.Module):
         relative_position_index = relative_coords.sum(-1)  # Wd*Wh*Ww, Wd*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
-    def get_relative_position_bias(self, window_size: List[int]) -> torch.Tensor:
+    def get_relative_position_bias(self, window_size: list[int]) -> torch.Tensor:
         return _get_relative_position_bias(self.relative_position_bias_table, self.relative_position_index, window_size)  # type: ignore
 
     def forward(self, x: Tensor) -> Tensor:
@@ -330,7 +330,7 @@ class PatchEmbed3d(nn.Module):
 
     def __init__(
         self,
-        patch_size: List[int],
+        patch_size: list[int],
         in_channels: int = 3,
         embed_dim: int = 96,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
@@ -385,11 +385,11 @@ class SwinTransformer3d(nn.Module):
 
     def __init__(
         self,
-        patch_size: List[int],
+        patch_size: list[int],
         embed_dim: int,
-        depths: List[int],
-        num_heads: List[int],
-        window_size: List[int],
+        depths: list[int],
+        num_heads: list[int],
+        window_size: list[int],
         mlp_ratio: float = 4.0,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
@@ -417,12 +417,12 @@ class SwinTransformer3d(nn.Module):
         self.patch_embed = patch_embed(patch_size=patch_size, embed_dim=embed_dim, norm_layer=norm_layer)
         self.pos_drop = nn.Dropout(p=dropout)
 
-        layers: List[nn.Module] = []
+        layers: list[nn.Module] = []
         total_stage_blocks = sum(depths)
         stage_block_id = 0
         # build SwinTransformer blocks
         for i_stage in range(len(depths)):
-            stage: List[nn.Module] = []
+            stage: list[nn.Module] = []
             dim = embed_dim * 2**i_stage
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
@@ -473,11 +473,11 @@ class SwinTransformer3d(nn.Module):
 
 
 def _swin_transformer3d(
-    patch_size: List[int],
+    patch_size: list[int],
     embed_dim: int,
-    depths: List[int],
-    num_heads: List[int],
-    window_size: List[int],
+    depths: list[int],
+    num_heads: list[int],
+    window_size: list[int],
     stochastic_depth_prob: float,
     weights: Optional[WeightsEnum],
     progress: bool,
