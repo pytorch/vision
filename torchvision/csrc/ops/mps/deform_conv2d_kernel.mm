@@ -102,27 +102,10 @@ at::Tensor deform_conv2d_forward_kernel(
     @autoreleasepool {
       id<MTLComputeCommandEncoder> computeEncoder = mpsStream->commandEncoder();
       [computeEncoder setComputePipelineState:pipelineState];
-      [computeEncoder setBuffer:inputBuffer offset:0 atIndex:0];
-      [computeEncoder setBuffer:offsetBuffer offset:0 atIndex:1];
-      [computeEncoder setBuffer:maskBuffer offset:0 atIndex:2];
-      [computeEncoder setBytes:&in_h length:sizeof(int) atIndex:3];
-      [computeEncoder setBytes:&in_w length:sizeof(int) atIndex:4];
-      [computeEncoder setBytes:&weight_h length:sizeof(int) atIndex:5];
-      [computeEncoder setBytes:&weight_w length:sizeof(int) atIndex:6];
-      [computeEncoder setBytes:&pad_h length:sizeof(int) atIndex:7];
-      [computeEncoder setBytes:&pad_w length:sizeof(int) atIndex:8];
-      [computeEncoder setBytes:&stride_h length:sizeof(int) atIndex:9];
-      [computeEncoder setBytes:&stride_w length:sizeof(int) atIndex:10];
-      [computeEncoder setBytes:&dilation_h length:sizeof(int) atIndex:11];
-      [computeEncoder setBytes:&dilation_w length:sizeof(int) atIndex:12];
-      [computeEncoder setBytes:&batch length:sizeof(int) atIndex:13];
-      [computeEncoder setBytes:&in_channels length:sizeof(int) atIndex:14];
-      [computeEncoder setBytes:&n_offset_grps length:sizeof(int) atIndex:15];
-      [computeEncoder setBytes:&out_h length:sizeof(int) atIndex:16];
-      [computeEncoder setBytes:&out_w length:sizeof(int) atIndex:17];
-      [computeEncoder setBytes:&use_mask length:sizeof(bool) atIndex:18];
-      [computeEncoder setBuffer:outputBuffer offset:0 atIndex:19];
-
+      at::native::mps::mtl_setArgs(computeEncoder, inputBuffer, offsetBuffer, maskBuffer,
+                                   in_h, in_w, weight_h, weight_w, pad_h, pad_w, stride_h, stride_w, 
+                                   dilation_h, dilation_w, batch, in_channels, n_offset_grps, out_h, out_w,
+                                   use_mask, outputBuffer);
       [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
     }
   });
