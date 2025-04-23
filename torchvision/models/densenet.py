@@ -1,7 +1,7 @@
 import re
 from collections import OrderedDict
 from functools import partial
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
@@ -44,27 +44,27 @@ class _DenseLayer(nn.Module):
         self.drop_rate = float(drop_rate)
         self.memory_efficient = memory_efficient
 
-    def bn_function(self, inputs: List[Tensor]) -> Tensor:
+    def bn_function(self, inputs: list[Tensor]) -> Tensor:
         concated_features = torch.cat(inputs, 1)
         bottleneck_output = self.conv1(self.relu1(self.norm1(concated_features)))  # noqa: T484
         return bottleneck_output
 
     # todo: rewrite when torchscript supports any
-    def any_requires_grad(self, input: List[Tensor]) -> bool:
+    def any_requires_grad(self, input: list[Tensor]) -> bool:
         for tensor in input:
             if tensor.requires_grad:
                 return True
         return False
 
     @torch.jit.unused  # noqa: T484
-    def call_checkpoint_bottleneck(self, input: List[Tensor]) -> Tensor:
+    def call_checkpoint_bottleneck(self, input: list[Tensor]) -> Tensor:
         def closure(*inputs):
             return self.bn_function(inputs)
 
         return cp.checkpoint(closure, *input, use_reentrant=False)
 
     @torch.jit._overload_method  # noqa: F811
-    def forward(self, input: List[Tensor]) -> Tensor:  # noqa: F811
+    def forward(self, input: list[Tensor]) -> Tensor:  # noqa: F811
         pass
 
     @torch.jit._overload_method  # noqa: F811
@@ -152,7 +152,7 @@ class DenseNet(nn.Module):
     def __init__(
         self,
         growth_rate: int = 32,
-        block_config: Tuple[int, int, int, int] = (6, 12, 24, 16),
+        block_config: tuple[int, int, int, int] = (6, 12, 24, 16),
         num_init_features: int = 64,
         bn_size: int = 4,
         drop_rate: float = 0,
@@ -239,7 +239,7 @@ def _load_state_dict(model: nn.Module, weights: WeightsEnum, progress: bool) -> 
 
 def _densenet(
     growth_rate: int,
-    block_config: Tuple[int, int, int, int],
+    block_config: tuple[int, int, int, int],
     num_init_features: int,
     weights: Optional[WeightsEnum],
     progress: bool,

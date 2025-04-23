@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import torch
 from torchvision.transforms.v2 import functional as F, Transform
@@ -22,5 +22,5 @@ class UniformTemporalSubsample(Transform):
         super().__init__()
         self.num_samples = num_samples
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.uniform_temporal_subsample, inpt, self.num_samples)

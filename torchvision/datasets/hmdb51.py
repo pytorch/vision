@@ -1,7 +1,7 @@
 import glob
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from torch import Tensor
 
@@ -68,7 +68,7 @@ class HMDB51(VisionDataset):
         fold: int = 1,
         train: bool = True,
         transform: Optional[Callable] = None,
-        _precomputed_metadata: Optional[Dict[str, Any]] = None,
+        _precomputed_metadata: Optional[dict[str, Any]] = None,
         num_workers: int = 1,
         _video_width: int = 0,
         _video_height: int = 0,
@@ -113,10 +113,10 @@ class HMDB51(VisionDataset):
         self.transform = transform
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return self.full_video_clips.metadata
 
-    def _select_fold(self, video_list: List[str], annotations_dir: str, fold: int, train: bool) -> List[int]:
+    def _select_fold(self, video_list: list[str], annotations_dir: str, fold: int, train: bool) -> list[int]:
         target_tag = self.TRAIN_TAG if train else self.TEST_TAG
         split_pattern_name = f"*test_split{fold}.txt"
         split_pattern_path = os.path.join(annotations_dir, split_pattern_name)
@@ -141,7 +141,7 @@ class HMDB51(VisionDataset):
     def __len__(self) -> int:
         return self.video_clips.num_clips()
 
-    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor, int]:
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, int]:
         video, audio, _, video_idx = self.video_clips.get_clip(idx)
         sample_index = self.indices[video_idx]
         _, class_index = self.samples[sample_index]

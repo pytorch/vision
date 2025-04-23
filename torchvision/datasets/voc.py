@@ -1,7 +1,7 @@
 import collections
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 from xml.etree.ElementTree import Element as ET_Element
 
 try:
@@ -141,10 +141,10 @@ class VOCSegmentation(_VOCBase):
     _TARGET_FILE_EXT = ".png"
 
     @property
-    def masks(self) -> List[str]:
+    def masks(self) -> list[str]:
         return self.targets
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -186,10 +186,10 @@ class VOCDetection(_VOCBase):
     _TARGET_FILE_EXT = ".xml"
 
     @property
-    def annotations(self) -> List[str]:
+    def annotations(self) -> list[str]:
         return self.targets
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -206,11 +206,11 @@ class VOCDetection(_VOCBase):
         return img, target
 
     @staticmethod
-    def parse_voc_xml(node: ET_Element) -> Dict[str, Any]:
-        voc_dict: Dict[str, Any] = {}
+    def parse_voc_xml(node: ET_Element) -> dict[str, Any]:
+        voc_dict: dict[str, Any] = {}
         children = list(node)
         if children:
-            def_dic: Dict[str, Any] = collections.defaultdict(list)
+            def_dic: dict[str, Any] = collections.defaultdict(list)
             for dc in map(VOCDetection.parse_voc_xml, children):
                 for ind, v in dc.items():
                     def_dic[ind].append(v)

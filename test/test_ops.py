@@ -3,7 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from itertools import product
-from typing import Callable, List, Tuple
+from typing import Callable
 
 import numpy as np
 import pytest
@@ -100,7 +100,7 @@ class PoolWrapper(nn.Module):
         super().__init__()
         self.pool = pool
 
-    def forward(self, imgs: Tensor, boxes: List[Tensor]) -> Tensor:
+    def forward(self, imgs: Tensor, boxes: list[Tensor]) -> Tensor:
         return self.pool(imgs, boxes)
 
 
@@ -1522,7 +1522,7 @@ class TestIouBase:
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
-    def _run_jit_test(target_fn: Callable, actual_box: List):
+    def _run_jit_test(target_fn: Callable, actual_box: list):
         box_tensor = torch.tensor(actual_box, dtype=torch.float)
         expected = target_fn(box_tensor, box_tensor)
         scripted_fn = torch.jit.script(target_fn)

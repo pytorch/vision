@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import torch
 import torch.fx
@@ -15,7 +15,7 @@ from .roi_align import roi_align
 # _onnx_merge_levels() is an implementation supported by ONNX
 # that merges the levels to the right indices
 @torch.jit.unused
-def _onnx_merge_levels(levels: Tensor, unmerged_results: List[Tensor]) -> Tensor:
+def _onnx_merge_levels(levels: Tensor, unmerged_results: list[Tensor]) -> Tensor:
     first_result = unmerged_results[0]
     dtype, device = first_result.dtype, first_result.device
     res = torch.zeros(
@@ -70,7 +70,7 @@ class LevelMapper:
         self.lvl0 = canonical_level
         self.eps = eps
 
-    def __call__(self, boxlists: List[Tensor]) -> Tensor:
+    def __call__(self, boxlists: list[Tensor]) -> Tensor:
         """
         Args:
             boxlists (list[BoxList])
@@ -84,7 +84,7 @@ class LevelMapper:
         return (target_lvls.to(torch.int64) - self.k_min).to(torch.int64)
 
 
-def _convert_to_roi_format(boxes: List[Tensor]) -> Tensor:
+def _convert_to_roi_format(boxes: list[Tensor]) -> Tensor:
     concat_boxes = torch.cat(boxes, dim=0)
     device, dtype = concat_boxes.device, concat_boxes.dtype
     ids = torch.cat(
@@ -95,10 +95,10 @@ def _convert_to_roi_format(boxes: List[Tensor]) -> Tensor:
     return rois
 
 
-def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
+def _infer_scale(feature: Tensor, original_size: list[int]) -> float:
     # assumption: the scale is of the form 2 ** (-k), with k integer
     size = feature.shape[-2:]
-    possible_scales: List[float] = []
+    possible_scales: list[float] = []
     for s1, s2 in zip(size, original_size):
         approx_scale = float(s1) / float(s2)
         scale = 2 ** float(torch.tensor(approx_scale).log2().round())
@@ -108,8 +108,8 @@ def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
 
 @torch.fx.wrap
 def _setup_scales(
-    features: List[Tensor], image_shapes: List[Tuple[int, int]], canonical_scale: int, canonical_level: int
-) -> Tuple[List[float], LevelMapper]:
+    features: list[Tensor], image_shapes: list[tuple[int, int]], canonical_scale: int, canonical_level: int
+) -> tuple[list[float], LevelMapper]:
     if not image_shapes:
         raise ValueError("images list should not be empty")
     max_x = 0
@@ -135,7 +135,7 @@ def _setup_scales(
 
 
 @torch.fx.wrap
-def _filter_input(x: Dict[str, Tensor], featmap_names: List[str]) -> List[Tensor]:
+def _filter_input(x: dict[str, Tensor], featmap_names: list[str]) -> list[Tensor]:
     x_filtered = []
     for k, v in x.items():
         if k in featmap_names:
@@ -145,11 +145,11 @@ def _filter_input(x: Dict[str, Tensor], featmap_names: List[str]) -> List[Tensor
 
 @torch.fx.wrap
 def _multiscale_roi_align(
-    x_filtered: List[Tensor],
-    boxes: List[Tensor],
-    output_size: List[int],
+    x_filtered: list[Tensor],
+    boxes: list[Tensor],
+    output_size: list[int],
     sampling_ratio: int,
-    scales: Optional[List[float]],
+    scales: Optional[list[float]],
     mapper: Optional[LevelMapper],
 ) -> Tensor:
     """
@@ -263,12 +263,12 @@ class MultiScaleRoIAlign(nn.Module):
 
     """
 
-    __annotations__ = {"scales": Optional[List[float]], "map_levels": Optional[LevelMapper]}
+    __annotations__ = {"scales": Optional[list[float]], "map_levels": Optional[LevelMapper]}
 
     def __init__(
         self,
-        featmap_names: List[str],
-        output_size: Union[int, Tuple[int], List[int]],
+        featmap_names: list[str],
+        output_size: Union[int, tuple[int], list[int]],
         sampling_ratio: int,
         *,
         canonical_scale: int = 224,
@@ -288,9 +288,9 @@ class MultiScaleRoIAlign(nn.Module):
 
     def forward(
         self,
-        x: Dict[str, Tensor],
-        boxes: List[Tensor],
-        image_shapes: List[Tuple[int, int]],
+        x: dict[str, Tensor],
+        boxes: list[Tensor],
+        image_shapes: list[tuple[int, int]],
     ) -> Tensor:
         """
         Args:

@@ -1,5 +1,6 @@
 import math
-from typing import cast, Iterator, List, Optional, Sized, Union
+from collections.abc import Iterator, Sized
+from typing import cast, Optional, Union
 
 import torch
 import torch.distributed as dist
@@ -71,7 +72,7 @@ class DistributedSampler(Sampler):
         # deterministically shuffle based on epoch
         g = torch.Generator()
         g.manual_seed(self.epoch)
-        indices: Union[torch.Tensor, List[int]]
+        indices: Union[torch.Tensor, list[int]]
         if self.shuffle:
             indices = torch.randperm(len(self.dataset), generator=g).tolist()
         else:
@@ -132,7 +133,7 @@ class UniformClipSampler(Sampler):
             sampled = torch.linspace(s, s + length - 1, steps=self.num_clips_per_video).floor().to(torch.int64)
             s += length
             idxs.append(sampled)
-        return iter(cast(List[int], torch.cat(idxs).tolist()))
+        return iter(cast(list[int], torch.cat(idxs).tolist()))
 
     def __len__(self) -> int:
         return sum(self.num_clips_per_video for c in self.video_clips.clips if len(c) > 0)

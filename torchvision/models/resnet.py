@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Callable, List, Optional, Type, Union
+from typing import Any, Callable, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -166,13 +166,13 @@ class Bottleneck(nn.Module):
 class ResNet(nn.Module):
     def __init__(
         self,
-        block: Type[Union[BasicBlock, Bottleneck]],
-        layers: List[int],
+        block: type[Union[BasicBlock, Bottleneck]],
+        layers: list[int],
         num_classes: int = 1000,
         zero_init_residual: bool = False,
         groups: int = 1,
         width_per_group: int = 64,
-        replace_stride_with_dilation: Optional[List[bool]] = None,
+        replace_stride_with_dilation: Optional[list[bool]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super().__init__()
@@ -224,7 +224,7 @@ class ResNet(nn.Module):
 
     def _make_layer(
         self,
-        block: Type[Union[BasicBlock, Bottleneck]],
+        block: type[Union[BasicBlock, Bottleneck]],
         planes: int,
         blocks: int,
         stride: int = 1,
@@ -286,8 +286,8 @@ class ResNet(nn.Module):
 
 
 def _resnet(
-    block: Type[Union[BasicBlock, Bottleneck]],
-    layers: List[int],
+    block: type[Union[BasicBlock, Bottleneck]],
+    layers: list[int],
     weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
