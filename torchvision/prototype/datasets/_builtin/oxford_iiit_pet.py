@@ -1,6 +1,6 @@
 import enum
 import pathlib
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, Optional, Union
 
 from torchdata.datapipes.iter import CSVDictParser, Demultiplexer, Filter, IterDataPipe, IterKeyZipper, Mapper
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
@@ -27,7 +27,7 @@ class OxfordIIITPetDemux(enum.IntEnum):
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=read_categories_file(NAME))
 
 
@@ -44,7 +44,7 @@ class OxfordIIITPet(Dataset):
         self._categories = _info()["categories"]
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         images = HttpResource(
             "https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz",
             sha256="67195c5e1c01f1ab5f9b6a5d22b8c27a580d896ece458917e61d459337fa318d",
@@ -57,21 +57,21 @@ class OxfordIIITPet(Dataset):
         )
         return [images, anns]
 
-    def _classify_anns(self, data: Tuple[str, Any]) -> Optional[int]:
+    def _classify_anns(self, data: tuple[str, Any]) -> Optional[int]:
         return {
             "annotations": OxfordIIITPetDemux.SPLIT_AND_CLASSIFICATION,
             "trimaps": OxfordIIITPetDemux.SEGMENTATIONS,
         }.get(pathlib.Path(data[0]).parent.name)
 
-    def _filter_images(self, data: Tuple[str, Any]) -> bool:
+    def _filter_images(self, data: tuple[str, Any]) -> bool:
         return pathlib.Path(data[0]).suffix == ".jpg"
 
-    def _filter_segmentations(self, data: Tuple[str, Any]) -> bool:
+    def _filter_segmentations(self, data: tuple[str, Any]) -> bool:
         return not pathlib.Path(data[0]).name.startswith(".")
 
     def _prepare_sample(
-        self, data: Tuple[Tuple[Dict[str, str], Tuple[str, BinaryIO]], Tuple[str, BinaryIO]]
-    ) -> Dict[str, Any]:
+        self, data: tuple[tuple[dict[str, str], tuple[str, BinaryIO]], tuple[str, BinaryIO]]
+    ) -> dict[str, Any]:
         ann_data, image_data = data
         classification_data, segmentation_data = ann_data
         segmentation_path, segmentation_buffer = segmentation_data
@@ -86,7 +86,7 @@ class OxfordIIITPet(Dataset):
             image=EncodedImage.from_file(image_buffer),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         images_dp, anns_dp = resource_dps
 
         images_dp = Filter(images_dp, self._filter_images)
@@ -125,10 +125,10 @@ class OxfordIIITPet(Dataset):
         )
         return Mapper(dp, self._prepare_sample)
 
-    def _filter_split_and_classification_anns(self, data: Tuple[str, Any]) -> bool:
+    def _filter_split_and_classification_anns(self, data: tuple[str, Any]) -> bool:
         return self._classify_anns(data) == OxfordIIITPetDemux.SPLIT_AND_CLASSIFICATION
 
-    def _generate_categories(self) -> List[str]:
+    def _generate_categories(self) -> list[str]:
         resources = self._resources()
 
         dp = resources[1].load(self._root)

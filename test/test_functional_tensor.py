@@ -2,8 +2,8 @@ import colorsys
 import itertools
 import math
 import os
+from collections.abc import Sequence
 from functools import partial
-from typing import Sequence
 
 import numpy as np
 import PIL.Image

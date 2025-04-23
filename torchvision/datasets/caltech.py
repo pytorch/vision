@@ -1,7 +1,7 @@
 import os
 import os.path
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
@@ -40,7 +40,7 @@ class Caltech101(VisionDataset):
     def __init__(
         self,
         root: Union[str, Path],
-        target_type: Union[List[str], str] = "category",
+        target_type: Union[list[str], str] = "category",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
@@ -71,14 +71,14 @@ class Caltech101(VisionDataset):
         }
         self.annotation_categories = list(map(lambda x: name_map[x] if x in name_map else x, self.categories))
 
-        self.index: List[int] = []
+        self.index: list[int] = []
         self.y = []
-        for (i, c) in enumerate(self.categories):
+        for i, c in enumerate(self.categories):
             n = len(os.listdir(os.path.join(self.root, "101_ObjectCategories", c)))
             self.index.extend(range(1, n + 1))
             self.y.extend(n * [i])
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -181,9 +181,9 @@ class Caltech256(VisionDataset):
             raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.categories = sorted(os.listdir(os.path.join(self.root, "256_ObjectCategories")))
-        self.index: List[int] = []
+        self.index: list[int] = []
         self.y = []
-        for (i, c) in enumerate(self.categories):
+        for i, c in enumerate(self.categories):
             n = len(
                 [
                     item
@@ -194,7 +194,7 @@ class Caltech256(VisionDataset):
             self.index.extend(range(1, n + 1))
             self.y.extend(n * [i])
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index

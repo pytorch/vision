@@ -1,6 +1,6 @@
 import math
 from collections import OrderedDict
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import torch
 from torch import nn, Tensor
@@ -22,7 +22,7 @@ class BalancedPositiveNegativeSampler:
         self.batch_size_per_image = batch_size_per_image
         self.positive_fraction = positive_fraction
 
-    def __call__(self, matched_idxs: List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]:
+    def __call__(self, matched_idxs: list[Tensor]) -> tuple[list[Tensor], list[Tensor]]:
         """
         Args:
             matched_idxs: list of tensors containing -1, 0 or positive values.
@@ -126,7 +126,7 @@ class BoxCoder:
     """
 
     def __init__(
-        self, weights: Tuple[float, float, float, float], bbox_xform_clip: float = math.log(1000.0 / 16)
+        self, weights: tuple[float, float, float, float], bbox_xform_clip: float = math.log(1000.0 / 16)
     ) -> None:
         """
         Args:
@@ -136,7 +136,7 @@ class BoxCoder:
         self.weights = weights
         self.bbox_xform_clip = bbox_xform_clip
 
-    def encode(self, reference_boxes: List[Tensor], proposals: List[Tensor]) -> List[Tensor]:
+    def encode(self, reference_boxes: list[Tensor], proposals: list[Tensor]) -> list[Tensor]:
         boxes_per_image = [len(b) for b in reference_boxes]
         reference_boxes = torch.cat(reference_boxes, dim=0)
         proposals = torch.cat(proposals, dim=0)
@@ -159,7 +159,7 @@ class BoxCoder:
 
         return targets
 
-    def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
+    def decode(self, rel_codes: Tensor, boxes: list[Tensor]) -> Tensor:
         torch._assert(
             isinstance(boxes, (list, tuple)),
             "This function expects boxes of type list or tuple.",
@@ -273,7 +273,6 @@ class BoxLinearCoder:
         return targets
 
     def decode(self, rel_codes: Tensor, boxes: Tensor) -> Tensor:
-
         """
         From a set of original boxes and encoded relative box offsets,
         get the decoded boxes.
@@ -451,7 +450,7 @@ def overwrite_eps(model: nn.Module, eps: float) -> None:
             module.eps = eps
 
 
-def retrieve_out_channels(model: nn.Module, size: Tuple[int, int]) -> List[int]:
+def retrieve_out_channels(model: nn.Module, size: tuple[int, int]) -> list[int]:
     """
     This method retrieves the number of output channels of a specific model.
 
@@ -518,7 +517,7 @@ def _box_loss(
     anchors_per_image: Tensor,
     matched_gt_boxes_per_image: Tensor,
     bbox_regression_per_image: Tensor,
-    cnf: Optional[Dict[str, float]] = None,
+    cnf: Optional[dict[str, float]] = None,
 ) -> Tensor:
     torch._assert(type in ["l1", "smooth_l1", "ciou", "diou", "giou"], f"Unsupported loss: {type}")
 

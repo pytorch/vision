@@ -1,7 +1,8 @@
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Optional
 
 import torch
 import torch.fx
@@ -29,10 +30,10 @@ class MSBlockConfig:
     num_heads: int
     input_channels: int
     output_channels: int
-    kernel_q: List[int]
-    kernel_kv: List[int]
-    stride_q: List[int]
-    stride_kv: List[int]
+    kernel_q: list[int]
+    kernel_kv: list[int]
+    stride_q: list[int]
+    stride_kv: list[int]
 
 
 def _prod(s: Sequence[int]) -> int:
@@ -42,7 +43,7 @@ def _prod(s: Sequence[int]) -> int:
     return product
 
 
-def _unsqueeze(x: torch.Tensor, target_dim: int, expand_dim: int) -> Tuple[torch.Tensor, int]:
+def _unsqueeze(x: torch.Tensor, target_dim: int, expand_dim: int) -> tuple[torch.Tensor, int]:
     tensor_dim = x.dim()
     if tensor_dim == target_dim - 1:
         x = x.unsqueeze(expand_dim)
@@ -79,7 +80,7 @@ class Pool(nn.Module):
         self.norm_act = nn.Sequential(*layers) if layers else None
         self.norm_before_pool = norm_before_pool
 
-    def forward(self, x: torch.Tensor, thw: Tuple[int, int, int]) -> Tuple[torch.Tensor, Tuple[int, int, int]]:
+    def forward(self, x: torch.Tensor, thw: tuple[int, int, int]) -> tuple[torch.Tensor, tuple[int, int, int]]:
         x, tensor_dim = _unsqueeze(x, 4, 1)
 
         # Separate the class token and reshape the input
@@ -123,8 +124,8 @@ def _interpolate(embedding: torch.Tensor, d: int) -> torch.Tensor:
 def _add_rel_pos(
     attn: torch.Tensor,
     q: torch.Tensor,
-    q_thw: Tuple[int, int, int],
-    k_thw: Tuple[int, int, int],
+    q_thw: tuple[int, int, int],
+    k_thw: tuple[int, int, int],
     rel_pos_h: torch.Tensor,
     rel_pos_w: torch.Tensor,
     rel_pos_t: torch.Tensor,
@@ -195,14 +196,14 @@ torch.fx.wrap("_add_shortcut")
 class MultiscaleAttention(nn.Module):
     def __init__(
         self,
-        input_size: List[int],
+        input_size: list[int],
         embed_dim: int,
         output_dim: int,
         num_heads: int,
-        kernel_q: List[int],
-        kernel_kv: List[int],
-        stride_q: List[int],
-        stride_kv: List[int],
+        kernel_q: list[int],
+        kernel_kv: list[int],
+        stride_q: list[int],
+        stride_kv: list[int],
         residual_pool: bool,
         residual_with_cls_embed: bool,
         rel_pos_embed: bool,
@@ -219,7 +220,7 @@ class MultiscaleAttention(nn.Module):
         self.residual_with_cls_embed = residual_with_cls_embed
 
         self.qkv = nn.Linear(embed_dim, 3 * output_dim)
-        layers: List[nn.Module] = [nn.Linear(output_dim, output_dim)]
+        layers: list[nn.Module] = [nn.Linear(output_dim, output_dim)]
         if dropout > 0.0:
             layers.append(nn.Dropout(dropout, inplace=True))
         self.project = nn.Sequential(*layers)
@@ -285,7 +286,7 @@ class MultiscaleAttention(nn.Module):
             nn.init.trunc_normal_(self.rel_pos_w, std=0.02)
             nn.init.trunc_normal_(self.rel_pos_t, std=0.02)
 
-    def forward(self, x: torch.Tensor, thw: Tuple[int, int, int]) -> Tuple[torch.Tensor, Tuple[int, int, int]]:
+    def forward(self, x: torch.Tensor, thw: tuple[int, int, int]) -> tuple[torch.Tensor, tuple[int, int, int]]:
         B, N, C = x.shape
         q, k, v = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).transpose(1, 3).unbind(dim=2)
 
@@ -323,7 +324,7 @@ class MultiscaleAttention(nn.Module):
 class MultiscaleBlock(nn.Module):
     def __init__(
         self,
-        input_size: List[int],
+        input_size: list[int],
         cnf: MSBlockConfig,
         residual_pool: bool,
         residual_with_cls_embed: bool,
@@ -379,7 +380,7 @@ class MultiscaleBlock(nn.Module):
         if cnf.input_channels != cnf.output_channels:
             self.project = nn.Linear(cnf.input_channels, cnf.output_channels)
 
-    def forward(self, x: torch.Tensor, thw: Tuple[int, int, int]) -> Tuple[torch.Tensor, Tuple[int, int, int]]:
+    def forward(self, x: torch.Tensor, thw: tuple[int, int, int]) -> tuple[torch.Tensor, tuple[int, int, int]]:
         x_norm1 = self.norm1(x.transpose(1, 2)).transpose(1, 2) if self.needs_transposal else self.norm1(x)
         x_attn, thw_new = self.attn(x_norm1, thw)
         x = x if self.project is None or not self.proj_after_attn else self.project(x_norm1)
@@ -393,7 +394,7 @@ class MultiscaleBlock(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, embed_size: int, spatial_size: Tuple[int, int], temporal_size: int, rel_pos_embed: bool) -> None:
+    def __init__(self, embed_size: int, spatial_size: tuple[int, int], temporal_size: int, rel_pos_embed: bool) -> None:
         super().__init__()
         self.spatial_size = spatial_size
         self.temporal_size = temporal_size
@@ -424,7 +425,7 @@ class PositionalEncoding(nn.Module):
 class MViT(nn.Module):
     def __init__(
         self,
-        spatial_size: Tuple[int, int],
+        spatial_size: tuple[int, int],
         temporal_size: int,
         block_setting: Sequence[MSBlockConfig],
         residual_pool: bool,
@@ -437,9 +438,9 @@ class MViT(nn.Module):
         num_classes: int = 400,
         block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-        patch_embed_kernel: Tuple[int, int, int] = (3, 7, 7),
-        patch_embed_stride: Tuple[int, int, int] = (2, 4, 4),
-        patch_embed_padding: Tuple[int, int, int] = (1, 3, 3),
+        patch_embed_kernel: tuple[int, int, int] = (3, 7, 7),
+        patch_embed_stride: tuple[int, int, int] = (2, 4, 4),
+        patch_embed_padding: tuple[int, int, int] = (1, 3, 3),
     ) -> None:
         """
         MViT main class.
@@ -566,7 +567,7 @@ class MViT(nn.Module):
 
 
 def _mvit(
-    block_setting: List[MSBlockConfig],
+    block_setting: list[MSBlockConfig],
     stochastic_depth_prob: float,
     weights: Optional[WeightsEnum],
     progress: bool,
@@ -691,7 +692,7 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
     """
     weights = MViT_V1_B_Weights.verify(weights)
 
-    config: Dict[str, List] = {
+    config: dict[str, list] = {
         "num_heads": [1, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 8, 8],
         "input_channels": [96, 192, 192, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 768, 768],
         "output_channels": [192, 192, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 768, 768, 768],
@@ -790,7 +791,7 @@ def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = T
     """
     weights = MViT_V2_S_Weights.verify(weights)
 
-    config: Dict[str, List] = {
+    config: dict[str, list] = {
         "num_heads": [1, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 8, 8],
         "input_channels": [96, 96, 192, 192, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 768],
         "output_channels": [96, 192, 192, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 384, 768, 768],

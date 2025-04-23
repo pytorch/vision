@@ -1,7 +1,7 @@
 import pathlib
 import re
 from collections import defaultdict, OrderedDict
-from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, cast, Optional, Union
 
 import torch
 from torchdata.datapipes.iter import (
@@ -34,7 +34,7 @@ NAME = "coco"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     categories, super_categories = zip(*read_categories_file(NAME))
     return dict(categories=categories, super_categories=super_categories)
 
@@ -87,7 +87,7 @@ class Coco(Dataset):
         "2017": "113a836d90195ee1f884e704da6304dfaaecff1f023f49b6ca93c4aaae470268",
     }
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         images = HttpResource(
             f"{self._IMAGE_URL_BASE}/{self._split}{self._year}.zip",
             sha256=self._IMAGES_CHECKSUMS[(self._year, self._split)],
@@ -99,7 +99,7 @@ class Coco(Dataset):
         return [images, meta]
 
     def _segmentation_to_mask(
-        self, segmentation: Any, *, is_crowd: bool, spatial_size: Tuple[int, int]
+        self, segmentation: Any, *, is_crowd: bool, spatial_size: tuple[int, int]
     ) -> torch.Tensor:
         from pycocotools import mask
 
@@ -110,7 +110,7 @@ class Coco(Dataset):
 
         return torch.from_numpy(mask.decode(segmentation)).to(torch.bool)
 
-    def _decode_instances_anns(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
+    def _decode_instances_anns(self, anns: list[dict[str, Any]], image_meta: dict[str, Any]) -> dict[str, Any]:
         spatial_size = (image_meta["height"], image_meta["width"])
         labels = [ann["category_id"] for ann in anns]
         return dict(
@@ -136,7 +136,7 @@ class Coco(Dataset):
             ann_ids=[ann["id"] for ann in anns],
         )
 
-    def _decode_captions_ann(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
+    def _decode_captions_ann(self, anns: list[dict[str, Any]], image_meta: dict[str, Any]) -> dict[str, Any]:
         return dict(
             captions=[ann["caption"] for ann in anns],
             ann_ids=[ann["id"] for ann in anns],
@@ -153,7 +153,7 @@ class Coco(Dataset):
         rf"(?P<annotations>({'|'.join(_ANN_DECODERS.keys())}))_(?P<split>[a-zA-Z]+)(?P<year>\d+)[.]json"
     )
 
-    def _filter_meta_files(self, data: Tuple[str, Any]) -> bool:
+    def _filter_meta_files(self, data: tuple[str, Any]) -> bool:
         match = self._META_FILE_PATTERN.match(pathlib.Path(data[0]).name)
         return bool(
             match
@@ -162,7 +162,7 @@ class Coco(Dataset):
             and match["annotations"] == self._annotations
         )
 
-    def _classify_meta(self, data: Tuple[str, Any]) -> Optional[int]:
+    def _classify_meta(self, data: tuple[str, Any]) -> Optional[int]:
         key, _ = data
         if key == "images":
             return 0
@@ -171,7 +171,7 @@ class Coco(Dataset):
         else:
             return None
 
-    def _prepare_image(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
+    def _prepare_image(self, data: tuple[str, BinaryIO]) -> dict[str, Any]:
         path, buffer = data
         return dict(
             path=path,
@@ -180,8 +180,8 @@ class Coco(Dataset):
 
     def _prepare_sample(
         self,
-        data: Tuple[Tuple[List[Dict[str, Any]], Dict[str, Any]], Tuple[str, BinaryIO]],
-    ) -> Dict[str, Any]:
+        data: tuple[tuple[list[dict[str, Any]], dict[str, Any]], tuple[str, BinaryIO]],
+    ) -> dict[str, Any]:
         ann_data, image_data = data
         anns, image_meta = ann_data
 
@@ -191,7 +191,7 @@ class Coco(Dataset):
         sample.update(self._ANN_DECODERS[annotations](self, anns, image_meta))
         return sample
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         images_dp, meta_dp = resource_dps
 
         if self._annotations is None:
@@ -203,7 +203,7 @@ class Coco(Dataset):
         meta_dp = Filter(meta_dp, self._filter_meta_files)
         meta_dp = JsonParser(meta_dp)
         meta_dp = Mapper(meta_dp, getitem(1))
-        meta_dp: IterDataPipe[Dict[str, Dict[str, Any]]] = MappingIterator(meta_dp)
+        meta_dp: IterDataPipe[dict[str, dict[str, Any]]] = MappingIterator(meta_dp)
         images_meta_dp, anns_meta_dp = Demultiplexer(
             meta_dp,
             2,
@@ -247,7 +247,7 @@ class Coco(Dataset):
             self._annotations  # type: ignore[index]
         ]
 
-    def _generate_categories(self) -> Tuple[Tuple[str, str]]:
+    def _generate_categories(self) -> tuple[tuple[str, str]]:
         self._annotations = "instances"
         resources = self._resources()
 
@@ -257,7 +257,7 @@ class Coco(Dataset):
 
         _, meta = next(iter(dp))
         # List[Tuple[super_category, id, category]]
-        label_data = [cast(Tuple[str, int, str], tuple(info.values())) for info in meta["categories"]]
+        label_data = [cast(tuple[str, int, str], tuple(info.values())) for info in meta["categories"]]
 
         # COCO actually defines 91 categories, but only 80 of them have instances. Still, the category_id refers to the
         # full set. To keep the labels dense, we fill the gaps with N/A. Note that there are only 10 gaps, so the total
@@ -271,4 +271,4 @@ class Coco(Dataset):
 
         super_categories, _, categories = zip(*sorted(label_data, key=lambda info: info[1]))
 
-        return cast(Tuple[Tuple[str, str]], tuple(zip(categories, super_categories)))
+        return cast(tuple[tuple[str, str]], tuple(zip(categories, super_categories)))

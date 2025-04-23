@@ -398,7 +398,7 @@ def test_read_1_bit_png_consistency(shape, mode, tmpdir):
 def test_read_interlaced_png():
     imgs = list(get_images(INTERLACED_PNG, ".png"))
     with Image.open(imgs[0]) as im1, Image.open(imgs[1]) as im2:
-        assert not (im1.info.get("interlace") is im2.info.get("interlace"))
+        assert im1.info.get("interlace") is not im2.info.get("interlace")
     img1 = read_image(imgs[0])
     img2 = read_image(imgs[1])
     assert_equal(img1, img2)
@@ -1040,7 +1040,7 @@ def test_decode_avif_heic_against_pil(decode_fun, mode, pil_mode, filename):
         from torchvision.utils import make_grid
 
         g = make_grid([img, from_pil])
-        F.to_pil_image(g).save((f"/home/nicolashug/out_images/{filename.name}.{pil_mode}.png"))
+        F.to_pil_image(g).save(f"/home/nicolashug/out_images/{filename.name}.{pil_mode}.png")
 
     is_decode_heic = getattr(decode_fun, "__name__", getattr(decode_fun, "name", None)) == "decode_heic"
     if mode == ImageReadMode.RGB and not is_decode_heic:
