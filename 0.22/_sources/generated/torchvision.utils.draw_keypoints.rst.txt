@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.utils
+
+
+draw_keypoints
+==============
+
+.. autofunction:: draw_keypoints
