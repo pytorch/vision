@@ -51,7 +51,12 @@ class _LFW(VisionDataset):
         self.data: list[Any] = []
 
         if download:
+            raise RuntimeError(
+                "LFW dataset is no longer available for download."
+                "Please download the dataset manually and place it in the specified directory"
+            )
             self.download()
+
 
         if not self._check_integrity():
             raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
