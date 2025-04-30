@@ -78,14 +78,16 @@ class KeyPoints(TVTensor):
 
         if isinstance(output, torch.Tensor) and not isinstance(output, KeyPoints):
             output = KeyPoints(output, canvas_size=canvas_size)
-        elif isinstance(output, tuple):
-            # NB: output is checked against sequence because it has already been checked against Tensor
-            # Since a Tensor is a sequence of Tensor, had it not been the case, we may have had silent
-            # or complex errors
-            output = tuple(KeyPoints(part, canvas_size=canvas_size) for part in output)
         elif isinstance(output, MutableSequence):
+            # For lists and list-like object we don't try to create a new object, we just set the values in the list
+            # This allows us to conserve the type of complex list-like object that may not follow the initialization API of lists
             for i, part in enumerate(output):
                 output[i] = KeyPoints(part, canvas_size=canvas_size)
+        elif isinstance(output, Sequence):
+            # Non-mutable sequences handled here (like tuples)
+            # Every sequence that is not a mutable sequence is a non-mutable sequence
+            # We have to use a tuple here, since we know its initialization api, unlike for `output`
+            output = tuple(KeyPoints(part, canvas_size=canvas_size) for part in output)
         return output
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:
