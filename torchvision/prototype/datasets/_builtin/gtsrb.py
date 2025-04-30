@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from torchdata.datapipes.iter import CSVDictParser, Demultiplexer, Filter, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
@@ -18,7 +18,7 @@ NAME = "gtsrb"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(
         categories=[f"{label:05d}" for label in range(43)],
     )
@@ -50,8 +50,8 @@ class GTSRB(Dataset):
         "test_ground_truth": "f94e5a7614d75845c74c04ddb26b8796b9e483f43541dd95dd5b726504e16d6d",
     }
 
-    def _resources(self) -> List[OnlineResource]:
-        rsrcs: List[OnlineResource] = [HttpResource(self._URLS[self._split], sha256=self._CHECKSUMS[self._split])]
+    def _resources(self) -> list[OnlineResource]:
+        rsrcs: list[OnlineResource] = [HttpResource(self._URLS[self._split], sha256=self._CHECKSUMS[self._split])]
 
         if self._split == "test":
             rsrcs.append(
@@ -63,7 +63,7 @@ class GTSRB(Dataset):
 
         return rsrcs
 
-    def _classify_train_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+    def _classify_train_archive(self, data: tuple[str, Any]) -> Optional[int]:
         path = pathlib.Path(data[0])
         if path.suffix == ".ppm":
             return 0
@@ -72,7 +72,7 @@ class GTSRB(Dataset):
         else:
             return None
 
-    def _prepare_sample(self, data: Tuple[Tuple[str, Any], Dict[str, Any]]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[tuple[str, Any], dict[str, Any]]) -> dict[str, Any]:
         (path, buffer), csv_info = data
         label = int(csv_info["ClassId"])
 
@@ -89,7 +89,7 @@ class GTSRB(Dataset):
             "bounding_boxes": bounding_boxes,
         }
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         if self._split == "train":
             images_dp, ann_dp = Demultiplexer(
                 resource_dps[0], 2, self._classify_train_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE

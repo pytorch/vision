@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 import numpy as np
 import PIL.Image
@@ -46,5 +46,5 @@ class ToTensor(Transform):
         )
         super().__init__()
 
-    def transform(self, inpt: Union[PIL.Image.Image, np.ndarray], params: Dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: Union[PIL.Image.Image, np.ndarray], params: dict[str, Any]) -> torch.Tensor:
         return _F.to_tensor(inpt)

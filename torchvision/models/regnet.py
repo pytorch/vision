@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import torch
 from torch import nn, Tensor
@@ -185,11 +185,11 @@ class AnyStage(nn.Sequential):
 class BlockParams:
     def __init__(
         self,
-        depths: List[int],
-        widths: List[int],
-        group_widths: List[int],
-        bottleneck_multipliers: List[float],
-        strides: List[int],
+        depths: list[int],
+        widths: list[int],
+        group_widths: list[int],
+        bottleneck_multipliers: list[float],
+        strides: list[int],
         se_ratio: Optional[float] = None,
     ) -> None:
         self.depths = depths
@@ -277,8 +277,8 @@ class BlockParams:
 
     @staticmethod
     def _adjust_widths_groups_compatibilty(
-        stage_widths: List[int], bottleneck_ratios: List[float], group_widths: List[int]
-    ) -> Tuple[List[int], List[int]]:
+        stage_widths: list[int], bottleneck_ratios: list[float], group_widths: list[int]
+    ) -> tuple[list[int], list[int]]:
         """
         Adjusts the compatibility of widths and groups,
         depending on the bottleneck ratio.
@@ -402,7 +402,7 @@ def _regnet(
     return model
 
 
-_COMMON_META: Dict[str, Any] = {
+_COMMON_META: dict[str, Any] = {
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
 }

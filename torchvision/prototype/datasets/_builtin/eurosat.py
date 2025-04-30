@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
@@ -12,7 +12,7 @@ NAME = "eurosat"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(
         categories=(
             "AnnualCrop",
@@ -39,7 +39,7 @@ class EuroSAT(Dataset):
         self._categories = _info()["categories"]
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         return [
             HttpResource(
                 "https://madm.dfki.de/files/sentinel/EuroSAT.zip",
@@ -47,7 +47,7 @@ class EuroSAT(Dataset):
             )
         ]
 
-    def _prepare_sample(self, data: Tuple[str, Any]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[str, Any]) -> dict[str, Any]:
         path, buffer = data
         category = pathlib.Path(path).parent.name
         return dict(
@@ -56,7 +56,7 @@ class EuroSAT(Dataset):
             image=EncodedImage.from_file(buffer),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         dp = resource_dps[0]
         dp = hint_shuffling(dp)
         dp = hint_sharding(dp)

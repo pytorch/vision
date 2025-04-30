@@ -4,7 +4,7 @@ import pathlib
 import warnings
 from itertools import repeat
 from types import FunctionType
-from typing import Any, BinaryIO, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, Optional, Union
 
 import numpy as np
 import torch
@@ -23,11 +23,11 @@ __all__ = [
 
 @torch.no_grad()
 def make_grid(
-    tensor: Union[torch.Tensor, List[torch.Tensor]],
+    tensor: Union[torch.Tensor, list[torch.Tensor]],
     nrow: int = 8,
     padding: int = 2,
     normalize: bool = False,
-    value_range: Optional[Tuple[int, int]] = None,
+    value_range: Optional[tuple[int, int]] = None,
     scale_each: bool = False,
     pad_value: float = 0.0,
 ) -> torch.Tensor:
@@ -125,7 +125,7 @@ def make_grid(
 
 @torch.no_grad()
 def save_image(
-    tensor: Union[torch.Tensor, List[torch.Tensor]],
+    tensor: Union[torch.Tensor, list[torch.Tensor]],
     fp: Union[str, pathlib.Path, BinaryIO],
     format: Optional[str] = None,
     **kwargs,
@@ -155,15 +155,15 @@ def save_image(
 def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
-    labels: Optional[List[str]] = None,
-    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+    labels: Optional[list[str]] = None,
+    colors: Optional[Union[list[Union[str, tuple[int, int, int]]], str, tuple[int, int, int]]] = None,
     fill: Optional[bool] = False,
     width: int = 1,
     font: Optional[str] = None,
     font_size: Optional[int] = None,
-    label_colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+    label_colors: Optional[Union[list[Union[str, tuple[int, int, int]]], str, tuple[int, int, int]]] = None,
+    fill_labels: bool = False,
 ) -> torch.Tensor:
-
     """
     Draws bounding boxes on given RGB image.
     The image values should be uint8 in [0, 255] or float in [0, 1].
@@ -186,7 +186,8 @@ def draw_bounding_boxes(
             `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
         font_size (int): The requested font size in points.
         label_colors (color or list of colors, optional): Colors for the label text.  See the description of the
-            `colors` argument for details.  Defaults to the same colors used for the boxes.
+            `colors` argument for details.  Defaults to the same colors used for the boxes, or to black if ``fill_labels`` is True.
+        fill_labels (bool): If `True` fills the label background with specified box color (from the ``colors`` parameter). Default: False.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
@@ -216,15 +217,15 @@ def draw_bounding_boxes(
         return image
 
     if labels is None:
-        labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
+        labels: Union[list[str], list[None]] = [None] * num_boxes  # type: ignore[no-redef]
     elif len(labels) != num_boxes:
         raise ValueError(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
         )
 
     colors = _parse_colors(colors, num_objects=num_boxes)
-    if label_colors:
-        label_colors = _parse_colors(label_colors, num_objects=num_boxes)  # type: ignore[assignment]
+    if label_colors or fill_labels:
+        label_colors = _parse_colors(label_colors if label_colors else "black", num_objects=num_boxes)  # type: ignore[assignment]
     else:
         label_colors = colors.copy()  # type: ignore[assignment]
 
@@ -259,7 +260,13 @@ def draw_bounding_boxes(
             draw.rectangle(bbox, width=width, outline=color)
 
         if label is not None:
-            margin = width + 1
+            box_margin = 1
+            margin = width + box_margin
+            if fill_labels:
+                left, top, right, bottom = draw.textbbox((bbox[0] + margin, bbox[1] + margin), label, font=txt_font)
+                draw.rectangle(
+                    (left - box_margin, top - box_margin, right + box_margin, bottom + box_margin), fill=color
+                )
             draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)  # type: ignore[arg-type]
 
     out = F.pil_to_tensor(img_to_draw)
@@ -273,9 +280,8 @@ def draw_segmentation_masks(
     image: torch.Tensor,
     masks: torch.Tensor,
     alpha: float = 0.8,
-    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+    colors: Optional[Union[list[Union[str, tuple[int, int, int]]], str, tuple[int, int, int]]] = None,
 ) -> torch.Tensor:
-
     """
     Draws segmentation masks on given RGB image.
     The image values should be uint8 in [0, 255] or float in [0, 1].
@@ -342,13 +348,12 @@ def draw_segmentation_masks(
 def draw_keypoints(
     image: torch.Tensor,
     keypoints: torch.Tensor,
-    connectivity: Optional[List[Tuple[int, int]]] = None,
-    colors: Optional[Union[str, Tuple[int, int, int]]] = None,
+    connectivity: Optional[list[tuple[int, int]]] = None,
+    colors: Optional[Union[str, tuple[int, int, int]]] = None,
     radius: int = 2,
     width: int = 3,
     visibility: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
-
     """
     Draws Keypoints on given RGB image.
     The image values should be uint8 in [0, 255] or float in [0, 1].
@@ -458,7 +463,6 @@ def draw_keypoints(
 # Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
 @torch.no_grad()
 def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
-
     """
     Converts a flow to an RGB image.
 
@@ -492,7 +496,6 @@ def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
 
 @torch.no_grad()
 def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
-
     """
     Converts a batch of normalized flow to an RGB image.
 
@@ -578,11 +581,11 @@ def _generate_color_palette(num_objects: int):
 
 
 def _parse_colors(
-    colors: Union[None, str, Tuple[int, int, int], List[Union[str, Tuple[int, int, int]]]],
+    colors: Union[None, str, tuple[int, int, int], list[Union[str, tuple[int, int, int]]]],
     *,
     num_objects: int,
     dtype: torch.dtype = torch.uint8,
-) -> List[Tuple[int, int, int]]:
+) -> list[tuple[int, int, int]]:
     """
     Parses a specification of colors for a set of objects.
 
@@ -625,7 +628,6 @@ def _parse_colors(
 
 
 def _log_api_usage_once(obj: Any) -> None:
-
     """
     Logs API usage(module and name) within an organization.
     In a large ecosystem, it's often useful to track the PyTorch and
@@ -651,7 +653,7 @@ def _log_api_usage_once(obj: Any) -> None:
     torch._C._log_api_usage_once(f"{module}.{name}")
 
 
-def _make_ntuple(x: Any, n: int) -> Tuple[Any, ...]:
+def _make_ntuple(x: Any, n: int) -> tuple[Any, ...]:
     """
     Make n-tuple from input x. If x is an iterable, then we just convert it to tuple.
     Otherwise, we will make a tuple of length n, all with value of x.

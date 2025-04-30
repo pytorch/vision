@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import torch
 from torch import Tensor
@@ -623,7 +623,7 @@ class RandomCrop(torch.nn.Module):
     """
 
     @staticmethod
-    def get_params(img: Tensor, output_size: Tuple[int, int]) -> Tuple[int, int, int, int]:
+    def get_params(img: Tensor, output_size: tuple[int, int]) -> tuple[int, int, int, int]:
         """Get parameters for ``crop`` for a random crop.
 
         Args:
@@ -806,7 +806,7 @@ class RandomPerspective(torch.nn.Module):
         return img
 
     @staticmethod
-    def get_params(width: int, height: int, distortion_scale: float) -> Tuple[List[List[int]], List[List[int]]]:
+    def get_params(width: int, height: int, distortion_scale: float) -> tuple[list[list[int]], list[list[int]]]:
         """Get parameters for ``perspective`` for a random perspective transform.
 
         Args:
@@ -918,7 +918,7 @@ class RandomResizedCrop(torch.nn.Module):
         self.ratio = ratio
 
     @staticmethod
-    def get_params(img: Tensor, scale: List[float], ratio: List[float]) -> Tuple[int, int, int, int]:
+    def get_params(img: Tensor, scale: list[float], ratio: list[float]) -> tuple[int, int, int, int]:
         """Get parameters for ``crop`` for a random sized crop.
 
         Args:
@@ -1190,10 +1190,10 @@ class ColorJitter(torch.nn.Module):
 
     def __init__(
         self,
-        brightness: Union[float, Tuple[float, float]] = 0,
-        contrast: Union[float, Tuple[float, float]] = 0,
-        saturation: Union[float, Tuple[float, float]] = 0,
-        hue: Union[float, Tuple[float, float]] = 0,
+        brightness: Union[float, tuple[float, float]] = 0,
+        contrast: Union[float, tuple[float, float]] = 0,
+        saturation: Union[float, tuple[float, float]] = 0,
+        hue: Union[float, tuple[float, float]] = 0,
     ) -> None:
         super().__init__()
         _log_api_usage_once(self)
@@ -1227,11 +1227,11 @@ class ColorJitter(torch.nn.Module):
 
     @staticmethod
     def get_params(
-        brightness: Optional[List[float]],
-        contrast: Optional[List[float]],
-        saturation: Optional[List[float]],
-        hue: Optional[List[float]],
-    ) -> Tuple[Tensor, Optional[float], Optional[float], Optional[float], Optional[float]]:
+        brightness: Optional[list[float]],
+        contrast: Optional[list[float]],
+        saturation: Optional[list[float]],
+        hue: Optional[list[float]],
+    ) -> tuple[Tensor, Optional[float], Optional[float], Optional[float], Optional[float]]:
         """Get the parameters for the randomized transform to be applied on image.
 
         Args:
@@ -1343,7 +1343,7 @@ class RandomRotation(torch.nn.Module):
         self.fill = fill
 
     @staticmethod
-    def get_params(degrees: List[float]) -> float:
+    def get_params(degrees: list[float]) -> float:
         """Get parameters for ``rotate`` for a random rotation.
 
         Returns:
@@ -1471,12 +1471,12 @@ class RandomAffine(torch.nn.Module):
 
     @staticmethod
     def get_params(
-        degrees: List[float],
-        translate: Optional[List[float]],
-        scale_ranges: Optional[List[float]],
-        shears: Optional[List[float]],
-        img_size: List[int],
-    ) -> Tuple[float, Tuple[int, int], float, Tuple[float, float]]:
+        degrees: list[float],
+        translate: Optional[list[float]],
+        scale_ranges: Optional[list[float]],
+        shears: Optional[list[float]],
+        img_size: list[int],
+    ) -> tuple[float, tuple[int, int], float, tuple[float, float]]:
         """Get parameters for affine transformation
 
         Returns:
@@ -1668,8 +1668,8 @@ class RandomErasing(torch.nn.Module):
 
     @staticmethod
     def get_params(
-        img: Tensor, scale: Tuple[float, float], ratio: Tuple[float, float], value: Optional[List[float]] = None
-    ) -> Tuple[int, int, int, int, Tensor]:
+        img: Tensor, scale: tuple[float, float], ratio: tuple[float, float], value: Optional[list[float]] = None
+    ) -> tuple[int, int, int, int, Tensor]:
         """Get parameters for ``erase`` for a random erasing.
 
         Args:
@@ -1728,7 +1728,7 @@ class RandomErasing(torch.nn.Module):
             else:
                 value = self.value
 
-            if value is not None and not (len(value) in (1, img.shape[-3])):
+            if value is not None and len(value) not in (1, img.shape[-3]):
                 raise ValueError(
                     "If value is a sequence, it should have either a single value or "
                     f"{img.shape[-3]} (number of input channels)"
@@ -2112,7 +2112,7 @@ class ElasticTransform(torch.nn.Module):
         self.fill = fill
 
     @staticmethod
-    def get_params(alpha: List[float], sigma: List[float], size: List[int]) -> Tensor:
+    def get_params(alpha: list[float], sigma: list[float], size: list[int]) -> Tensor:
         dx = torch.rand([1, 1] + size) * 2 - 1
         if sigma[0] > 0.0:
             kx = int(8 * sigma[0] + 1)

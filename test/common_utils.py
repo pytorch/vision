@@ -35,14 +35,12 @@ OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't nee
 
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
-    tmp_dir = tempfile.mkdtemp(**kwargs)
-    if src is not None:
-        os.rmdir(tmp_dir)
-        shutil.copytree(src, tmp_dir)
-    try:
+    with tempfile.TemporaryDirectory(
+        **kwargs,
+    ) as tmp_dir:
+        if src is not None:
+            shutil.copytree(src, tmp_dir)
         yield tmp_dir
-    finally:
-        shutil.rmtree(tmp_dir)
 
 
 def set_rng_seed(seed):
@@ -288,7 +286,7 @@ class ImagePair(TensorLikePair):
         **other_parameters,
     ):
         if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
-            actual, expected = [to_image(input) for input in [actual, expected]]
+            actual, expected = (to_image(input) for input in [actual, expected])
 
         super().__init__(actual, expected, **other_parameters)
         self.mae = mae
@@ -435,7 +433,7 @@ def make_bounding_boxes(
 
     dtype = dtype or torch.float32
 
-    h, w = [torch.randint(1, s, (num_boxes,)) for s in canvas_size]
+    h, w = (torch.randint(1, s, (num_boxes,)) for s in canvas_size)
     y = sample_position(h, canvas_size[0])
     x = sample_position(w, canvas_size[1])
     r = -360 * torch.rand((num_boxes,)) + 180

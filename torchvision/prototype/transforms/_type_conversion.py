@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import torch
 
@@ -15,7 +15,7 @@ class LabelToOneHot(Transform):
         super().__init__()
         self.num_categories = num_categories
 
-    def transform(self, inpt: proto_tv_tensors.Label, params: Dict[str, Any]) -> proto_tv_tensors.OneHotLabel:
+    def transform(self, inpt: proto_tv_tensors.Label, params: dict[str, Any]) -> proto_tv_tensors.OneHotLabel:
         num_categories = self.num_categories
         if num_categories == -1 and inpt.categories is not None:
             num_categories = len(inpt.categories)

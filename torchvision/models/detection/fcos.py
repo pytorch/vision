@@ -2,7 +2,7 @@ import math
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import torch
 from torch import nn, Tensor
@@ -51,11 +51,11 @@ class FCOSHead(nn.Module):
 
     def compute_loss(
         self,
-        targets: List[Dict[str, Tensor]],
-        head_outputs: Dict[str, Tensor],
-        anchors: List[Tensor],
-        matched_idxs: List[Tensor],
-    ) -> Dict[str, Tensor]:
+        targets: list[dict[str, Tensor]],
+        head_outputs: dict[str, Tensor],
+        anchors: list[Tensor],
+        matched_idxs: list[Tensor],
+    ) -> dict[str, Tensor]:
 
         cls_logits = head_outputs["cls_logits"]  # [N, HWA, C]
         bbox_regression = head_outputs["bbox_regression"]  # [N, HWA, 4]
@@ -124,7 +124,7 @@ class FCOSHead(nn.Module):
             "bbox_ctrness": loss_bbox_ctrness / max(1, num_foreground),
         }
 
-    def forward(self, x: List[Tensor]) -> Dict[str, Tensor]:
+    def forward(self, x: list[Tensor]) -> dict[str, Tensor]:
         cls_logits = self.classification_head(x)
         bbox_regression, bbox_ctrness = self.regression_head(x)
         return {
@@ -180,7 +180,7 @@ class FCOSClassificationHead(nn.Module):
         torch.nn.init.normal_(self.cls_logits.weight, std=0.01)
         torch.nn.init.constant_(self.cls_logits.bias, -math.log((1 - prior_probability) / prior_probability))
 
-    def forward(self, x: List[Tensor]) -> Tensor:
+    def forward(self, x: list[Tensor]) -> Tensor:
         all_cls_logits = []
 
         for features in x:
@@ -242,7 +242,7 @@ class FCOSRegressionHead(nn.Module):
                 torch.nn.init.normal_(layer.weight, std=0.01)
                 torch.nn.init.zeros_(layer.bias)
 
-    def forward(self, x: List[Tensor]) -> Tuple[Tensor, Tensor]:
+    def forward(self, x: list[Tensor]) -> tuple[Tensor, Tensor]:
         all_bbox_regression = []
         all_bbox_ctrness = []
 
@@ -369,8 +369,8 @@ class FCOS(nn.Module):
         # transform parameters
         min_size: int = 800,
         max_size: int = 1333,
-        image_mean: Optional[List[float]] = None,
-        image_std: Optional[List[float]] = None,
+        image_mean: Optional[list[float]] = None,
+        image_std: Optional[list[float]] = None,
         # Anchor parameters
         anchor_generator: Optional[AnchorGenerator] = None,
         head: Optional[nn.Module] = None,
@@ -430,8 +430,8 @@ class FCOS(nn.Module):
 
     @torch.jit.unused
     def eager_outputs(
-        self, losses: Dict[str, Tensor], detections: List[Dict[str, Tensor]]
-    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+        self, losses: dict[str, Tensor], detections: list[dict[str, Tensor]]
+    ) -> tuple[dict[str, Tensor], list[dict[str, Tensor]]]:
         if self.training:
             return losses
 
@@ -439,11 +439,11 @@ class FCOS(nn.Module):
 
     def compute_loss(
         self,
-        targets: List[Dict[str, Tensor]],
-        head_outputs: Dict[str, Tensor],
-        anchors: List[Tensor],
-        num_anchors_per_level: List[int],
-    ) -> Dict[str, Tensor]:
+        targets: list[dict[str, Tensor]],
+        head_outputs: dict[str, Tensor],
+        anchors: list[Tensor],
+        num_anchors_per_level: list[int],
+    ) -> dict[str, Tensor]:
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             if targets_per_image["boxes"].numel() == 0:
@@ -487,15 +487,15 @@ class FCOS(nn.Module):
         return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
 
     def postprocess_detections(
-        self, head_outputs: Dict[str, List[Tensor]], anchors: List[List[Tensor]], image_shapes: List[Tuple[int, int]]
-    ) -> List[Dict[str, Tensor]]:
+        self, head_outputs: dict[str, list[Tensor]], anchors: list[list[Tensor]], image_shapes: list[tuple[int, int]]
+    ) -> list[dict[str, Tensor]]:
         class_logits = head_outputs["cls_logits"]
         box_regression = head_outputs["bbox_regression"]
         box_ctrness = head_outputs["bbox_ctrness"]
 
         num_images = len(image_shapes)
 
-        detections: List[Dict[str, Tensor]] = []
+        detections: list[dict[str, Tensor]] = []
 
         for index in range(num_images):
             box_regression_per_image = [br[index] for br in box_regression]
@@ -557,9 +557,9 @@ class FCOS(nn.Module):
 
     def forward(
         self,
-        images: List[Tensor],
-        targets: Optional[List[Dict[str, Tensor]]] = None,
-    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+        images: list[Tensor],
+        targets: Optional[list[dict[str, Tensor]]] = None,
+    ) -> tuple[dict[str, Tensor], list[dict[str, Tensor]]]:
         """
         Args:
             images (list[Tensor]): images to be processed
@@ -584,7 +584,7 @@ class FCOS(nn.Module):
                         f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
                     )
 
-        original_image_sizes: List[Tuple[int, int]] = []
+        original_image_sizes: list[tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
             torch._assert(
@@ -604,7 +604,7 @@ class FCOS(nn.Module):
                 if degenerate_boxes.any():
                     # print the first degenerate box
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
-                    degen_bb: List[float] = boxes[bb_idx].tolist()
+                    degen_bb: list[float] = boxes[bb_idx].tolist()
                     torch._assert(
                         False,
                         f"All bounding boxes should have positive height and width. Found invalid box {degen_bb} for target at index {target_idx}.",
@@ -626,7 +626,7 @@ class FCOS(nn.Module):
         num_anchors_per_level = [x.size(2) * x.size(3) for x in features]
 
         losses = {}
-        detections: List[Dict[str, Tensor]] = []
+        detections: list[dict[str, Tensor]] = []
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
@@ -635,7 +635,7 @@ class FCOS(nn.Module):
                 losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
         else:
             # split outputs per level
-            split_head_outputs: Dict[str, List[Tensor]] = {}
+            split_head_outputs: dict[str, list[Tensor]] = {}
             for k in head_outputs:
                 split_head_outputs[k] = list(head_outputs[k].split(num_anchors_per_level, dim=1))
             split_anchors = [list(a.split(num_anchors_per_level)) for a in anchors]
