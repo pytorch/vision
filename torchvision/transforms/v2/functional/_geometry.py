@@ -2493,10 +2493,10 @@ def resized_crop_keypoints(
 def _resized_crop_keypoints_dispatch(
     inpt: tv_tensors.BoundingBoxes, top: int, left: int, height: int, width: int, size: List[int], **kwargs
 ):
-    out, canvas_size = resized_crop_keypoints(
+    output, canvas_size = resized_crop_keypoints(
         inpt.as_subclass(torch.Tensor), top=top, left=left, height=height, width=width, size=size
     )
-    return tv_tensors.wrap(out, like=inpt, canvas_size=canvas_size)
+    return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 def resized_crop_bounding_boxes(
