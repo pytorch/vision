@@ -185,7 +185,7 @@ def _xyxy_to_keypoints(bounding_boxes: torch.Tensor) -> torch.Tensor:
     return bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
 
 
-def convert_box_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensors.KeyPoints:
+def convert_bounding_boxes_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensors.KeyPoints:
     """Converts a set of bounding boxes to its edge points.
 
     Args:
@@ -194,6 +194,7 @@ def convert_box_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensor
     Returns:
         tv_tensors.KeyPoints: The edges, of shape ``[N, 4, 2]``
     """
+    # TODO: support rotated BBOX
     bbox = _convert_bounding_box_format(
         bounding_boxes.as_subclass(torch.Tensor),
         old_format=bounding_boxes.format,

@@ -6260,3 +6260,23 @@ class TestUtils:
     def test_no_valid_input(self, query):
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
+
+    @pytest.mark.parametrize(
+        'boxes', [
+            tv_tensors.BoundingBoxes(torch.tensor([[1, 1, 2, 2]]), format="XYXY", canvas_size=(4, 4))
+        ]
+    )
+    def test_convert_bounding_boxes_to_points(self, boxes: tv_tensors.BoundingBoxes):
+        # TODO: this test can't handle rotated boxes yet
+        kp = F.convert_bounding_boxes_to_points(boxes)
+        assert kp.shape == boxes.shape + (2, )
+        assert kp.dtype == boxes.dtype
+        # kp is a list of A, B, C, D polygons.
+        # If we use A | C, we should get back the XYXY format of bounding box
+        reconverted = torch.cat([kp[..., 0, :], kp[..., 2, :]], dim=-1)
+        reconverted_bbox = F.convert_bounding_box_format(
+            tv_tensors.BoundingBoxes(
+                reconverted, format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=kp.canvas_size
+            ), new_format=boxes.format
+        )
+        assert (reconverted_bbox == boxes).all(), f"Invalid reconversion : {reconverted_bbox}"

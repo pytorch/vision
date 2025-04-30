@@ -5,7 +5,7 @@ from ._utils import is_pure_tensor, register_kernel  # usort: skip
 from ._meta import (
     clamp_bounding_boxes,
     convert_bounding_box_format,
-    convert_box_to_points,
+    convert_bounding_boxes_to_points,
     get_dimensions_image,
     get_dimensions_video,
     get_dimensions,
