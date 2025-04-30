@@ -3487,7 +3487,7 @@ class TestAutoAugmentTransforms:
         adapted_input = {}
         image_or_video_found = False
         for key, value in input.items():
-            if isinstance(value, (tv_tensors.BoundingBoxes, tv_tensors.Mask)):
+            if isinstance(value, (tv_tensors.BoundingBoxes, tv_tensors.KeyPoints, tv_tensors.Mask)):
                 # AA transforms don't support bounding boxes or masks
                 continue
             elif check_type(value, (tv_tensors.Image, tv_tensors.Video, is_pure_tensor, PIL.Image.Image)):

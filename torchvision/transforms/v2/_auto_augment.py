@@ -46,7 +46,7 @@ class _AutoAugmentBase(Transform):
     def _flatten_and_extract_image_or_video(
         self,
         inputs: Any,
-        unsupported_types: Tuple[Type, ...] = (tv_tensors.BoundingBoxes, tv_tensors.Mask),
+        unsupported_types: Tuple[Type, ...] = (tv_tensors.BoundingBoxes, tv_tensors.Mask, tv_tensors.KeyPoints),
     ) -> Tuple[Tuple[List[Any], TreeSpec, int], ImageOrVideo]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
         needs_transform_list = self._needs_transform_list(flat_inputs)
@@ -194,6 +194,7 @@ class AutoAugment(_AutoAugmentBase):
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
     """
+
     _v1_transform_cls = _transforms.AutoAugment
 
     _AUGMENTATION_SPACE = {

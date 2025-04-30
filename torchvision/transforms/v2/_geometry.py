@@ -356,7 +356,7 @@ class FiveCrop(Transform):
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
-        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask)):
+        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.KeyPoints, tv_tensors.Mask)):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
                 f"tv_tensors.{type(inpt).__name__}. This will likely change in the future."
@@ -401,7 +401,7 @@ class TenCrop(Transform):
         self.vertical_flip = vertical_flip
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
-        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask)):
+        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.KeyPoints, tv_tensors.Mask)):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
                 f"tv_tensors.{type(inpt).__name__}. This will likely change in the future."

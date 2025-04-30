@@ -9,15 +9,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import (
-    _parse_labels_getter,
-    _setup_number_or_seq,
-    _setup_size,
-    get_all_keypoints,
-    get_bounding_boxes,
-    has_any,
-    is_pure_tensor,
-)
+from ._utils import _parse_labels_getter, _setup_number_or_seq, _setup_size, get_bounding_boxes, has_any, is_pure_tensor
 
 
 # TODO: do we want/need to expose this?
@@ -348,9 +340,9 @@ class ConvertImageDtype(Transform):
 
 
 class SanitizeBoundingBoxes(Transform):
-    """Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
+    """Remove degenerate/invalid bounding boxes and their corresponding labels, masks and keypoints.
 
-    This transform removes bounding boxes and their associated labels/masks that:
+    This transform removes bounding boxes and their associated labels, masks and keypoints that:
 
     - are below a given ``min_size`` or ``min_area``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
@@ -365,6 +357,14 @@ class SanitizeBoundingBoxes(Transform):
     If you want to be extra careful, you may call it after all transforms that
     may modify bounding boxes but once at the end should be enough in most
     cases.
+
+    .. note::
+        This transform requires that any :class:`~torchvision.tv_tensor.KeyPoints` or
+        :class:`~torchvision.tv_tensor.Mask` provided has to match the bounding boxes in shape.
+
+        If the bounding boxes are of shape ``[N, K]``, then the
+        KeyPoints have to be of shape ``[N, ..., 2]`` or ``[N, 2]``
+        and the masks have to be of shape ``[N, ..., H, W]`` or ``[N, H, W]``
 
     Args:
         min_size (float, optional): The size below which bounding boxes are removed. Default is 1.
@@ -445,10 +445,15 @@ class SanitizeBoundingBoxes(Transform):
         return tree_unflatten(flat_outputs, spec)
 
     def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
-        is_label = params["labels"] is not None and any(inpt is label for label in params["labels"])
-        is_bounding_boxes_or_mask = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask))
+        # For every object in the flattened input of the `forward` method, we apply transform
+        # The params contain the list of valid indices of the (N, K) bbox set
 
-        if not (is_label or is_bounding_boxes_or_mask):
+        # We suppose here that any KeyPoints or Masks TVTensors is of shape (N, ..., 2) and (N, ..., H, W) respectively
+        # TODO: check this.
+        is_label = params["labels"] is not None and any(inpt is label for label in params["labels"])
+        is_bbox_mask_or_kpoints = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask, tv_tensors.KeyPoints))
+
+        if not (is_label or is_bbox_mask_or_kpoints):
             return inpt
 
         output = inpt[params["valid"]]

@@ -89,7 +89,7 @@ class RandomErasing(_RandomApplyTransform):
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
-        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask)):
+        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.KeyPoints, tv_tensors.Mask)):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
                 f"tv_tensors.{type(inpt).__name__}. This will likely change in the future."
