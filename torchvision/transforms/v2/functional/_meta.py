@@ -181,8 +181,7 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xyxy
 
 
-
-def _xyxy_to_points(bounding_boxes: torch.Tensor) -> torch.Tensor:
+def _xyxy_to_keypoints(bounding_boxes: torch.Tensor) -> torch.Tensor:
     return bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
 
 
@@ -201,7 +200,7 @@ def convert_box_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensor
         new_format=BoundingBoxFormat.XYXY,
         inplace=False,
     )
-    return tv_tensors.KeyPoints(_xyxy_to_points(bbox), canvas_size=bounding_boxes.canvas_size)
+    return tv_tensors.KeyPoints(_xyxy_to_keypoints(bbox), canvas_size=bounding_boxes.canvas_size)
 
 
 def _cxcywhr_to_xywhr(cxcywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
