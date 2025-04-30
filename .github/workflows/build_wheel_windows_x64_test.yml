@@ -35,6 +35,7 @@ jobs:
         include:
           - repository: pytorch/vision
             smoke-test-script: test/smoke_test.py
+            pre-script: packaging/pre_build_script_arm64.sh
             package-name: torchvision
             architecture: "arm64"
     name: ${{ matrix.repository }}
