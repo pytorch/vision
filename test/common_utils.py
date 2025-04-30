@@ -409,9 +409,9 @@ def make_keypoints(
     """Make the KeyPoints for testing purposes"""
     if isinstance(num_points, int):
         num_points = [num_points]
-    half_point: Tuple[int, ...] = tuple(num_points) + (1,)
-    y = torch.randint(0, canvas_size[0] - 1, half_point, dtype=dtype, device=device)
-    x = torch.randint(0, canvas_size[1] - 1, half_point, dtype=dtype, device=device)
+    single_coord_shape: Tuple[int, ...] = tuple(num_points) + (1,)
+    y = torch.randint(0, canvas_size[0] - 1, single_coord_shape, dtype=dtype, device=device)
+    x = torch.randint(0, canvas_size[1] - 1, single_coord_shape, dtype=dtype, device=device)
     points = torch.cat((x, y), dim=-1)
     keypoints = tv_tensors.KeyPoints(points, canvas_size=canvas_size)
     return keypoints
