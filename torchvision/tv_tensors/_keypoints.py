@@ -33,10 +33,10 @@ class KeyPoints(TVTensor):
         cls,
         data: Any,
         *,
+        canvas_size: Tuple[int, int],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
-        canvas_size: Tuple[int, int],
     ):
         tensor: torch.Tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if tensor.ndim == 1:
@@ -55,10 +55,10 @@ class KeyPoints(TVTensor):
             self,
             data: Any,
             *,
+            canvas_size: Tuple[int, int],
             dtype: Optional[torch.dtype] = None,
             device: Optional[Union[torch.device, str, int]] = None,
             requires_grad: Optional[bool] = None,
-            canvas_size: Tuple[int, int],
         ):
             ...
 
