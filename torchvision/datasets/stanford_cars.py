@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from .folder import default_loader
 
@@ -84,7 +84,7 @@ class StanfordCars(VisionDataset):
     def __len__(self) -> int:
         return len(self._samples)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         """Returns pil_image and class_id for given index"""
         image_path, target = self._samples[idx]
         image = self.loader(image_path)

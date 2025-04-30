@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import torch
 from torchdata.datapipes.iter import CSVDictParser, IterDataPipe, Mapper
@@ -14,7 +14,7 @@ NAME = "fer2013"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=("angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"))
 
 
@@ -37,7 +37,7 @@ class FER2013(Dataset):
         "test": "dec8dfe8021e30cd6704b85ec813042b4a5d99d81cb55e023291a94104f575c3",
     }
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         archive = KaggleDownloadResource(
             "https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge",
             file_name=f"{self._split}.csv.zip",
@@ -45,7 +45,7 @@ class FER2013(Dataset):
         )
         return [archive]
 
-    def _prepare_sample(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: dict[str, Any]) -> dict[str, Any]:
         label_id = data.get("emotion")
 
         return dict(
@@ -53,7 +53,7 @@ class FER2013(Dataset):
             label=Label(int(label_id), categories=self._categories) if label_id is not None else None,
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         dp = resource_dps[0]
         dp = CSVDictParser(dp)
         dp = hint_shuffling(dp)

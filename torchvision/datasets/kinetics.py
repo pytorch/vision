@@ -5,7 +5,7 @@ from functools import partial
 from multiprocessing import Pool
 from os import path
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from torch import Tensor
 
@@ -97,11 +97,11 @@ class Kinetics(VisionDataset):
         frame_rate: Optional[int] = None,
         step_between_clips: int = 1,
         transform: Optional[Callable] = None,
-        extensions: Tuple[str, ...] = ("avi", "mp4"),
+        extensions: tuple[str, ...] = ("avi", "mp4"),
         download: bool = False,
         num_download_workers: int = 1,
         num_workers: int = 1,
-        _precomputed_metadata: Optional[Dict[str, Any]] = None,
+        _precomputed_metadata: Optional[dict[str, Any]] = None,
         _video_width: int = 0,
         _video_height: int = 0,
         _video_min_dimension: int = 0,
@@ -221,13 +221,13 @@ class Kinetics(VisionDataset):
                     )
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return self.video_clips.metadata
 
     def __len__(self) -> int:
         return self.video_clips.num_clips()
 
-    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor, int]:
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, int]:
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
         label = self.samples[video_idx][1]
 

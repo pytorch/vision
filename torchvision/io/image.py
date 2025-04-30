@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Union
+from typing import Union
 from warnings import warn
 
 import torch
@@ -154,11 +154,11 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
 
 
 def decode_jpeg(
-    input: Union[torch.Tensor, List[torch.Tensor]],
+    input: Union[torch.Tensor, list[torch.Tensor]],
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     device: Union[str, torch.device] = "cpu",
     apply_exif_orientation: bool = False,
-) -> Union[torch.Tensor, List[torch.Tensor]]:
+) -> Union[torch.Tensor, list[torch.Tensor]]:
     """Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.
 
     The values of the output tensor are uint8 between 0 and 255.
@@ -225,8 +225,8 @@ def decode_jpeg(
 
 
 def encode_jpeg(
-    input: Union[torch.Tensor, List[torch.Tensor]], quality: int = 75
-) -> Union[torch.Tensor, List[torch.Tensor]]:
+    input: Union[torch.Tensor, list[torch.Tensor]], quality: int = 75
+) -> Union[torch.Tensor, list[torch.Tensor]]:
     """Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.
 
     .. note::
@@ -478,7 +478,7 @@ def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
     """Decode an HEIC image into a 3 dimensional RGB[A] Tensor.
 
     .. warning::
-        In order to enable the AVIF decoding capabilities of torchvision, you
+        In order to enable the HEIC decoding capabilities of torchvision, you
         first need to run ``pip install torchvision-extra-decoders``. Just
         install the package, you don't need to update your code. This is only
         supported on Linux, and this feature is still in BETA stage. Please let

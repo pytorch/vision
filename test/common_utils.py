@@ -285,7 +285,7 @@ class ImagePair(TensorLikePair):
         **other_parameters,
     ):
         if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
-            actual, expected = [to_image(input) for input in [actual, expected]]
+            actual, expected = (to_image(input) for input in [actual, expected])
 
         super().__init__(actual, expected, **other_parameters)
         self.mae = mae
@@ -418,7 +418,7 @@ def make_bounding_boxes(
 
     dtype = dtype or torch.float32
 
-    h, w = [torch.randint(1, s, (num_boxes,)) for s in canvas_size]
+    h, w = (torch.randint(1, s, (num_boxes,)) for s in canvas_size)
     y = sample_position(h, canvas_size[0])
     x = sample_position(w, canvas_size[1])
     r = -360 * torch.rand((num_boxes,)) + 180

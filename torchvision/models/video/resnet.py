@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from functools import partial
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Optional, Union
 
 import torch.nn as nn
 from torch import Tensor
@@ -37,7 +38,7 @@ class Conv3DSimple(nn.Conv3d):
         )
 
     @staticmethod
-    def get_downsample_stride(stride: int) -> Tuple[int, int, int]:
+    def get_downsample_stride(stride: int) -> tuple[int, int, int]:
         return stride, stride, stride
 
 
@@ -60,7 +61,7 @@ class Conv2Plus1D(nn.Sequential):
         )
 
     @staticmethod
-    def get_downsample_stride(stride: int) -> Tuple[int, int, int]:
+    def get_downsample_stride(stride: int) -> tuple[int, int, int]:
         return stride, stride, stride
 
 
@@ -79,7 +80,7 @@ class Conv3DNoTemporal(nn.Conv3d):
         )
 
     @staticmethod
-    def get_downsample_stride(stride: int) -> Tuple[int, int, int]:
+    def get_downsample_stride(stride: int) -> tuple[int, int, int]:
         return 1, stride, stride
 
 
@@ -197,9 +198,9 @@ class R2Plus1dStem(nn.Sequential):
 class VideoResNet(nn.Module):
     def __init__(
         self,
-        block: Type[Union[BasicBlock, Bottleneck]],
-        conv_makers: Sequence[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
-        layers: List[int],
+        block: type[Union[BasicBlock, Bottleneck]],
+        conv_makers: Sequence[type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
+        layers: list[int],
         stem: Callable[..., nn.Module],
         num_classes: int = 400,
         zero_init_residual: bool = False,
@@ -264,8 +265,8 @@ class VideoResNet(nn.Module):
 
     def _make_layer(
         self,
-        block: Type[Union[BasicBlock, Bottleneck]],
-        conv_builder: Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]],
+        block: type[Union[BasicBlock, Bottleneck]],
+        conv_builder: type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]],
         planes: int,
         blocks: int,
         stride: int = 1,
@@ -289,9 +290,9 @@ class VideoResNet(nn.Module):
 
 
 def _video_resnet(
-    block: Type[Union[BasicBlock, Bottleneck]],
-    conv_makers: Sequence[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
-    layers: List[int],
+    block: type[Union[BasicBlock, Bottleneck]],
+    conv_makers: Sequence[type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
+    layers: list[int],
     stem: Callable[..., nn.Module],
     weights: Optional[WeightsEnum],
     progress: bool,

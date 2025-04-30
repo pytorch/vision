@@ -1,7 +1,7 @@
 import os
 import os.path
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
@@ -71,7 +71,7 @@ class INaturalist(VisionDataset):
         self,
         root: Union[str, Path],
         version: str = "2021_train",
-        target_type: Union[List[str], str] = "full",
+        target_type: Union[list[str], str] = "full",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
@@ -88,13 +88,13 @@ class INaturalist(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
-        self.all_categories: List[str] = []
+        self.all_categories: list[str] = []
 
         # map: category type -> name of category -> index
-        self.categories_index: Dict[str, Dict[str, int]] = {}
+        self.categories_index: dict[str, dict[str, int]] = {}
 
         # list indexed by category id, containing mapping from category type -> index
-        self.categories_map: List[Dict[str, int]] = []
+        self.categories_map: list[dict[str, int]] = []
 
         if not isinstance(target_type, list):
             target_type = [target_type]
@@ -106,7 +106,7 @@ class INaturalist(VisionDataset):
             self._init_pre2021()
 
         # index of all files: (full category id, filename)
-        self.index: List[Tuple[int, str]] = []
+        self.index: list[tuple[int, str]] = []
 
         for dir_index, dir_name in enumerate(self.all_categories):
             files = os.listdir(os.path.join(self.root, dir_name))
@@ -174,7 +174,7 @@ class INaturalist(VisionDataset):
             if not c:
                 raise RuntimeError(f"Missing category {cindex}")
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index

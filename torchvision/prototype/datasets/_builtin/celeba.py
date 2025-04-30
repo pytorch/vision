@@ -1,6 +1,7 @@
 import csv
 import pathlib
-from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from collections.abc import Iterator, Sequence
+from typing import Any, BinaryIO, Optional, Union
 
 import torch
 from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper, Zipper
@@ -20,17 +21,17 @@ from .._api import register_dataset, register_info
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 
 
-class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
+class CelebACSVParser(IterDataPipe[tuple[str, dict[str, str]]]):
     def __init__(
         self,
-        datapipe: IterDataPipe[Tuple[Any, BinaryIO]],
+        datapipe: IterDataPipe[tuple[Any, BinaryIO]],
         *,
         fieldnames: Optional[Sequence[str]] = None,
     ) -> None:
         self.datapipe = datapipe
         self.fieldnames = fieldnames
 
-    def __iter__(self) -> Iterator[Tuple[str, Dict[str, str]]]:
+    def __iter__(self) -> Iterator[tuple[str, dict[str, str]]]:
         for _, file in self.datapipe:
             try:
                 lines = (line.decode() for line in file)
@@ -58,7 +59,7 @@ NAME = "celeba"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict()
 
 
@@ -79,7 +80,7 @@ class CelebA(Dataset):
 
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         splits = GDriveResource(
             "0B7EVK8r0v71pY0NSMzRuSXJEVkk",
             sha256="fc955bcb3ef8fbdf7d5640d9a8693a8431b5f2ee291a5c1449a1549e7e073fe7",
@@ -112,7 +113,7 @@ class CelebA(Dataset):
         )
         return [splits, images, identities, attributes, bounding_boxes, landmarks]
 
-    def _filter_split(self, data: Tuple[str, Dict[str, str]]) -> bool:
+    def _filter_split(self, data: tuple[str, dict[str, str]]) -> bool:
         split_id = {
             "train": "0",
             "val": "1",
@@ -122,16 +123,16 @@ class CelebA(Dataset):
 
     def _prepare_sample(
         self,
-        data: Tuple[
-            Tuple[str, Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]],
-            Tuple[
-                Tuple[str, Dict[str, str]],
-                Tuple[str, Dict[str, str]],
-                Tuple[str, Dict[str, str]],
-                Tuple[str, Dict[str, str]],
+        data: tuple[
+            tuple[str, tuple[tuple[str, list[str]], tuple[str, BinaryIO]]],
+            tuple[
+                tuple[str, dict[str, str]],
+                tuple[str, dict[str, str]],
+                tuple[str, dict[str, str]],
+                tuple[str, dict[str, str]],
             ],
         ],
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         split_and_image_data, ann_data = data
         _, (_, image_data) = split_and_image_data
         path, buffer = image_data
@@ -155,7 +156,7 @@ class CelebA(Dataset):
             },
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         splits_dp, images_dp, identities_dp, attributes_dp, bounding_boxes_dp, landmarks_dp = resource_dps
 
         splits_dp = CelebACSVParser(splits_dp, fieldnames=("image_id", "split_id"))

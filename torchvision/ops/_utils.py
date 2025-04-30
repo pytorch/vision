@@ -1,10 +1,10 @@
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import torch
 from torch import nn, Tensor
 
 
-def _cat(tensors: List[Tensor], dim: int = 0) -> Tensor:
+def _cat(tensors: list[Tensor], dim: int = 0) -> Tensor:
     """
     Efficient version of torch.cat that avoids a copy if there is only a single element in a list
     """
@@ -15,7 +15,7 @@ def _cat(tensors: List[Tensor], dim: int = 0) -> Tensor:
     return torch.cat(tensors, dim)
 
 
-def convert_boxes_to_roi_format(boxes: List[Tensor]) -> Tensor:
+def convert_boxes_to_roi_format(boxes: list[Tensor]) -> Tensor:
     concat_boxes = _cat([b for b in boxes], dim=0)
     temp = []
     for i, b in enumerate(boxes):
@@ -25,7 +25,7 @@ def convert_boxes_to_roi_format(boxes: List[Tensor]) -> Tensor:
     return rois
 
 
-def check_roi_boxes_shape(boxes: Union[Tensor, List[Tensor]]):
+def check_roi_boxes_shape(boxes: Union[Tensor, list[Tensor]]):
     if isinstance(boxes, (list, tuple)):
         for _tensor in boxes:
             torch._assert(
@@ -39,8 +39,8 @@ def check_roi_boxes_shape(boxes: Union[Tensor, List[Tensor]]):
 
 
 def split_normalization_params(
-    model: nn.Module, norm_classes: Optional[List[type]] = None
-) -> Tuple[List[Tensor], List[Tensor]]:
+    model: nn.Module, norm_classes: Optional[list[type]] = None
+) -> tuple[list[Tensor], list[Tensor]]:
     # Adapted from https://github.com/facebookresearch/ClassyVision/blob/659d7f78/classy_vision/generic/util.py#L501
     if not norm_classes:
         norm_classes = [
@@ -87,7 +87,7 @@ def _upcast_non_float(t: Tensor) -> Tensor:
 def _loss_inter_union(
     boxes1: torch.Tensor,
     boxes2: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
 
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)

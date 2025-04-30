@@ -1,7 +1,7 @@
 import enum
 import functools
 import pathlib
-from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, cast, Optional, Union
 from xml.etree import ElementTree
 
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
@@ -25,7 +25,7 @@ NAME = "voc"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=read_categories_file(NAME))
 
 
@@ -70,12 +70,12 @@ class VOC(Dataset):
         "2007": ("VOCtest_06-Nov-2007.tar", "6836888e2e01dca84577a849d339fa4f73e1e4f135d312430c4856b5609b4892")
     }
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         file_name, sha256 = (self._TEST_ARCHIVES if self._split == "test" else self._TRAIN_VAL_ARCHIVES)[self._year]
         archive = HttpResource(f"http://host.robots.ox.ac.uk/pascal/VOC/voc{self._year}/{file_name}", sha256=sha256)
         return [archive]
 
-    def _is_in_folder(self, data: Tuple[str, Any], *, name: str, depth: int = 1) -> bool:
+    def _is_in_folder(self, data: tuple[str, Any], *, name: str, depth: int = 1) -> bool:
         path = pathlib.Path(data[0])
         return name in path.parent.parts[-depth:]
 
@@ -84,7 +84,7 @@ class VOC(Dataset):
         IMAGES = 1
         ANNS = 2
 
-    def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+    def _classify_archive(self, data: tuple[str, Any]) -> Optional[int]:
         if self._is_in_folder(data, name="ImageSets", depth=2):
             return self._Demux.SPLIT
         elif self._is_in_folder(data, name="JPEGImages"):
@@ -94,12 +94,12 @@ class VOC(Dataset):
         else:
             return None
 
-    def _parse_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
-        ann = cast(Dict[str, Any], VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())["annotation"])
+    def _parse_detection_ann(self, buffer: BinaryIO) -> dict[str, Any]:
+        ann = cast(dict[str, Any], VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())["annotation"])
         buffer.close()
         return ann
 
-    def _prepare_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
+    def _prepare_detection_ann(self, buffer: BinaryIO) -> dict[str, Any]:
         anns = self._parse_detection_ann(buffer)
         instances = anns["object"]
         return dict(
@@ -109,20 +109,20 @@ class VOC(Dataset):
                     for instance in instances
                 ],
                 format="xyxy",
-                spatial_size=cast(Tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
+                spatial_size=cast(tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
             ),
             labels=Label(
                 [self._categories.index(instance["name"]) for instance in instances], categories=self._categories
             ),
         )
 
-    def _prepare_segmentation_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
+    def _prepare_segmentation_ann(self, buffer: BinaryIO) -> dict[str, Any]:
         return dict(segmentation=EncodedImage.from_file(buffer))
 
     def _prepare_sample(
         self,
-        data: Tuple[Tuple[Tuple[str, str], Tuple[str, BinaryIO]], Tuple[str, BinaryIO]],
-    ) -> Dict[str, Any]:
+        data: tuple[tuple[tuple[str, str], tuple[str, BinaryIO]], tuple[str, BinaryIO]],
+    ) -> dict[str, Any]:
         split_and_image_data, ann_data = data
         _, image_data = split_and_image_data
         image_path, image_buffer = image_data
@@ -135,7 +135,7 @@ class VOC(Dataset):
             ann_path=ann_path,
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         archive_dp = resource_dps[0]
         split_dp, images_dp, anns_dp = Demultiplexer(
             archive_dp,
@@ -204,10 +204,10 @@ class VOC(Dataset):
             ("test", "2007", "segmentation"): 210,
         }[(self._split, self._year, self._task)]
 
-    def _filter_anns(self, data: Tuple[str, Any]) -> bool:
+    def _filter_anns(self, data: tuple[str, Any]) -> bool:
         return self._classify_archive(data) == self._Demux.ANNS
 
-    def _generate_categories(self) -> List[str]:
+    def _generate_categories(self) -> list[str]:
         self._task = "detection"
         resources = self._resources()
 

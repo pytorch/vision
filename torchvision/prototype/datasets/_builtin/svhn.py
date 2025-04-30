@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, BinaryIO, Dict, List, Tuple, Union
+from typing import Any, BinaryIO, Union
 
 import numpy as np
 from torchdata.datapipes.iter import IterDataPipe, Mapper, UnBatcher
@@ -14,7 +14,7 @@ NAME = "svhn"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=[str(c) for c in range(10)])
 
 
@@ -42,7 +42,7 @@ class SVHN(Dataset):
         "extra": "a133a4beb38a00fcdda90c9489e0c04f900b660ce8a316a5e854838379a71eb3",
     }
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         data = HttpResource(
             f"http://ufldl.stanford.edu/housenumbers/{self._split}_32x32.mat",
             sha256=self._CHECKSUMS[self._split],
@@ -50,7 +50,7 @@ class SVHN(Dataset):
 
         return [data]
 
-    def _read_images_and_labels(self, data: Tuple[str, BinaryIO]) -> List[Tuple[np.ndarray, np.ndarray]]:
+    def _read_images_and_labels(self, data: tuple[str, BinaryIO]) -> list[tuple[np.ndarray, np.ndarray]]:
         _, buffer = data
         content = read_mat(buffer)
         return list(
@@ -60,7 +60,7 @@ class SVHN(Dataset):
             )
         )
 
-    def _prepare_sample(self, data: Tuple[np.ndarray, np.ndarray]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[np.ndarray, np.ndarray]) -> dict[str, Any]:
         image_array, label_array = data
 
         return dict(
@@ -68,7 +68,7 @@ class SVHN(Dataset):
             label=Label(int(label_array) % 10, categories=self._categories),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         dp = resource_dps[0]
         dp = Mapper(dp, self._read_images_and_labels)
         dp = UnBatcher(dp)
