@@ -574,6 +574,45 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
     )
 
 
+def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_size=None, clamp=True):
+    canvas_size = new_canvas_size or keypoints.canvas_size
+
+    def affine_keypoints(keypoints):
+        dtype = keypoints.dtype
+        device = keypoints.device
+
+        # Go to float before converting to prevent precision loss
+        x, y = keypoints.to(dtype=torch.float64, device="cpu", copy=True).squeeze(0).tolist()
+
+        points = np.array([[x, y, 1.0]])
+        transformed_points = np.matmul(points, affine_matrix.astype(points.dtype).T)
+
+        output = torch.Tensor(
+            [
+                float(transformed_points[0, 0]),
+                float(transformed_points[0, 1]),
+            ]
+        )
+
+        if clamp:
+            # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
+            output = F.clamp_keypoints(
+                output,
+                canvas_size=canvas_size,
+            )
+        else:
+            # We leave the bounding box as float64 so the caller gets the full precision to perform any additional
+            # operation
+            dtype = output.dtype
+
+        return output.to(dtype=dtype, device=device)
+
+    return tv_tensors.KeyPoints(
+        torch.cat([affine_keypoints(k) for k in keypoints.reshape(-1, 2).unbind()], dim=0).reshape(keypoints.shape),
+        canvas_size=canvas_size,
+    )
+
+
 class TestResize:
     INPUT_SIZE = (17, 11)
     OUTPUT_SIZES = [17, [17], (17,), None, [12, 13], (12, 13)]
@@ -668,6 +707,28 @@ class TestResize:
             F.resize_bounding_boxes,
             bounding_boxes,
             canvas_size=bounding_boxes.canvas_size,
+            size=size,
+            **max_size_kwarg,
+            check_scripted_vs_eager=not isinstance(size, int),
+        )
+
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("use_max_size", [True, False])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_keypoints(self, size, use_max_size, dtype, device):
+        if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
+            return
+
+        keypoints = make_keypoints(
+            canvas_size=self.INPUT_SIZE,
+            dtype=dtype,
+            device=device,
+        )
+        check_kernel(
+            F.resize_keypoints,
+            keypoints,
+            canvas_size=keypoints.canvas_size,
             size=size,
             **max_size_kwarg,
             check_scripted_vs_eager=not isinstance(size, int),
@@ -781,6 +842,28 @@ class TestResize:
             new_canvas_size=(new_height, new_width),
         )
 
+    def _reference_resize_keypoints(self, keypoints, *, size, max_size=None):
+        old_height, old_width = keypoints.canvas_size
+        new_height, new_width = self._compute_output_size(
+            input_size=keypoints.canvas_size, size=size, max_size=max_size
+        )
+
+        if (old_height, old_width) == (new_height, new_width):
+            return keypoints
+
+        affine_matrix = np.array(
+            [
+                [new_width / old_width, 0, 0],
+                [0, new_height / old_height, 0],
+            ],
+        )
+
+        return reference_affine_keypoints_helper(
+            keypoints,
+            affine_matrix=affine_matrix,
+            new_canvas_size=(new_height, new_width),
+        )
+
     @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
@@ -795,6 +878,21 @@ class TestResize:
         expected = self._reference_resize_bounding_boxes(bounding_boxes, size=size, **max_size_kwarg)
 
         self._check_output_size(bounding_boxes, actual, size=size, **max_size_kwarg)
+        torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize("size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("use_max_size", [True, False])
+    @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
+    def test_keypoints_correctness(self, size, use_max_size, fn):
+        if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
+            return
+
+        keypoints = make_keypoints(canvas_size=self.INPUT_SIZE)
+
+        actual = fn(keypoints, size=size, **max_size_kwarg)
+        expected = self._reference_resize_keypoints(keypoints, size=size, **max_size_kwarg)
+
+        self._check_output_size(keypoints, actual, size=size, **max_size_kwarg)
         torch.testing.assert_close(actual, expected)
 
     @pytest.mark.parametrize("interpolation", set(transforms.InterpolationMode) - set(INTERPOLATION_MODES))
@@ -1039,6 +1137,16 @@ class TestHorizontalFlip:
             canvas_size=bounding_boxes.canvas_size,
         )
 
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_keypoints(self, dtype, device):
+        keypoints = make_keypoints(dtype=dtype, device=device)
+        check_kernel(
+            F.horizontal_flip_keypoints,
+            keypoints,
+            canvas_size=keypoints.canvas_size,
+        )
+
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.horizontal_flip_mask, make_mask())
@@ -1097,6 +1205,16 @@ class TestHorizontalFlip:
 
         return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
 
+    def _reference_horizontal_flip_keypoints(self, keypoints):
+        affine_matrix = np.array(
+            [
+                [-1, 0, keypoints.canvas_size[1]],
+                [0, 1, 0],
+            ],
+        )
+
+        return reference_affine_keypoints_helper(keypoints, affine_matrix=affine_matrix)
+
     @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
@@ -1106,6 +1224,17 @@ class TestHorizontalFlip:
 
         actual = fn(bounding_boxes)
         expected = self._reference_horizontal_flip_bounding_boxes(bounding_boxes)
+
+        torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize(
+        "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
+    )
+    def test_keypoints_correctness(self, fn):
+        keypoints = make_keypoints()
+
+        actual = fn(keypoints)
+        expected = self._reference_horizontal_flip_keypoints(keypoints)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1206,6 +1335,24 @@ class TestAffine:
             bounding_boxes,
             format=format,
             canvas_size=bounding_boxes.canvas_size,
+            **{param: value},
+            check_scripted_vs_eager=not (param == "shear" and isinstance(value, (int, float))),
+        )
+
+    @param_value_parametrization(
+        angle=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"],
+        translate=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["translate"],
+        shear=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["shear"],
+        center=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_keypoints(self, param, value, dtype, device):
+        keypoints = make_keypoints(dtype=dtype, device=device)
+        self._check_kernel(
+            F.affine_keypoints,
+            keypoints,
+            canvas_size=keypoints.canvas_size,
             **{param: value},
             check_scripted_vs_eager=not (param == "shear" and isinstance(value, (int, float))),
         )
@@ -1346,6 +1493,17 @@ class TestAffine:
             ),
         )
 
+    def _reference_affine_keypoints(self, keypoints, *, angle, translate, scale, shear, center):
+        if center is None:
+            center = [s * 0.5 for s in keypoints.canvas_size[::-1]]
+
+        return reference_affine_keypoints_helper(
+            keypoints,
+            affine_matrix=self._compute_affine_matrix(
+                angle=angle, translate=translate, scale=scale, shear=shear, center=center
+            ),
+        )
+
     @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])
@@ -1389,6 +1547,50 @@ class TestAffine:
         actual = transform(bounding_boxes)
 
         expected = self._reference_affine_bounding_boxes(bounding_boxes, **params, center=center)
+
+        torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
+    @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])
+    @pytest.mark.parametrize("scale", _CORRECTNESS_AFFINE_KWARGS["scale"])
+    @pytest.mark.parametrize("shear", _CORRECTNESS_AFFINE_KWARGS["shear"])
+    @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
+    def test_functional_keypoints_correctness(self, angle, translate, scale, shear, center):
+        keypoints = make_keypoints()
+
+        actual = F.affine(
+            keypoints,
+            angle=angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            center=center,
+        )
+        expected = self._reference_affine_keypoints(
+            keypoints,
+            angle=angle,
+            translate=translate,
+            scale=scale,
+            shear=shear,
+            center=center,
+        )
+
+        torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_keypoints_correctness(self, center, seed):
+        keypoints = make_keypoints()
+
+        transform = transforms.RandomAffine(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, center=center)
+
+        torch.manual_seed(seed)
+        params = transform.make_params([keypoints])
+
+        torch.manual_seed(seed)
+        actual = transform(keypoints)
+
+        expected = self._reference_affine_keypoints(keypoints, **params, center=center)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1493,6 +1695,16 @@ class TestVerticalFlip:
             canvas_size=bounding_boxes.canvas_size,
         )
 
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_keypoints(self, dtype, device):
+        keypoints = make_keypoints(dtype=dtype, device=device)
+        check_kernel(
+            F.vertical_flip_keypoints,
+            keypoints,
+            canvas_size=keypoints.canvas_size,
+        )
+
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.vertical_flip_mask, make_mask())
@@ -1549,6 +1761,16 @@ class TestVerticalFlip:
 
         return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
 
+    def _reference_vertical_flip_keypoints(self, keypoints):
+        affine_matrix = np.array(
+            [
+                [1, 0, 0],
+                [0, -1, keypoints.canvas_size[0]],
+            ],
+        )
+
+        return reference_affine_keypoints_helper(keypoints, affine_matrix=affine_matrix)
+
     @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
     def test_bounding_boxes_correctness(self, format, fn):
@@ -1556,6 +1778,15 @@ class TestVerticalFlip:
 
         actual = fn(bounding_boxes)
         expected = self._reference_vertical_flip_bounding_boxes(bounding_boxes)
+
+        torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
+    def test_keypoints_correctness(self, fn):
+        keypoints = make_keypoints()
+
+        actual = fn(keypoints)
+        expected = self._reference_vertical_flip_keypoints(keypoints)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1633,6 +1864,27 @@ class TestRotate:
             bounding_boxes,
             format=format,
             canvas_size=bounding_boxes.canvas_size,
+            **kwargs,
+        )
+
+    @param_value_parametrization(
+        angle=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["angle"],
+        expand=[False, True],
+        center=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_keypoints(self, param, value, dtype, device):
+        kwargs = {param: value}
+        if param != "angle":
+            kwargs["angle"] = self._MINIMAL_AFFINE_KWARGS["angle"]
+
+        keypoints = make_keypoints(dtype=dtype, device=device)
+
+        check_kernel(
+            F.rotate_keypoints,
+            keypoints,
+            canvas_size=keypoints.canvas_size,
             **kwargs,
         )
 
@@ -1819,6 +2071,71 @@ class TestRotate:
         actual = transform(bounding_boxes)
 
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center)
+
+        torch.testing.assert_close(actual, expected)
+        torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
+
+    def _recenter_keypoints_after_expand(self, keypoints, *, recenter_xy):
+        x, y = recenter_xy
+        translate = [x, y]
+        return tv_tensors.wrap(
+            (keypoints.to(torch.float64) - torch.tensor(translate)).to(keypoints.dtype), like=keypoints
+        )
+
+    def _reference_rotate_keypoints(self, keypoints, *, angle, expand, center):
+        if center is None:
+            center = [s * 0.5 for s in keypoints.canvas_size[::-1]]
+        cx, cy = center
+
+        a = np.cos(angle * np.pi / 180.0)
+        b = np.sin(angle * np.pi / 180.0)
+        affine_matrix = np.array(
+            [
+                [a, b, cx - cx * a - b * cy],
+                [-b, a, cy + cx * b - a * cy],
+            ],
+        )
+
+        new_canvas_size, recenter_xy = self._compute_output_canvas_size(
+            expand=expand, canvas_size=keypoints.canvas_size, affine_matrix=affine_matrix
+        )
+
+        output = reference_affine_keypoints_helper(
+            keypoints,
+            affine_matrix=affine_matrix,
+            new_canvas_size=new_canvas_size,
+            clamp=False,
+        )
+
+        return F.clamp_keypoints(self._recenter_keypoints_after_expand(output, recenter_xy=recenter_xy)).to(keypoints)
+
+    @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
+    @pytest.mark.parametrize("expand", [False, True])
+    @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
+    def test_functional_keypoints_correctness(self, angle, expand, center):
+        keypoints = make_keypoints()
+
+        actual = F.rotate(keypoints, angle=angle, expand=expand, center=center)
+        expected = self._reference_rotate_keypoints(keypoints, angle=angle, expand=expand, center=center)
+
+        torch.testing.assert_close(actual, expected)
+        torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
+
+    @pytest.mark.parametrize("expand", [False, True])
+    @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_keypoints_correctness(self, expand, center, seed):
+        keypoints = make_keypoints()
+
+        transform = transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, expand=expand, center=center)
+
+        torch.manual_seed(seed)
+        params = transform.make_params([keypoints])
+
+        torch.manual_seed(seed)
+        actual = transform(keypoints)
+
+        expected = self._reference_rotate_keypoints(keypoints, **params, expand=expand, center=center)
 
         torch.testing.assert_close(actual, expected)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
@@ -2740,6 +3057,18 @@ class TestElastic:
             displacement=self._make_displacement(bounding_boxes),
         )
 
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_keypoints(self, dtype, device):
+        keypoints = make_keypoints(dtype=dtype, device=device)
+
+        check_kernel(
+            F.elastic_keypoints,
+            keypoints,
+            canvas_size=keypoints.canvas_size,
+            displacement=self._make_displacement(keypoints),
+        )
+
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         mask = make_mask()
@@ -2872,7 +3201,7 @@ class TestCrop:
     @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel_bounding_box(self, kwargs, format, dtype, device):
+    def test_kernel_bounding_boxes(self, kwargs, format, dtype, device):
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
         check_kernel(F.crop_bounding_boxes, bounding_boxes, format=format, **kwargs)
 
@@ -3053,6 +3382,54 @@ class TestCrop:
             actual = transform(bounding_boxes)
 
         expected = self._reference_crop_bounding_boxes(bounding_boxes, **params)
+
+        assert_equal(actual, expected)
+        assert_equal(F.get_size(actual), F.get_size(expected))
+
+    def _reference_crop_keypoints(self, keypoints, *, top, left, height, width):
+        affine_matrix = np.array(
+            [
+                [1, 0, -left],
+                [0, 1, -top],
+            ],
+        )
+        return reference_affine_keypoints_helper(
+            keypoints, affine_matrix=affine_matrix, new_canvas_size=(height, width)
+        )
+
+    @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_functional_keypoints_correctness(self, kwargs, dtype, device):
+        keypoints = make_keypoints(self.INPUT_SIZE, dtype=dtype, device=device)
+
+        actual = F.crop(keypoints, **kwargs)
+        expected = self._reference_crop_keypoints(keypoints, **kwargs)
+
+        assert_equal(actual, expected, atol=1, rtol=0)
+        assert_equal(F.get_size(actual), F.get_size(expected))
+
+    @pytest.mark.parametrize("output_size", [(17, 11), (11, 17), (11, 11)])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_keypoints_correctness(self, output_size, dtype, device, seed):
+        input_size = (output_size[0] * 2, output_size[1] * 2)
+        keypoints = make_keypoints(input_size, dtype=dtype, device=device)
+
+        transform = transforms.RandomCrop(output_size)
+
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            params = transform.make_params([keypoints])
+            assert not params.pop("needs_pad")
+            del params["padding"]
+            assert params.pop("needs_crop")
+
+            torch.manual_seed(seed)
+            actual = transform(keypoints)
+
+        expected = self._reference_crop_keypoints(keypoints, **params)
 
         assert_equal(actual, expected)
         assert_equal(F.get_size(actual), F.get_size(expected))
@@ -3795,6 +4172,31 @@ class TestResizedCrop:
             new_canvas_size=size,
         )
 
+    def _reference_resized_crop_keypoints(self, keypoints, *, top, left, height, width, size):
+        new_height, new_width = size
+
+        crop_affine_matrix = np.array(
+            [
+                [1, 0, -left],
+                [0, 1, -top],
+                [0, 0, 1],
+            ],
+        )
+        resize_affine_matrix = np.array(
+            [
+                [new_width / width, 0, 0],
+                [0, new_height / height, 0],
+                [0, 0, 1],
+            ],
+        )
+        affine_matrix = (resize_affine_matrix @ crop_affine_matrix)[:2, :]
+
+        return reference_affine_keypoints_helper(
+            keypoints,
+            affine_matrix=affine_matrix,
+            new_canvas_size=size,
+        )
+
     @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     def test_functional_bounding_boxes_correctness(self, format):
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
@@ -3803,6 +4205,15 @@ class TestResizedCrop:
         expected = self._reference_resized_crop_bounding_boxes(
             bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE
         )
+
+        assert_equal(actual, expected)
+        assert_equal(F.get_size(actual), F.get_size(expected))
+
+    def test_functional_keypoints_correctness(self):
+        keypoints = make_keypoints(self.INPUT_SIZE)
+
+        actual = F.resized_crop(keypoints, **self.CROP_KWARGS, size=self.OUTPUT_SIZE)
+        expected = self._reference_resized_crop_keypoints(keypoints, **self.CROP_KWARGS, size=self.OUTPUT_SIZE)
 
         assert_equal(actual, expected)
         assert_equal(F.get_size(actual), F.get_size(expected))
@@ -3888,6 +4299,26 @@ class TestPad:
                 bounding_boxes,
                 format=bounding_boxes.format,
                 canvas_size=bounding_boxes.canvas_size,
+                padding=[1],
+                padding_mode=padding_mode,
+            )
+
+    def test_kernel_keypoints(self):
+        keypoints = make_keypoints()
+        check_kernel(
+            F.pad_keypoints,
+            keypoints,
+            canvas_size=keypoints.canvas_size,
+            padding=[1],
+        )
+
+    @pytest.mark.parametrize("padding_mode", ["symmetric", "edge", "reflect"])
+    def test_kernel_keypoints_errors(self, padding_mode):
+        keypoints = make_keypoints()
+        with pytest.raises(ValueError, match=f"'{padding_mode}' is not supported"):
+            F.pad_keypoints(
+                keypoints,
+                canvas_size=keypoints.canvas_size,
                 padding=[1],
                 padding_mode=padding_mode,
             )
@@ -4035,6 +4466,17 @@ class TestCenterCrop:
             check_scripted_vs_eager=not isinstance(output_size, int),
         )
 
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    def test_kernel_keypoints(self, output_size):
+        keypoints = make_keypoints(self.INPUT_SIZE)
+        check_kernel(
+            F.center_crop_keypoints,
+            keypoints,
+            canvas_size=keypoints.canvas_size,
+            output_size=output_size,
+            check_scripted_vs_eager=not isinstance(output_size, int),
+        )
+
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.center_crop_mask, make_mask(), output_size=self.OUTPUT_SIZES[0])
@@ -4111,6 +4553,37 @@ class TestCenterCrop:
 
         actual = fn(bounding_boxes, output_size)
         expected = self._reference_center_crop_bounding_boxes(bounding_boxes, output_size)
+
+        assert_equal(actual, expected)
+
+    def _reference_center_crop_keypoints(self, keypoints, output_size):
+        image_height, image_width = keypoints.canvas_size
+        if isinstance(output_size, int):
+            output_size = (output_size, output_size)
+        elif len(output_size) == 1:
+            output_size *= 2
+        crop_height, crop_width = output_size
+
+        top = int(round((image_height - crop_height) / 2))
+        left = int(round((image_width - crop_width) / 2))
+
+        affine_matrix = np.array(
+            [
+                [1, 0, -left],
+                [0, 1, -top],
+            ],
+        )
+        return reference_affine_keypoints_helper(keypoints, affine_matrix=affine_matrix, new_canvas_size=output_size)
+
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
+    def test_keypoints_correctness(self, output_size, dtype, device, fn):
+        keypoints = make_keypoints(self.INPUT_SIZE, dtype=dtype, device=device)
+
+        actual = fn(keypoints, output_size)
+        expected = self._reference_center_crop_keypoints(keypoints, output_size)
 
         assert_equal(actual, expected)
 
@@ -4195,6 +4668,39 @@ class TestPerspective:
             F.perspective_bounding_boxes(
                 bounding_boxes,
                 format=format,
+                canvas_size=canvas_size,
+                startpoints=None,
+                endpoints=None,
+                coefficients=[0.0] * 8,
+            )
+
+    @param_value_parametrization(
+        coefficients=COEFFICIENTS,
+        start_end_points=START_END_POINTS,
+    )
+    def test_kernel_keypoints(self, param, value):
+        if param == "start_end_points":
+            kwargs = dict(zip(["startpoints", "endpoints"], value))
+        else:
+            kwargs = {"startpoints": None, "endpoints": None, param: value}
+
+        keypoints = make_keypoints()
+
+        check_kernel(
+            F.perspective_keypoints,
+            keypoints,
+            canvas_size=keypoints.canvas_size,
+            **kwargs,
+        )
+
+    def test_kernel_keypoints_error(self):
+        keypoints = make_keypoints()
+        canvas_size = keypoints.canvas_size
+        keypoints = keypoints.as_subclass(torch.Tensor)
+
+        with pytest.raises(RuntimeError, match="Denominator is zero"):
+            F.perspective_keypoints(
+                keypoints,
                 canvas_size=canvas_size,
                 startpoints=None,
                 endpoints=None,
@@ -4355,6 +4861,67 @@ class TestPerspective:
         expected = self._reference_perspective_bounding_boxes(
             bounding_boxes, startpoints=startpoints, endpoints=endpoints
         )
+
+        assert_close(actual, expected, rtol=0, atol=1)
+
+    def _reference_perspective_keypoints(self, keypoints, *, startpoints, endpoints):
+        canvas_size = keypoints.canvas_size
+        dtype = keypoints.dtype
+        device = keypoints.device
+
+        coefficients = _get_perspective_coeffs(endpoints, startpoints)
+
+        def perspective_keypoints(keypoints):
+            m1 = np.array(
+                [
+                    [coefficients[0], coefficients[1], coefficients[2]],
+                    [coefficients[3], coefficients[4], coefficients[5]],
+                ]
+            )
+            m2 = np.array(
+                [
+                    [coefficients[6], coefficients[7], 1.0],
+                    [coefficients[6], coefficients[7], 1.0],
+                ]
+            )
+
+            # Go to float before converting to prevent precision loss
+            x, y = keypoints.to(dtype=torch.float64, device="cpu", copy=True).squeeze(0).tolist()
+
+            points = np.array([[x, y, 1.0]])
+
+            numerator = points @ m1.T
+            denominator = points @ m2.T
+            transformed_points = numerator / denominator
+
+            output = torch.Tensor(
+                [
+                    float(transformed_points[0, 0]),
+                    float(transformed_points[0, 1]),
+                ]
+            )
+
+            # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
+            return F.clamp_keypoints(
+                output,
+                canvas_size=canvas_size,
+            ).to(dtype=dtype, device=device)
+
+        return tv_tensors.KeyPoints(
+            torch.cat([perspective_keypoints(k) for k in keypoints.reshape(-1, 2).unbind()], dim=0).reshape(
+                keypoints.shape
+            ),
+            canvas_size=canvas_size,
+        )
+
+    @pytest.mark.parametrize(("startpoints", "endpoints"), START_END_POINTS)
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_correctness_perspective_keypoints(self, startpoints, endpoints, dtype, device):
+        keypoints = make_keypoints(dtype=dtype, device=device)
+
+        actual = F.perspective(keypoints, startpoints=startpoints, endpoints=endpoints)
+        expected = self._reference_perspective_keypoints(keypoints, startpoints=startpoints, endpoints=endpoints)
 
         assert_close(actual, expected, rtol=0, atol=1)
 

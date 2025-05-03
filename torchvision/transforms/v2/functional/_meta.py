@@ -388,14 +388,12 @@ def _clamp_bounding_boxes(
     return out_boxes.to(in_dtype)
 
 
-def clamp_keypoints(inpt: torch.Tensor, canvas_size: Tuple[int, int]) -> torch.Tensor:
-    if not torch.jit.is_scripting():
-        _log_api_usage_once(clamp_bounding_boxes)
-    dtype = inpt.dtype
-    inpt = inpt.float()
-    inpt[..., 0].clamp_(0, canvas_size[1])
-    inpt[..., 1].clamp_(0, canvas_size[0])
-    return inpt.to(dtype=dtype)
+def _clamp_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int]) -> torch.Tensor:
+    dtype = keypoints.dtype
+    keypoints = keypoints.clone() if keypoints.is_floating_point() else keypoints.float()
+    keypoints[..., 0].clamp_(min=0, max=canvas_size[1])
+    keypoints[..., 1].clamp_(min=0, max=canvas_size[0])
+    return keypoints.to(dtype=dtype)
 
 
 def clamp_bounding_boxes(
@@ -421,3 +419,25 @@ def clamp_bounding_boxes(
         raise TypeError(
             f"Input can either be a plain tensor or a bounding box tv_tensor, but got {type(inpt)} instead."
         )
+
+
+def clamp_keypoints(
+    inpt: torch.Tensor,
+    canvas_size: Optional[tuple[int, int]] = None,
+) -> torch.Tensor:
+    """See :func:`~torchvision.transforms.v2.ClampKeyPoints` for details."""
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(clamp_keypoints)
+
+    if torch.jit.is_scripting() or is_pure_tensor(inpt):
+
+        if canvas_size is None:
+            raise ValueError("For pure tensor inputs, `canvas_size` have to be passed.")
+        return _clamp_keypoints(inpt, canvas_size=canvas_size)
+    elif isinstance(inpt, tv_tensors.KeyPoints):
+        if canvas_size is not None:
+            raise ValueError("For keypoints tv_tensor inputs, `canvas_size` must not be passed.")
+        output = _clamp_keypoints(inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size)
+        return tv_tensors.wrap(output, like=inpt)
+    else:
+        raise TypeError(f"Input can either be a plain tensor or a keypoints tv_tensor, but got {type(inpt)} instead.")

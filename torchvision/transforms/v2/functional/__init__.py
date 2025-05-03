@@ -4,6 +4,7 @@ from ._utils import is_pure_tensor, register_kernel  # usort: skip
 
 from ._meta import (
     clamp_bounding_boxes,
+    clamp_keypoints,
     convert_bounding_box_format,
     convert_bounding_boxes_to_points,
     get_dimensions_image,
@@ -16,6 +17,7 @@ from ._meta import (
     get_num_channels_video,
     get_num_channels,
     get_size_bounding_boxes,
+    get_size_keypoints,
     get_size_image,
     get_size_mask,
     get_size_video,
@@ -108,10 +110,10 @@ from ._geometry import (
     pad_keypoints,
     pad_mask,
     pad_video,
-    perspectice_keypoints,
     perspective,
     perspective_bounding_boxes,
     perspective_image,
+    perspective_keypoints,
     perspective_mask,
     perspective_video,
     resize,
