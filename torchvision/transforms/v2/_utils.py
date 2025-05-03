@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import collections.abc
 import numbers
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from contextlib import suppress
 
-from typing import Any, Callable, Literal, Sequence, Iterable
+from typing import Any, Callable, Literal
 
 import PIL.Image
 import torch

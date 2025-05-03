@@ -329,8 +329,8 @@ def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: boo
 
 
 def sanitize_keypoints(
-    keypoints: torch.Tensor, canvas_size: Optional[Tuple[int, int]] = None
-) -> Tuple[torch.Tensor, torch.Tensor]:
+    keypoints: torch.Tensor, canvas_size: Optional[tuple[int, int]] = None
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Removes degenerate/invalid keypoints and returns the corresponding indexing mask.
 
     This removes the keypoints that are outside of their corresponing image.
@@ -345,7 +345,7 @@ def sanitize_keypoints(
 
     Args:
         keypoints (torch.Tensor or class:`~torchvision.tv_tensors.KeyPoints`): The Keypoints being removed
-        canvas_size (Optional[Tuple[int, int]], optional): The canvas_size of the bounding boxes
+        canvas_size (Optional[tuple[int, int]], optional): The canvas_size of the bounding boxes
             (size of the corresponding image/video).
             Must be left to none if ``bounding_boxes`` is a :class:`~torchvision.tv_tensors.KeyPoints` object.
 
@@ -383,7 +383,7 @@ def sanitize_keypoints(
 
 def _get_sanitize_keypoints_mask(
     keypoints: torch.Tensor,
-    canvas_size: Tuple[int, int],
+    canvas_size: tuple[int, int],
 ) -> torch.Tensor:
     image_h, image_w = canvas_size
     x = keypoints[:, 0]

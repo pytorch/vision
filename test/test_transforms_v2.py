@@ -231,10 +231,7 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
     if issubclass(input_type, tv_tensors.TVTensor):
         # We filter out metadata that is implicitly passed to the functional through the input tv_tensor, but has to be
         # explicitly passed to the kernel.
-        explicit_metadata = {
-            tv_tensors.BoundingBoxes: {"format", "canvas_size"},
-            tv_tensors.KeyPoints: {"canvas_size"}
-        }
+        explicit_metadata = {tv_tensors.BoundingBoxes: {"format", "canvas_size"}, tv_tensors.KeyPoints: {"canvas_size"}}
         kernel_params = [param for param in kernel_params if param.name not in explicit_metadata.get(input_type, set())]
 
     functional_params = iter(functional_params)
@@ -338,7 +335,8 @@ def _make_transform_sample(transform, *, image_or_video, adapter):
             canvas_size=size,
             device=device,
         ),
-        keypoints=make_keypoints(canvas_size=size), keypoints_degenerate=tv_tensors.KeyPoints(
+        keypoints=make_keypoints(canvas_size=size),
+        keypoints_degenerate=tv_tensors.KeyPoints(
             [
                 [0, 1],  # left edge
                 [1, 0],  # top edge
@@ -347,8 +345,10 @@ def _make_transform_sample(transform, *, image_or_video, adapter):
                 [size[1], 0],  # top right corner
                 [1, size[0]],  # bottom edge
                 [0, size[0]],  # bottom left corner
-                [size[1], size[0]]  # bottom right corner
-            ], canvas_size=size, device=device
+                [size[1], size[0]],  # bottom right corner
+            ],
+            canvas_size=size,
+            device=device,
         ),
         detection_mask=make_detection_masks(size, device=device),
         segmentation_mask=make_segmentation_mask(size, device=device),
@@ -2362,7 +2362,7 @@ class TestCutMixMixUp:
             F.to_pil_image(imgs[0]),
             tv_tensors.Mask(torch.rand(12, 12)),
             tv_tensors.BoundingBoxes(torch.rand(2, 4), format="XYXY", canvas_size=12),
-            tv_tensors.KeyPoints(torch.rand(2, 2), canvas_size=(12, 12))
+            tv_tensors.KeyPoints(torch.rand(2, 2), canvas_size=(12, 12)),
         ):
             print(type(input_with_bad_type), cutmix_mixup)
             with pytest.raises(ValueError, match="does not support PIL images, "):
@@ -2772,8 +2772,15 @@ class TestElastic:
         check_functional_kernel_signature_match(F.elastic, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
-        "make_input", [
-            make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_video,
+            make_keypoints,
         ],
     )
     def test_displacement_error(self, make_input):
@@ -2786,9 +2793,15 @@ class TestElastic:
             F.elastic(input, displacement=torch.rand(F.get_size(input)))
 
     @pytest.mark.parametrize(
-        "make_input", [
-            make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video,
-            make_keypoints
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_video,
+            make_keypoints,
         ],
     )
     # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
@@ -6297,21 +6310,18 @@ class TestUtils:
             query(["blah"])
 
     @pytest.mark.parametrize(
-        'boxes', [
-            tv_tensors.BoundingBoxes(torch.tensor([[1, 1, 2, 2]]), format="XYXY", canvas_size=(4, 4))
-        ]
+        "boxes", [tv_tensors.BoundingBoxes(torch.tensor([[1, 1, 2, 2]]), format="XYXY", canvas_size=(4, 4))]
     )
     def test_convert_bounding_boxes_to_points(self, boxes: tv_tensors.BoundingBoxes):
         # TODO: this test can't handle rotated boxes yet
         kp = F.convert_bounding_boxes_to_points(boxes)
-        assert kp.shape == boxes.shape + (2, )
+        assert kp.shape == boxes.shape + (2,)
         assert kp.dtype == boxes.dtype
         # kp is a list of A, B, C, D polygons.
         # If we use A | C, we should get back the XYXY format of bounding box
         reconverted = torch.cat([kp[..., 0, :], kp[..., 2, :]], dim=-1)
         reconverted_bbox = F.convert_bounding_box_format(
-            tv_tensors.BoundingBoxes(
-                reconverted, format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=kp.canvas_size
-            ), new_format=boxes.format
+            tv_tensors.BoundingBoxes(reconverted, format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=kp.canvas_size),
+            new_format=boxes.format,
         )
         assert (reconverted_bbox == boxes).all(), f"Invalid reconversion : {reconverted_bbox}"

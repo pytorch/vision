@@ -68,7 +68,11 @@ def test_has_any(sample, types, expected):
         ((IMAGE, BOUNDING_BOX, MASK, KEYPOINTS), (tv_tensors.BoundingBoxes, tv_tensors.Mask), True),
         ((IMAGE, BOUNDING_BOX, MASK, KEYPOINTS), (tv_tensors.Mask, tv_tensors.KeyPoints), True),
         ((IMAGE, BOUNDING_BOX, MASK, KEYPOINTS), (tv_tensors.BoundingBoxes, tv_tensors.KeyPoints), True),
-        ((IMAGE, BOUNDING_BOX, MASK, KEYPOINTS), (tv_tensors.BoundingBoxes, tv_tensors.Mask, tv_tensors.KeyPoints), True),
+        (
+            (IMAGE, BOUNDING_BOX, MASK, KEYPOINTS),
+            (tv_tensors.BoundingBoxes, tv_tensors.Mask, tv_tensors.KeyPoints),
+            True,
+        ),
         (
             (IMAGE, BOUNDING_BOX, MASK, KEYPOINTS),
             (tv_tensors.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask, tv_tensors.KeyPoints),

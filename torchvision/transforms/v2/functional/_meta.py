@@ -122,7 +122,7 @@ def get_size_bounding_boxes(bounding_box: tv_tensors.BoundingBoxes) -> list[int]
 
 
 @_register_kernel_internal(get_size, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
-def get_size_keypoints(keypoints: tv_tensors.KeyPoints) -> List[int]:
+def get_size_keypoints(keypoints: tv_tensors.KeyPoints) -> list[int]:
     return list(keypoints.canvas_size)
 
 

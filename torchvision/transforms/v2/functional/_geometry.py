@@ -2112,7 +2112,9 @@ def _create_identity_grid(size: tuple[int, int], device: torch.device, dtype: to
     return base_grid
 
 
-def elastic_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int], displacement: torch.Tensor) -> torch.Tensor:
+def elastic_keypoints(
+    keypoints: torch.Tensor, canvas_size: tuple[int, int], displacement: torch.Tensor
+) -> torch.Tensor:
     expected_shape = (1, canvas_size[0], canvas_size[1], 2)
     if not isinstance(displacement, torch.Tensor):
         raise TypeError("Argument displacement should be a Tensor")
