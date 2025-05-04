@@ -50,8 +50,17 @@ class _LFW(VisionDataset):
         self.labels_file = f"{self.view}{self.annot_file[self.split]}.txt"
         self.data: list[Any] = []
 
+        """
+        Warning:
+        
+        The LFW dataset is no longer available for automatic download.
+        Please download it manually and place it in the specified directory.
+
+        """
+
         if download:
             raise RuntimeError(
+                
                 "LFW dataset is no longer available for download."
                 "Please download the dataset manually and place it in the specified directory"
             )
