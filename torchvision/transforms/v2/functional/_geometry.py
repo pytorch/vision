@@ -364,12 +364,13 @@ def resize_keypoints(
     keypoints: torch.Tensor,
     size: Optional[list[int]],
     canvas_size: tuple[int, int],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[bool] = True,
 ):
     old_height, old_width = canvas_size
     new_height, new_width = _compute_resized_output_size(canvas_size, size=size, max_size=max_size)
+
+    if (new_height, new_width) == (old_height, old_width):
+        return keypoints, canvas_size
 
     w_ratio = new_width / old_width
     h_ratio = new_height / old_height
@@ -383,17 +384,13 @@ def resize_keypoints(
 def _resize_keypoints_dispatch(
     keypoints: tv_tensors.KeyPoints,
     size: Optional[list[int]],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
-    antialias: Optional[bool] = True,
 ) -> tv_tensors.KeyPoints:
     out, canvas_size = resize_keypoints(
         keypoints.as_subclass(torch.Tensor),
         size,
         canvas_size=keypoints.canvas_size,
-        interpolation=interpolation,
         max_size=max_size,
-        antialias=antialias,
     )
     return tv_tensors.wrap(out, like=keypoints, canvas_size=canvas_size)
 
@@ -1259,8 +1256,10 @@ def rotate_keypoints(
 def _rotate_keypoints_dispatch(
     inpt: tv_tensors.KeyPoints, angle: float, expand: bool = False, center: Optional[list[float]] = None, **kwargs
 ) -> tv_tensors.KeyPoints:
-    out, canvas_size = rotate_keypoints(inpt, canvas_size=inpt.canvas_size, angle=angle, center=center, expand=expand)
-    return tv_tensors.wrap(out, like=inpt, canvas_size=canvas_size)
+    output, canvas_size = rotate_keypoints(
+        inpt, canvas_size=inpt.canvas_size, angle=angle, center=center, expand=expand
+    )
+    return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
 def rotate_bounding_boxes(
