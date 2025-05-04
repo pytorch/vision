@@ -130,7 +130,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
         the transform :func:`~torchvision.transforms.v2.SanitizeBoundingBoxes` instead.
 
     Args:
-        boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
+        boxes (Tensor[..., 4]): boxes in ``(x1, y1, x2, y2)`` format
             with ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         min_size (float): minimum size
 
@@ -140,7 +140,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(remove_small_boxes)
-    ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
+    ws, hs = boxes[..., 2] - boxes[..., 0], boxes[..., 3] - boxes[..., 1]
     keep = (ws >= min_size) & (hs >= min_size)
     keep = torch.where(keep)[0]
     return keep
@@ -155,12 +155,12 @@ def clip_boxes_to_image(boxes: Tensor, size: tuple[int, int]) -> Tensor:
         the transform :func:`~torchvision.transforms.v2.ClampBoundingBoxes` instead.
 
     Args:
-        boxes (Tensor[N, 4]): boxes in ``(x1, y1, x2, y2)`` format
+        boxes (Tensor[..., 4]): boxes in ``(x1, y1, x2, y2)`` format
             with ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         size (Tuple[height, width]): size of the image
 
     Returns:
-        Tensor[N, 4]: clipped boxes
+        Tensor[..., 4]: clipped boxes
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(clip_boxes_to_image)
@@ -276,7 +276,7 @@ def box_area(boxes: Tensor) -> Tensor:
     (x1, y1, x2, y2) coordinates.
 
     Args:
-        boxes (Tensor[N, 4]): boxes for which the area will be computed. They
+        boxes (Tensor[..., 4]): boxes for which the area will be computed. They
             are expected to be in (x1, y1, x2, y2) format with
             ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
@@ -286,7 +286,7 @@ def box_area(boxes: Tensor) -> Tensor:
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(box_area)
     boxes = _upcast(boxes)
-    return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+    return (boxes[..., 2] - boxes[..., 0]) * (boxes[..., 3] - boxes[..., 1])
 
 
 # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
@@ -295,13 +295,13 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor) -> tuple[Tensor, Tensor]:
     area1 = box_area(boxes1)
     area2 = box_area(boxes2)
 
-    lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
-    rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
+    lt = torch.max(boxes1[..., None, :2], boxes2[..., None, :, :2])  # [...,N,M,2]
+    rb = torch.min(boxes1[..., None, 2:], boxes2[..., None, :, 2:])  # [...,N,M,2]
 
     wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]
-    inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
+    inter = wh[..., 0] * wh[..., 1]  # [N,M]
 
-    union = area1[:, None] + area2 - inter
+    union = area1[..., None] + area2[..., None, :] - inter
 
     return inter, union
 
@@ -314,11 +314,12 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Args:
-        boxes1 (Tensor[N, 4]): first set of boxes
-        boxes2 (Tensor[M, 4]): second set of boxes
+        boxes1 (Tensor[..., N, 4]): first set of boxes
+        boxes2 (Tensor[..., M, 4]): second set of boxes
 
     Returns:
-        Tensor[N, M]: the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
+        Tensor[..., N, M]: the NxM matrix containing the pairwise IoU values for every element
+        in boxes1 and boxes2
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(box_iou)
@@ -336,11 +337,11 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Args:
-        boxes1 (Tensor[N, 4]): first set of boxes
-        boxes2 (Tensor[M, 4]): second set of boxes
+        boxes1 (Tensor[..., N, 4]): first set of boxes
+        boxes2 (Tensor[..., M, 4]): second set of boxes
 
     Returns:
-        Tensor[N, M]: the NxM matrix containing the pairwise generalized IoU values
+        Tensor[..., N, M]: the NxM matrix containing the pairwise generalized IoU values
         for every element in boxes1 and boxes2
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -349,11 +350,11 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union
 
-    lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
-    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+    lti = torch.min(boxes1[..., None, :2], boxes2[..., None, :, :2])
+    rbi = torch.max(boxes1[..., None, 2:], boxes2[..., None, :, 2:])
 
     whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
-    areai = whi[:, :, 0] * whi[:, :, 1]
+    areai = whi[..., 0] * whi[..., 1]
 
     return iou - (areai - union) / areai
 
@@ -364,11 +365,11 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
     ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
     Args:
-        boxes1 (Tensor[N, 4]): first set of boxes
-        boxes2 (Tensor[M, 4]): second set of boxes
+        boxes1 (Tensor[..., N, 4]): first set of boxes
+        boxes2 (Tensor[..., M, 4]): second set of boxes
         eps (float, optional): small number to prevent division by zero. Default: 1e-7
     Returns:
-        Tensor[N, M]: the NxM matrix containing the pairwise complete IoU values
+        Tensor[..., N, M]: the NxM matrix containing the pairwise complete IoU values
         for every element in boxes1 and boxes2
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -379,11 +380,11 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
 
     diou, iou = _box_diou_iou(boxes1, boxes2, eps)
 
-    w_pred = boxes1[:, None, 2] - boxes1[:, None, 0]
-    h_pred = boxes1[:, None, 3] - boxes1[:, None, 1]
+    w_pred = boxes1[..., None, 2] - boxes1[..., None, 0]
+    h_pred = boxes1[..., None, 3] - boxes1[..., None, 1]
 
-    w_gt = boxes2[:, 2] - boxes2[:, 0]
-    h_gt = boxes2[:, 3] - boxes2[:, 1]
+    w_gt = boxes2[..., None, :, 2] - boxes2[..., None, :, 0]
+    h_gt = boxes2[..., None, :, 3] - boxes2[..., None, :, 1]
 
     v = (4 / (torch.pi**2)) * torch.pow(torch.atan(w_pred / h_pred) - torch.atan(w_gt / h_gt), 2)
     with torch.no_grad():
@@ -399,12 +400,12 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
 
     Args:
-        boxes1 (Tensor[N, 4]): first set of boxes
-        boxes2 (Tensor[M, 4]): second set of boxes
+        boxes1 (Tensor[..., N, 4]): first set of boxes
+        boxes2 (Tensor[..., M, 4]): second set of boxes
         eps (float, optional): small number to prevent division by zero. Default: 1e-7
 
     Returns:
-        Tensor[N, M]: the NxM matrix containing the pairwise distance IoU values
+        Tensor[..., N, M]: the NxM matrix containing the pairwise distance IoU values
         for every element in boxes1 and boxes2
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
@@ -419,17 +420,19 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
 def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> tuple[Tensor, Tensor]:
 
     iou = box_iou(boxes1, boxes2)
-    lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
-    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+    lti = torch.min(boxes1[..., None, :2], boxes2[..., None, :, :2])
+    rbi = torch.max(boxes1[..., None, 2:], boxes2[..., None, :, 2:])
     whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
-    diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2) + eps
+    diagonal_distance_squared = (whi[..., 0] ** 2) + (whi[..., 1] ** 2) + eps
     # centers of boxes
-    x_p = (boxes1[:, 0] + boxes1[:, 2]) / 2
-    y_p = (boxes1[:, 1] + boxes1[:, 3]) / 2
-    x_g = (boxes2[:, 0] + boxes2[:, 2]) / 2
-    y_g = (boxes2[:, 1] + boxes2[:, 3]) / 2
+    x_p = (boxes1[..., 0] + boxes1[..., 2]) / 2
+    y_p = (boxes1[..., 1] + boxes1[..., 3]) / 2
+    x_g = (boxes2[..., 0] + boxes2[..., 2]) / 2
+    y_g = (boxes2[..., 1] + boxes2[..., 3]) / 2
     # The distance between boxes' centers squared.
-    centers_distance_squared = (_upcast(x_p[:, None] - x_g[None, :]) ** 2) + (_upcast(y_p[:, None] - y_g[None, :]) ** 2)
+    centers_distance_squared = (_upcast(x_p[..., None] - x_g[..., None, :]) ** 2) + (
+        _upcast(y_p[..., None] - y_g[..., None, :]) ** 2
+    )
     # The distance IoU is the IoU penalized by a normalized
     # distance between boxes' centers squared.
     return iou - (centers_distance_squared / diagonal_distance_squared), iou
