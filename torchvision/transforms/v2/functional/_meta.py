@@ -185,16 +185,38 @@ def _xyxy_to_keypoints(bounding_boxes: torch.Tensor) -> torch.Tensor:
     return bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
 
 
+def _xyxyxyxy_to_keypoints(bounding_boxes: torch.Tensor) -> torch.Tensor:
+    return bounding_boxes[:, [[0, 1], [2, 3], [4, 5], [6, 7]]]
+
+
 def convert_bounding_boxes_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensors.KeyPoints:
     """Converts a set of bounding boxes to its edge points.
+
+    .. note::
+
+        This handles rotated :class:`tv_tensors.BoundingBoxes` formats
+        by first converting them to XYXYXYXY format.
+         
+        Due to floating-point approximation, this may not be an exact computation.
 
     Args:
         bounding_boxes (tv_tensors.BoundingBoxes): A set of ``N`` bounding boxes (of shape ``[N, 4]``)
 
     Returns:
-        tv_tensors.KeyPoints: The edges, of shape ``[N, 4, 2]``
+        tv_tensors.KeyPoints: The edges, as a polygon of shape ``[N, 4, 2]``
     """
-    # TODO: support rotated BBOX
+    if is_rotated_bounding_box_format(bounding_boxes.format):
+        # We are working on a rotated bounding box
+        bbox = _convert_bounding_box_format(
+            bounding_boxes.as_subclass(torch.Tensor),
+            old_format=bounding_boxes.format,
+            new_format=BoundingBoxFormat.XYXYXYXY,
+            inplace=False,
+        )
+        return tv_tensors.KeyPoints(
+            _xyxyxyxy_to_keypoints(bbox), canvas_size=bounding_boxes.canvas_size
+        )
+
     bbox = _convert_bounding_box_format(
         bounding_boxes.as_subclass(torch.Tensor),
         old_format=bounding_boxes.format,
