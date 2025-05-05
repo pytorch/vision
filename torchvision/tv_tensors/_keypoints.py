@@ -102,5 +102,5 @@ class KeyPoints(TVTensor):
             output = tuple(KeyPoints(part, canvas_size=canvas_size) for part in output)
         return output
 
-    def __repr__(self, *, tensor_contents: Any = None) -> str:
+    def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
         return self._make_repr(canvas_size=self.canvas_size)
