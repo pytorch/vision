@@ -334,17 +334,24 @@ def sanitize_keypoints(
     """Removes degenerate/invalid keypoints and returns the corresponding indexing mask.
 
     This removes the keypoints that are outside of their corresponing image.
-    You may want to first call :func:`~torchvision.transforms.v2.functional.clam_keypoints`
-    first to avoid undesired removals.
+
+    It is recommended to call it at the end of a pipeline, before passing the
+    input to the models. It is critical to call this transform if
+    :class:`~torchvision.transforms.v2.RandomIoUCrop` was called.
+    If you want to be extra careful, you may call it after all transforms that
+    may modify the key points but once at the end should be enough in most
+    cases.
 
     .. note::
-        Points that touch the edge of the canvas are removed, unlike for :func:`sanitize_bounding_boxes`
+
+        Points that touch the edge of the canvas are removed, unlike for :func:`sanitize_bounding_boxes`.  
 
     Raises:
         ValueError: If the keypoints are not passed as a two dimensional tensor.
 
     Args:
-        keypoints (torch.Tensor or class:`~torchvision.tv_tensors.KeyPoints`): The Keypoints being removed
+        keypoints (torch.Tensor or :class:`~torchvision.tv_tensors.KeyPoints`): The Keypoints being sanitized.
+            Should be of shape ``[N, 2]``
         canvas_size (Optional[tuple[int, int]], optional): The canvas_size of the bounding boxes
             (size of the corresponding image/video).
             Must be left to none if ``bounding_boxes`` is a :class:`~torchvision.tv_tensors.KeyPoints` object.
@@ -372,8 +379,10 @@ def sanitize_keypoints(
             canvas_size=canvas_size,
         )
         return keypoints[valid], valid
+
     if not isinstance(keypoints, tv_tensors.KeyPoints):
         raise ValueError("keypoints must be a tv_tensors.KeyPoints instance or a pure tensor.")
+
     valid = _get_sanitize_keypoints_mask(
         keypoints,
         canvas_size=keypoints.canvas_size,
