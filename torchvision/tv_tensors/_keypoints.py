@@ -72,8 +72,7 @@ class KeyPoints(TVTensor):
             dtype: Optional[torch.dtype] = None,
             device: Optional[Union[torch.device, str, int]] = None,
             requires_grad: Optional[bool] = None,
-        ):
-            ...
+        ): ...
 
     @classmethod
     def _wrap_output(

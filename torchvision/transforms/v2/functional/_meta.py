@@ -196,7 +196,7 @@ def convert_bounding_boxes_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -
 
         This handles rotated :class:`tv_tensors.BoundingBoxes` formats
         by first converting them to XYXYXYXY format.
-         
+
         Due to floating-point approximation, this may not be an exact computation.
 
     Args:
@@ -213,9 +213,7 @@ def convert_bounding_boxes_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -
             new_format=BoundingBoxFormat.XYXYXYXY,
             inplace=False,
         )
-        return tv_tensors.KeyPoints(
-            _xyxyxyxy_to_keypoints(bbox), canvas_size=bounding_boxes.canvas_size
-        )
+        return tv_tensors.KeyPoints(_xyxyxyxy_to_keypoints(bbox), canvas_size=bounding_boxes.canvas_size)
 
     bbox = _convert_bounding_box_format(
         bounding_boxes.as_subclass(torch.Tensor),
