@@ -1,4 +1,4 @@
-name: Build Torchvision Windows ARM64 Wheels
+name: Build Windows ARM64 Wheels
 
 on:
   pull_request:
@@ -19,12 +19,12 @@ permissions:
 
 jobs:
   generate-matrix:
-    uses: alinpahontu2912/test-infra/.github/workflows/generate_binary_build_matrix.yml@winarm64_wheels
+    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
     with:
       package-type: wheel
       os: windows-arm64
-      test-infra-repository: alinpahontu2912/test-infra
-      test-infra-ref: winarm64_wheels
+      test-infra-repository: pytorch/test-infra
+      test-infra-ref: main
       with-cuda: disable
 
   build:
@@ -35,15 +35,17 @@ jobs:
         include:
           - repository: pytorch/vision
             smoke-test-script: test/smoke_test.py
+            pre-script: packaging/pre_build_script_arm64.sh
             package-name: torchvision
-            architecture: arm64
+            architecture: "arm64"
     name: ${{ matrix.repository }}
-    uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@winarm64_wheels
+    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
     with:
       repository: ${{ matrix.repository }}
       ref: ""
-      test-infra-repository: alinpahontu2912/test-infra
-      test-infra-ref: winarm64_wheels
+      test-infra-repository: pytorch/test-infra
+      test-infra-ref: main
+      pre-script: ${{ matrix.pre-script }}
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
