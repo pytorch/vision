@@ -1167,9 +1167,11 @@ class TestAffine:
             make_image(dtype=dtype, device=device),
             **{param: value},
             check_scripted_vs_eager=not (param in {"shear", "fill"} and isinstance(value, (int, float))),
-            check_cuda_vs_cpu=dict(atol=1, rtol=0)
-            if dtype is torch.uint8 and param == "interpolation" and value is transforms.InterpolationMode.BILINEAR
-            else True,
+            check_cuda_vs_cpu=(
+                dict(atol=1, rtol=0)
+                if dtype is torch.uint8 and param == "interpolation" and value is transforms.InterpolationMode.BILINEAR
+                else True
+            ),
         )
 
     @param_value_parametrization(
@@ -1298,7 +1300,7 @@ class TestAffine:
         rot = math.radians(angle)
         cx, cy = center
         tx, ty = translate
-        sx, sy = [math.radians(s) for s in ([shear, 0.0] if isinstance(shear, (int, float)) else shear)]
+        sx, sy = (math.radians(s) for s in ([shear, 0.0] if isinstance(shear, (int, float)) else shear))
 
         c_matrix = np.array([[1, 0, cx], [0, 1, cy], [0, 0, 1]])
         t_matrix = np.array([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
@@ -4497,7 +4499,7 @@ class TestNormalize:
 
     def _reference_normalize_image(self, image, *, mean, std):
         image = image.numpy()
-        mean, std = [np.array(stat, dtype=image.dtype).reshape((-1, 1, 1)) for stat in [mean, std]]
+        mean, std = (np.array(stat, dtype=image.dtype).reshape((-1, 1, 1)) for stat in [mean, std])
         return tv_tensors.Image((image - mean) / std)
 
     @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)

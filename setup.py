@@ -271,6 +271,14 @@ def find_library(header):
                 return True, None, None
             print(f"{searching_for}. Didn't find in {prefix}")
 
+    if sys.platform == "darwin":
+        HOMEBREW_PATH = Path("/opt/homebrew")
+        include_dir = HOMEBREW_PATH / "include"
+        library_dir = HOMEBREW_PATH / "lib"
+        if (include_dir / header).exists():
+            print(f"{searching_for}. Found in {include_dir}.")
+            return True, str(include_dir), str(library_dir)
+
     return False, None, None
 
 

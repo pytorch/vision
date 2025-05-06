@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import torch
 
@@ -25,7 +25,7 @@ class FakeData(VisionDataset):
     def __init__(
         self,
         size: int = 1000,
-        image_size: Tuple[int, int, int] = (3, 224, 224),
+        image_size: tuple[int, int, int] = (3, 224, 224),
         num_classes: int = 10,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -37,7 +37,7 @@ class FakeData(VisionDataset):
         self.image_size = image_size
         self.random_offset = random_offset
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index

@@ -1,7 +1,7 @@
 import os
 from collections import defaultdict
 from numbers import Number
-from typing import Any, List
+from typing import Any
 
 import torch
 from torch.utils._python_dispatch import TorchDispatchMode
@@ -30,7 +30,7 @@ def prod(x):
     return res
 
 
-def matmul_flop(inputs: List[Any], outputs: List[Any]) -> Number:
+def matmul_flop(inputs: list[Any], outputs: list[Any]) -> Number:
     """
     Count flops for matmul.
     """
@@ -43,7 +43,7 @@ def matmul_flop(inputs: List[Any], outputs: List[Any]) -> Number:
     return flop
 
 
-def addmm_flop(inputs: List[Any], outputs: List[Any]) -> Number:
+def addmm_flop(inputs: list[Any], outputs: list[Any]) -> Number:
     """
     Count flops for fully connected layers.
     """
@@ -60,7 +60,7 @@ def addmm_flop(inputs: List[Any], outputs: List[Any]) -> Number:
     return flops
 
 
-def bmm_flop(inputs: List[Any], outputs: List[Any]) -> Number:
+def bmm_flop(inputs: list[Any], outputs: list[Any]) -> Number:
     """
     Count flops for the bmm operation.
     """
@@ -75,9 +75,9 @@ def bmm_flop(inputs: List[Any], outputs: List[Any]) -> Number:
 
 
 def conv_flop_count(
-    x_shape: List[int],
-    w_shape: List[int],
-    out_shape: List[int],
+    x_shape: list[int],
+    w_shape: list[int],
+    out_shape: list[int],
     transposed: bool = False,
 ) -> Number:
     """
@@ -99,7 +99,7 @@ def conv_flop_count(
     return flop
 
 
-def conv_flop(inputs: List[Any], outputs: List[Any]):
+def conv_flop(inputs: list[Any], outputs: list[Any]):
     """
     Count flops for convolution.
     """
@@ -110,7 +110,7 @@ def conv_flop(inputs: List[Any], outputs: List[Any]):
     return conv_flop_count(x_shape, w_shape, out_shape, transposed=transposed)
 
 
-def quant_conv_flop(inputs: List[Any], outputs: List[Any]):
+def quant_conv_flop(inputs: list[Any], outputs: list[Any]):
     """
     Count flops for quantized convolution.
     """
@@ -124,8 +124,8 @@ def transpose_shape(shape):
     return [shape[1], shape[0]] + list(shape[2:])
 
 
-def conv_backward_flop(inputs: List[Any], outputs: List[Any]):
-    grad_out_shape, x_shape, w_shape = [get_shape(i) for i in inputs[:3]]
+def conv_backward_flop(inputs: list[Any], outputs: list[Any]):
+    grad_out_shape, x_shape, w_shape = (get_shape(i) for i in inputs[:3])
     output_mask = inputs[-1]
     fwd_transposed = inputs[7]
     flop_count = 0
@@ -140,7 +140,7 @@ def conv_backward_flop(inputs: List[Any], outputs: List[Any]):
     return flop_count
 
 
-def scaled_dot_product_flash_attention_flop(inputs: List[Any], outputs: List[Any]):
+def scaled_dot_product_flash_attention_flop(inputs: list[Any], outputs: list[Any]):
     # FIXME: this needs to count the flops of this kernel
     # https://github.com/pytorch/pytorch/blob/207b06d099def9d9476176a1842e88636c1f714f/aten/src/ATen/native/cpu/FlashAttentionKernel.cpp#L52-L267
     return 0

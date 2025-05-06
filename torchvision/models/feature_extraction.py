@@ -6,7 +6,7 @@ import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from itertools import chain
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import torch
 import torchvision
@@ -175,7 +175,7 @@ def _warn_graph_differences(train_tracer: NodePathTracer, eval_tracer: NodePathT
     warnings.warn(msg + suggestion_msg)
 
 
-def _get_leaf_modules_for_ops() -> List[type]:
+def _get_leaf_modules_for_ops() -> list[type]:
     members = inspect.getmembers(torchvision.ops)
     result = []
     for _, obj in members:
@@ -184,7 +184,7 @@ def _get_leaf_modules_for_ops() -> List[type]:
     return result
 
 
-def _set_default_tracer_kwargs(original_tr_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def _set_default_tracer_kwargs(original_tr_kwargs: Optional[dict[str, Any]]) -> dict[str, Any]:
     default_autowrap_modules = (math, torchvision.ops)
     default_leaf_modules = _get_leaf_modules_for_ops()
     result_tracer_kwargs = {} if original_tr_kwargs is None else original_tr_kwargs
@@ -203,10 +203,10 @@ def _set_default_tracer_kwargs(original_tr_kwargs: Optional[Dict[str, Any]]) -> 
 
 def get_graph_node_names(
     model: nn.Module,
-    tracer_kwargs: Optional[Dict[str, Any]] = None,
+    tracer_kwargs: Optional[dict[str, Any]] = None,
     suppress_diff_warning: bool = False,
-    concrete_args: Optional[Dict[str, Any]] = None,
-) -> Tuple[List[str], List[str]]:
+    concrete_args: Optional[dict[str, Any]] = None,
+) -> tuple[list[str], list[str]]:
     """
     Dev utility to return node names in order of execution. See note on node
     names under :func:`create_feature_extractor`. Useful for seeing which node
@@ -368,12 +368,12 @@ class DualGraphModule(fx.GraphModule):
 
 def create_feature_extractor(
     model: nn.Module,
-    return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
-    train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
-    eval_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
-    tracer_kwargs: Optional[Dict[str, Any]] = None,
+    return_nodes: Optional[Union[list[str], dict[str, str]]] = None,
+    train_return_nodes: Optional[Union[list[str], dict[str, str]]] = None,
+    eval_return_nodes: Optional[Union[list[str], dict[str, str]]] = None,
+    tracer_kwargs: Optional[dict[str, Any]] = None,
     suppress_diff_warning: bool = False,
-    concrete_args: Optional[Dict[str, Any]] = None,
+    concrete_args: Optional[dict[str, Any]] = None,
 ) -> fx.GraphModule:
     """
     Creates a new graph module that returns intermediate nodes from a given
@@ -501,7 +501,7 @@ def create_feature_extractor(
         raise ValueError("If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified")
 
     # Put *_return_nodes into Dict[str, str] format
-    def to_strdict(n) -> Dict[str, str]:
+    def to_strdict(n) -> dict[str, str]:
         if isinstance(n, list):
             return {str(i): str(i) for i in n}
         return {str(k): str(v) for k, v in n.items()}
@@ -517,7 +517,7 @@ def create_feature_extractor(
     # Repeat the tracing and graph rewriting for train and eval mode
     tracers = {}
     graphs = {}
-    mode_return_nodes: Dict[str, Dict[str, str]] = {"train": train_return_nodes, "eval": eval_return_nodes}
+    mode_return_nodes: dict[str, dict[str, str]] = {"train": train_return_nodes, "eval": eval_return_nodes}
     for mode in ["train", "eval"]:
         if mode == "train":
             model.train()

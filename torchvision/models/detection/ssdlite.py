@@ -1,7 +1,7 @@
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import torch
 from torch import nn, Tensor
@@ -80,13 +80,13 @@ def _normal_init(conv: nn.Module):
 
 class SSDLiteHead(nn.Module):
     def __init__(
-        self, in_channels: List[int], num_anchors: List[int], num_classes: int, norm_layer: Callable[..., nn.Module]
+        self, in_channels: list[int], num_anchors: list[int], num_classes: int, norm_layer: Callable[..., nn.Module]
     ):
         super().__init__()
         self.classification_head = SSDLiteClassificationHead(in_channels, num_anchors, num_classes, norm_layer)
         self.regression_head = SSDLiteRegressionHead(in_channels, num_anchors, norm_layer)
 
-    def forward(self, x: List[Tensor]) -> Dict[str, Tensor]:
+    def forward(self, x: list[Tensor]) -> dict[str, Tensor]:
         return {
             "bbox_regression": self.regression_head(x),
             "cls_logits": self.classification_head(x),
@@ -95,7 +95,7 @@ class SSDLiteHead(nn.Module):
 
 class SSDLiteClassificationHead(SSDScoringHead):
     def __init__(
-        self, in_channels: List[int], num_anchors: List[int], num_classes: int, norm_layer: Callable[..., nn.Module]
+        self, in_channels: list[int], num_anchors: list[int], num_classes: int, norm_layer: Callable[..., nn.Module]
     ):
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
@@ -105,7 +105,7 @@ class SSDLiteClassificationHead(SSDScoringHead):
 
 
 class SSDLiteRegressionHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], norm_layer: Callable[..., nn.Module]):
+    def __init__(self, in_channels: list[int], num_anchors: list[int], norm_layer: Callable[..., nn.Module]):
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(_prediction_block(channels, 4 * anchors, 3, norm_layer))
@@ -147,7 +147,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
 
         self.extra = extra
 
-    def forward(self, x: Tensor) -> Dict[str, Tensor]:
+    def forward(self, x: Tensor) -> dict[str, Tensor]:
         # Get feature maps from backbone and extra. Can't be refactored due to JIT limitations.
         output = []
         for block in self.features:

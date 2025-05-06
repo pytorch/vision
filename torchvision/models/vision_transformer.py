@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, NamedTuple, Optional
+from typing import Any, Callable, NamedTuple, Optional
 
 import torch
 import torch.nn as nn
@@ -173,7 +173,7 @@ class VisionTransformer(nn.Module):
         num_classes: int = 1000,
         representation_size: Optional[int] = None,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
-        conv_stem_configs: Optional[List[ConvStemConfig]] = None,
+        conv_stem_configs: Optional[list[ConvStemConfig]] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -337,7 +337,7 @@ def _vision_transformer(
     return model
 
 
-_COMMON_META: Dict[str, Any] = {
+_COMMON_META: dict[str, Any] = {
     "categories": _IMAGENET_CATEGORIES,
 }
 

@@ -2,7 +2,7 @@ import csv
 import os
 from collections import namedtuple
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import PIL
 import torch
@@ -66,7 +66,7 @@ class CelebA(VisionDataset):
         self,
         root: Union[str, Path],
         split: str = "train",
-        target_type: Union[List[str], str] = "attr",
+        target_type: Union[list[str], str] = "attr",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
@@ -141,7 +141,7 @@ class CelebA(VisionDataset):
         return CSV(headers, indices, torch.tensor(data_int))
 
     def _check_integrity(self) -> bool:
-        for (_, md5, filename) in self.file_list:
+        for _, md5, filename in self.file_list:
             fpath = os.path.join(self.root, self.base_folder, filename)
             _, ext = os.path.splitext(filename)
             # Allow original archive to be deleted (zip and 7z)
@@ -156,12 +156,12 @@ class CelebA(VisionDataset):
         if self._check_integrity():
             return
 
-        for (file_id, md5, filename) in self.file_list:
+        for file_id, md5, filename in self.file_list:
             download_file_from_google_drive(file_id, os.path.join(self.root, self.base_folder), filename, md5)
 
         extract_archive(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"))
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))
 
         target: Any = []

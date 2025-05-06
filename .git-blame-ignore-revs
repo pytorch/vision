@@ -11,3 +11,5 @@ d367a01a18a3ae6bee13d8be3b63fd6a581ea46f
 a335d916db0694770e8152f41e19195de3134523
 # Renaming: `BoundingBox` -> `BoundingBoxes` (#7778)
 332bff937c6711666191880fab57fa2f23ae772e
+# Upgrade type hint and others to Python 3.9 (#8814)
+a095de183d3811d79ed0db2715e7a1c3162fa19d

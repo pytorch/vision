@@ -1,7 +1,7 @@
 import warnings
 from collections import namedtuple
 from functools import partial
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import torch
 import torch.nn as nn
@@ -35,7 +35,7 @@ class GoogLeNet(nn.Module):
         aux_logits: bool = True,
         transform_input: bool = False,
         init_weights: Optional[bool] = None,
-        blocks: Optional[List[Callable[..., nn.Module]]] = None,
+        blocks: Optional[list[Callable[..., nn.Module]]] = None,
         dropout: float = 0.2,
         dropout_aux: float = 0.7,
     ) -> None:
@@ -107,7 +107,7 @@ class GoogLeNet(nn.Module):
             x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
         return x
 
-    def _forward(self, x: Tensor) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
+    def _forward(self, x: Tensor) -> tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
         # N x 3 x 224 x 224
         x = self.conv1(x)
         # N x 64 x 112 x 112
@@ -214,7 +214,7 @@ class Inception(nn.Module):
             conv_block(in_channels, pool_proj, kernel_size=1),
         )
 
-    def _forward(self, x: Tensor) -> List[Tensor]:
+    def _forward(self, x: Tensor) -> list[Tensor]:
         branch1 = self.branch1(x)
         branch2 = self.branch2(x)
         branch3 = self.branch3(x)

@@ -1,7 +1,7 @@
 import csv
 import functools
 import pathlib
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, Callable, Optional, Union
 
 import torch
 from torchdata.datapipes.iter import (
@@ -38,7 +38,7 @@ NAME = "cub200"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=read_categories_file(NAME))
 
 
@@ -68,7 +68,7 @@ class CUB200(Dataset):
             skip_integrity_check=skip_integrity_check,
         )
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         if self._year == "2011":
             archive = GDriveResource(
                 "1hbzc_P1FuxMkcabkgn9ZKinBwW683j45",
@@ -104,7 +104,7 @@ class CUB200(Dataset):
             )
             return [split, images, anns]
 
-    def _2011_classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+    def _2011_classify_archive(self, data: tuple[str, Any]) -> Optional[int]:
         path = pathlib.Path(data[0])
         if path.parents[1].name == "images":
             return 0
@@ -120,20 +120,20 @@ class CUB200(Dataset):
     def _2011_extract_file_name(self, rel_posix_path: str) -> str:
         return rel_posix_path.rsplit("/", maxsplit=1)[1]
 
-    def _2011_filter_split(self, row: List[str]) -> bool:
+    def _2011_filter_split(self, row: list[str]) -> bool:
         _, split_id = row
         return {
             "0": "test",
             "1": "train",
         }[split_id] == self._split
 
-    def _2011_segmentation_key(self, data: Tuple[str, Any]) -> str:
+    def _2011_segmentation_key(self, data: tuple[str, Any]) -> str:
         path = pathlib.Path(data[0])
         return path.with_suffix(".jpg").name
 
     def _2011_prepare_ann(
-        self, data: Tuple[str, Tuple[List[str], Tuple[str, BinaryIO]]], spatial_size: Tuple[int, int]
-    ) -> Dict[str, Any]:
+        self, data: tuple[str, tuple[list[str], tuple[str, BinaryIO]]], spatial_size: tuple[int, int]
+    ) -> dict[str, Any]:
         _, (bounding_boxes_data, segmentation_data) = data
         segmentation_path, segmentation_buffer = segmentation_data
         return dict(
@@ -147,13 +147,13 @@ class CUB200(Dataset):
     def _2010_split_key(self, data: str) -> str:
         return data.rsplit("/", maxsplit=1)[1]
 
-    def _2010_anns_key(self, data: Tuple[str, BinaryIO]) -> Tuple[str, Tuple[str, BinaryIO]]:
+    def _2010_anns_key(self, data: tuple[str, BinaryIO]) -> tuple[str, tuple[str, BinaryIO]]:
         path = pathlib.Path(data[0])
         return path.with_suffix(".jpg").name, data
 
     def _2010_prepare_ann(
-        self, data: Tuple[str, Tuple[str, BinaryIO]], spatial_size: Tuple[int, int]
-    ) -> Dict[str, Any]:
+        self, data: tuple[str, tuple[str, BinaryIO]], spatial_size: tuple[int, int]
+    ) -> dict[str, Any]:
         _, (path, buffer) = data
         content = read_mat(buffer)
         return dict(
@@ -168,10 +168,10 @@ class CUB200(Dataset):
 
     def _prepare_sample(
         self,
-        data: Tuple[Tuple[str, Tuple[str, BinaryIO]], Any],
+        data: tuple[tuple[str, tuple[str, BinaryIO]], Any],
         *,
-        prepare_ann_fn: Callable[[Any, Tuple[int, int]], Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        prepare_ann_fn: Callable[[Any, tuple[int, int]], dict[str, Any]],
+    ) -> dict[str, Any]:
         data, anns_data = data
         _, image_data = data
         path, buffer = image_data
@@ -187,7 +187,7 @@ class CUB200(Dataset):
             ),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         prepare_ann_fn: Callable
         if self._year == "2011":
             archive_dp, segmentations_dp = resource_dps
@@ -254,7 +254,7 @@ class CUB200(Dataset):
             ("test", "2011"): 5_794,
         }[(self._split, self._year)]
 
-    def _generate_categories(self) -> List[str]:
+    def _generate_categories(self) -> list[str]:
         self._year = "2011"
         resources = self._resources()
 

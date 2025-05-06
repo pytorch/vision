@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import PIL.Image
 import torch
@@ -11,7 +11,7 @@ from torchvision.utils import _log_api_usage_once
 from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
 
 
-def get_dimensions(inpt: torch.Tensor) -> List[int]:
+def get_dimensions(inpt: torch.Tensor) -> list[int]:
     if torch.jit.is_scripting():
         return get_dimensions_image(inpt)
 
@@ -23,7 +23,7 @@ def get_dimensions(inpt: torch.Tensor) -> List[int]:
 
 @_register_kernel_internal(get_dimensions, torch.Tensor)
 @_register_kernel_internal(get_dimensions, tv_tensors.Image, tv_tensor_wrapper=False)
-def get_dimensions_image(image: torch.Tensor) -> List[int]:
+def get_dimensions_image(image: torch.Tensor) -> list[int]:
     chw = list(image.shape[-3:])
     ndims = len(chw)
     if ndims == 3:
@@ -39,7 +39,7 @@ _get_dimensions_image_pil = _register_kernel_internal(get_dimensions, PIL.Image.
 
 
 @_register_kernel_internal(get_dimensions, tv_tensors.Video, tv_tensor_wrapper=False)
-def get_dimensions_video(video: torch.Tensor) -> List[int]:
+def get_dimensions_video(video: torch.Tensor) -> list[int]:
     return get_dimensions_image(video)
 
 
@@ -79,7 +79,7 @@ def get_num_channels_video(video: torch.Tensor) -> int:
 get_image_num_channels = get_num_channels
 
 
-def get_size(inpt: torch.Tensor) -> List[int]:
+def get_size(inpt: torch.Tensor) -> list[int]:
     if torch.jit.is_scripting():
         return get_size_image(inpt)
 
@@ -91,7 +91,7 @@ def get_size(inpt: torch.Tensor) -> List[int]:
 
 @_register_kernel_internal(get_size, torch.Tensor)
 @_register_kernel_internal(get_size, tv_tensors.Image, tv_tensor_wrapper=False)
-def get_size_image(image: torch.Tensor) -> List[int]:
+def get_size_image(image: torch.Tensor) -> list[int]:
     hw = list(image.shape[-2:])
     ndims = len(hw)
     if ndims == 2:
@@ -101,23 +101,23 @@ def get_size_image(image: torch.Tensor) -> List[int]:
 
 
 @_register_kernel_internal(get_size, PIL.Image.Image)
-def _get_size_image_pil(image: PIL.Image.Image) -> List[int]:
+def _get_size_image_pil(image: PIL.Image.Image) -> list[int]:
     width, height = _FP.get_image_size(image)
     return [height, width]
 
 
 @_register_kernel_internal(get_size, tv_tensors.Video, tv_tensor_wrapper=False)
-def get_size_video(video: torch.Tensor) -> List[int]:
+def get_size_video(video: torch.Tensor) -> list[int]:
     return get_size_image(video)
 
 
 @_register_kernel_internal(get_size, tv_tensors.Mask, tv_tensor_wrapper=False)
-def get_size_mask(mask: torch.Tensor) -> List[int]:
+def get_size_mask(mask: torch.Tensor) -> list[int]:
     return get_size_image(mask)
 
 
 @_register_kernel_internal(get_size, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
-def get_size_bounding_boxes(bounding_box: tv_tensors.BoundingBoxes) -> List[int]:
+def get_size_bounding_boxes(bounding_box: tv_tensors.BoundingBoxes) -> list[int]:
     return list(bounding_box.canvas_size)
 
 
@@ -252,13 +252,13 @@ def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
         xyxyxyxy = xyxyxyxy.float()
 
     r_rad = torch.atan2(xyxyxyxy[..., 1].sub(xyxyxyxy[..., 3]), xyxyxyxy[..., 2].sub(xyxyxyxy[..., 0]))
-    cos, sin = r_rad.cos(), r_rad.sin()
-    # x1, y1, x3, y3, (x2 - x1), (y2 - y1) x4, y4
-    xyxyxyxy[..., 4:6].sub_(xyxyxyxy[..., :2])
-    # (x2 - x1) * cos + (y1 - y2) * sin = w
-    xyxyxyxy[..., 2] = xyxyxyxy[..., 4].mul(cos).sub(xyxyxyxy[..., 5].mul(sin))
-    # (x2 - x1) * sin + (y2 - y1) * cos = h
-    xyxyxyxy[..., 3] = xyxyxyxy[..., 5].mul(cos).add(xyxyxyxy[..., 4].mul(sin))
+    # x1, y1, (x3 - x1), (y3 - y1), (x2 - x3), (y2 - y3) x4, y4
+    xyxyxyxy[..., 4:6].sub_(xyxyxyxy[..., 2:4])
+    xyxyxyxy[..., 2:4].sub_(xyxyxyxy[..., :2])
+    # sqrt((x3 - x1) ** 2 + (y1 - y3) ** 2) = w
+    xyxyxyxy[..., 2] = xyxyxyxy[..., 2].pow(2).add(xyxyxyxy[..., 3].pow(2)).sqrt()
+    # sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2) = h
+    xyxyxyxy[..., 3] = xyxyxyxy[..., 4].pow(2).add(xyxyxyxy[..., 5].pow(2)).sqrt()
     xyxyxyxy[..., 4] = r_rad.div_(torch.pi).mul_(180.0)
     return xyxyxyxy[..., :5].to(dtype)
 
@@ -343,7 +343,7 @@ def convert_bounding_box_format(
 
 
 def _clamp_bounding_boxes(
-    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: Tuple[int, int]
+    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: tuple[int, int]
 ) -> torch.Tensor:
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
@@ -363,7 +363,7 @@ def _clamp_bounding_boxes(
 def clamp_bounding_boxes(
     inpt: torch.Tensor,
     format: Optional[BoundingBoxFormat] = None,
-    canvas_size: Optional[Tuple[int, int]] = None,
+    canvas_size: Optional[tuple[int, int]] = None,
 ) -> torch.Tensor:
     """See :func:`~torchvision.transforms.v2.ClampBoundingBoxes` for details."""
     if not torch.jit.is_scripting():

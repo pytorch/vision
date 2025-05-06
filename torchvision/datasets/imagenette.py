@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from .folder import default_loader, find_classes, make_dataset
 from .utils import download_and_extract_archive, verify_str_arg
@@ -88,7 +88,7 @@ class Imagenette(VisionDataset):
 
         download_and_extract_archive(self._url, self.root, md5=self._md5)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         path, label = self._samples[idx]
         image = self.loader(path)
 
