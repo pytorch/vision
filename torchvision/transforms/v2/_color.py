@@ -3,11 +3,25 @@ from collections.abc import Sequence
 from typing import Any, Optional, Union
 
 import torch
+from torch import Tensor
 from torchvision import transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
 
+
 from ._transform import _RandomApplyTransform
 from ._utils import query_chw
+
+def _ensure_integer_dtype(tensor: Tensor) -> None:
+    """
+    Checks that the tensor's dtype is integer.
+    Throws TypeError for float, complex, bool, etc.
+    """
+    try:
+        torch.iinfo(tensor.dtype)
+    except (ValueError, TypeError):
+        raise TypeError(
+            f"Number of value bits is only defined for integer dtypes, but got {tensor.dtype}"
+        )
 
 
 class Grayscale(Transform):
@@ -306,8 +320,10 @@ class RandomPosterize(_RandomApplyTransform):
         self.bits = bits
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+        # Check that the tensor is integer
+        if isinstance(inpt, Tensor):
+            _ensure_integer_dtype(inpt)
         return self._call_kernel(F.posterize, inpt, bits=self.bits)
-
 
 class RandomSolarize(_RandomApplyTransform):
     """Solarize the image or video with a given probability by inverting all pixel
