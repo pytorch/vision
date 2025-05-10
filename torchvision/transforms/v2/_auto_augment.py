@@ -46,7 +46,7 @@ class _AutoAugmentBase(Transform):
     def _flatten_and_extract_image_or_video(
         self,
         inputs: Any,
-        unsupported_types: tuple[type, ...] = (tv_tensors.BoundingBoxes, tv_tensors.Mask),
+        unsupported_types: tuple[type, ...] = (tv_tensors.BoundingBoxes, tv_tensors.Mask, tv_tensors.KeyPoints),
     ) -> tuple[tuple[list[Any], TreeSpec, int], ImageOrVideo]:
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
         needs_transform_list = self._needs_transform_list(flat_inputs)
