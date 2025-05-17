@@ -19,6 +19,7 @@ import pytest
 import torch
 import torchvision.ops
 import torchvision.transforms.v2 as transforms
+from torchvision.transforms.v2 import RandomPosterize
 
 from common_utils import (
     assert_equal,
@@ -6270,4 +6271,20 @@ class TestUtils:
     @pytest.mark.parametrize("query", [transforms.query_size, transforms.query_chw])
     def test_no_valid_input(self, query):
         with pytest.raises(TypeError, match="No image"):
-            query(["blah"])
+            query(["blah"]
+
+@pytest.mark.parametrize("dtype", [torch.float32, torch.bool, torch.complex64])
+def test_random_posterize_dtype_error(dtype):
+    rp = RandomPosterize(bits=3, p=1.0)
+    tensor = torch.zeros((1, 3, 5, 5), dtype=dtype)
+    with pytest.raises(TypeError) as excinfo:
+        rp(tensor)
+    assert "Number of value bits is only defined for integer dtypes" in str(excinfo.value)
+
+
+def test_random_posterize_uint8_pass():
+    rp = RandomPosterize(bits=4, p=1.0)
+    tensor = torch.randint(0, 255, (1, 3, 5, 5), dtype=torch.uint8)
+    out = rp(tensor)
+    assert isinstance(out, torch.Tensor)
+    assert out.dtype == torch.uint8
