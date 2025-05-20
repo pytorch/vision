@@ -58,7 +58,8 @@ pip install numpy==2.2.3
 
 if [ "$CHANNEL" = "release" ]; then
   echo "Installing latest stable version of PyTorch."
-  pip3 install torch
+  # TODO: update when arm64 torch available on pypi
+  pip3 install --pre torch --index-url https://download.pytorch.org/whl/torch/
 elif [ "$CHANNEL" = "test" ]; then
   echo "Installing PyTorch version $PYTORCH_VERSION."
   pip3 install torch=="$PYTORCH_VERSION"
