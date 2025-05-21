@@ -60,7 +60,7 @@ if [ "$CHANNEL" = "release" ]; then
   pip3 install --pre torch --index-url https://download.pytorch.org/whl/torch/
 elif [ "$CHANNEL" = "test" ]; then
   echo "Installing PyTorch version $PYTORCH_VERSION."
-  pip3 install --pre torch=="$PYTORCH_VERSION" --index-url=https://download.pytorch.org/whl/test
+  pip3 install --pre torch=="$PYTORCH_VERSION" --index-url https://download.pytorch.org/whl/test
 else
   echo "CHANNEL is not set, installing PyTorch from nightly."
   pip3 install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu
