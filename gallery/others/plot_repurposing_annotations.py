@@ -173,8 +173,8 @@ class SegmentationToDetectionDataset(torch.utils.data.Dataset):
         self.transforms = transforms
         # load all image files, sorting them to
         # ensure that they are aligned
-        self.imgs = list(sorted(os.listdir(os.path.join(root, "PNGImages"))))
-        self.masks = list(sorted(os.listdir(os.path.join(root, "PedMasks"))))
+        self.imgs = sorted(os.listdir(os.path.join(root, "PNGImages")))
+        self.masks = sorted(os.listdir(os.path.join(root, "PedMasks")))
 
     def __getitem__(self, idx):
         # load images and masks
