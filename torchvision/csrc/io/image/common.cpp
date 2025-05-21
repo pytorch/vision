@@ -1,6 +1,5 @@
 
 #include "common.h"
-#include <torch/torch.h>
 
 namespace vision {
 namespace image {
