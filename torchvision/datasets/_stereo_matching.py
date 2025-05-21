@@ -67,13 +67,13 @@ class StereoMatchingDataset(ABC, VisionDataset):
         paths_right_pattern: Optional[str] = None,
     ) -> list[tuple[str, Optional[str]]]:
 
-        left_paths = list(sorted(glob(paths_left_pattern)))
+        left_paths = sorted(glob(paths_left_pattern))
 
         right_paths: list[Union[None, str]]
         if paths_right_pattern:
-            right_paths = list(sorted(glob(paths_right_pattern)))
+            right_paths = sorted(glob(paths_right_pattern))
         else:
-            right_paths = list(None for _ in left_paths)
+            right_paths = [None for _ in left_paths]
 
         if not left_paths:
             raise FileNotFoundError(f"Could not find any files matching the patterns: {paths_left_pattern}")
