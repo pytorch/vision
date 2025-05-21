@@ -84,7 +84,7 @@ class Flickr8k(VisionDataset):
             parser.feed(fh.read())
         self.annotations = parser.annotations
 
-        self.ids = list(sorted(self.annotations.keys()))
+        self.ids = sorted(self.annotations.keys())
         self.loader = loader
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
