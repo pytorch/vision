@@ -36,7 +36,7 @@ class CocoDetection(VisionDataset):
         from pycocotools.coco import COCO
 
         self.coco = COCO(annFile)
-        self.ids = list(sorted(self.coco.imgs.keys()))
+        self.ids = sorted(self.coco.imgs.keys())
 
     def _load_image(self, id: int) -> Image.Image:
         path = self.coco.loadImgs(id)[0]["file_name"]

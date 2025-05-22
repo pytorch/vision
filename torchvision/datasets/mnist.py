@@ -284,9 +284,9 @@ class EMNIST(MNIST):
     _merged_classes = {"c", "i", "j", "k", "l", "m", "o", "p", "s", "u", "v", "w", "x", "y", "z"}
     _all_classes = set(string.digits + string.ascii_letters)
     classes_split_dict = {
-        "byclass": sorted(list(_all_classes)),
-        "bymerge": sorted(list(_all_classes - _merged_classes)),
-        "balanced": sorted(list(_all_classes - _merged_classes)),
+        "byclass": sorted(_all_classes),
+        "bymerge": sorted(_all_classes - _merged_classes),
+        "balanced": sorted(_all_classes - _merged_classes),
         "letters": ["N/A"] + list(string.ascii_lowercase),
         "digits": list(string.digits),
         "mnist": list(string.digits),
