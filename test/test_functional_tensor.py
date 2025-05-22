@@ -434,6 +434,35 @@ def test_perspective_batch(device, dims_and_points, dt):
     )
 
 
+@pytest.mark.parametrize("device", cpu_and_cuda())
+@pytest.mark.parametrize("dims_and_points", _get_data_dims_and_points_for_perspective())
+@pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
+def test_perspective_tensor_input(device, dims_and_points, dt):
+
+    if dt == torch.float16 and device == "cpu":
+        # skip float16 on CPU case
+        return
+
+    data_dims, (spoints, epoints) = dims_and_points
+    print(spoints, epoints)
+
+    batch_tensors = _create_data_batch(*data_dims, num_samples=4, device=device)
+    if dt is not None:
+        batch_tensors = batch_tensors.to(dtype=dt)
+
+    # Ignore the equivalence between scripted and regular function on float16 cuda. The pixels at
+    # the border may be entirely different due to small rounding errors.
+    scripted_fn_atol = -1 if (dt == torch.float16 and device == "cuda") else 1e-8
+    _test_fn_on_batch(
+        batch_tensors,
+        F.perspective,
+        scripted_fn_atol=scripted_fn_atol,
+        startpoints=torch.tensor(spoints, device=device, dtype=dt),
+        endpoints=torch.tensor(epoints, device=device, dtype=dt),
+        interpolation=NEAREST,
+    )
+
+
 def test_perspective_interpolation_type():
     spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
     epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
