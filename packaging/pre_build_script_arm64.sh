@@ -13,8 +13,6 @@ export TRIPLET_FILE="triplets/arm64-windows.cmake"
 export PYTORCH_VERSION="$PYTORCH_VERSION"
 export CHANNEL="$CHANNEL"
 
-echo "channel: $CHANNEL"
-
 # Dependencies
 mkdir -p "$DOWNLOADS_DIR"
 mkdir -p "$DEPENDENCIES_DIR"
@@ -27,7 +25,8 @@ git clone https://github.com/microsoft/vcpkg.git
 cd vcpkg || exit
 ./bootstrap-vcpkg.sh
 
-# # Set vcpkg to only build release packages
+# Set vcpkg to only build release packages
+
 echo "set(VCPKG_BUILD_TYPE release)" >> "$TRIPLET_FILE"
 
 # Install dependencies using vcpkg
@@ -35,7 +34,8 @@ echo "set(VCPKG_BUILD_TYPE release)" >> "$TRIPLET_FILE"
 ./vcpkg install libwebp:arm64-windows --x-install-root="$DEPENDENCIES_DIR"
 ./vcpkg install libpng[tools]:arm64-windows --x-install-root="$DEPENDENCIES_DIR"
 
-# Copy files using cp (replace robocopy)
+# Copy files using cp
+
 cp "$DEPENDENCIES_DIR/arm64-windows/lib/libpng16.lib" "$DEPENDENCIES_DIR/arm64-windows/lib/libpng.lib"
 cp "$DEPENDENCIES_DIR/arm64-windows/bin/libpng16.dll" "$DEPENDENCIES_DIR/arm64-windows/bin/libpng.dll"
 cp "$DEPENDENCIES_DIR/arm64-windows/bin/libpng16.pdb" "$DEPENDENCIES_DIR/arm64-windows/bin/libpng.pdb"
@@ -62,7 +62,7 @@ if [ "$CHANNEL" = "release" ]; then
   pip3 install --pre torch --index-url https://download.pytorch.org/whl/torch/
 elif [ "$CHANNEL" = "test" ]; then
   echo "Installing PyTorch version $PYTORCH_VERSION."
-  pip3 install torch=="$PYTORCH_VERSION"
+  pip3 install --pre torch=="$PYTORCH_VERSION" --index-url https://download.pytorch.org/whl/test
 else
   echo "CHANNEL is not set, installing PyTorch from nightly."
   pip3 install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu
