@@ -13,7 +13,6 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
 } // namespace vision
 
 #else
-#include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <ATen/cuda/CUDAEvent.h>
 #include <c10/cuda/CUDAGuard.h>

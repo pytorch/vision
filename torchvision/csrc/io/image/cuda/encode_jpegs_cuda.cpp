@@ -12,11 +12,8 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
 } // namespace vision
 #else
 
-#include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <ATen/cuda/CUDAEvent.h>
-#include <cuda_runtime.h>
-#include <torch/nn/functional.h>
 #include <iostream>
 #include <memory>
 #include <string>
