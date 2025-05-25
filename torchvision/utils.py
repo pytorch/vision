@@ -171,9 +171,11 @@ def draw_bounding_boxes(
 
     Args:
         image (Tensor): Tensor of shape (C, H, W) and dtype uint8 or float.
-        boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
-            the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
-            `0 <= ymin < ymax < H`.
+        boxes (Tensor): Tensor of size (N, 4) or (N, 8) containing bounding boxes.
+            For (N, 4), the format is (xmin, ymin, xmax, ymax) and the boxes are absolute coordinates with respect to the image.
+            In other words: `0 <= xmin < xmax < W` and `0 <= ymin < ymax < H`.
+            For (N, 8), the format is (x1, y1, x3, y3, x2, y2, x4, y4) and the boxes are absolute coordinates with respect to the underlying
+            object, so no need to verify the latter inequalities.
         labels (List[str]): List containing the labels of bounding boxes.
         colors (color or list of colors, optional): List containing the colors
             of the boxes or single color for all boxes. The color can be represented as
@@ -205,7 +207,7 @@ def draw_bounding_boxes(
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
-    elif (boxes[:, 0] > boxes[:, 2]).any() or (boxes[:, 1] > boxes[:, 3]).any():
+    elif boxes.shape[-1] == 4 and ((boxes[:, 0] > boxes[:, 2]).any() or (boxes[:, 1] > boxes[:, 3]).any()):
         raise ValueError(
             "Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to convert them"
         )
@@ -255,9 +257,15 @@ def draw_bounding_boxes(
     for bbox, color, label, label_color in zip(img_boxes, colors, labels, label_colors):  # type: ignore[arg-type]
         if fill:
             fill_color = color + (100,)
-            draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
+            if len(bbox) == 4:
+                draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
+            else:
+                draw.polygon(bbox, width=width, outline=color, fill=fill_color)
         else:
-            draw.rectangle(bbox, width=width, outline=color)
+            if len(bbox) == 4:
+                draw.rectangle(bbox, width=width, outline=color)
+            else:
+                draw.polygon(bbox, width=width, outline=color)
 
         if label is not None:
             box_margin = 1
