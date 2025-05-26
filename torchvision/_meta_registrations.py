@@ -160,27 +160,18 @@ def meta_ps_roi_pool_backward(
     return grad.new_empty((batch_size, channels, height, width))
 
 
-# --- FAKE NMS REGISTRATION (GUARDED) ---
-try:
-    @torch.library.register_fake("torchvision::nms")
-    def meta_nms(dets, scores, iou_threshold):
-        torch._check(dets.dim() == 2, lambda: f"boxes should be a 2d tensor, got {dets.dim()}D")
-        torch._check(dets.size(1) == 4, lambda: f"boxes should have 4 elements in dimension 1, got {dets.size(1)}")
-        torch._check(scores.dim() == 1, lambda: f"scores should be a 1d tensor, got {scores.dim()}")
-        torch._check(
-            dets.size(0) == scores.size(0),
-            lambda: f"boxes and scores should have same number of elements in dimension 0, got {dets.size(0)} and {scores.size(0)}",
-        )
-        ctx = torch._custom_ops.get_ctx()
-        num_to_keep = ctx.create_unbacked_symint()
-        return dets.new_empty(num_to_keep, dtype=torch.long)
-except RuntimeError as e:
-    # See https://github.com/Lightning-AI/torchmetrics/issues/3098
-    if "operator torchvision::nms does not exist" in str(e):
-        # Op is not present in CPU-only builds; safe to skip registration
-        pass
-    else:
-        raise
+@torch.library.register_fake("torchvision::nms")
+def meta_nms(dets, scores, iou_threshold):
+    torch._check(dets.dim() == 2, lambda: f"boxes should be a 2d tensor, got {dets.dim()}D")
+    torch._check(dets.size(1) == 4, lambda: f"boxes should have 4 elements in dimension 1, got {dets.size(1)}")
+    torch._check(scores.dim() == 1, lambda: f"scores should be a 1d tensor, got {scores.dim()}")
+    torch._check(
+        dets.size(0) == scores.size(0),
+        lambda: f"boxes and scores should have same number of elements in dimension 0, got {dets.size(0)} and {scores.size(0)}",
+    )
+    ctx = torch._custom_ops.get_ctx()
+    num_to_keep = ctx.create_unbacked_symint()
+    return dets.new_empty(num_to_keep, dtype=torch.long)
 
 
 @register_meta("deform_conv2d")
@@ -231,4 +222,5 @@ def meta_deform_conv2d_backward(
     grad_offset = offset.new_empty(offset.shape)
     grad_mask = mask.new_empty(mask.shape)
     grad_bias = bias.new_empty(bias.shape)
-    return grad_input, grad_weight, grad_offset, grad_mask, grad_bias
+    return grad_input, grad_weight, grad_offset, grad_mask, grad_bias pleease give me the whole corrected code
+    
