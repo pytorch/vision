@@ -1531,7 +1531,7 @@ class TestVerticalFlip:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.vertical_flip_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -1588,7 +1588,7 @@ class TestVerticalFlip:
 
         torch.testing.assert_close(actual, expected)
 
-    def _reference_vertical_flip_bounding_boxes(self, bounding_boxes):
+    def _reference_vertical_flip_bounding_boxes(self, bounding_boxes, format):
         affine_matrix = np.array(
             [
                 [1, 0, 0],
@@ -1596,15 +1596,17 @@ class TestVerticalFlip:
             ],
         )
 
+        if tv_tensors.is_rotated_bounding_format(format):
+            return reference_affine_rotated_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
         return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
     def test_bounding_boxes_correctness(self, format, fn):
         bounding_boxes = make_bounding_boxes(format=format)
 
         actual = fn(bounding_boxes)
-        expected = self._reference_vertical_flip_bounding_boxes(bounding_boxes)
+        expected = self._reference_vertical_flip_bounding_boxes(bounding_boxes, format)
 
         torch.testing.assert_close(actual, expected)
 
