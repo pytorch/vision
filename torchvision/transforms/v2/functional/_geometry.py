@@ -71,14 +71,32 @@ def horizontal_flip_bounding_boxes(
 ) -> torch.Tensor:
     shape = bounding_boxes.shape
 
-    bounding_boxes = bounding_boxes.clone().reshape(-1, 4)
+    if tv_tensors.is_rotated_bounding_format(format):
+        bounding_boxes = (
+            bounding_boxes.clone().reshape(-1, 5)
+            if format != tv_tensors.BoundingBoxFormat.XYXYXYXY
+            else bounding_boxes.clone().reshape(-1, 8)
+        )
+    else:
+        bounding_boxes = bounding_boxes.clone().reshape(-1, 4)
 
     if format == tv_tensors.BoundingBoxFormat.XYXY:
         bounding_boxes[:, [2, 0]] = bounding_boxes[:, [0, 2]].sub_(canvas_size[1]).neg_()
     elif format == tv_tensors.BoundingBoxFormat.XYWH:
         bounding_boxes[:, 0].add_(bounding_boxes[:, 2]).sub_(canvas_size[1]).neg_()
-    else:  # format == tv_tensors.BoundingBoxFormat.CXCYWH:
+    elif format == tv_tensors.BoundingBoxFormat.CXCYWH:
         bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
+    elif format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
+        bounding_boxes[:, 0::2].sub_(canvas_size[1]).neg_()
+        bounding_boxes = bounding_boxes[:, [0, 1, 6, 7, 4, 5, 2, 3]]
+    elif format == tv_tensors.BoundingBoxFormat.XYWHR:
+        bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
+        bounding_boxes = bounding_boxes[:, [0, 1, 3, 2, 4]]
+        bounding_boxes[:, -1].add_(90).neg_()
+    else:  # format == tv_tensors.BoundingBoxFormat.CXCYWHR:
+        bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
+        bounding_boxes = bounding_boxes[:, [0, 1, 3, 2, 4]]
+        bounding_boxes[:, -1].add_(90).neg_()
 
     return bounding_boxes.reshape(shape)
 
