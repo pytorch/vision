@@ -360,6 +360,16 @@ def _clamp_bounding_boxes(
     return out_boxes.to(in_dtype)
 
 
+def _clamp_rotated_bounding_boxes(
+    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: tuple[int, int]
+) -> torch.Tensor:
+    # TODO: For now we are not clamping rotated bounding boxes.
+    in_dtype = bounding_boxes.dtype
+    out_boxes = bounding_boxes.clone() if bounding_boxes.is_floating_point() else bounding_boxes.float()
+
+    return out_boxes.to(in_dtype)
+
+
 def clamp_bounding_boxes(
     inpt: torch.Tensor,
     format: Optional[BoundingBoxFormat] = None,
@@ -373,11 +383,21 @@ def clamp_bounding_boxes(
 
         if format is None or canvas_size is None:
             raise ValueError("For pure tensor inputs, `format` and `canvas_size` have to be passed.")
-        return _clamp_bounding_boxes(inpt, format=format, canvas_size=canvas_size)
+        if tv_tensors.is_rotated_bounding_format(format):
+            return _clamp_rotated_bounding_boxes(inpt, format=format, canvas_size=canvas_size)
+        else:
+            return _clamp_bounding_boxes(inpt, format=format, canvas_size=canvas_size)
     elif isinstance(inpt, tv_tensors.BoundingBoxes):
         if format is not None or canvas_size is not None:
             raise ValueError("For bounding box tv_tensor inputs, `format` and `canvas_size` must not be passed.")
-        output = _clamp_bounding_boxes(inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size)
+        if tv_tensors.is_rotated_bounding_format(inpt.format):
+            output = _clamp_rotated_bounding_boxes(
+                inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size
+            )
+        else:
+            output = _clamp_bounding_boxes(
+                inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size
+            )
         return tv_tensors.wrap(output, like=inpt)
     else:
         raise TypeError(
