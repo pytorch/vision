@@ -1,6 +1,6 @@
 import torch
 
-from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat
+from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat, is_rotated_bounding_format
 from ._image import Image
 from ._mask import Mask
 from ._torch_function_helpers import set_return_type

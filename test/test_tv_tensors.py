@@ -43,6 +43,72 @@ def test_bbox_instance(data, format):
     assert bboxes.format == format
 
 
+@pytest.mark.parametrize(
+    "format",
+    [
+        "XYXY",
+        "XYWH",
+        "CXCYWH",
+        "XYXYXYXY",
+        "XYWHR",
+        "CXCYWHR",
+        tv_tensors.BoundingBoxFormat.XYXY,
+        tv_tensors.BoundingBoxFormat.XYWH,
+        tv_tensors.BoundingBoxFormat.CXCYWH,
+        tv_tensors.BoundingBoxFormat.XYXYXYXY,
+        tv_tensors.BoundingBoxFormat.XYWHR,
+        tv_tensors.BoundingBoxFormat.CXCYWHR,
+    ],
+)
+def test_bbox_format(format):
+    if isinstance(format, str):
+        format = tv_tensors.BoundingBoxFormat[(format.upper())]
+    if format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
+        assert tv_tensors.is_rotated_bounding_format(format) is True
+    elif format == tv_tensors.BoundingBoxFormat.XYWHR:
+        assert tv_tensors.is_rotated_bounding_format(format) is True
+    elif format == tv_tensors.BoundingBoxFormat.CXCYWHR:
+        assert tv_tensors.is_rotated_bounding_format(format) is True
+    else:
+        assert tv_tensors.is_rotated_bounding_format(format) is False
+
+
+@pytest.mark.parametrize(
+    "format",
+    [
+        "XYXY",
+        "XYWH",
+        "CXCYWH",
+        "XYXYXYXY",
+        "XYWHR",
+        "CXCYWHR",
+        tv_tensors.BoundingBoxFormat.XYXY,
+        tv_tensors.BoundingBoxFormat.XYWH,
+        tv_tensors.BoundingBoxFormat.CXCYWH,
+        tv_tensors.BoundingBoxFormat.XYXYXYXY,
+        tv_tensors.BoundingBoxFormat.XYWHR,
+        tv_tensors.BoundingBoxFormat.CXCYWHR,
+    ],
+)
+def test_bbox_format_scripted(format):
+    obj = tv_tensors.is_rotated_bounding_format
+    try:
+        fn = torch.jit.script(obj)
+    except Exception as error:
+        name = getattr(obj, "__name__", obj.__class__.__name__)
+        raise AssertionError(f"Trying to `torch.jit.script` `{name}` raised the error above.") from error
+    if isinstance(format, str):
+        format = tv_tensors.BoundingBoxFormat[(format.upper())]
+    if format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
+        assert fn(format) is True
+    elif format == tv_tensors.BoundingBoxFormat.XYWHR:
+        assert fn(format) is True
+    elif format == tv_tensors.BoundingBoxFormat.CXCYWHR:
+        assert fn(format) is True
+    else:
+        assert fn(format) is False
+
+
 def test_bbox_dim_error():
     data_3d = [[[1, 2, 3, 4]]]
     with pytest.raises(ValueError, match="Expected a 1D or 2D tensor, got 3D"):

@@ -38,6 +38,14 @@ class BoundingBoxFormat(Enum):
     XYXYXYXY = "XYXYXYXY"
 
 
+# TODO: Once torchscript supports Enums with staticmethod
+# this can be put into BoundingBoxFormat as staticmethod
+def is_rotated_bounding_format(format: BoundingBoxFormat) -> bool:
+    return (
+        format == BoundingBoxFormat.XYWHR or format == BoundingBoxFormat.CXCYWHR or format == BoundingBoxFormat.XYXYXYXY
+    )
+
+
 class BoundingBoxes(TVTensor):
     """:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``.
 
