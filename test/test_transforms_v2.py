@@ -588,14 +588,14 @@ def reference_affine_rotated_bounding_boxes_helper(bounding_boxes, *, affine_mat
         transformed_points = np.matmul(points, affine_matrix.astype(points.dtype).T)
         output = torch.Tensor(
             [
+                float(transformed_points[1, 0]),
+                float(transformed_points[1, 1]),
                 float(transformed_points[0, 0]),
                 float(transformed_points[0, 1]),
                 float(transformed_points[3, 0]),
                 float(transformed_points[3, 1]),
                 float(transformed_points[2, 0]),
                 float(transformed_points[2, 1]),
-                float(transformed_points[1, 0]),
-                float(transformed_points[1, 1]),
             ]
         )
 
@@ -618,12 +618,19 @@ def reference_affine_rotated_bounding_boxes_helper(bounding_boxes, *, affine_mat
         return output.to(dtype=dtype, device=device)
 
     return tv_tensors.BoundingBoxes(
-        torch.cat([affine_rotated_bounding_boxes(b) for b in bounding_boxes.reshape(-1, 5 if format != tv_tensors.BoundingBoxFormat.XYXYXYXY else 8).unbind()], dim=0).reshape(
-            bounding_boxes.shape
-        ),
+        torch.cat(
+            [
+                affine_rotated_bounding_boxes(b)
+                for b in bounding_boxes.reshape(
+                    -1, 5 if format != tv_tensors.BoundingBoxFormat.XYXYXYXY else 8
+                ).unbind()
+            ],
+            dim=0,
+        ).reshape(bounding_boxes.shape),
         format=format,
         canvas_size=canvas_size,
     )
+
 
 class TestResize:
     INPUT_SIZE = (17, 11)
