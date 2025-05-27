@@ -123,6 +123,57 @@ def make_grid(
     return grid
 
 
+class ImageDrawTV(ImageDraw.ImageDraw):
+    """
+    A wrapper around PIL.ImageDraw to add functionalities for drawing rotated bounding boxes.
+    """
+
+    def oriented_rectangle(self, xy, fill=None, outline=None, width=1):
+        self.dashed_line(((xy[0], xy[1]), (xy[2], xy[3])), width=width, fill=outline)
+        for i in range(2, len(xy), 2):
+            self.line(
+                ((xy[i], xy[i + 1]), (xy[(i + 2) % len(xy)], xy[(i + 3) % len(xy)])),
+                width=width,
+                fill=outline,
+            )
+        self.rectangle(xy, fill=fill, outline=None, width=0)
+
+    def dashed_line(self, xy, fill=None, width=0, joint=None, dash_length=5, space_length=5):
+        # Calculate the total length of the line
+        total_length = 0
+        for i in range(1, len(xy)):
+            x1, y1 = xy[i - 1]
+            x2, y2 = xy[i]
+            total_length += ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+        # Initialize the current position and the current dash
+        current_position = 0
+        current_dash = True
+        # Iterate over the coordinates of the line
+        for i in range(1, len(xy)):
+            x1, y1 = xy[i - 1]
+            x2, y2 = xy[i]
+            # Calculate the length of this segment
+            segment_length = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+            # While there are still dashes to draw on this segment
+            while segment_length > 0:
+                # Calculate the length of this dash
+                dash_length_to_draw = min(segment_length, dash_length if current_dash else space_length)
+                # Calculate the end point of this dash
+                dx = x2 - x1
+                dy = y2 - y1
+                angle = math.atan2(dy, dx)
+                end_x = x1 + math.cos(angle) * dash_length_to_draw
+                end_y = y1 + math.sin(angle) * dash_length_to_draw
+                # If this is a dash, draw it
+                if current_dash:
+                    self.line([(x1, y1), (end_x, end_y)], fill, width, joint)
+                # Update the current position and the current dash
+                current_position += dash_length_to_draw
+                segment_length -= dash_length_to_draw
+                x1, y1 = end_x, end_y
+                current_dash = not current_dash
+
+
 @torch.no_grad()
 def save_image(
     tensor: Union[torch.Tensor, list[torch.Tensor]],
@@ -250,9 +301,9 @@ def draw_bounding_boxes(
     img_boxes = boxes.to(torch.int64).tolist()
 
     if fill:
-        draw = ImageDraw.Draw(img_to_draw, "RGBA")
+        draw = ImageDrawTV(img_to_draw, "RGBA")
     else:
-        draw = ImageDraw.Draw(img_to_draw)
+        draw = ImageDrawTV(img_to_draw)
 
     for bbox, color, label, label_color in zip(img_boxes, colors, labels, label_colors):  # type: ignore[arg-type]
         if fill:
@@ -260,12 +311,14 @@ def draw_bounding_boxes(
             if len(bbox) == 4:
                 draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
             else:
-                draw.polygon(bbox, width=width, outline=color, fill=fill_color)
+                # Indicate the orientation of the rotated box with dashed line.
+                draw.oriented_rectangle(bbox, width=width, outline=color, fill=fill_color)
         else:
             if len(bbox) == 4:
                 draw.rectangle(bbox, width=width, outline=color)
             else:
-                draw.polygon(bbox, width=width, outline=color)
+                # Indicate the orientation of the polygon with dashed line.
+                draw.oriented_rectangle(bbox, width=width, outline=color)
 
         if label is not None:
             box_margin = 1
@@ -433,7 +486,7 @@ def draw_keypoints(
 
     ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
-    draw = ImageDraw.Draw(img_to_draw)
+    draw = ImageDrawTV(img_to_draw)
     img_kpts = keypoints.to(torch.int64).tolist()
     img_vis = visibility.cpu().bool().tolist()
 
