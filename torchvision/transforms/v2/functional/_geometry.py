@@ -88,15 +88,21 @@ def horizontal_flip_bounding_boxes(
         bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
     elif format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
         bounding_boxes[:, 0::2].sub_(canvas_size[1]).neg_()
-        bounding_boxes = bounding_boxes[:, [0, 1, 6, 7, 4, 5, 2, 3]]
+        bounding_boxes = bounding_boxes[:, [2, 3, 0, 1, 6, 7, 4, 5]]
     elif format == tv_tensors.BoundingBoxFormat.XYWHR:
-        bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
-        bounding_boxes = bounding_boxes[:, [0, 1, 3, 2, 4]]
-        bounding_boxes[:, -1].add_(90).neg_()
+
+        dtype = bounding_boxes.dtype
+        if not torch.is_floating_point(bounding_boxes):
+            # Casting to float to support cos and sin computations.
+            bounding_boxes = bounding_boxes.to(torch.float64)
+        angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
+        bounding_boxes[:, 0].add_(bounding_boxes[:, 2].mul(angle_rad.cos())).sub_(canvas_size[1]).neg_()
+        bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin()))
+        bounding_boxes[:, 4].neg_()
+        bounding_boxes = bounding_boxes.to(dtype)
     else:  # format == tv_tensors.BoundingBoxFormat.CXCYWHR:
         bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
-        bounding_boxes = bounding_boxes[:, [0, 1, 3, 2, 4]]
-        bounding_boxes[:, -1].add_(90).neg_()
+        bounding_boxes[:, 4].neg_()
 
     return bounding_boxes.reshape(shape)
 
