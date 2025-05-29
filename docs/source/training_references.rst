@@ -19,11 +19,8 @@ guarantees.
 
 In general, these scripts rely on the latest (not yet released) pytorch version
 or the latest torchvision version. This means that to use them, **you might need
-to install the latest pytorch and torchvision versions**, with e.g.::
-
-
-.. code-block:: sh
-    pip install torch torchvision
+to install the latest pytorch and torchvision versions** following the `official
+instructions <https://pytorch.org/get-started/locally/>`_.
 
 
 If you need to rely on an older stable version of pytorch or torchvision, e.g.
