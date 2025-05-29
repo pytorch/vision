@@ -3,7 +3,7 @@ import numbers
 import sys
 import warnings
 from enum import Enum
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import torch
@@ -63,7 +63,7 @@ pil_modes_mapping = {
 _is_pil_image = F_pil._is_pil_image
 
 
-def get_dimensions(img: Tensor) -> List[int]:
+def get_dimensions(img: Tensor) -> list[int]:
     """Returns the dimensions of an image as [channels, height, width].
 
     Args:
@@ -80,7 +80,7 @@ def get_dimensions(img: Tensor) -> List[int]:
     return F_pil.get_dimensions(img)
 
 
-def get_image_size(img: Tensor) -> List[int]:
+def get_image_size(img: Tensor) -> list[int]:
     """Returns the size of an image as [width, height].
 
     Args:
@@ -324,7 +324,7 @@ def to_pil_image(pic, mode=None):
     return Image.fromarray(npimg, mode=mode)
 
 
-def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool = False) -> Tensor:
+def normalize(tensor: Tensor, mean: list[float], std: list[float], inplace: bool = False) -> Tensor:
     """Normalize a float tensor image with mean and standard deviation.
     This transform does not support PIL Image.
 
@@ -351,11 +351,11 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
 
 
 def _compute_resized_output_size(
-    image_size: Tuple[int, int],
-    size: Optional[List[int]],
+    image_size: tuple[int, int],
+    size: Optional[list[int]],
     max_size: Optional[int] = None,
     allow_size_none: bool = False,  # only True in v2
-) -> List[int]:
+) -> list[int]:
     h, w = image_size
     short, long = (w, h) if w <= h else (h, w)
     if size is None:
@@ -386,7 +386,7 @@ def _compute_resized_output_size(
 
 def resize(
     img: Tensor,
-    size: List[int],
+    size: list[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
@@ -479,7 +479,7 @@ def resize(
     return F_t.resize(img, size=output_size, interpolation=interpolation.value, antialias=antialias)
 
 
-def pad(img: Tensor, padding: List[int], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
+def pad(img: Tensor, padding: list[int], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,
@@ -553,7 +553,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     return F_t.crop(img, top, left, height, width)
 
 
-def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
+def center_crop(img: Tensor, output_size: list[int]) -> Tensor:
     """Crops the given image at the center.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -600,7 +600,7 @@ def resized_crop(
     left: int,
     height: int,
     width: int,
-    size: List[int],
+    size: list[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     antialias: Optional[bool] = True,
 ) -> Tensor:
@@ -671,7 +671,7 @@ def hflip(img: Tensor) -> Tensor:
     return F_t.hflip(img)
 
 
-def _get_perspective_coeffs(startpoints: List[List[int]], endpoints: List[List[int]]) -> List[float]:
+def _get_perspective_coeffs(startpoints: list[list[int]], endpoints: list[list[int]]) -> list[float]:
     """Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.
 
     In Perspective Transform each pixel (x, y) in the original image gets transformed as,
@@ -700,16 +700,16 @@ def _get_perspective_coeffs(startpoints: List[List[int]], endpoints: List[List[i
     # do least squares in double precision to prevent numerical issues
     res = torch.linalg.lstsq(a_matrix, b_matrix, driver="gels").solution.to(torch.float32)
 
-    output: List[float] = res.tolist()
+    output: list[float] = res.tolist()
     return output
 
 
 def perspective(
     img: Tensor,
-    startpoints: List[List[int]],
-    endpoints: List[List[int]],
+    startpoints: list[list[int]],
+    endpoints: list[list[int]],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[List[float]] = None,
+    fill: Optional[list[float]] = None,
 ) -> Tensor:
     """Perform perspective transform of the given image.
     If the image is torch Tensor, it is expected
@@ -774,7 +774,7 @@ def vflip(img: Tensor) -> Tensor:
     return F_t.vflip(img)
 
 
-def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+def five_crop(img: Tensor, size: list[int]) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
     """Crop the given image into four corners and the central crop.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
@@ -820,8 +820,8 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
 
 
 def ten_crop(
-    img: Tensor, size: List[int], vertical_flip: bool = False
-) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
+    img: Tensor, size: list[int], vertical_flip: bool = False
+) -> tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor, Tensor]:
     """Generate ten cropped images from the given image.
     Crop the given image into four corners and the central crop plus the
     flipped version of these (horizontal flipping is used by default).
@@ -1004,8 +1004,8 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
 
 def _get_inverse_affine_matrix(
-    center: List[float], angle: float, translate: List[float], scale: float, shear: List[float], inverted: bool = True
-) -> List[float]:
+    center: list[float], angle: float, translate: list[float], scale: float, shear: list[float], inverted: bool = True
+) -> list[float]:
     # Helper method to compute inverse matrix for affine transformation
 
     # Pillow requires inverse affine transformation matrix:
@@ -1068,8 +1068,8 @@ def rotate(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    center: Optional[List[int]] = None,
-    fill: Optional[List[float]] = None,
+    center: Optional[list[int]] = None,
+    fill: Optional[list[float]] = None,
 ) -> Tensor:
     """Rotate the image by angle.
     If the image is torch Tensor, it is expected
@@ -1135,12 +1135,12 @@ def rotate(
 def affine(
     img: Tensor,
     angle: float,
-    translate: List[int],
+    translate: list[int],
     scale: float,
-    shear: List[float],
+    shear: list[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Optional[List[float]] = None,
-    center: Optional[List[int]] = None,
+    fill: Optional[list[float]] = None,
+    center: Optional[list[int]] = None,
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
     If the image is torch Tensor, it is expected
@@ -1315,7 +1315,7 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     return F_t.erase(img, i, j, h, w, v, inplace=inplace)
 
 
-def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
+def gaussian_blur(img: Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None) -> Tensor:
     """Performs Gaussian blurring on the image by given kernel
 
     The convolution will be using reflection padding corresponding to the kernel size, to maintain the input shape.
@@ -1519,7 +1519,7 @@ def elastic_transform(
     img: Tensor,
     displacement: Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    fill: Optional[List[float]] = None,
+    fill: Optional[list[float]] = None,
 ) -> Tensor:
     """Transform a tensor image with elastic transformations.
     Given alpha and sigma, it will generate displacement

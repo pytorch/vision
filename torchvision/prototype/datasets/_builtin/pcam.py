@@ -1,7 +1,8 @@
 import io
 import pathlib
 from collections import namedtuple
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from collections.abc import Iterator
+from typing import Any, Optional, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
@@ -15,16 +16,16 @@ from .._api import register_dataset, register_info
 NAME = "pcam"
 
 
-class PCAMH5Reader(IterDataPipe[Tuple[str, io.IOBase]]):
+class PCAMH5Reader(IterDataPipe[tuple[str, io.IOBase]]):
     def __init__(
         self,
-        datapipe: IterDataPipe[Tuple[str, io.IOBase]],
+        datapipe: IterDataPipe[tuple[str, io.IOBase]],
         key: Optional[str] = None,  # Note: this key thing might be very specific to the PCAM dataset
     ) -> None:
         self.datapipe = datapipe
         self.key = key
 
-    def __iter__(self) -> Iterator[Tuple[str, io.IOBase]]:
+    def __iter__(self) -> Iterator[tuple[str, io.IOBase]]:
         import h5py
 
         for _, handle in self.datapipe:
@@ -41,7 +42,7 @@ _Resource = namedtuple("_Resource", ("file_name", "gdrive_id", "sha256"))
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=["0", "1"])
 
 
@@ -99,13 +100,13 @@ class PCAM(Dataset):
         ),
     }
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         return [  # = [images resource, targets resource]
             GDriveResource(file_name=file_name, id=gdrive_id, sha256=sha256, preprocess="decompress")
             for file_name, gdrive_id, sha256 in self._RESOURCES[self._split]
         ]
 
-    def _prepare_sample(self, data: Tuple[Any, Any]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[Any, Any]) -> dict[str, Any]:
         image, target = data  # They're both numpy arrays at this point
 
         return {
@@ -113,7 +114,7 @@ class PCAM(Dataset):
             "label": Label(target.item(), categories=self._categories),
         }
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
 
         images_dp, targets_dp = resource_dps
 

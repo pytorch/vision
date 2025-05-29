@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, List
+from typing import Any
 
 import torch
 
@@ -16,7 +16,7 @@ def to_tensor(inpt: Any) -> torch.Tensor:
     return _F.to_tensor(inpt)
 
 
-def get_image_size(inpt: torch.Tensor) -> List[int]:
+def get_image_size(inpt: torch.Tensor) -> list[int]:
     warnings.warn(
         "The function `get_image_size(...)` is deprecated and will be removed in a future release. "
         "Instead, please use `get_size(...)` which returns `[h, w]` instead of `[w, h]`."

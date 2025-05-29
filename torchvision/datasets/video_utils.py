@@ -2,7 +2,7 @@ import bisect
 import math
 import warnings
 from fractions import Fraction
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, cast, Optional, TypeVar, Union
 
 import torch
 from torchvision.io import _probe_video_from_file, _read_video_from_file, read_video, read_video_timestamps
@@ -53,13 +53,13 @@ class _VideoTimestampsDataset:
     pickled when forking.
     """
 
-    def __init__(self, video_paths: List[str]) -> None:
+    def __init__(self, video_paths: list[str]) -> None:
         self.video_paths = video_paths
 
     def __len__(self) -> int:
         return len(self.video_paths)
 
-    def __getitem__(self, idx: int) -> Tuple[List[int], Optional[float]]:
+    def __getitem__(self, idx: int) -> tuple[list[int], Optional[float]]:
         return read_video_timestamps(self.video_paths[idx])
 
 
@@ -99,11 +99,11 @@ class VideoClips:
 
     def __init__(
         self,
-        video_paths: List[str],
+        video_paths: list[str],
         clip_length_in_frames: int = 16,
         frames_between_clips: int = 1,
         frame_rate: Optional[float] = None,
-        _precomputed_metadata: Optional[Dict[str, Any]] = None,
+        _precomputed_metadata: Optional[dict[str, Any]] = None,
         num_workers: int = 0,
         _video_width: int = 0,
         _video_height: int = 0,
@@ -136,7 +136,7 @@ class VideoClips:
 
     def _compute_frame_pts(self) -> None:
         self.video_pts = []  # len = num_videos. Each entry is a tensor of shape (num_frames_in_video,)
-        self.video_fps: List[float] = []  # len = num_videos
+        self.video_fps: list[float] = []  # len = num_videos
 
         # strategy: use a DataLoader to parallelize read_video_timestamps
         # so need to create a dummy dataset first
@@ -160,7 +160,7 @@ class VideoClips:
                 self.video_pts.extend(batch_pts)
                 self.video_fps.extend(batch_fps)
 
-    def _init_from_metadata(self, metadata: Dict[str, Any]) -> None:
+    def _init_from_metadata(self, metadata: dict[str, Any]) -> None:
         self.video_paths = metadata["video_paths"]
         assert len(self.video_paths) == len(metadata["video_pts"])
         self.video_pts = metadata["video_pts"]
@@ -168,7 +168,7 @@ class VideoClips:
         self.video_fps = metadata["video_fps"]
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         _metadata = {
             "video_paths": self.video_paths,
             "video_pts": self.video_pts,
@@ -176,7 +176,7 @@ class VideoClips:
         }
         return _metadata
 
-    def subset(self, indices: List[int]) -> "VideoClips":
+    def subset(self, indices: list[int]) -> "VideoClips":
         video_paths = [self.video_paths[i] for i in indices]
         video_pts = [self.video_pts[i] for i in indices]
         video_fps = [self.video_fps[i] for i in indices]
@@ -204,7 +204,7 @@ class VideoClips:
     @staticmethod
     def compute_clips_for_video(
         video_pts: torch.Tensor, num_frames: int, step: int, fps: Optional[float], frame_rate: Optional[float] = None
-    ) -> Tuple[torch.Tensor, Union[List[slice], torch.Tensor]]:
+    ) -> tuple[torch.Tensor, Union[list[slice], torch.Tensor]]:
         if fps is None:
             # if for some reason the video doesn't have fps (because doesn't have a video stream)
             # set the fps to 1. The value doesn't matter, because video_pts is empty anyway
@@ -220,7 +220,7 @@ class VideoClips:
                 "There aren't enough frames in the current video to get a clip for the given clip length and "
                 "frames between clips. The video (and potentially others) will be skipped."
             )
-        idxs: Union[List[slice], torch.Tensor]
+        idxs: Union[list[slice], torch.Tensor]
         if isinstance(_idxs, slice):
             idxs = [_idxs] * len(clips)
         else:
@@ -262,7 +262,7 @@ class VideoClips:
         """
         return self.cumulative_sizes[-1]
 
-    def get_clip_location(self, idx: int) -> Tuple[int, int]:
+    def get_clip_location(self, idx: int) -> tuple[int, int]:
         """
         Converts a flattened representation of the indices into a video_idx, clip_idx
         representation.
@@ -286,7 +286,7 @@ class VideoClips:
         idxs = idxs.floor().to(torch.int64)
         return idxs
 
-    def get_clip(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any], int]:
+    def get_clip(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, dict[str, Any], int]:
         """
         Gets a subclip from a list of videos.
 
@@ -374,7 +374,7 @@ class VideoClips:
 
         return video, audio, info, video_idx
 
-    def __getstate__(self) -> Dict[str, Any]:
+    def __getstate__(self) -> dict[str, Any]:
         video_pts_sizes = [len(v) for v in self.video_pts]
         # To be back-compatible, we convert data to dtype torch.long as needed
         # because for empty list, in legacy implementation, torch.as_tensor will
@@ -402,7 +402,7 @@ class VideoClips:
         d["_version"] = 2
         return d
 
-    def __setstate__(self, d: Dict[str, Any]) -> None:
+    def __setstate__(self, d: dict[str, Any]) -> None:
         # for backwards-compatibility
         if "_version" not in d:
             self.__dict__ = d

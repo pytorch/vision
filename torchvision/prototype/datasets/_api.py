@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 from torchvision.prototype.datasets import home
 from torchvision.prototype.datasets.utils import Dataset
@@ -7,13 +7,13 @@ from torchvision.prototype.utils._internal import add_suggestion
 
 
 T = TypeVar("T")
-D = TypeVar("D", bound=Type[Dataset])
+D = TypeVar("D", bound=type[Dataset])
 
-BUILTIN_INFOS: Dict[str, Dict[str, Any]] = {}
+BUILTIN_INFOS: dict[str, dict[str, Any]] = {}
 
 
-def register_info(name: str) -> Callable[[Callable[[], Dict[str, Any]]], Callable[[], Dict[str, Any]]]:
-    def wrapper(fn: Callable[[], Dict[str, Any]]) -> Callable[[], Dict[str, Any]]:
+def register_info(name: str) -> Callable[[Callable[[], dict[str, Any]]], Callable[[], dict[str, Any]]]:
+    def wrapper(fn: Callable[[], dict[str, Any]]) -> Callable[[], dict[str, Any]]:
         BUILTIN_INFOS[name] = fn()
         return fn
 
@@ -31,11 +31,11 @@ def register_dataset(name: str) -> Callable[[D], D]:
     return wrapper
 
 
-def list_datasets() -> List[str]:
+def list_datasets() -> list[str]:
     return sorted(BUILTIN_DATASETS.keys())
 
 
-def find(dct: Dict[str, T], name: str) -> T:
+def find(dct: dict[str, T], name: str) -> T:
     name = name.lower()
     try:
         return dct[name]
@@ -52,7 +52,7 @@ def find(dct: Dict[str, T], name: str) -> T:
         ) from error
 
 
-def info(name: str) -> Dict[str, Any]:
+def info(name: str) -> dict[str, Any]:
     return find(BUILTIN_INFOS, name)
 
 

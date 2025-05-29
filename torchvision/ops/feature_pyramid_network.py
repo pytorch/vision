@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Optional
 
 import torch.nn.functional as F
 from torch import nn, Tensor
@@ -26,10 +26,10 @@ class ExtraFPNBlock(nn.Module):
 
     def forward(
         self,
-        results: List[Tensor],
-        x: List[Tensor],
-        names: List[str],
-    ) -> Tuple[List[Tensor], List[str]]:
+        results: list[Tensor],
+        x: list[Tensor],
+        names: list[str],
+    ) -> tuple[list[Tensor], list[str]]:
         pass
 
 
@@ -76,7 +76,7 @@ class FeaturePyramidNetwork(nn.Module):
 
     def __init__(
         self,
-        in_channels_list: List[int],
+        in_channels_list: list[int],
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
@@ -169,7 +169,7 @@ class FeaturePyramidNetwork(nn.Module):
                 out = module(x)
         return out
 
-    def forward(self, x: Dict[str, Tensor]) -> Dict[str, Tensor]:
+    def forward(self, x: dict[str, Tensor]) -> dict[str, Tensor]:
         """
         Computes the FPN for a set of feature maps.
 
@@ -211,10 +211,10 @@ class LastLevelMaxPool(ExtraFPNBlock):
 
     def forward(
         self,
-        x: List[Tensor],
-        y: List[Tensor],
-        names: List[str],
-    ) -> Tuple[List[Tensor], List[str]]:
+        x: list[Tensor],
+        y: list[Tensor],
+        names: list[str],
+    ) -> tuple[list[Tensor], list[str]]:
         names.append("pool")
         # Use max pooling to simulate stride 2 subsampling
         x.append(F.max_pool2d(x[-1], kernel_size=1, stride=2, padding=0))
@@ -237,10 +237,10 @@ class LastLevelP6P7(ExtraFPNBlock):
 
     def forward(
         self,
-        p: List[Tensor],
-        c: List[Tensor],
-        names: List[str],
-    ) -> Tuple[List[Tensor], List[str]]:
+        p: list[Tensor],
+        c: list[Tensor],
+        names: list[str],
+    ) -> tuple[list[Tensor], list[str]]:
         p5, c5 = p[-1], c[-1]
         x = p5 if self.use_P5 else c5
         p6 = self.p6(x)

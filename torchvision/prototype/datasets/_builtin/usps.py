@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import torch
 from torchdata.datapipes.iter import Decompressor, IterDataPipe, LineReader, Mapper
@@ -14,7 +14,7 @@ NAME = "usps"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=[str(c) for c in range(10)])
 
 
@@ -47,10 +47,10 @@ class USPS(Dataset):
         ),
     }
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         return [USPS._RESOURCES[self._split]]
 
-    def _prepare_sample(self, line: str) -> Dict[str, Any]:
+    def _prepare_sample(self, line: str) -> dict[str, Any]:
         label, *values = line.strip().split(" ")
         values = [float(value.split(":")[1]) for value in values]
         pixels = torch.tensor(values).add_(1).div_(2)
@@ -59,7 +59,7 @@ class USPS(Dataset):
             label=Label(int(label) - 1, categories=self._categories),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         dp = Decompressor(resource_dps[0])
         dp = LineReader(dp, decode=True, return_path=False)
         dp = hint_shuffling(dp)

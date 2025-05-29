@@ -4,10 +4,10 @@ Implements the Generalized R-CNN framework
 
 import warnings
 from collections import OrderedDict
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import torch
-from torch import nn, Tensor
+from torch import nn
 
 from ...utils import _log_api_usage_once
 
@@ -25,7 +25,13 @@ class GeneralizedRCNN(nn.Module):
             the model
     """
 
-    def __init__(self, backbone: nn.Module, rpn: nn.Module, roi_heads: nn.Module, transform: nn.Module) -> None:
+    def __init__(
+        self,
+        backbone: nn.Module,
+        rpn: nn.Module,
+        roi_heads: nn.Module,
+        transform: nn.Module,
+    ) -> None:
         super().__init__()
         _log_api_usage_once(self)
         self.transform = transform
@@ -36,19 +42,23 @@ class GeneralizedRCNN(nn.Module):
         self._has_warned = False
 
     @torch.jit.unused
-    def eager_outputs(self, losses, detections):
-        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Union[Dict[str, Tensor], List[Dict[str, Tensor]]]
+    def eager_outputs(
+        self, losses: dict[str, torch.Tensor], detections: list[dict[str, torch.Tensor]]
+    ) -> Union[dict[str, torch.Tensor], list[dict[str, torch.Tensor]]]:
         if self.training:
             return losses
 
         return detections
 
-    def forward(self, images, targets=None):
-        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
+    def forward(
+        self,
+        images: list[torch.Tensor],
+        targets: Optional[list[dict[str, torch.Tensor]]] = None,
+    ) -> tuple[dict[str, torch.Tensor], list[dict[str, torch.Tensor]]]:
         """
         Args:
             images (list[Tensor]): images to be processed
-            targets (list[Dict[str, Tensor]]): ground-truth boxes present in the image (optional)
+            targets (list[dict[str, tensor]]): ground-truth boxes present in the image (optional)
 
         Returns:
             result (list[BoxList] or dict[Tensor]): the output from the model.
@@ -69,9 +79,12 @@ class GeneralizedRCNN(nn.Module):
                             f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
                         )
                     else:
-                        torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+                        torch._assert(
+                            False,
+                            f"Expected target boxes to be of type Tensor, got {type(boxes)}.",
+                        )
 
-        original_image_sizes: List[Tuple[int, int]] = []
+        original_image_sizes: list[tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
             torch._assert(
@@ -91,7 +104,7 @@ class GeneralizedRCNN(nn.Module):
                 if degenerate_boxes.any():
                     # print the first degenerate box
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
-                    degen_bb: List[float] = boxes[bb_idx].tolist()
+                    degen_bb: list[float] = boxes[bb_idx].tolist()
                     torch._assert(
                         False,
                         "All bounding boxes should have positive height and width."
@@ -103,7 +116,9 @@ class GeneralizedRCNN(nn.Module):
             features = OrderedDict([("0", features)])
         proposals, proposal_losses = self.rpn(images, features, targets)
         detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
-        detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)  # type: ignore[operator]
+        detections = self.transform.postprocess(
+            detections, images.image_sizes, original_image_sizes
+        )  # type: ignore[operator]
 
         losses = {}
         losses.update(detector_losses)

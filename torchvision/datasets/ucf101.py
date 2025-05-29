@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from torch import Tensor
 
@@ -61,7 +61,7 @@ class UCF101(VisionDataset):
         fold: int = 1,
         train: bool = True,
         transform: Optional[Callable] = None,
-        _precomputed_metadata: Optional[Dict[str, Any]] = None,
+        _precomputed_metadata: Optional[dict[str, Any]] = None,
         num_workers: int = 1,
         _video_width: int = 0,
         _video_height: int = 0,
@@ -102,10 +102,10 @@ class UCF101(VisionDataset):
         self.transform = transform
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return self.full_video_clips.metadata
 
-    def _select_fold(self, video_list: List[str], annotation_path: str, fold: int, train: bool) -> List[int]:
+    def _select_fold(self, video_list: list[str], annotation_path: str, fold: int, train: bool) -> list[int]:
         name = "train" if train else "test"
         name = f"{name}list{fold:02d}.txt"
         f = os.path.join(annotation_path, name)
@@ -121,7 +121,7 @@ class UCF101(VisionDataset):
     def __len__(self) -> int:
         return self.video_clips.num_clips()
 
-    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor, int]:
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, int]:
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
         label = self.samples[self.indices[video_idx]][1]
 

@@ -3,7 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from itertools import product
-from typing import Callable, List, Tuple
+from typing import Callable
 
 import numpy as np
 import pytest
@@ -100,7 +100,7 @@ class PoolWrapper(nn.Module):
         super().__init__()
         self.pool = pool
 
-    def forward(self, imgs: Tensor, boxes: List[Tensor]) -> Tensor:
+    def forward(self, imgs: Tensor, boxes: list[Tensor]) -> Tensor:
         return self.pool(imgs, boxes)
 
 
@@ -1384,6 +1384,10 @@ class TestBoxConvert:
         box_xyxyxyxy = ops.box_convert(box_tensor, in_fmt="cxcywhr", out_fmt="xyxyxyxy")
         torch.testing.assert_close(box_xyxyxyxy, exp_xyxyxyxy)
 
+        # Reverse conversion
+        box_cxcywhr = ops.box_convert(box_xyxyxyxy, in_fmt="xyxyxyxy", out_fmt="cxcywhr")
+        torch.testing.assert_close(box_cxcywhr, box_tensor)
+
     def test_bbox_xywhr_to_xyxyxyxy(self):
         box_tensor = torch.tensor([[4, 5, 4, 2, 90]], dtype=torch.float)
         exp_xyxyxyxy = torch.tensor([[4, 5, 4, 1, 6, 1, 6, 5]], dtype=torch.float)
@@ -1391,6 +1395,10 @@ class TestBoxConvert:
         assert exp_xyxyxyxy.size() == torch.Size([1, 8])
         box_xyxyxyxy = ops.box_convert(box_tensor, in_fmt="xywhr", out_fmt="xyxyxyxy")
         torch.testing.assert_close(box_xyxyxyxy, exp_xyxyxyxy)
+
+        # Reverse conversion
+        box_xywhr = ops.box_convert(box_xyxyxyxy, in_fmt="xyxyxyxy", out_fmt="xywhr")
+        torch.testing.assert_close(box_xywhr, box_tensor)
 
     @pytest.mark.parametrize("inv_infmt", ["xwyh", "cxwyh", "xwyhr", "cxwyhr", "xxxxyyyy"])
     @pytest.mark.parametrize("inv_outfmt", ["xwcx", "xhwcy", "xwcxr", "xhwcyr", "xyxyxxyy"])
@@ -1477,7 +1485,7 @@ class TestIouBase:
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
-    def _run_jit_test(target_fn: Callable, actual_box: List):
+    def _run_jit_test(target_fn: Callable, actual_box: list):
         box_tensor = torch.tensor(actual_box, dtype=torch.float)
         expected = target_fn(box_tensor, box_tensor)
         scripted_fn = torch.jit.script(target_fn)
