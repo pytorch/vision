@@ -575,13 +575,13 @@ def reference_affine_rotated_bounding_boxes_helper(bounding_boxes, *, affine_mat
             new_format=tv_tensors.BoundingBoxFormat.XYXYXYXY,
             inplace=True,
         )
-        x1, y1, x3, y3, x2, y2, x4, y4 = input_xyxyxyxy.squeeze(0).tolist()
+        x1, y1, x2, y2, x3, y3, x4, y4 = input_xyxyxyxy.squeeze(0).tolist()
 
         points = np.array(
             [
                 [x1, y1, 1.0],
-                [x3, y3, 1.0],
                 [x2, y2, 1.0],
+                [x3, y3, 1.0],
                 [x4, y4, 1.0],
             ]
         )
@@ -604,14 +604,14 @@ def reference_affine_rotated_bounding_boxes_helper(bounding_boxes, *, affine_mat
         )
 
         if clamp:
-            # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
+            # It is important to clamp before casting, especially for CXCYWHR format, dtype=int64
             output = F.clamp_bounding_boxes(
                 output,
                 format=format,
                 canvas_size=canvas_size,
             )
         else:
-            # We leave the bounding box as float64 so the caller gets the full precision to perform any additional
+            # We leave the bounding box as float32 so the caller gets the full precision to perform any additional
             # operation
             dtype = output.dtype
 
@@ -1143,7 +1143,7 @@ class TestHorizontalFlip:
 
         torch.testing.assert_close(actual, expected)
 
-    def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes, format):
+    def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
             [
                 [-1, 0, bounding_boxes.canvas_size[1]],
@@ -1151,9 +1151,12 @@ class TestHorizontalFlip:
             ],
         )
 
-        if tv_tensors.is_rotated_bounding_format(format):
-            return reference_affine_rotated_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
-        return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
+        helper = (
+            reference_affine_rotated_bounding_boxes_helper
+            if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
+            else reference_affine_bounding_boxes_helper
+        )
+        return helper(bounding_boxes, affine_matrix=affine_matrix)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize(
@@ -1163,7 +1166,7 @@ class TestHorizontalFlip:
         bounding_boxes = make_bounding_boxes(format=format)
 
         actual = fn(bounding_boxes)
-        expected = self._reference_horizontal_flip_bounding_boxes(bounding_boxes, format)
+        expected = self._reference_horizontal_flip_bounding_boxes(bounding_boxes)
 
         torch.testing.assert_close(actual, expected)
 
@@ -1595,7 +1598,7 @@ class TestVerticalFlip:
 
         torch.testing.assert_close(actual, expected)
 
-    def _reference_vertical_flip_bounding_boxes(self, bounding_boxes, format):
+    def _reference_vertical_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
             [
                 [1, 0, 0],
@@ -1603,9 +1606,12 @@ class TestVerticalFlip:
             ],
         )
 
-        if tv_tensors.is_rotated_bounding_format(format):
-            return reference_affine_rotated_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
-        return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
+        helper = (
+            reference_affine_rotated_bounding_boxes_helper
+            if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
+            else reference_affine_bounding_boxes_helper
+        )
+        return helper(bounding_boxes, affine_matrix=affine_matrix)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
@@ -1613,7 +1619,7 @@ class TestVerticalFlip:
         bounding_boxes = make_bounding_boxes(format=format)
 
         actual = fn(bounding_boxes)
-        expected = self._reference_vertical_flip_bounding_boxes(bounding_boxes, format)
+        expected = self._reference_vertical_flip_bounding_boxes(bounding_boxes)
 
         torch.testing.assert_close(actual, expected)
 

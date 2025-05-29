@@ -94,7 +94,7 @@ def horizontal_flip_bounding_boxes(
         dtype = bounding_boxes.dtype
         if not torch.is_floating_point(bounding_boxes):
             # Casting to float to support cos and sin computations.
-            bounding_boxes = bounding_boxes.to(torch.float64)
+            bounding_boxes = bounding_boxes.to(torch.float32)
         angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
         bounding_boxes[:, 0].add_(bounding_boxes[:, 2].mul(angle_rad.cos())).sub_(canvas_size[1]).neg_()
         bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin()))

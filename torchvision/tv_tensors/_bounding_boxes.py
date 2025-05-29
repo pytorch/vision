@@ -26,8 +26,8 @@ class BoundingBoxFormat(Enum):
       cy being center of box, w, h being width and height. r is rotation angle
       in degrees.
     * ``XYXYXYXY``: rotated boxes represented via corners, x1, y1 being top
-      left, x2, y2 being bottom right, x3, y3 being bottom left, x4, y4 being
-      top right.
+      left, x2, y2 being top right, x3, y3 being bottom right, x4, y4 being
+      bottom left.
     """
 
     XYXY = "XYXY"

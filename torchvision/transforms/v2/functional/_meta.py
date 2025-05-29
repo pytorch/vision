@@ -227,13 +227,13 @@ def _xywhr_to_xyxyxyxy(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
     r_rad = xywhr[..., 4].mul(torch.pi).div(180.0)
     cos, sin = r_rad.cos(), r_rad.sin()
     xywhr = xywhr[..., :2].tile((1, 4))
-    # x1 + w * cos = x3
+    # x1 + w * cos = x2
     xywhr[..., 2].add_(wh[..., 0].mul(cos))
-    # y1 - w * sin = y3
+    # y1 - w * sin = y2
     xywhr[..., 3].sub_(wh[..., 0].mul(sin))
-    # x1 + w * cos + h * sin = x2
+    # x1 + w * cos + h * sin = x3
     xywhr[..., 4].add_(wh[..., 0].mul(cos).add(wh[..., 1].mul(sin)))
-    # y1 - w * sin + h * cos = y2
+    # y1 - w * sin + h * cos = y3
     xywhr[..., 5].sub_(wh[..., 0].mul(sin).sub(wh[..., 1].mul(cos)))
     # x1 + h * sin = x4
     xywhr[..., 6].add_(wh[..., 1].mul(sin))
@@ -252,12 +252,12 @@ def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
         xyxyxyxy = xyxyxyxy.float()
 
     r_rad = torch.atan2(xyxyxyxy[..., 1].sub(xyxyxyxy[..., 3]), xyxyxyxy[..., 2].sub(xyxyxyxy[..., 0]))
-    # x1, y1, (x3 - x1), (y3 - y1), (x2 - x3), (y2 - y3) x4, y4
+    # x1, y1, (x2 - x1), (y2 - y1), (x3 - x2), (y3 - y2) x4, y4
     xyxyxyxy[..., 4:6].sub_(xyxyxyxy[..., 2:4])
     xyxyxyxy[..., 2:4].sub_(xyxyxyxy[..., :2])
-    # sqrt((x3 - x1) ** 2 + (y1 - y3) ** 2) = w
+    # sqrt((x2 - x1) ** 2 + (y1 - y2) ** 2) = w
     xyxyxyxy[..., 2] = xyxyxyxy[..., 2].pow(2).add(xyxyxyxy[..., 3].pow(2)).sqrt()
-    # sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2) = h
+    # sqrt((x2 - x3) ** 2 + (y2 - y3) ** 2) = h
     xyxyxyxy[..., 3] = xyxyxyxy[..., 4].pow(2).add(xyxyxyxy[..., 5].pow(2)).sqrt()
     xyxyxyxy[..., 4] = r_rad.div_(torch.pi).mul_(180.0)
     return xyxyxyxy[..., :5].to(dtype)

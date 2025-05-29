@@ -123,7 +123,7 @@ def make_grid(
     return grid
 
 
-class ImageDrawTV(ImageDraw.ImageDraw):
+class _ImageDrawTV(ImageDraw.ImageDraw):
     """
     A wrapper around PIL.ImageDraw to add functionalities for drawing rotated bounding boxes.
     """
@@ -225,7 +225,7 @@ def draw_bounding_boxes(
         boxes (Tensor): Tensor of size (N, 4) or (N, 8) containing bounding boxes.
             For (N, 4), the format is (xmin, ymin, xmax, ymax) and the boxes are absolute coordinates with respect to the image.
             In other words: `0 <= xmin < xmax < W` and `0 <= ymin < ymax < H`.
-            For (N, 8), the format is (x1, y1, x3, y3, x2, y2, x4, y4) and the boxes are absolute coordinates with respect to the underlying
+            For (N, 8), the format is (x1, y1, x2, y2, x3, y3, x4, y4) and the boxes are absolute coordinates with respect to the underlying
             object, so no need to verify the latter inequalities.
         labels (List[str]): List containing the labels of bounding boxes.
         colors (color or list of colors, optional): List containing the colors
@@ -301,24 +301,14 @@ def draw_bounding_boxes(
     img_boxes = boxes.to(torch.int64).tolist()
 
     if fill:
-        draw = ImageDrawTV(img_to_draw, "RGBA")
+        draw = _ImageDrawTV(img_to_draw, "RGBA")
     else:
-        draw = ImageDrawTV(img_to_draw)
+        draw = _ImageDrawTV(img_to_draw)
 
     for bbox, color, label, label_color in zip(img_boxes, colors, labels, label_colors):  # type: ignore[arg-type]
-        if fill:
-            fill_color = color + (100,)
-            if len(bbox) == 4:
-                draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
-            else:
-                # Indicate the orientation of the rotated box with dashed line.
-                draw.oriented_rectangle(bbox, width=width, outline=color, fill=fill_color)
-        else:
-            if len(bbox) == 4:
-                draw.rectangle(bbox, width=width, outline=color)
-            else:
-                # Indicate the orientation of the polygon with dashed line.
-                draw.oriented_rectangle(bbox, width=width, outline=color)
+        draw_method = draw.oriented_rectangle if len(bbox) > 4 else draw.rectangle
+        fill_color = color + (100,) if fill else None
+        draw_method(bbox, width=width, outline=color, fill=fill_color)
 
         if label is not None:
             box_margin = 1
@@ -486,7 +476,7 @@ def draw_keypoints(
 
     ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
-    draw = ImageDrawTV(img_to_draw)
+    draw = ImageDraw.Draw(img_to_draw)
     img_kpts = keypoints.to(torch.int64).tolist()
     img_vis = visibility.cpu().bool().tolist()
 

@@ -44,69 +44,31 @@ def test_bbox_instance(data, format):
 
 
 @pytest.mark.parametrize(
-    "format",
+    "format, is_rotated_expected",
     [
-        "XYXY",
-        "XYWH",
-        "CXCYWH",
-        "XYXYXYXY",
-        "XYWHR",
-        "CXCYWHR",
-        tv_tensors.BoundingBoxFormat.XYXY,
-        tv_tensors.BoundingBoxFormat.XYWH,
-        tv_tensors.BoundingBoxFormat.CXCYWH,
-        tv_tensors.BoundingBoxFormat.XYXYXYXY,
-        tv_tensors.BoundingBoxFormat.XYWHR,
-        tv_tensors.BoundingBoxFormat.CXCYWHR,
+        ("XYXY", False),
+        ("XYWH", False),
+        ("CXCYWH", False),
+        ("XYXYXYXY", True),
+        ("XYWHR", True),
+        ("CXCYWHR", True),
+        (tv_tensors.BoundingBoxFormat.XYXY, False),
+        (tv_tensors.BoundingBoxFormat.XYWH, False),
+        (tv_tensors.BoundingBoxFormat.CXCYWH, False),
+        (tv_tensors.BoundingBoxFormat.XYXYXYXY, True),
+        (tv_tensors.BoundingBoxFormat.XYWHR, True),
+        (tv_tensors.BoundingBoxFormat.CXCYWHR, True),
     ],
 )
-def test_bbox_format(format):
+@pytest.mark.parametrize("scripted", (False, True))
+def test_bbox_format(format, is_rotated_expected, scripted):
     if isinstance(format, str):
         format = tv_tensors.BoundingBoxFormat[(format.upper())]
-    if format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
-        assert tv_tensors.is_rotated_bounding_format(format) is True
-    elif format == tv_tensors.BoundingBoxFormat.XYWHR:
-        assert tv_tensors.is_rotated_bounding_format(format) is True
-    elif format == tv_tensors.BoundingBoxFormat.CXCYWHR:
-        assert tv_tensors.is_rotated_bounding_format(format) is True
-    else:
-        assert tv_tensors.is_rotated_bounding_format(format) is False
 
-
-@pytest.mark.parametrize(
-    "format",
-    [
-        "XYXY",
-        "XYWH",
-        "CXCYWH",
-        "XYXYXYXY",
-        "XYWHR",
-        "CXCYWHR",
-        tv_tensors.BoundingBoxFormat.XYXY,
-        tv_tensors.BoundingBoxFormat.XYWH,
-        tv_tensors.BoundingBoxFormat.CXCYWH,
-        tv_tensors.BoundingBoxFormat.XYXYXYXY,
-        tv_tensors.BoundingBoxFormat.XYWHR,
-        tv_tensors.BoundingBoxFormat.CXCYWHR,
-    ],
-)
-def test_bbox_format_scripted(format):
-    obj = tv_tensors.is_rotated_bounding_format
-    try:
-        fn = torch.jit.script(obj)
-    except Exception as error:
-        name = getattr(obj, "__name__", obj.__class__.__name__)
-        raise AssertionError(f"Trying to `torch.jit.script` `{name}` raised the error above.") from error
-    if isinstance(format, str):
-        format = tv_tensors.BoundingBoxFormat[(format.upper())]
-    if format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
-        assert fn(format) is True
-    elif format == tv_tensors.BoundingBoxFormat.XYWHR:
-        assert fn(format) is True
-    elif format == tv_tensors.BoundingBoxFormat.CXCYWHR:
-        assert fn(format) is True
-    else:
-        assert fn(format) is False
+    fn = tv_tensors.is_rotated_bounding_format
+    if scripted:
+        fn = torch.jit.script(fn)
+    assert fn(format) == is_rotated_expected
 
 
 def test_bbox_dim_error():
