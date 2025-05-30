@@ -22,6 +22,17 @@ rotated_boxes = torch.tensor(
         [100, 150, 150, 150, 150, 250, 100, 250],
         [200, 350, 250, 350, 250, 250, 200, 250],
         [300, 200, 200, 200, 200, 250, 300, 250],
+        # Not really a rectangle, but it doesn't matter
+        [
+            100,
+            100,
+            200,
+            50,
+            290,
+            350,
+            200,
+            400,
+        ],
     ],
     dtype=torch.float,
 )
@@ -156,12 +167,11 @@ def test_draw_boxes_with_coloured_label_backgrounds():
 
 
 @pytest.mark.skipif(PILLOW_VERSION < (10, 1), reason="The reference image is only valid for PIL >= 10.1")
-def test_draw_rotatated_boxes():
+def test_draw_rotated_boxes():
     img = torch.full((3, 500, 500), 255, dtype=torch.uint8)
-    colors = ["blue", "yellow", (0, 255, 0)]
+    colors = ["blue", "yellow", (0, 255, 0), "black"]
 
     result = utils.draw_bounding_boxes(img, rotated_boxes, colors=colors)
-    expected = torch.as_tensor(np.array(result)).permute(2, 0, 1)
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_rotated_boxes.png")
     expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
     assert_equal(result, expected)
