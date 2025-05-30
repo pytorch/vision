@@ -209,8 +209,8 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     being width and height.
     r is rotation angle w.r.t to the box center by :math:`|r|` degrees counter clock wise in the image plan
 
-    ``'xyxyxyxy'``: boxes are represented via corners, x1, y1 being top left, x2, y2 bottom right,
-    x3, y3 bottom left, and x4, y4 top right.
+    ``'xyxyxyxy'``: boxes are represented via corners, x1, y1 being top left, x2, y2 top right,
+    x3, y3 bottom right, and x4, y4 bottom left.
 
     Args:
         boxes (Tensor[N, K]): boxes which will be converted. K is the number of coordinates (4 for unrotated bounding boxes, 5 or 8 for rotated bounding boxes)

@@ -123,6 +123,57 @@ def make_grid(
     return grid
 
 
+class _ImageDrawTV(ImageDraw.ImageDraw):
+    """
+    A wrapper around PIL.ImageDraw to add functionalities for drawing rotated bounding boxes.
+    """
+
+    def oriented_rectangle(self, xy, fill=None, outline=None, width=1):
+        self.dashed_line(((xy[0], xy[1]), (xy[2], xy[3])), width=width, fill=outline)
+        for i in range(2, len(xy), 2):
+            self.line(
+                ((xy[i], xy[i + 1]), (xy[(i + 2) % len(xy)], xy[(i + 3) % len(xy)])),
+                width=width,
+                fill=outline,
+            )
+        self.rectangle(xy, fill=fill, outline=None, width=0)
+
+    def dashed_line(self, xy, fill=None, width=0, joint=None, dash_length=5, space_length=5):
+        # Calculate the total length of the line
+        total_length = 0
+        for i in range(1, len(xy)):
+            x1, y1 = xy[i - 1]
+            x2, y2 = xy[i]
+            total_length += ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+        # Initialize the current position and the current dash
+        current_position = 0
+        current_dash = True
+        # Iterate over the coordinates of the line
+        for i in range(1, len(xy)):
+            x1, y1 = xy[i - 1]
+            x2, y2 = xy[i]
+            # Calculate the length of this segment
+            segment_length = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+            # While there are still dashes to draw on this segment
+            while segment_length > 0:
+                # Calculate the length of this dash
+                dash_length_to_draw = min(segment_length, dash_length if current_dash else space_length)
+                # Calculate the end point of this dash
+                dx = x2 - x1
+                dy = y2 - y1
+                angle = math.atan2(dy, dx)
+                end_x = x1 + math.cos(angle) * dash_length_to_draw
+                end_y = y1 + math.sin(angle) * dash_length_to_draw
+                # If this is a dash, draw it
+                if current_dash:
+                    self.line([(x1, y1), (end_x, end_y)], fill, width, joint)
+                # Update the current position and the current dash
+                current_position += dash_length_to_draw
+                segment_length -= dash_length_to_draw
+                x1, y1 = end_x, end_y
+                current_dash = not current_dash
+
+
 @torch.no_grad()
 def save_image(
     tensor: Union[torch.Tensor, list[torch.Tensor]],
@@ -171,9 +222,11 @@ def draw_bounding_boxes(
 
     Args:
         image (Tensor): Tensor of shape (C, H, W) and dtype uint8 or float.
-        boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
-            the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
-            `0 <= ymin < ymax < H`.
+        boxes (Tensor): Tensor of size (N, 4) or (N, 8) containing bounding boxes.
+            For (N, 4), the format is (xmin, ymin, xmax, ymax) and the boxes are absolute coordinates with respect to the image.
+            In other words: `0 <= xmin < xmax < W` and `0 <= ymin < ymax < H`.
+            For (N, 8), the format is (x1, y1, x2, y2, x3, y3, x4, y4) and the boxes are absolute coordinates with respect to the underlying
+            object, so no need to verify the latter inequalities.
         labels (List[str]): List containing the labels of bounding boxes.
         colors (color or list of colors, optional): List containing the colors
             of the boxes or single color for all boxes. The color can be represented as
@@ -205,7 +258,7 @@ def draw_bounding_boxes(
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
-    elif (boxes[:, 0] > boxes[:, 2]).any() or (boxes[:, 1] > boxes[:, 3]).any():
+    elif boxes.shape[-1] == 4 and ((boxes[:, 0] > boxes[:, 2]).any() or (boxes[:, 1] > boxes[:, 3]).any()):
         raise ValueError(
             "Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to convert them"
         )
@@ -248,16 +301,14 @@ def draw_bounding_boxes(
     img_boxes = boxes.to(torch.int64).tolist()
 
     if fill:
-        draw = ImageDraw.Draw(img_to_draw, "RGBA")
+        draw = _ImageDrawTV(img_to_draw, "RGBA")
     else:
-        draw = ImageDraw.Draw(img_to_draw)
+        draw = _ImageDrawTV(img_to_draw)
 
     for bbox, color, label, label_color in zip(img_boxes, colors, labels, label_colors):  # type: ignore[arg-type]
-        if fill:
-            fill_color = color + (100,)
-            draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
-        else:
-            draw.rectangle(bbox, width=width, outline=color)
+        draw_method = draw.oriented_rectangle if len(bbox) > 4 else draw.rectangle
+        fill_color = color + (100,) if fill else None
+        draw_method(bbox, width=width, outline=color, fill=fill_color)
 
         if label is not None:
             box_margin = 1
