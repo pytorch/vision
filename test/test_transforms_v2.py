@@ -586,7 +586,7 @@ def reference_affine_rotated_bounding_boxes_helper(bounding_boxes, *, affine_mat
             ]
         )
         transformed_points = np.matmul(points, affine_matrix.astype(points.dtype).T)
-        output = torch.Tensor(
+        output = torch.tensor(
             [
                 float(transformed_points[1, 0]),
                 float(transformed_points[1, 1]),
