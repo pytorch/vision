@@ -210,11 +210,16 @@ def draw_bounding_boxes(
             "Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to convert them"
         )
 
+    def to_rgb(image):
+        if image.size(0) == 1:
+            image = torch.tile(image, (3, 1, 1))
+        return image
+
     num_boxes = boxes.shape[0]
 
     if num_boxes == 0:
-        warnings.warn("boxes doesn't contain any box. No box was drawn")
-        return image
+        # Consistent handling of grayscale images
+        return to_rgb(image)
 
     if labels is None:
         labels: Union[list[str], list[None]] = [None] * num_boxes  # type: ignore[no-redef]
@@ -237,8 +242,7 @@ def draw_bounding_boxes(
         txt_font = ImageFont.truetype(font=font, size=font_size or 10)
 
     # Handle Grayscale images
-    if image.size(0) == 1:
-        image = torch.tile(image, (3, 1, 1))
+    image = to_rbg(image)
 
     original_dtype = image.dtype
     if original_dtype.is_floating_point:
