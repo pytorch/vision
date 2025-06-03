@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, MutableSequence, Optional, Sequence, Tuple, TYPE_CHECKING, Union
+from typing import Any, Mapping, MutableSequence, Optional, Sequence, Tuple, Union
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -40,13 +40,13 @@ class KeyPoints(TVTensor):
             ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
     """
 
-    canvas_size: Tuple[int, int]
+    canvas_size: tuple[int, int]
 
     def __new__(
         cls,
         data: Any,
         *,
-        canvas_size: Tuple[int, int],
+        canvas_size: tuple[int, int],
         dtype: Optional[torch.dtype] = None,
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: Optional[bool] = None,
@@ -60,21 +60,6 @@ class KeyPoints(TVTensor):
         points.canvas_size = canvas_size
         return points
 
-    if TYPE_CHECKING:
-        # EVIL: Just so that MYPY+PYLANCE+others stop shouting that everything is wrong when initializeing the TVTensor
-        # Not read or defined at Runtime (only at linting time).
-        # TODO: BOUNDING BOXES needs something similar
-        def __init__(
-            self,
-            data: Any,
-            *,
-            canvas_size: Tuple[int, int],
-            dtype: Optional[torch.dtype] = None,
-            device: Optional[Union[torch.device, str, int]] = None,
-            requires_grad: Optional[bool] = None,
-        ):
-            pass
-
     @classmethod
     def _wrap_output(
         cls,
@@ -87,7 +72,7 @@ class KeyPoints(TVTensor):
         # For BoundingBoxes, that included format, but we only support one format here !
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
         first_bbox_from_args = next(x for x in flat_params if isinstance(x, KeyPoints))
-        canvas_size: Tuple[int, int] = first_bbox_from_args.canvas_size
+        canvas_size = first_bbox_from_args.canvas_size
 
         if isinstance(output, torch.Tensor) and not isinstance(output, KeyPoints):
             output = KeyPoints(output, canvas_size=canvas_size)
