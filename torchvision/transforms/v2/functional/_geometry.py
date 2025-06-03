@@ -385,6 +385,7 @@ def _resize_keypoints_dispatch(
     keypoints: tv_tensors.KeyPoints,
     size: Optional[list[int]],
     max_size: Optional[int] = None,
+    **kwargs: Any,
 ) -> tv_tensors.KeyPoints:
     out, canvas_size = resize_keypoints(
         keypoints.as_subclass(torch.Tensor),
