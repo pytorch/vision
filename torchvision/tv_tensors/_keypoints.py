@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, MutableSequence, Optional, Sequence, Tuple, Union
+from typing import Any, Mapping, Sequence
 
 import torch
 from torch.utils._pytree import tree_flatten
