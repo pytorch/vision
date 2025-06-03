@@ -2678,7 +2678,9 @@ def five_crop_video(
     return five_crop_image(video, size)
 
 
-def ten_crop(inpt: torch.Tensor, size: list[int], vertical_flip: bool = False) -> tuple[
+def ten_crop(
+    inpt: torch.Tensor, size: list[int], vertical_flip: bool = False
+) -> tuple[
     torch.Tensor,
     torch.Tensor,
     torch.Tensor,
@@ -2702,7 +2704,9 @@ def ten_crop(inpt: torch.Tensor, size: list[int], vertical_flip: bool = False) -
 
 @_register_five_ten_crop_kernel_internal(ten_crop, torch.Tensor)
 @_register_five_ten_crop_kernel_internal(ten_crop, tv_tensors.Image)
-def ten_crop_image(image: torch.Tensor, size: list[int], vertical_flip: bool = False) -> tuple[
+def ten_crop_image(
+    image: torch.Tensor, size: list[int], vertical_flip: bool = False
+) -> tuple[
     torch.Tensor,
     torch.Tensor,
     torch.Tensor,
@@ -2727,7 +2731,9 @@ def ten_crop_image(image: torch.Tensor, size: list[int], vertical_flip: bool = F
 
 
 @_register_five_ten_crop_kernel_internal(ten_crop, PIL.Image.Image)
-def _ten_crop_image_pil(image: PIL.Image.Image, size: list[int], vertical_flip: bool = False) -> tuple[
+def _ten_crop_image_pil(
+    image: PIL.Image.Image, size: list[int], vertical_flip: bool = False
+) -> tuple[
     PIL.Image.Image,
     PIL.Image.Image,
     PIL.Image.Image,
@@ -2752,7 +2758,9 @@ def _ten_crop_image_pil(image: PIL.Image.Image, size: list[int], vertical_flip: 
 
 
 @_register_five_ten_crop_kernel_internal(ten_crop, tv_tensors.Video)
-def ten_crop_video(video: torch.Tensor, size: list[int], vertical_flip: bool = False) -> tuple[
+def ten_crop_video(
+    video: torch.Tensor, size: list[int], vertical_flip: bool = False
+) -> tuple[
     torch.Tensor,
     torch.Tensor,
     torch.Tensor,

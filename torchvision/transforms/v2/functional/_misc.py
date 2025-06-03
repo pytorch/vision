@@ -344,7 +344,7 @@ def sanitize_keypoints(
 
     .. note::
 
-        Points that touch the edge of the canvas are removed, unlike for :func:`sanitize_bounding_boxes`.  
+        Points that touch the edge of the canvas are removed, unlike for :func:`sanitize_bounding_boxes`.
 
     Raises:
         ValueError: If the keypoints are not passed as a two dimensional tensor.

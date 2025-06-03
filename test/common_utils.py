@@ -9,7 +9,6 @@ import shutil
 import sys
 import tempfile
 import warnings
-from collections.abc import Sequence
 from subprocess import CalledProcessError, check_output, STDOUT
 
 import numpy as np
@@ -401,18 +400,10 @@ def make_image_pil(*args, **kwargs):
     return to_pil_image(make_image(*args, **kwargs))
 
 
-def make_keypoints(
-    canvas_size: tuple[int, int] = DEFAULT_SIZE, *, num_points: int | Sequence[int] = 4, dtype=None, device="cpu"
-) -> tv_tensors.KeyPoints:
-    """Make the KeyPoints for testing purposes"""
-    if isinstance(num_points, int):
-        num_points = [num_points]
-    single_coord_shape: tuple[int, ...] = tuple(num_points) + (1,)
-    y = torch.randint(0, canvas_size[0] - 1, single_coord_shape, dtype=dtype, device=device)
-    x = torch.randint(0, canvas_size[1] - 1, single_coord_shape, dtype=dtype, device=device)
-    points = torch.cat((x, y), dim=-1)
-    keypoints = tv_tensors.KeyPoints(points, canvas_size=canvas_size)
-    return keypoints
+def make_keypoints(canvas_size=DEFAULT_SIZE, *, num_points=4, dtype=None, device="cpu"):
+    y = torch.randint(0, canvas_size[0], size=(num_points, 1), dtype=dtype, device=device)
+    x = torch.randint(0, canvas_size[1], size=(num_points, 1), dtype=dtype, device=device)
+    return tv_tensors.KeyPoints(torch.cat((x, y), dim=-1), canvas_size=canvas_size)
 
 
 def make_bounding_boxes(

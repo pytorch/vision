@@ -6877,14 +6877,27 @@ class TestUtils:
             query(["blah"])
 
     @pytest.mark.parametrize(
-        "boxes", [
-            tv_tensors.BoundingBoxes(torch.tensor([[1., 1., 2., 2.]]), format="XYXY", canvas_size=(4, 4)),  # [boxes0]
-            tv_tensors.BoundingBoxes(torch.tensor([[1., 1., 1., 1.]]), format="XYWH", canvas_size=(4, 4)),  # [boxes1]
-            tv_tensors.BoundingBoxes(torch.tensor([[1.5, 1.5, 1., 1.]]), format="CXCYWH", canvas_size=(4, 4)),  # [boxes2]
-            tv_tensors.BoundingBoxes(torch.tensor([[1.5, 1.5, 1., 1., 45]]), format="CXCYWHR", canvas_size=(4, 4)),  # [boxes3]
-            tv_tensors.BoundingBoxes(torch.tensor([[1., 1., 1., 1., 45.]]), format="XYWHR", canvas_size=(4, 4)),  # [boxes4]
-            tv_tensors.BoundingBoxes(torch.tensor([[1., 1., 1., 2., 2., 2., 2., 1.]]), format="XY" * 4, canvas_size=(4, 4)),  # [boxes5]
-        ]
+        "boxes",
+        [
+            tv_tensors.BoundingBoxes(
+                torch.tensor([[1.0, 1.0, 2.0, 2.0]]), format="XYXY", canvas_size=(4, 4)
+            ),  # [boxes0]
+            tv_tensors.BoundingBoxes(
+                torch.tensor([[1.0, 1.0, 1.0, 1.0]]), format="XYWH", canvas_size=(4, 4)
+            ),  # [boxes1]
+            tv_tensors.BoundingBoxes(
+                torch.tensor([[1.5, 1.5, 1.0, 1.0]]), format="CXCYWH", canvas_size=(4, 4)
+            ),  # [boxes2]
+            tv_tensors.BoundingBoxes(
+                torch.tensor([[1.5, 1.5, 1.0, 1.0, 45]]), format="CXCYWHR", canvas_size=(4, 4)
+            ),  # [boxes3]
+            tv_tensors.BoundingBoxes(
+                torch.tensor([[1.0, 1.0, 1.0, 1.0, 45.0]]), format="XYWHR", canvas_size=(4, 4)
+            ),  # [boxes4]
+            tv_tensors.BoundingBoxes(
+                torch.tensor([[1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 1.0]]), format="XY" * 4, canvas_size=(4, 4)
+            ),  # [boxes5]
+        ],
     )
     def test_convert_bounding_boxes_to_points(self, boxes: tv_tensors.BoundingBoxes):
         kp = F.convert_bounding_boxes_to_points(boxes)
@@ -6897,10 +6910,14 @@ class TestUtils:
             # If we convert to XYXYXYXY format, we should get what we want.
             reconverted = kp.reshape(-1, 8)
             reconverted_bbox = F.convert_bounding_box_format(
-                tv_tensors.BoundingBoxes(reconverted, format=tv_tensors.BoundingBoxFormat.XYXYXYXY, canvas_size=kp.canvas_size),
-                new_format=boxes.format
+                tv_tensors.BoundingBoxes(
+                    reconverted, format=tv_tensors.BoundingBoxFormat.XYXYXYXY, canvas_size=kp.canvas_size
+                ),
+                new_format=boxes.format,
             )
-            assert ((reconverted_bbox - boxes).abs() < 1e-5).all(), (  # Rotational computations mean that we can't ensure exactitude.
+            assert (
+                (reconverted_bbox - boxes).abs() < 1e-5
+            ).all(), (  # Rotational computations mean that we can't ensure exactitude.
                 f"Invalid reconversion :\n\tGot:  {reconverted_bbox}\n\tFrom: {boxes}\n\t"
                 f"Diff: {reconverted_bbox - boxes}"
             )
@@ -6909,7 +6926,11 @@ class TestUtils:
             # If we use A | C, we should get back the XYXY format of bounding box
             reconverted = torch.cat([kp[..., 0, :], kp[..., 2, :]], dim=-1)
             reconverted_bbox = F.convert_bounding_box_format(
-                tv_tensors.BoundingBoxes(reconverted, format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=kp.canvas_size),
+                tv_tensors.BoundingBoxes(
+                    reconverted, format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=kp.canvas_size
+                ),
                 new_format=boxes.format,
             )
-            assert (reconverted_bbox == boxes).all(), f"Invalid reconversion :\n\tGot:  {reconverted_bbox}\n\tFrom: {boxes}"
+            assert (
+                reconverted_bbox == boxes
+            ).all(), f"Invalid reconversion :\n\tGot:  {reconverted_bbox}\n\tFrom: {boxes}"
