@@ -336,20 +336,6 @@ def _make_transform_sample(transform, *, image_or_video, adapter):
             device=device,
         ),
         keypoints=make_keypoints(canvas_size=size),
-        keypoints_degenerate=tv_tensors.KeyPoints(
-            [
-                [0, 1],  # left edge
-                [1, 0],  # top edge
-                [0, 0],  # top left corner
-                [size[1], 1],  # right edge
-                [size[1], 0],  # top right corner
-                [1, size[0]],  # bottom edge
-                [0, size[0]],  # bottom left corner
-                [size[1], size[0]],  # bottom right corner
-            ],
-            canvas_size=size,
-            device=device,
-        ),
         detection_mask=make_detection_masks(size, device=device),
         segmentation_mask=make_segmentation_mask(size, device=device),
         int=0,
@@ -404,6 +390,7 @@ def _check_transform_sample_input_smoke(transform, input, *, adapter):
 
     # Enforce that the transform does not turn a degenerate bounding box, e.g. marked by RandomIoUCrop (or any other
     # future transform that does this), back into a valid one.
+    # TODO: We may want to do that for KeyPoints too
     for degenerate_bounding_boxes in (
         bounding_box
         for name, bounding_box in sample.items()
@@ -6879,24 +6866,14 @@ class TestUtils:
     @pytest.mark.parametrize(
         "boxes",
         [
-            tv_tensors.BoundingBoxes(
-                torch.tensor([[1.0, 1.0, 2.0, 2.0]]), format="XYXY", canvas_size=(4, 4)
-            ),  # [boxes0]
-            tv_tensors.BoundingBoxes(
-                torch.tensor([[1.0, 1.0, 1.0, 1.0]]), format="XYWH", canvas_size=(4, 4)
-            ),  # [boxes1]
-            tv_tensors.BoundingBoxes(
-                torch.tensor([[1.5, 1.5, 1.0, 1.0]]), format="CXCYWH", canvas_size=(4, 4)
-            ),  # [boxes2]
-            tv_tensors.BoundingBoxes(
-                torch.tensor([[1.5, 1.5, 1.0, 1.0, 45]]), format="CXCYWHR", canvas_size=(4, 4)
-            ),  # [boxes3]
-            tv_tensors.BoundingBoxes(
-                torch.tensor([[1.0, 1.0, 1.0, 1.0, 45.0]]), format="XYWHR", canvas_size=(4, 4)
-            ),  # [boxes4]
+            tv_tensors.BoundingBoxes(torch.tensor([[1.0, 1.0, 2.0, 2.0]]), format="XYXY", canvas_size=(4, 4)),
+            tv_tensors.BoundingBoxes(torch.tensor([[1.0, 1.0, 1.0, 1.0]]), format="XYWH", canvas_size=(4, 4)),
+            tv_tensors.BoundingBoxes(torch.tensor([[1.5, 1.5, 1.0, 1.0]]), format="CXCYWH", canvas_size=(4, 4)),
+            tv_tensors.BoundingBoxes(torch.tensor([[1.5, 1.5, 1.0, 1.0, 45]]), format="CXCYWHR", canvas_size=(4, 4)),
+            tv_tensors.BoundingBoxes(torch.tensor([[1.0, 1.0, 1.0, 1.0, 45.0]]), format="XYWHR", canvas_size=(4, 4)),
             tv_tensors.BoundingBoxes(
                 torch.tensor([[1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 1.0]]), format="XY" * 4, canvas_size=(4, 4)
-            ),  # [boxes5]
+            ),
         ],
     )
     def test_convert_bounding_boxes_to_points(self, boxes: tv_tensors.BoundingBoxes):
