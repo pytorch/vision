@@ -47,10 +47,10 @@ class KeyPoints(TVTensor):
         data: Any,
         *,
         canvas_size: tuple[int, int],
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: Optional[bool] = None,
-    ):
+        dtype: torch.dtype | None = None,
+        device: torch.device | str | int | None = None,
+        requires_grad: bool | None = None,
+    ) -> KeyPoints:
         tensor: torch.Tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if tensor.ndim == 1:
             tensor = tensor.unsqueeze(0)
@@ -63,10 +63,10 @@ class KeyPoints(TVTensor):
     @classmethod
     def _wrap_output(
         cls,
-        output: Any,
+        output: torch.Tensor,
         args: Sequence[Any] = (),
-        kwargs: Optional[Mapping[str, Any]] = None,
-    ) -> Any:
+        kwargs: Mapping[str, Any] | None = None,
+    ) -> KeyPoints:
         # Mostly copied over from the BoundingBoxes TVTensor, minor improvements.
         # This copies over the metadata.
         # For BoundingBoxes, that included format, but we only support one format here !
