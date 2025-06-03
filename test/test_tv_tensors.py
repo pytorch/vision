@@ -139,7 +139,8 @@ def test_to_wrapping(make_input):
 )
 @pytest.mark.parametrize("return_type", ["Tensor", "TVTensor"])
 def test_to_tv_tensor_reference(make_input, return_type):
-    tensor = torch.rand((3, 16, 16), dtype=torch.float64)
+    tensor = make_input().to(dtype=torch.float64).as_subclass(torch.Tensor)
+    assert type(tensor) is torch.Tensor
     dp = make_input()
 
     with tv_tensors.set_return_type(return_type):
