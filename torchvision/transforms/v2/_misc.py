@@ -341,9 +341,9 @@ class ConvertImageDtype(Transform):
 
 
 class SanitizeBoundingBoxes(Transform):
-    """Remove degenerate/invalid bounding boxes and their corresponding labels, masks and keypoints.
+    """Remove degenerate/invalid bounding boxes and their corresponding labels and masks.
 
-    This transform removes bounding boxes and their associated labels, masks and keypoints that:
+    This transform removes bounding boxes and their associated labels/masks that:
 
     - are below a given ``min_size`` or ``min_area``: by default this also removes degenerate boxes that have e.g. X2 <= X1.
     - have any coordinate outside of their corresponding image. You may want to
@@ -358,14 +358,6 @@ class SanitizeBoundingBoxes(Transform):
     If you want to be extra careful, you may call it after all transforms that
     may modify bounding boxes but once at the end should be enough in most
     cases.
-
-    .. note::
-        This transform requires that any :class:`~torchvision.tv_tensor.KeyPoints` or
-        :class:`~torchvision.tv_tensor.Mask` provided has to match the bounding boxes in shape.
-
-        If the bounding boxes are of shape ``[N, K]``, then the
-        KeyPoints have to be of shape ``[N, ..., 2]`` or ``[N, 2]``
-        and the masks have to be of shape ``[N, ..., H, W]`` or ``[N, H, W]``
 
     Args:
         min_size (float, optional): The size below which bounding boxes are removed. Default is 1.
@@ -446,15 +438,10 @@ class SanitizeBoundingBoxes(Transform):
         return tree_unflatten(flat_outputs, spec)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
-        # For every object in the flattened input of the `forward` method, we apply transform
-        # The params contain the list of valid indices of the (N, K) bbox set
-
-        # We suppose here that any KeyPoints or Masks TVTensors is of shape (N, ..., 2) and (N, ..., H, W) respectively
-        # TODO: check this.
         is_label = params["labels"] is not None and any(inpt is label for label in params["labels"])
-        is_bbox_mask_or_kpoints = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask, tv_tensors.KeyPoints))
+        is_bounding_boxes_or_mask = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask))
 
-        if not (is_label or is_bbox_mask_or_kpoints):
+        if not (is_label or is_bounding_boxes_or_mask):
             return inpt
 
         output = inpt[params["valid"]]
