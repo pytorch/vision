@@ -1229,7 +1229,7 @@ def _rotate_image_pil(
     interpolation = _check_interpolation(interpolation)
 
     return _FP.rotate(
-        image, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center
+        image, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center  # type: ignore[arg-type]
     )
 
 
