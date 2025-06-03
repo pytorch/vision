@@ -72,12 +72,10 @@ class KeyPoints(TVTensor):
         args: Sequence[Any] = (),
         kwargs: Mapping[str, Any] | None = None,
     ) -> KeyPoints:
-        # Mostly copied over from the BoundingBoxes TVTensor, minor improvements.
-        # This copies over the metadata.
-        # For BoundingBoxes, that included format, but we only support one format here !
+        # Similar to BoundingBoxes._wrap_output(), see comment there.
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
-        first_bbox_from_args = next(x for x in flat_params if isinstance(x, KeyPoints))
-        canvas_size = first_bbox_from_args.canvas_size
+        first_keypoints_from_args = next(x for x in flat_params if isinstance(x, KeyPoints))
+        canvas_size = first_keypoints_from_args.canvas_size
 
         if isinstance(output, torch.Tensor) and not isinstance(output, KeyPoints):
             output = KeyPoints._wrap(output, canvas_size=canvas_size, check_dims=False)
