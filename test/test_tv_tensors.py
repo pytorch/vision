@@ -56,37 +56,17 @@ def test_bbox_dim_error():
         tv_tensors.BoundingBoxes(data_3d, format="XYXY", canvas_size=(32, 32))
 
 
-@pytest.mark.parametrize(
-    "data",
-    [
-        torch.randint(0, 32, size=(5, 2)),
-        [
-            [
-                0,
-                0,
-            ],
-            [
-                2,
-                2,
-            ],
-        ],
-        [
-            1,
-            2,
-        ],
-    ],
-)
+@pytest.mark.parametrize("data", [torch.randint(0, 32, size=(5, 2)), [[0, 0], [2, 2]], [1, 2]])
 def test_keypoints_instance(data):
     kpoint = tv_tensors.KeyPoints(data, canvas_size=(32, 32))
-    assert isinstance(kpoint, tv_tensors.KeyPoints)
+    assert isinstance(kpoint, torch.Tensor)
     assert type(kpoint) is tv_tensors.KeyPoints
     assert kpoint.shape[-1] == 2
 
 
 def test_keypoints_shape_error():
-    data_3d = [(0, 1, 2)]
-    with pytest.raises(ValueError, match="shape"):
-        tv_tensors.KeyPoints(torch.tensor(data_3d), canvas_size=(11, 7))
+    with pytest.raises(ValueError, match="Expected a tensor of shape"):
+        tv_tensors.KeyPoints(torch.tensor([[1, 2, 3]]), canvas_size=(11, 7))
 
 
 @pytest.mark.parametrize(
@@ -231,9 +211,9 @@ def test_force_subclass_with_metadata(return_type):
     bbox.requires_grad_(True)
     kpoints.requires_grad_(True)
     if return_type == "TVTensor":
-        assert kpoints.canvas_size == canvas_size
         assert bbox.format, bbox.canvas_size == (format, canvas_size)
         assert bbox.requires_grad
+        assert kpoints.canvas_size == canvas_size
         assert kpoints.requires_grad
     tv_tensors.set_return_type("tensor")
 

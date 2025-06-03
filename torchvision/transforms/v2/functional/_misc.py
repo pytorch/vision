@@ -328,6 +328,7 @@ def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: boo
     return inpt.to(dtype)
 
 
+# TODOKP This is untested. Also there's no corresponding transform class
 def sanitize_keypoints(
     keypoints: torch.Tensor, canvas_size: Optional[tuple[int, int]] = None
 ) -> tuple[torch.Tensor, torch.Tensor]:
@@ -390,6 +391,7 @@ def sanitize_keypoints(
     return tv_tensors.wrap(keypoints[valid], like=keypoints), valid
 
 
+# TODOKP Untested, see above
 def _get_sanitize_keypoints_mask(
     keypoints: torch.Tensor,
     canvas_size: tuple[int, int],

@@ -165,6 +165,7 @@ def get_bounding_boxes(flat_inputs: list[Any]) -> tv_tensors.BoundingBoxes:
         raise ValueError("No bounding boxes were found in the sample")
 
 
+# TODOKP this is unused and un-tested
 def get_keypoints(flat_inputs: list[Any]) -> tv_tensors.KeyPoints:
     """Returns the KeyPoints in the input.
 
