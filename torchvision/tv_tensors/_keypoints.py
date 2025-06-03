@@ -42,6 +42,17 @@ class KeyPoints(TVTensor):
 
     canvas_size: tuple[int, int]
 
+    @classmethod
+    def _wrap(cls, tensor: torch.Tensor, *, canvas_size: tuple[int, int], check_dims: bool = True) -> KeyPoints:  # type: ignore[override]
+        if check_dims:
+            if tensor.ndim == 1:
+                tensor = tensor.unsqueeze(0)
+            elif tensor.shape[-1] != 2:
+                raise ValueError(f"Expected a tensor of shape (..., 2), not {tensor.shape}")
+        points = tensor.as_subclass(cls)
+        points.canvas_size = canvas_size
+        return points
+
     def __new__(
         cls,
         data: Any,
@@ -51,14 +62,8 @@ class KeyPoints(TVTensor):
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,
     ) -> KeyPoints:
-        tensor: torch.Tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        if tensor.ndim == 1:
-            tensor = tensor.unsqueeze(0)
-        elif tensor.shape[-1] != 2:
-            raise ValueError(f"Expected a tensor of shape (..., 2), not {tensor.shape}")
-        points = tensor.as_subclass(cls)
-        points.canvas_size = canvas_size
-        return points
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        return cls._wrap(tensor, canvas_size=canvas_size)
 
     @classmethod
     def _wrap_output(
@@ -75,17 +80,10 @@ class KeyPoints(TVTensor):
         canvas_size = first_bbox_from_args.canvas_size
 
         if isinstance(output, torch.Tensor) and not isinstance(output, KeyPoints):
-            output = KeyPoints(output, canvas_size=canvas_size)
-        elif isinstance(output, MutableSequence):
-            # For lists and list-like object we don't try to create a new object, we just set the values in the list
-            # This allows us to conserve the type of complex list-like object that may not follow the initialization API of lists
-            for i, part in enumerate(output):
-                output[i] = KeyPoints(part, canvas_size=canvas_size)
-        elif isinstance(output, Sequence):
-            # Non-mutable sequences handled here (like tuples)
-            # Every sequence that is not a mutable sequence is a non-mutable sequence
-            # We have to use a tuple here, since we know its initialization api, unlike for `output`
-            output = tuple(KeyPoints(part, canvas_size=canvas_size) for part in output)
+            output = KeyPoints._wrap(output, canvas_size=canvas_size, check_dims=False)
+        elif isinstance(output, (tuple, list)):
+            # This branch exists for chunk() and unbind()
+            output = type(output)(KeyPoints._wrap(part, canvas_size=canvas_size, check_dims=False) for part in output)
         return output
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
