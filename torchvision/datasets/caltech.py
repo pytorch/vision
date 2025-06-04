@@ -1,11 +1,12 @@
 import os
 import os.path
+import shutil
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
-from .utils import download_and_extract_archive, verify_str_arg
+from .utils import download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -131,19 +132,36 @@ class Caltech101(VisionDataset):
     def download(self) -> None:
         if self._check_integrity():
             return
+        # Download and unzip the single ZIP containing both .tar files
+        download_and_extract_archive(
+            "https://data.caltech.edu/records/mzrjq-6wc02/files/caltech-101.zip?download=1",
+            self.root,
+            filename="caltech-101.zip",
+            md5="3138e1922a9193bfa496528edbbc45d0",
+        )
+        archive_folder = os.path.join(self.root, "caltech-101")
+        category_archive = os.path.join(archive_folder, "101_ObjectCategories.tar.gz")
+        annotation_archive = os.path.join(archive_folder, "Annotations.tar")
+        macos_meta = os.path.join(archive_folder, "__MACOSX")
 
-        download_and_extract_archive(
-            "https://drive.google.com/file/d/137RyRjvTBkBiIfeYBNZBtViDHQ6_Ewsp",
-            self.root,
-            filename="101_ObjectCategories.tar.gz",
-            md5="b224c7392d521a49829488ab0f1120d9",
-        )
-        download_and_extract_archive(
-            "https://drive.google.com/file/d/175kQy3UsZ0wUEHZjqkUDdNVssr7bgh_m",
-            self.root,
-            filename="Annotations.tar",
-            md5="6f83eeb1f24d99cab4eb377263132c91",
-        )
+        # Remove macOS metadata folder if it exists
+        if os.path.isdir(macos_meta):
+            shutil.rmtree(macos_meta)
+
+        # Extract '101_ObjectCategories.tar.gz' into self.root
+        extract_archive(category_archive, self.root, remove_finished=True)
+
+        # Extract 'Annotations.tar' into self.root
+        extract_archive(annotation_archive, self.root, remove_finished=True)
+
+        # Delete the 'caltech-101' folder (which may now be empty or contain only other hidden files)
+        if os.path.isdir(archive_folder):
+            shutil.rmtree(archive_folder)
+
+        # Remove the ZIP file itself
+        zip_path = os.path.join(self.root, "caltech-101.zip")
+        if os.path.isfile(zip_path):
+            os.remove(zip_path)
 
     def extra_repr(self) -> str:
         return "Target type: {target_type}".format(**self.__dict__)
