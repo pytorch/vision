@@ -310,10 +310,7 @@ semantic segmentation tasks.
 
     [img.shape for img in imgs] = [torch.Size([3, 512, 512]), torch.Size([3, 409, 493])]
     [type(target) for target in targets] = [<class 'dict'>, <class 'dict'>]
-    /opt/conda/envs/ci/lib/python3.10/site-packages/torch/_tensor.py:1128: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-    Consider using tensor.detach() first. (Triggered internally at /pytorch/aten/src/ATen/native/Scalar.cpp:22.)
-      return self.item().__format__(format_spec)
-    loss_classifier     4.721
+    loss_classifier     4.722
     loss_box_reg        0.006
     loss_mask           0.734
     loss_objectness     0.691
@@ -339,7 +336,7 @@ v2). So don't be afraid to simplify and only keep what you need.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 4.821 seconds)
+   **Total running time of the script:** (0 minutes 4.825 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_transforms_e2e.py:

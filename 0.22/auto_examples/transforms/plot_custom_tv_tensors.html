@@ -438,11 +438,11 @@ Torchvision v2 transforms. Before continuing, make sure you have read
 what you need to know to implement your more elaborate uses-cases. If you need
 to create a class that carries meta-data, take a look at how the
 <a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a> class is <a class="reference external" href="https://github.com/pytorch/vision/blob/main/torchvision/tv_tensors/_bounding_box.py">implemented</a>.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyTVTensor</span><span class="p">(</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">TVTensor</span></a><span class="p">):</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyTVTensor</span><span class="p">(</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">TVTensor</span></a><span class="p">):</span>
     <span class="k">pass</span>
 
 
-<span class="n">my_dp</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">MyTVTensor</span></a><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="n">my_dp</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">MyTVTensor</span></a><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
 <span class="n">my_dp</span>
 </pre></div>
 </div>
@@ -459,7 +459,7 @@ operation of our MyTVTensor class, and register it to the functional API.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
 
 
-<span class="nd">@F</span><span class="o">.</span><span class="n">register_kernel</span><span class="p">(</span><span class="n">functional</span><span class="o">=</span><span class="s2">&quot;hflip&quot;</span><span class="p">,</span> <span class="n">tv_tensor_cls</span><span class="o">=</span><a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">MyTVTensor</span></a><span class="p">)</span>
+<span class="nd">@F</span><span class="o">.</span><span class="n">register_kernel</span><span class="p">(</span><span class="n">functional</span><span class="o">=</span><span class="s2">&quot;hflip&quot;</span><span class="p">,</span> <span class="n">tv_tensor_cls</span><span class="o">=</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">MyTVTensor</span></a><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">hflip_my_tv_tensor</span><span class="p">(</span><span class="n">my_dp</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Flipping!&quot;</span><span class="p">)</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">my_dp</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
@@ -478,7 +478,7 @@ could also have used the  functional <em>itself</em>, i.e.
 </div>
 <p>Now that we have registered our kernel, we can call the functional API on a
 <code class="docutils literal notranslate"><span class="pre">MyTVTensor</span></code> instance:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">my_dp</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">MyTVTensor</span></a><span class="p">(</span><a href="https://pytorch.org/docs/stable/generated/torch.rand.html#torch.rand" title="torch.rand" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">rand</span></a><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">))</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">my_dp</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">MyTVTensor</span></a><span class="p">(</span><a href="https://docs.pytorch.org/docs/stable/generated/torch.rand.html#torch.rand" title="torch.rand" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">rand</span></a><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">))</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">hflip</span><span class="p">(</span><span class="n">my_dp</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -487,7 +487,7 @@ could also have used the  functional <em>itself</em>, i.e.
 </div>
 <p>And we can also use the
 <a class="reference internal" href="../../generated/torchvision.transforms.v2.RandomHorizontalFlip.html#torchvision.transforms.v2.RandomHorizontalFlip" title="torchvision.transforms.v2.RandomHorizontalFlip"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomHorizontalFlip</span></code></a> transform, since it relies on <code class="xref py py-func docutils literal notranslate"><span class="pre">hflip()</span></code> internally:</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <a href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span></a><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">RandomHorizontalFlip</span></a><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">_</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="n">my_dp</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -525,7 +525,7 @@ accept it.</p>
 <code class="docutils literal notranslate"><span class="pre">*args,</span> <span class="pre">**kwargs</span></code> in their signature, as done above. This way, your kernel
 will be able to accept any new parameter that we may add in the future.
 (Technically, adding <cite>**kwargs</cite> only should be enough).</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.004 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.003 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-transforms-plot-custom-tv-tensors-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/8b062cf0fa8a991b8cff18fa361c8ffe/plot_custom_tv_tensors.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_custom_tv_tensors.ipynb</span></code></a></p>
