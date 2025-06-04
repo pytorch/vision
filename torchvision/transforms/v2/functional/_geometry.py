@@ -71,14 +71,38 @@ def horizontal_flip_bounding_boxes(
 ) -> torch.Tensor:
     shape = bounding_boxes.shape
 
-    bounding_boxes = bounding_boxes.clone().reshape(-1, 4)
+    if tv_tensors.is_rotated_bounding_format(format):
+        bounding_boxes = (
+            bounding_boxes.clone().reshape(-1, 5)
+            if format != tv_tensors.BoundingBoxFormat.XYXYXYXY
+            else bounding_boxes.clone().reshape(-1, 8)
+        )
+    else:
+        bounding_boxes = bounding_boxes.clone().reshape(-1, 4)
 
     if format == tv_tensors.BoundingBoxFormat.XYXY:
         bounding_boxes[:, [2, 0]] = bounding_boxes[:, [0, 2]].sub_(canvas_size[1]).neg_()
     elif format == tv_tensors.BoundingBoxFormat.XYWH:
         bounding_boxes[:, 0].add_(bounding_boxes[:, 2]).sub_(canvas_size[1]).neg_()
-    else:  # format == tv_tensors.BoundingBoxFormat.CXCYWH:
+    elif format == tv_tensors.BoundingBoxFormat.CXCYWH:
         bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
+    elif format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
+        bounding_boxes[:, 0::2].sub_(canvas_size[1]).neg_()
+        bounding_boxes = bounding_boxes[:, [2, 3, 0, 1, 6, 7, 4, 5]]
+    elif format == tv_tensors.BoundingBoxFormat.XYWHR:
+
+        dtype = bounding_boxes.dtype
+        if not torch.is_floating_point(bounding_boxes):
+            # Casting to float to support cos and sin computations.
+            bounding_boxes = bounding_boxes.to(torch.float32)
+        angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
+        bounding_boxes[:, 0].add_(bounding_boxes[:, 2].mul(angle_rad.cos())).sub_(canvas_size[1]).neg_()
+        bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin()))
+        bounding_boxes[:, 4].neg_()
+        bounding_boxes = bounding_boxes.to(dtype)
+    else:  # format == tv_tensors.BoundingBoxFormat.CXCYWHR:
+        bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
+        bounding_boxes[:, 4].neg_()
 
     return bounding_boxes.reshape(shape)
 
@@ -128,14 +152,37 @@ def vertical_flip_bounding_boxes(
 ) -> torch.Tensor:
     shape = bounding_boxes.shape
 
-    bounding_boxes = bounding_boxes.clone().reshape(-1, 4)
+    if tv_tensors.is_rotated_bounding_format(format):
+        bounding_boxes = (
+            bounding_boxes.clone().reshape(-1, 5)
+            if format != tv_tensors.BoundingBoxFormat.XYXYXYXY
+            else bounding_boxes.clone().reshape(-1, 8)
+        )
+    else:
+        bounding_boxes = bounding_boxes.clone().reshape(-1, 4)
 
     if format == tv_tensors.BoundingBoxFormat.XYXY:
         bounding_boxes[:, [1, 3]] = bounding_boxes[:, [3, 1]].sub_(canvas_size[0]).neg_()
     elif format == tv_tensors.BoundingBoxFormat.XYWH:
         bounding_boxes[:, 1].add_(bounding_boxes[:, 3]).sub_(canvas_size[0]).neg_()
-    else:  # format == tv_tensors.BoundingBoxFormat.CXCYWH:
+    elif format == tv_tensors.BoundingBoxFormat.CXCYWH:
         bounding_boxes[:, 1].sub_(canvas_size[0]).neg_()
+    elif format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
+        bounding_boxes[:, 1::2].sub_(canvas_size[0]).neg_()
+        bounding_boxes = bounding_boxes[:, [2, 3, 0, 1, 6, 7, 4, 5]]
+    elif format == tv_tensors.BoundingBoxFormat.XYWHR:
+        dtype = bounding_boxes.dtype
+        if not torch.is_floating_point(bounding_boxes):
+            # Casting to float to support cos and sin computations.
+            bounding_boxes = bounding_boxes.to(torch.float64)
+        angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
+        bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin())).sub_(canvas_size[0]).neg_()
+        bounding_boxes[:, 0].add_(bounding_boxes[:, 2].mul(angle_rad.cos()))
+        bounding_boxes[:, 4].neg_().add_(180)
+        bounding_boxes = bounding_boxes.to(dtype)
+    else:  # format == tv_tensors.BoundingBoxFormat.CXCYWHR:
+        bounding_boxes[:, 1].sub_(canvas_size[0]).neg_()
+        bounding_boxes[:, 4].neg_().add_(180)
 
     return bounding_boxes.reshape(shape)
 
@@ -1052,7 +1099,7 @@ def _rotate_image_pil(
     interpolation = _check_interpolation(interpolation)
 
     return _FP.rotate(
-        image, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center
+        image, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center  # type: ignore[arg-type]
     )
 
 
