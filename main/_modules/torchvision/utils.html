@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+297815a) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+428a54c) &#x25BC</a>
     </div>
     
 
@@ -536,6 +536,57 @@
     <span class="k">return</span> <span class="n">grid</span></div>
 
 
+<span class="k">class</span><span class="w"> </span><span class="nc">_ImageDrawTV</span><span class="p">(</span><span class="n">ImageDraw</span><span class="o">.</span><span class="n">ImageDraw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A wrapper around PIL.ImageDraw to add functionalities for drawing rotated bounding boxes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">oriented_rectangle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xy</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dashed_line</span><span class="p">(((</span><span class="n">xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xy</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="p">(</span><span class="n">xy</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">xy</span><span class="p">[</span><span class="mi">3</span><span class="p">])),</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">outline</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">xy</span><span class="p">),</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">(</span>
+                <span class="p">((</span><span class="n">xy</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">xy</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]),</span> <span class="p">(</span><span class="n">xy</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">xy</span><span class="p">)],</span> <span class="n">xy</span><span class="p">[(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">xy</span><span class="p">)])),</span>
+                <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
+                <span class="n">fill</span><span class="o">=</span><span class="n">outline</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">xy</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">dashed_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xy</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dash_length</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">space_length</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="c1"># Calculate the total length of the line</span>
+        <span class="n">total_length</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">xy</span><span class="p">)):</span>
+            <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">xy</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">xy</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">total_length</span> <span class="o">+=</span> <span class="p">((</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+        <span class="c1"># Initialize the current position and the current dash</span>
+        <span class="n">current_position</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">current_dash</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># Iterate over the coordinates of the line</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">xy</span><span class="p">)):</span>
+            <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">xy</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">xy</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># Calculate the length of this segment</span>
+            <span class="n">segment_length</span> <span class="o">=</span> <span class="p">((</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span>
+            <span class="c1"># While there are still dashes to draw on this segment</span>
+            <span class="k">while</span> <span class="n">segment_length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Calculate the length of this dash</span>
+                <span class="n">dash_length_to_draw</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">segment_length</span><span class="p">,</span> <span class="n">dash_length</span> <span class="k">if</span> <span class="n">current_dash</span> <span class="k">else</span> <span class="n">space_length</span><span class="p">)</span>
+                <span class="c1"># Calculate the end point of this dash</span>
+                <span class="n">dx</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span>
+                <span class="n">dy</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span>
+                <span class="n">angle</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">dx</span><span class="p">)</span>
+                <span class="n">end_x</span> <span class="o">=</span> <span class="n">x1</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">dash_length_to_draw</span>
+                <span class="n">end_y</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">dash_length_to_draw</span>
+                <span class="c1"># If this is a dash, draw it</span>
+                <span class="k">if</span> <span class="n">current_dash</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">([(</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">),</span> <span class="p">(</span><span class="n">end_x</span><span class="p">,</span> <span class="n">end_y</span><span class="p">)],</span> <span class="n">fill</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">joint</span><span class="p">)</span>
+                <span class="c1"># Update the current position and the current dash</span>
+                <span class="n">current_position</span> <span class="o">+=</span> <span class="n">dash_length_to_draw</span>
+                <span class="n">segment_length</span> <span class="o">-=</span> <span class="n">dash_length_to_draw</span>
+                <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">end_x</span><span class="p">,</span> <span class="n">end_y</span>
+                <span class="n">current_dash</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">current_dash</span>
+
+
 <div class="viewcode-block" id="save_image"><a class="viewcode-back" href="../../generated/torchvision.utils.save_image.html#torchvision.utils.save_image">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">save_image</span><span class="p">(</span>
     <span class="n">tensor</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
@@ -584,9 +635,11 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        image (Tensor): Tensor of shape (C, H, W) and dtype uint8 or float.</span>
-<span class="sd">        boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that</span>
-<span class="sd">            the boxes are absolute coordinates with respect to the image. In other words: `0 &lt;= xmin &lt; xmax &lt; W` and</span>
-<span class="sd">            `0 &lt;= ymin &lt; ymax &lt; H`.</span>
+<span class="sd">        boxes (Tensor): Tensor of size (N, 4) or (N, 8) containing bounding boxes.</span>
+<span class="sd">            For (N, 4), the format is (xmin, ymin, xmax, ymax) and the boxes are absolute coordinates with respect to the image.</span>
+<span class="sd">            In other words: `0 &lt;= xmin &lt; xmax &lt; W` and `0 &lt;= ymin &lt; ymax &lt; H`.</span>
+<span class="sd">            For (N, 8), the format is (x1, y1, x2, y2, x3, y3, x4, y4) and the boxes are absolute coordinates with respect to the underlying</span>
+<span class="sd">            object, so no need to verify the latter inequalities.</span>
 <span class="sd">        labels (List[str]): List containing the labels of bounding boxes.</span>
 <span class="sd">        colors (color or list of colors, optional): List containing the colors</span>
 <span class="sd">            of the boxes or single color for all boxes. The color can be represented as</span>
@@ -618,7 +671,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pass individual images, not batches&quot;</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">}:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only grayscale and RGB images are supported&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+    <span class="k">elif</span> <span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span> <span class="ow">and</span> <span class="p">((</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
             <span class="s2">&quot;Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to convert them&quot;</span>
         <span class="p">)</span>
@@ -661,16 +714,14 @@
     <span class="n">img_boxes</span> <span class="o">=</span> <span class="n">boxes</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="n">fill</span><span class="p">:</span>
-        <span class="n">draw</span> <span class="o">=</span> <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">,</span> <span class="s2">&quot;RGBA&quot;</span><span class="p">)</span>
+        <span class="n">draw</span> <span class="o">=</span> <span class="n">_ImageDrawTV</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">,</span> <span class="s2">&quot;RGBA&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">draw</span> <span class="o">=</span> <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">)</span>
+        <span class="n">draw</span> <span class="o">=</span> <span class="n">_ImageDrawTV</span><span class="p">(</span><span class="n">img_to_draw</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">bbox</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">label_color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">img_boxes</span><span class="p">,</span> <span class="n">colors</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">label_colors</span><span class="p">):</span>  <span class="c1"># type: ignore[arg-type]</span>
-        <span class="k">if</span> <span class="n">fill</span><span class="p">:</span>
-            <span class="n">fill_color</span> <span class="o">=</span> <span class="n">color</span> <span class="o">+</span> <span class="p">(</span><span class="mi">100</span><span class="p">,)</span>
-            <span class="n">draw</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">bbox</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill_color</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">draw</span><span class="o">.</span><span class="n">rectangle</span><span class="p">(</span><span class="n">bbox</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+        <span class="n">draw_method</span> <span class="o">=</span> <span class="n">draw</span><span class="o">.</span><span class="n">oriented_rectangle</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bbox</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">4</span> <span class="k">else</span> <span class="n">draw</span><span class="o">.</span><span class="n">rectangle</span>
+        <span class="n">fill_color</span> <span class="o">=</span> <span class="n">color</span> <span class="o">+</span> <span class="p">(</span><span class="mi">100</span><span class="p">,)</span> <span class="k">if</span> <span class="n">fill</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">draw_method</span><span class="p">(</span><span class="n">bbox</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill_color</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">box_margin</span> <span class="o">=</span> <span class="mi">1</span>

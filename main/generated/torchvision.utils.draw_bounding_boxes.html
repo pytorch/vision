@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+297815a) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+428a54c) &#x25BC</a>
     </div>
     
 
@@ -427,9 +427,11 @@ If fill is True, Resulting Tensor should be saved as PNG image.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>image</strong> (<em>Tensor</em>) – Tensor of shape (C, H, W) and dtype uint8 or float.</p></li>
-<li><p><strong>boxes</strong> (<em>Tensor</em>) – Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
-the boxes are absolute coordinates with respect to the image. In other words: <cite>0 &lt;= xmin &lt; xmax &lt; W</cite> and
-<cite>0 &lt;= ymin &lt; ymax &lt; H</cite>.</p></li>
+<li><p><strong>boxes</strong> (<em>Tensor</em>) – Tensor of size (N, 4) or (N, 8) containing bounding boxes.
+For (N, 4), the format is (xmin, ymin, xmax, ymax) and the boxes are absolute coordinates with respect to the image.
+In other words: <cite>0 &lt;= xmin &lt; xmax &lt; W</cite> and <cite>0 &lt;= ymin &lt; ymax &lt; H</cite>.
+For (N, 8), the format is (x1, y1, x2, y2, x3, y3, x4, y4) and the boxes are absolute coordinates with respect to the underlying
+object, so no need to verify the latter inequalities.</p></li>
 <li><p><strong>labels</strong> (<em>List</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>]</em>) – List containing the labels of bounding boxes.</p></li>
 <li><p><strong>colors</strong> (<em>color</em><em> or </em><em>list of colors</em><em>, </em><em>optional</em>) – List containing the colors
 of the boxes or single color for all boxes. The color can be represented as
