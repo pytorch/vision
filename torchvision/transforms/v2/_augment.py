@@ -158,7 +158,9 @@ class _BaseMixUpCutMix(Transform):
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
         if has_any(flat_inputs, PIL.Image.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask, tv_tensors.KeyPoints):
-            raise ValueError(f"{type(self).__name__}() does not support PIL images, bounding boxes and masks.")
+            raise ValueError(
+                f"{type(self).__name__}() does not support PIL images, bounding boxes, keypoints and masks."
+            )
 
         labels = self._labels_getter(inputs)
         if not isinstance(labels, torch.Tensor):

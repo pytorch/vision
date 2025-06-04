@@ -8,6 +8,9 @@ from torch.utils._pytree import tree_flatten
 from ._tv_tensor import TVTensor
 
 
+# TODOKP do we support arbitrary number of leading dimension, as claimed in the
+# docs?
+# This doesn't seem to be tested?
 class KeyPoints(TVTensor):
     """:class:`torch.Tensor` subclass for tensors with shape ``[..., 2]`` that represent points in an image.
 

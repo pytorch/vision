@@ -189,6 +189,7 @@ def _xyxyxyxy_to_keypoints(bounding_boxes: torch.Tensor) -> torch.Tensor:
     return bounding_boxes[:, [[0, 1], [2, 3], [4, 5], [6, 7]]]
 
 
+# TODOKP Should this be in the box ops? rename points->keypoints.
 def convert_bounding_boxes_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensors.KeyPoints:
     """Converts a set of bounding boxes to its edge points.
 
