@@ -6946,6 +6946,7 @@ class TestUtils:
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
 
+    # TODOKP this is tested here in TestUtils but defined in meta
     @pytest.mark.parametrize(
         "boxes",
         [
@@ -6955,7 +6956,7 @@ class TestUtils:
             tv_tensors.BoundingBoxes(torch.tensor([[1.5, 1.5, 1.0, 1.0, 45]]), format="CXCYWHR", canvas_size=(4, 4)),
             tv_tensors.BoundingBoxes(torch.tensor([[1.0, 1.0, 1.0, 1.0, 45.0]]), format="XYWHR", canvas_size=(4, 4)),
             tv_tensors.BoundingBoxes(
-                torch.tensor([[1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 1.0]]), format="XY" * 4, canvas_size=(4, 4)
+                torch.tensor([[1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 1.0]]), format="XYXYXYXY", canvas_size=(4, 4)
             ),
         ],
     )
@@ -6963,34 +6964,20 @@ class TestUtils:
         kp = F.convert_bounding_boxes_to_points(boxes)
         assert kp.shape == (boxes.shape[0], 4, 2)
         assert kp.dtype == boxes.dtype
-        # kp is a list of A, B, C, D polygons.
 
+        # We manually convert the kp back into a BoundingBoxes, and convert that
+        # bbox back into the original `boxes` format to compare against it.
         if F._meta.is_rotated_bounding_box_format(boxes.format):
-            # In the rotated case
-            # If we convert to XYXYXYXY format, we should get what we want.
             reconverted = kp.reshape(-1, 8)
-            reconverted_bbox = F.convert_bounding_box_format(
-                tv_tensors.BoundingBoxes(
-                    reconverted, format=tv_tensors.BoundingBoxFormat.XYXYXYXY, canvas_size=kp.canvas_size
-                ),
-                new_format=boxes.format,
-            )
-            assert (
-                (reconverted_bbox - boxes).abs() < 1e-5
-            ).all(), (  # Rotational computations mean that we can't ensure exactitude.
-                f"Invalid reconversion :\n\tGot:  {reconverted_bbox}\n\tFrom: {boxes}\n\t"
-                f"Diff: {reconverted_bbox - boxes}"
-            )
+            intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY
         else:
-            # In the unrotated case
-            # If we use A | C, we should get back the XYXY format of bounding box
             reconverted = torch.cat([kp[..., 0, :], kp[..., 2, :]], dim=-1)
-            reconverted_bbox = F.convert_bounding_box_format(
-                tv_tensors.BoundingBoxes(
-                    reconverted, format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=kp.canvas_size
-                ),
-                new_format=boxes.format,
-            )
-            assert (
-                reconverted_bbox == boxes
-            ).all(), f"Invalid reconversion :\n\tGot:  {reconverted_bbox}\n\tFrom: {boxes}"
+            intermediate_format = tv_tensors.BoundingBoxFormat.XYXY
+
+        reconverted_bbox = F.convert_bounding_box_format(
+            tv_tensors.BoundingBoxes(
+                reconverted, format=intermediate_format, canvas_size=kp.canvas_size
+            ),
+            new_format=boxes.format,
+        )
+        assert_equal(reconverted_bbox, boxes, atol=1e-5, rtol=0)
