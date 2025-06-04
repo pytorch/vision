@@ -3132,7 +3132,7 @@ class TestCrop:
 
         expected = self._reference_crop_bounding_boxes(bounding_boxes, **params)
 
-        assert_equal(actual, expected, atol=1, rtol=0)
+        torch.testing.assert_close(actual, expected)
         assert_equal(F.get_size(actual), F.get_size(expected))
 
     def test_errors(self):
