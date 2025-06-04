@@ -825,10 +825,10 @@ class TestResize:
             (F.resize_image, torch.Tensor),
             (F._geometry._resize_image_pil, PIL.Image.Image),
             (F.resize_image, tv_tensors.Image),
-            (F.resize_keypoints, tv_tensors.KeyPoints),
             (F.resize_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.resize_mask, tv_tensors.Mask),
             (F.resize_video, tv_tensors.Video),
+            (F.resize_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -1241,10 +1241,10 @@ class TestHorizontalFlip:
             (F.horizontal_flip_image, torch.Tensor),
             (F._geometry._horizontal_flip_image_pil, PIL.Image.Image),
             (F.horizontal_flip_image, tv_tensors.Image),
-            (F.horizontal_flip_keypoints, tv_tensors.KeyPoints),
             (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.horizontal_flip_mask, tv_tensors.Mask),
             (F.horizontal_flip_video, tv_tensors.Video),
+            (F.horizontal_flip_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -1472,10 +1472,10 @@ class TestAffine:
             (F.affine_image, torch.Tensor),
             (F._geometry._affine_image_pil, PIL.Image.Image),
             (F.affine_image, tv_tensors.Image),
-            (F.affine_keypoints, tv_tensors.KeyPoints),
             (F.affine_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.affine_mask, tv_tensors.Mask),
             (F.affine_video, tv_tensors.Video),
+            (F.affine_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -1829,10 +1829,10 @@ class TestVerticalFlip:
             (F.vertical_flip_image, torch.Tensor),
             (F._geometry._vertical_flip_image_pil, PIL.Image.Image),
             (F.vertical_flip_image, tv_tensors.Image),
-            (F.vertical_flip_keypoints, tv_tensors.KeyPoints),
             (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.vertical_flip_mask, tv_tensors.Mask),
             (F.vertical_flip_video, tv_tensors.Video),
+            (F.vertical_flip_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -2033,10 +2033,10 @@ class TestRotate:
             (F.rotate_image, torch.Tensor),
             (F._geometry._rotate_image_pil, PIL.Image.Image),
             (F.rotate_image, tv_tensors.Image),
-            (F.rotate_keypoints, tv_tensors.KeyPoints),
             (F.rotate_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.rotate_mask, tv_tensors.Mask),
             (F.rotate_video, tv_tensors.Video),
+            (F.rotate_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -3221,6 +3221,7 @@ class TestElastic:
             (F.elastic_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.elastic_mask, tv_tensors.Mask),
             (F.elastic_video, tv_tensors.Video),
+            (F.elastic_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -3354,6 +3355,7 @@ class TestCrop:
             (F.crop_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.crop_mask, tv_tensors.Mask),
             (F.crop_video, tv_tensors.Video),
+            (F.crop_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -4236,6 +4238,7 @@ class TestResizedCrop:
             (F.resized_crop_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.resized_crop_mask, tv_tensors.Mask),
             (F.resized_crop_video, tv_tensors.Video),
+            (F.resized_crop_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -4626,6 +4629,7 @@ class TestCenterCrop:
             (F.center_crop_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.center_crop_mask, tv_tensors.Mask),
             (F.center_crop_video, tv_tensors.Video),
+            (F.center_crop_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -4856,6 +4860,7 @@ class TestPerspective:
             (F.perspective_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.perspective_mask, tv_tensors.Mask),
             (F.perspective_video, tv_tensors.Video),
+            (F.perspective_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
