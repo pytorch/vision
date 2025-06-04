@@ -3206,7 +3206,7 @@ class TestElastic:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_functional(self, make_input):
         input = make_input()
@@ -4214,13 +4214,14 @@ class TestResizedCrop:
             (F.resized_crop_mask, make_segmentation_mask),
             (F.resized_crop_mask, make_detection_masks),
             (F.resized_crop_video, make_video),
+            (F.resized_crop_keypoints, make_keypoints),
         ],
     )
     def test_kernel(self, kernel, make_input):
         input = make_input(self.INPUT_SIZE)
         if isinstance(input, tv_tensors.BoundingBoxes):
             extra_kwargs = dict(format=input.format)
-        elif isinstance(input, tv_tensors.Mask):
+        elif isinstance(input, (tv_tensors.Mask, tv_tensors.KeyPoints)):
             extra_kwargs = dict()
         else:
             extra_kwargs = dict(antialias=True)
@@ -4229,7 +4230,7 @@ class TestResizedCrop:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_functional(self, make_input):
         check_functional(
@@ -4257,7 +4258,7 @@ class TestResizedCrop:
     )
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_transform(self, param, value, make_input):
         check_transform(
@@ -4623,7 +4624,7 @@ class TestCenterCrop:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_functional(self, make_input):
         check_functional(F.center_crop, make_input(self.INPUT_SIZE), output_size=self.OUTPUT_SIZES[0])
@@ -4645,7 +4646,7 @@ class TestCenterCrop:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_transform(self, make_input):
         check_transform(transforms.CenterCrop(self.OUTPUT_SIZES[0]), make_input(self.INPUT_SIZE))
