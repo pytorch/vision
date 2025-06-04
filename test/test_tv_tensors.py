@@ -43,6 +43,34 @@ def test_bbox_instance(data, format):
     assert bboxes.format == format
 
 
+@pytest.mark.parametrize(
+    "format, is_rotated_expected",
+    [
+        ("XYXY", False),
+        ("XYWH", False),
+        ("CXCYWH", False),
+        ("XYXYXYXY", True),
+        ("XYWHR", True),
+        ("CXCYWHR", True),
+        (tv_tensors.BoundingBoxFormat.XYXY, False),
+        (tv_tensors.BoundingBoxFormat.XYWH, False),
+        (tv_tensors.BoundingBoxFormat.CXCYWH, False),
+        (tv_tensors.BoundingBoxFormat.XYXYXYXY, True),
+        (tv_tensors.BoundingBoxFormat.XYWHR, True),
+        (tv_tensors.BoundingBoxFormat.CXCYWHR, True),
+    ],
+)
+@pytest.mark.parametrize("scripted", (False, True))
+def test_bbox_format(format, is_rotated_expected, scripted):
+    if isinstance(format, str):
+        format = tv_tensors.BoundingBoxFormat[(format.upper())]
+
+    fn = tv_tensors.is_rotated_bounding_format
+    if scripted:
+        fn = torch.jit.script(fn)
+    assert fn(format) == is_rotated_expected
+
+
 def test_bbox_dim_error():
     data_3d = [[[1, 2, 3, 4]]]
     with pytest.raises(ValueError, match="Expected a 1D or 2D tensor, got 3D"):
