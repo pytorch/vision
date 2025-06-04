@@ -2839,6 +2839,7 @@ class TestShapeGetters:
             (F._meta._get_size_image_pil, make_image_pil),
             (F.get_size_image, make_image),
             (F.get_size_bounding_boxes, make_bounding_boxes),
+            (F.get_size_keypoints, make_keypoints),
             (F.get_size_mask, make_detection_masks),
             (F.get_size_mask, make_segmentation_mask),
             (F.get_size_video, make_video),
