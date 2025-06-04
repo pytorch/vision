@@ -231,9 +231,8 @@ class Caltech256(VisionDataset):
     def download(self) -> None:
         if self._check_integrity():
             return
-
         download_and_extract_archive(
-            "https://drive.google.com/file/d/1r6o0pSROcV1_VwT4oSjA2FBUSCWGuxLK",
+            "https://data.caltech.edu/records/nyy15-4j048/files/256_ObjectCategories.tar",
             self.root,
             filename="256_ObjectCategories.tar",
             md5="67b4f42ca05d46448c6bb8ecd2220f6d",
