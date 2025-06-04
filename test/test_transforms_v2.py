@@ -5943,9 +5943,31 @@ def test_classification_preset(image_type, label_type, dataset_return_type, to_t
 @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
 @pytest.mark.parametrize("device", cpu_and_cuda())
 def test_parallelogram_to_bounding_boxes(input_size, dtype, device):
-    bounding_boxes = make_bounding_boxes(input_size, format=tv_tensors.BoundingBoxFormat.XYXYXYXY, dtype=dtype, device=device)
+    # Assert that applying `_parallelogram_to_bounding_boxes` to rotated boxes
+    # does not modify the input.
+    bounding_boxes = make_bounding_boxes(
+        input_size, format=tv_tensors.BoundingBoxFormat.XYXYXYXY, dtype=dtype, device=device
+    )
     actual = _parallelogram_to_bounding_boxes(bounding_boxes)
     torch.testing.assert_close(actual, bounding_boxes, rtol=0, atol=1)
+
+    # Test the transformation of two simple parallelograms.
+    #   1---2    1----2
+    #  /   /  -> |    |
+    # 4---3      4----3
+
+    # 1---2      1----2
+    #  \   \  -> |    |
+    #   4---3    4----3
+    parallelogram = torch.tensor([[1, 0, 4, 0, 3, 2, 0, 2], [0, 0, 3, 0, 4, 2, 1, 2]])
+    expected = torch.tensor(
+        [
+            [0, 0, 4, 0, 4, 2, 0, 2],
+            [0, 0, 4, 0, 4, 2, 0, 2],
+        ]
+    )
+    actual = _parallelogram_to_bounding_boxes(parallelogram)
+    assert_equal(actual, expected)
 
 
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, tv_tensors.Image))

@@ -383,11 +383,10 @@ def _resize_mask_dispatch(
 
 def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tensor:
     """
-    Convert a parallelogram to a rectangle while keeping the points (x1, y1) and (x3, y3) unchanged.
-
+    Convert a parallelogram to a rectangle while keeping two points unchanged.
     This function transforms a parallelogram represented by 8 coordinates (4 points) into a rectangle.
-    The first point (x1, y1) and the third point (x3, y3) of the parallelogram remain fixed,
-    while the second and fourth points are adjusted to form a proper rectangle.
+    The two diagonally opposed points of the parallelogram forming the longest diagonal remain fixed.
+    The other points are adjusted to form a proper rectangle.
 
     Note:
         This function is not applied in-place and will return a copy of the input tensor.
@@ -401,34 +400,52 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
                      The output maintains the same dtype as the input.
     """
     dtype = parallelogram.dtype
-    int_dtype = dtype in (torch.uint8,
-            torch.int8,
-            torch.int16,
-            torch.int32,
-            torch.int64,
-        )
+    int_dtype = dtype in (
+        torch.uint8,
+        torch.int8,
+        torch.int16,
+        torch.int32,
+        torch.int64,
+    )
 
-    # Calculate diagonal vector from first to third point
-    dx = parallelogram[..., 4] - parallelogram[..., 0]
-    dy = parallelogram[..., 5] - parallelogram[..., 1]
-    diag = torch.sqrt(dx**2 + dy**2)
+    out_boxes = parallelogram.clone()
+
+    # Calculate parallelogram diagonal vectors
+    dx13 = parallelogram[..., 4] - parallelogram[..., 0]
+    dy13 = parallelogram[..., 5] - parallelogram[..., 1]
+    dx42 = parallelogram[..., 2] - parallelogram[..., 6]
+    dy42 = parallelogram[..., 3] - parallelogram[..., 7]
+    diag13 = torch.sqrt(dx13**2 + dy13**2)
+    diag24 = torch.sqrt(dx42**2 + dy42**2)
+    mask = diag13 > diag24
 
     # Calculate rotation angle in radians
     r_rad = torch.atan2(parallelogram[..., 1] - parallelogram[..., 3], parallelogram[..., 2] - parallelogram[..., 0])
     cos, sin = torch.cos(r_rad), torch.sin(r_rad)
 
     # Calculate width using the angle between diagonal and rotation
-    w = diag * torch.abs(torch.sin(torch.atan2(dx, dy) - r_rad))
+    w = torch.where(
+        mask,
+        diag13 * torch.abs(torch.sin(torch.atan2(dx13, dy13) - r_rad)),
+        diag24 * torch.abs(torch.sin(torch.atan2(dx42, dy42) - r_rad)),
+    )
 
     delta_x = torch.round(w * cos).to(dtype) if int_dtype else w * cos
-    detla_y = torch.round(w * sin).to(dtype) if int_dtype else w * sin
+    delta_y = torch.round(w * sin).to(dtype) if int_dtype else w * sin
 
     # Update coordinates to form a rectangle
-    parallelogram[..., 2] = parallelogram[..., 0] + delta_x
-    parallelogram[..., 3] = parallelogram[..., 1] - detla_y
-    parallelogram[..., 6] = parallelogram[..., 4] - delta_x
-    parallelogram[..., 7] = parallelogram[..., 5] + detla_y
-    return parallelogram
+    # Keeping the points (x1, y1) and (x3, y3) unchanged.
+    out_boxes[..., 2] = torch.where(mask, parallelogram[..., 0] + delta_x, parallelogram[..., 2])
+    out_boxes[..., 3] = torch.where(mask, parallelogram[..., 1] - delta_y, parallelogram[..., 3])
+    out_boxes[..., 6] = torch.where(mask, parallelogram[..., 4] - delta_x, parallelogram[..., 6])
+    out_boxes[..., 7] = torch.where(mask, parallelogram[..., 5] + delta_y, parallelogram[..., 7])
+
+    # Keeping the points (x2, y2) and (x4, y4) unchanged.
+    out_boxes[..., 0] = torch.where(~mask, parallelogram[..., 2] - delta_x, parallelogram[..., 0])
+    out_boxes[..., 1] = torch.where(~mask, parallelogram[..., 3] + delta_y, parallelogram[..., 1])
+    out_boxes[..., 4] = torch.where(~mask, parallelogram[..., 6] + delta_x, parallelogram[..., 4])
+    out_boxes[..., 5] = torch.where(~mask, parallelogram[..., 7] - delta_y, parallelogram[..., 5])
+    return out_boxes
 
 
 def resize_bounding_boxes(
