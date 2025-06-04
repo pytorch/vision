@@ -381,7 +381,7 @@ def _resize_mask_dispatch(
     return tv_tensors.wrap(output, like=inpt)
 
 
-def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor, inplace: bool = False) -> torch.Tensor:
+def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tensor:
     """
     Convert a parallelogram to a rectangle while keeping the points (x1, y1) and (x3, y3) unchanged.
 
@@ -389,21 +389,24 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor, inplace: bool 
     The first point (x1, y1) and the third point (x3, y3) of the parallelogram remain fixed,
     while the second and fourth points are adjusted to form a proper rectangle.
 
+    Note:
+        This function is not applied in-place and will return a copy of the input tensor.
+
     Args:
         parallelogram (torch.Tensor): Tensor of shape (..., 8) containing coordinates of parallelograms.
                                      Format is [x1, y1, x2, y2, x3, y3, x4, y4].
-        inplace (bool, optional): If True, performs operation in-place. Default is False.
 
     Returns:
         torch.Tensor: Tensor of same shape as input containing the rectangle coordinates.
                      The output maintains the same dtype as the input.
     """
-    if not inplace:
-        parallelogram = parallelogram.clone()
-
     dtype = parallelogram.dtype
-    if not torch.is_floating_point(parallelogram):
-        parallelogram = parallelogram.float()
+    int_dtype = dtype in (torch.uint8,
+            torch.int8,
+            torch.int16,
+            torch.int32,
+            torch.int64,
+        )
 
     # Calculate diagonal vector from first to third point
     dx = parallelogram[..., 4] - parallelogram[..., 0]
@@ -417,21 +420,28 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor, inplace: bool 
     # Calculate width using the angle between diagonal and rotation
     w = diag * torch.abs(torch.sin(torch.atan2(dx, dy) - r_rad))
 
+    delta_x = torch.round(w * cos).to(dtype) if int_dtype else w * cos
+    detla_y = torch.round(w * sin).to(dtype) if int_dtype else w * sin
+
     # Update coordinates to form a rectangle
-    parallelogram[..., 2] = parallelogram[..., 0] + w * cos
-    parallelogram[..., 3] = parallelogram[..., 1] - w * sin
-    parallelogram[..., 6] = parallelogram[..., 4] - w * cos
-    parallelogram[..., 7] = parallelogram[..., 5] + w * sin
-    return parallelogram.to(dtype)
+    parallelogram[..., 2] = parallelogram[..., 0] + delta_x
+    parallelogram[..., 3] = parallelogram[..., 1] - detla_y
+    parallelogram[..., 6] = parallelogram[..., 4] - delta_x
+    parallelogram[..., 7] = parallelogram[..., 5] + detla_y
+    return parallelogram
 
 
 def resize_bounding_boxes(
     bounding_boxes: torch.Tensor,
-    format: tv_tensors.BoundingBoxFormat,
     canvas_size: tuple[int, int],
     size: Optional[list[int]],
     max_size: Optional[int] = None,
+    format: tv_tensors.BoundingBoxFormat = tv_tensors.BoundingBoxFormat.XYXY,
 ) -> tuple[torch.Tensor, tuple[int, int]]:
+    # We set the default format as `tv_tensors.BoundingBoxFormat.XYXY`
+    # to ensure backward compatibility.
+    # Indeed before the introduction of rotated bounding box format
+    # this function did not received `format` parameter as input.
     old_height, old_width = canvas_size
     new_height, new_width = _compute_resized_output_size(canvas_size, size=size, max_size=max_size)
 
@@ -893,12 +903,9 @@ def _affine_bounding_boxes_with_expand(
     bounding_boxes = bounding_boxes.clone() if bounding_boxes.is_floating_point() else bounding_boxes.float()
     dtype = bounding_boxes.dtype
     device = bounding_boxes.device
-    intermediate_format = (
-        tv_tensors.BoundingBoxFormat.XYXYXYXY
-        if tv_tensors.is_rotated_bounding_format(format)
-        else tv_tensors.BoundingBoxFormat.XYXY
-    )
-    intermediate_shape = 8 if tv_tensors.is_rotated_bounding_format(format) else 4
+    is_rotated = tv_tensors.is_rotated_bounding_format(format)
+    intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
+    intermediate_shape = 8 if is_rotated else 4
     bounding_boxes = (
         convert_bounding_box_format(bounding_boxes, old_format=format, new_format=intermediate_format, inplace=True)
     ).reshape(-1, intermediate_shape)
@@ -925,7 +932,7 @@ def _affine_bounding_boxes_with_expand(
     # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
     # Single point structure is similar to
     # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
-    if tv_tensors.is_rotated_bounding_format(format):
+    if is_rotated:
         points = bounding_boxes.reshape(-1, 2)
     else:
         points = bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
@@ -934,7 +941,7 @@ def _affine_bounding_boxes_with_expand(
     transformed_points = torch.matmul(points, transposed_affine_matrix)
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
-    if tv_tensors.is_rotated_bounding_format(format):
+    if is_rotated:
         transformed_points = transformed_points.reshape(-1, 8)
         out_bboxes = _parallelogram_to_bounding_boxes(transformed_points)
     else:
@@ -1556,6 +1563,9 @@ def crop_bounding_boxes(
 
     bounding_boxes = bounding_boxes - torch.tensor(sub, dtype=bounding_boxes.dtype, device=bounding_boxes.device)
     canvas_size = (height, width)
+
+    if format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
+        bounding_boxes = _parallelogram_to_bounding_boxes(bounding_boxes)
 
     return clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size), canvas_size
 

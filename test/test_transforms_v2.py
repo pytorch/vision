@@ -5939,6 +5939,15 @@ def test_classification_preset(image_type, label_type, dataset_return_type, to_t
     assert out_label == label
 
 
+@pytest.mark.parametrize("input_size", [(17, 11), (11, 17), (11, 11)])
+@pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+@pytest.mark.parametrize("device", cpu_and_cuda())
+def test_parallelogram_to_bounding_boxes(input_size, dtype, device):
+    bounding_boxes = make_bounding_boxes(input_size, format=tv_tensors.BoundingBoxFormat.XYXYXYXY, dtype=dtype, device=device)
+    actual = _parallelogram_to_bounding_boxes(bounding_boxes)
+    torch.testing.assert_close(actual, bounding_boxes, rtol=0, atol=1)
+
+
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, tv_tensors.Image))
 @pytest.mark.parametrize("data_augmentation", ("hflip", "lsj", "multiscale", "ssd", "ssdlite"))
 @pytest.mark.parametrize("to_tensor", (transforms.ToTensor, transforms.ToImage))
