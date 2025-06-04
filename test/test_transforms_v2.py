@@ -3332,6 +3332,13 @@ class TestCrop:
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
         check_kernel(F.crop_bounding_boxes, bounding_boxes, format=format, **kwargs)
 
+    @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel_keypoints(self, kwargs, dtype, device):
+        keypoints = make_keypoints(self.INPUT_SIZE, dtype=dtype, device=device)
+        check_kernel(F.crop_keypoints, keypoints, **kwargs)
+
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
     def test_kernel_mask(self, make_mask):
         check_kernel(F.crop_mask, make_mask(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
@@ -3341,7 +3348,7 @@ class TestCrop:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_functional(self, make_input):
         check_functional(F.crop, make_input(self.INPUT_SIZE), **self.MINIMAL_CROP_KWARGS)
@@ -3376,7 +3383,7 @@ class TestCrop:
     )
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_transform(self, param, value, make_input):
         input = make_input(self.INPUT_SIZE)
@@ -4466,7 +4473,7 @@ class TestPad:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_functional(self, make_input):
         check_functional(F.pad, make_input(), padding=[1])
@@ -4491,7 +4498,7 @@ class TestPad:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_transform(self, make_input):
         check_transform(transforms.Pad(padding=[1]), make_input())
@@ -4565,6 +4572,7 @@ class TestPad:
         expected = self._reference_pad_bounding_boxes(bounding_boxes, padding=padding)
 
         assert_equal(actual, expected)
+    #TODOKP need keypoint correctness tests
 
 
 class TestCenterCrop:
