@@ -462,11 +462,11 @@ def _clamp_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int]) -> t
     return keypoints.to(dtype=dtype)
 
 
+# TODOKP there is no corresponding transform and this isn't tested
 def clamp_keypoints(
     inpt: torch.Tensor,
     canvas_size: Optional[tuple[int, int]] = None,
 ) -> torch.Tensor:
-    """See :func:`~torchvision.transforms.v2.ClampKeyPoints` for details."""
     if not torch.jit.is_scripting():
         _log_api_usage_once(clamp_keypoints)
 
