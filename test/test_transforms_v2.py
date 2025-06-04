@@ -561,6 +561,78 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
     )
 
 
+def reference_affine_rotated_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new_canvas_size=None, clamp=True):
+    format = bounding_boxes.format
+    canvas_size = new_canvas_size or bounding_boxes.canvas_size
+
+    def affine_rotated_bounding_boxes(bounding_boxes):
+        dtype = bounding_boxes.dtype
+        device = bounding_boxes.device
+
+        # Go to float before converting to prevent precision loss in case of CXCYWHR -> XYXYXYXY and W or H is 1
+        input_xyxyxyxy = F.convert_bounding_box_format(
+            bounding_boxes.to(dtype=torch.float64, device="cpu", copy=True),
+            old_format=format,
+            new_format=tv_tensors.BoundingBoxFormat.XYXYXYXY,
+            inplace=True,
+        )
+        x1, y1, x2, y2, x3, y3, x4, y4 = input_xyxyxyxy.squeeze(0).tolist()
+
+        points = np.array(
+            [
+                [x1, y1, 1.0],
+                [x2, y2, 1.0],
+                [x3, y3, 1.0],
+                [x4, y4, 1.0],
+            ]
+        )
+        transformed_points = np.matmul(points, affine_matrix.astype(points.dtype).T)
+        output = torch.tensor(
+            [
+                float(transformed_points[1, 0]),
+                float(transformed_points[1, 1]),
+                float(transformed_points[0, 0]),
+                float(transformed_points[0, 1]),
+                float(transformed_points[3, 0]),
+                float(transformed_points[3, 1]),
+                float(transformed_points[2, 0]),
+                float(transformed_points[2, 1]),
+            ]
+        )
+
+        output = F.convert_bounding_box_format(
+            output, old_format=tv_tensors.BoundingBoxFormat.XYXYXYXY, new_format=format
+        )
+
+        if clamp:
+            # It is important to clamp before casting, especially for CXCYWHR format, dtype=int64
+            output = F.clamp_bounding_boxes(
+                output,
+                format=format,
+                canvas_size=canvas_size,
+            )
+        else:
+            # We leave the bounding box as float32 so the caller gets the full precision to perform any additional
+            # operation
+            dtype = output.dtype
+
+        return output.to(dtype=dtype, device=device)
+
+    return tv_tensors.BoundingBoxes(
+        torch.cat(
+            [
+                affine_rotated_bounding_boxes(b)
+                for b in bounding_boxes.reshape(
+                    -1, 5 if format != tv_tensors.BoundingBoxFormat.XYXYXYXY else 8
+                ).unbind()
+            ],
+            dim=0,
+        ).reshape(bounding_boxes.shape),
+        format=format,
+        canvas_size=canvas_size,
+    )
+
+
 def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_size=None, clamp=True):
     canvas_size = new_canvas_size or keypoints.canvas_size
 
@@ -1112,7 +1184,7 @@ class TestHorizontalFlip:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.horizontal_flip_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -1182,7 +1254,7 @@ class TestHorizontalFlip:
 
         torch.testing.assert_close(actual, expected)
 
-    def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes):
+    def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
             [
                 [-1, 0, bounding_boxes.canvas_size[1]],
@@ -1190,19 +1262,14 @@ class TestHorizontalFlip:
             ],
         )
 
-        return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
-
-    def _reference_horizontal_flip_keypoints(self, keypoints):
-        affine_matrix = np.array(
-            [
-                [-1, 0, keypoints.canvas_size[1]],
-                [0, 1, 0],
-            ],
+        helper = (
+            reference_affine_rotated_bounding_boxes_helper
+            if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
+            else reference_affine_bounding_boxes_helper
         )
+        return helper(bounding_boxes, affine_matrix=affine_matrix)
 
-        return reference_affine_keypoints_helper(keypoints, affine_matrix=affine_matrix)
-
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
@@ -1213,6 +1280,16 @@ class TestHorizontalFlip:
         expected = self._reference_horizontal_flip_bounding_boxes(bounding_boxes)
 
         torch.testing.assert_close(actual, expected)
+
+    def _reference_horizontal_flip_keypoints(self, keypoints):
+        affine_matrix = np.array(
+            [
+                [-1, 0, keypoints.canvas_size[1]],
+                [0, 1, 0],
+            ],
+        )
+
+        return reference_affine_keypoints_helper(keypoints, affine_matrix=affine_matrix)
 
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
@@ -1670,7 +1747,7 @@ class TestVerticalFlip:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.vertical_flip_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
@@ -1738,7 +1815,7 @@ class TestVerticalFlip:
 
         torch.testing.assert_close(actual, expected)
 
-    def _reference_vertical_flip_bounding_boxes(self, bounding_boxes):
+    def _reference_vertical_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
             [
                 [1, 0, 0],
@@ -1746,7 +1823,22 @@ class TestVerticalFlip:
             ],
         )
 
-        return reference_affine_bounding_boxes_helper(bounding_boxes, affine_matrix=affine_matrix)
+        helper = (
+            reference_affine_rotated_bounding_boxes_helper
+            if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
+            else reference_affine_bounding_boxes_helper
+        )
+        return helper(bounding_boxes, affine_matrix=affine_matrix)
+
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
+    def test_bounding_boxes_correctness(self, format, fn):
+        bounding_boxes = make_bounding_boxes(format=format)
+
+        actual = fn(bounding_boxes)
+        expected = self._reference_vertical_flip_bounding_boxes(bounding_boxes)
+
+        torch.testing.assert_close(actual, expected)
 
     def _reference_vertical_flip_keypoints(self, keypoints):
         affine_matrix = np.array(
@@ -1757,16 +1849,6 @@ class TestVerticalFlip:
         )
 
         return reference_affine_keypoints_helper(keypoints, affine_matrix=affine_matrix)
-
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
-    @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
-    def test_bounding_boxes_correctness(self, format, fn):
-        bounding_boxes = make_bounding_boxes(format=format)
-
-        actual = fn(bounding_boxes)
-        expected = self._reference_vertical_flip_bounding_boxes(bounding_boxes)
-
-        torch.testing.assert_close(actual, expected)
 
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
     def test_keypoints_correctness(self, fn):
