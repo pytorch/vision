@@ -49,7 +49,7 @@ from torchvision.transforms._functional_tensor import _max_value as get_max_valu
 from torchvision.transforms.functional import pil_modes_mapping, to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import check_type, is_pure_tensor
-from torchvision.transforms.v2.functional._geometry import _get_perspective_coeffs
+from torchvision.transforms.v2.functional._geometry import _get_perspective_coeffs, _parallelogram_to_bounding_boxes
 from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
 
@@ -560,7 +560,9 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
     )
 
 
-def reference_affine_rotated_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new_canvas_size=None, clamp=True):
+def reference_affine_rotated_bounding_boxes_helper(
+    bounding_boxes, *, affine_matrix, new_canvas_size=None, clamp=True, flip=False
+):
     format = bounding_boxes.format
     canvas_size = new_canvas_size or bounding_boxes.canvas_size
 
@@ -588,16 +590,19 @@ def reference_affine_rotated_bounding_boxes_helper(bounding_boxes, *, affine_mat
         transformed_points = np.matmul(points, affine_matrix.astype(points.dtype).T)
         output = torch.tensor(
             [
-                float(transformed_points[1, 0]),
-                float(transformed_points[1, 1]),
                 float(transformed_points[0, 0]),
                 float(transformed_points[0, 1]),
-                float(transformed_points[3, 0]),
-                float(transformed_points[3, 1]),
+                float(transformed_points[1, 0]),
+                float(transformed_points[1, 1]),
                 float(transformed_points[2, 0]),
                 float(transformed_points[2, 1]),
+                float(transformed_points[3, 0]),
+                float(transformed_points[3, 1]),
             ]
         )
+
+        output = output[[2, 3, 0, 1, 6, 7, 4, 5]] if flip else output
+        output = _parallelogram_to_bounding_boxes(output)
 
         output = F.convert_bounding_box_format(
             output, old_format=tv_tensors.BoundingBoxFormat.XYXYXYXY, new_format=format
@@ -707,7 +712,7 @@ class TestResize:
             check_scripted_vs_eager=not isinstance(size, int),
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
@@ -725,6 +730,7 @@ class TestResize:
         check_kernel(
             F.resize_bounding_boxes,
             bounding_boxes,
+            format=format,
             canvas_size=bounding_boxes.canvas_size,
             size=size,
             **max_size_kwarg,
@@ -816,7 +822,7 @@ class TestResize:
         self._check_output_size(image, actual, size=size, **max_size_kwarg)
         torch.testing.assert_close(actual, expected, atol=1, rtol=0)
 
-    def _reference_resize_bounding_boxes(self, bounding_boxes, *, size, max_size=None):
+    def _reference_resize_bounding_boxes(self, bounding_boxes, format, *, size, max_size=None):
         old_height, old_width = bounding_boxes.canvas_size
         new_height, new_width = self._compute_output_size(
             input_size=bounding_boxes.canvas_size, size=size, max_size=max_size
@@ -832,13 +838,19 @@ class TestResize:
             ],
         )
 
-        return reference_affine_bounding_boxes_helper(
+        helper = (
+            reference_affine_rotated_bounding_boxes_helper
+            if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
+            else reference_affine_bounding_boxes_helper
+        )
+
+        return helper(
             bounding_boxes,
             affine_matrix=affine_matrix,
             new_canvas_size=(new_height, new_width),
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
@@ -849,7 +861,7 @@ class TestResize:
         bounding_boxes = make_bounding_boxes(format=format, canvas_size=self.INPUT_SIZE)
 
         actual = fn(bounding_boxes, size=size, **max_size_kwarg)
-        expected = self._reference_resize_bounding_boxes(bounding_boxes, size=size, **max_size_kwarg)
+        expected = self._reference_resize_bounding_boxes(bounding_boxes, format=format, size=size, **max_size_kwarg)
 
         self._check_output_size(bounding_boxes, actual, size=size, **max_size_kwarg)
         torch.testing.assert_close(actual, expected)
@@ -1152,7 +1164,7 @@ class TestHorizontalFlip:
         )
 
         helper = (
-            reference_affine_rotated_bounding_boxes_helper
+            functools.partial(reference_affine_rotated_bounding_boxes_helper, flip=True)
             if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
             else reference_affine_bounding_boxes_helper
         )
@@ -1607,7 +1619,7 @@ class TestVerticalFlip:
         )
 
         helper = (
-            reference_affine_rotated_bounding_boxes_helper
+            functools.partial(reference_affine_rotated_bounding_boxes_helper, flip=True)
             if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
             else reference_affine_bounding_boxes_helper
         )
