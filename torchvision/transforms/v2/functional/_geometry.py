@@ -1458,7 +1458,11 @@ def pad_bounding_boxes(
 
     left, right, top, bottom = _parse_pad_padding(padding)
 
-    if format == tv_tensors.BoundingBoxFormat.XYXY:
+    if format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
+        pad = [left, top, left, top, left, top, left, top]
+    elif format == tv_tensors.BoundingBoxFormat.XYWHR or format == tv_tensors.BoundingBoxFormat.CXCYWHR:
+        pad = [left, top, 0, 0, 0]
+    elif format == tv_tensors.BoundingBoxFormat.XYXY:
         pad = [left, top, left, top]
     else:
         pad = [left, top, 0, 0]

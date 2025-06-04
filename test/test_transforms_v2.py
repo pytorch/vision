@@ -608,6 +608,16 @@ def reference_affine_rotated_bounding_boxes_helper(
             output, old_format=tv_tensors.BoundingBoxFormat.XYXYXYXY, new_format=format
         )
 
+        if torch.is_floating_point(output) and dtype in (
+            torch.uint8,
+            torch.int8,
+            torch.int16,
+            torch.int32,
+            torch.int64,
+        ):
+            # it is better to round before cast
+            output = torch.round(output)
+
         if clamp:
             # It is important to clamp before casting, especially for CXCYWHR format, dtype=int64
             output = F.clamp_bounding_boxes(
@@ -3934,7 +3944,7 @@ class TestPad:
             ),
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_kernel_bounding_boxes(self, format):
         bounding_boxes = make_bounding_boxes(format=format)
         check_kernel(
@@ -4054,12 +4064,15 @@ class TestPad:
         height = bounding_boxes.canvas_size[0] + top + bottom
         width = bounding_boxes.canvas_size[1] + left + right
 
-        return reference_affine_bounding_boxes_helper(
-            bounding_boxes, affine_matrix=affine_matrix, new_canvas_size=(height, width)
+        helper = (
+            reference_affine_rotated_bounding_boxes_helper
+            if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
+            else reference_affine_bounding_boxes_helper
         )
+        return helper(bounding_boxes, affine_matrix=affine_matrix, new_canvas_size=(height, width))
 
     @pytest.mark.parametrize("padding", CORRECTNESS_PADDINGS)
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
@@ -4069,7 +4082,7 @@ class TestPad:
         actual = fn(bounding_boxes, padding=padding)
         expected = self._reference_pad_bounding_boxes(bounding_boxes, padding=padding)
 
-        assert_equal(actual, expected)
+        torch.testing.assert_close(actual, expected)
 
 
 class TestCenterCrop:
