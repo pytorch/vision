@@ -4854,7 +4854,7 @@ class TestPerspective:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_functional(self, make_input):
         check_functional(F.perspective, make_input(), **self.MINIMAL_KWARGS)
@@ -4877,7 +4877,7 @@ class TestPerspective:
     @pytest.mark.parametrize("distortion_scale", [0.5, 0.0, 1.0])
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_transform(self, distortion_scale, make_input):
         check_transform(transforms.RandomPerspective(distortion_scale=distortion_scale, p=1), make_input())
