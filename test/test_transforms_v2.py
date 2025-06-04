@@ -1461,7 +1461,7 @@ class TestAffine:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     def test_functional(self, make_input):
         check_functional(F.affine, make_input(), **self._MINIMAL_AFFINE_KWARGS)
@@ -1483,7 +1483,7 @@ class TestAffine:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
@@ -1588,17 +1588,6 @@ class TestAffine:
             ),
         )
 
-    def _reference_affine_keypoints(self, keypoints, *, angle, translate, scale, shear, center):
-        if center is None:
-            center = [s * 0.5 for s in keypoints.canvas_size[::-1]]
-
-        return reference_affine_keypoints_helper(
-            keypoints,
-            affine_matrix=self._compute_affine_matrix(
-                angle=angle, translate=translate, scale=scale, shear=shear, center=center
-            ),
-        )
-
     @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])
@@ -1644,6 +1633,18 @@ class TestAffine:
         expected = self._reference_affine_bounding_boxes(bounding_boxes, **params, center=center)
 
         torch.testing.assert_close(actual, expected)
+
+    def _reference_affine_keypoints(self, keypoints, *, angle, translate, scale, shear, center):
+        if center is None:
+            center = [s * 0.5 for s in keypoints.canvas_size[::-1]]
+
+        return reference_affine_keypoints_helper(
+            keypoints,
+            affine_matrix=self._compute_affine_matrix(
+                angle=angle, translate=translate, scale=scale, shear=shear, center=center
+            ),
+        )
+
 
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("translate", _CORRECTNESS_AFFINE_KWARGS["translate"])

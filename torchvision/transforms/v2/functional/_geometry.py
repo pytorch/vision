@@ -868,6 +868,7 @@ def _affine_image_pil(
     return _FP.affine(image, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
+# TODO: Consider merging/unifying this with the bbox implementation
 def _affine_keypoints_with_expand(
     keypoints: torch.Tensor,
     canvas_size: tuple[int, int],
@@ -935,10 +936,10 @@ def _affine_keypoints_with_expand(
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         canvas_size = (new_height, new_width)
 
-    out_kkpoints = clamp_keypoints(transformed_points, canvas_size=canvas_size).reshape(original_shape)
-    out_kkpoints = out_kkpoints.to(original_dtype)
+    out_keypoints = clamp_keypoints(transformed_points, canvas_size=canvas_size).reshape(original_shape)
+    out_keypoints = out_keypoints.to(original_dtype)
 
-    return out_kkpoints, canvas_size
+    return out_keypoints, canvas_size
 
 
 def affine_keypoints(
