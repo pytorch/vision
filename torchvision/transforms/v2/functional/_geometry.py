@@ -1545,7 +1545,11 @@ def crop_bounding_boxes(
 ) -> tuple[torch.Tensor, tuple[int, int]]:
 
     # Crop or implicit pad if left and/or top have negative values:
-    if format == tv_tensors.BoundingBoxFormat.XYXY:
+    if format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
+        sub = [left, top, left, top, left, top, left, top]
+    elif format == tv_tensors.BoundingBoxFormat.XYWHR or format == tv_tensors.BoundingBoxFormat.CXCYWHR:
+        sub = [left, top, 0, 0, 0]
+    elif format == tv_tensors.BoundingBoxFormat.XYXY:
         sub = [left, top, left, top]
     else:
         sub = [left, top, 0, 0]
