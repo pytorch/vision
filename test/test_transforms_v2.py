@@ -4661,7 +4661,36 @@ class TestPad:
 
         assert_equal(actual, expected)
 
-    # TODOKP need keypoint correctness tests
+    def _reference_pad_keypoints(self, keypoints, *, padding):
+        if isinstance(padding, int):
+            padding = [padding]
+        left, top, right, bottom = padding * (4 // len(padding))
+
+        affine_matrix = np.array(
+            [
+                [1, 0, left],
+                [0, 1, top],
+            ],
+        )
+
+        height = keypoints.canvas_size[0] + top + bottom
+        width = keypoints.canvas_size[1] + left + right
+
+        return reference_affine_keypoints_helper(
+            keypoints, affine_matrix=affine_matrix, new_canvas_size=(height, width)
+        )
+
+    @pytest.mark.parametrize("padding", CORRECTNESS_PADDINGS)
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
+    def test_keypoints_correctness(self, padding, dtype, device, fn):
+        keypoints = make_keypoints(dtype=dtype, device=device)
+
+        actual = fn(keypoints, padding=padding)
+        expected = self._reference_pad_keypoints(keypoints, padding=padding)
+
+        assert_equal(actual, expected)
 
 
 class TestCenterCrop:
