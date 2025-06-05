@@ -6008,7 +6008,9 @@ class TestColorJitter:
                 "will degenerate to that anyway."
             )
 
-        torch.manual_seed(1)  # TODOKP why is this needed now??
+        # TODO needed to add seed after KeyPoints PR, not sure why? failure
+        # wasn't really significant anyway.
+        torch.manual_seed(1)
         check_transform(
             transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.25),
             make_input(dtype=dtype, device=device),
@@ -7194,36 +7196,35 @@ class TestUtils:
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
 
-    # TODOKP this is tested here in TestUtils but defined in meta
-    @pytest.mark.parametrize(
-        "boxes",
-        [
-            tv_tensors.BoundingBoxes(torch.tensor([[1.0, 1.0, 2.0, 2.0]]), format="XYXY", canvas_size=(4, 4)),
-            tv_tensors.BoundingBoxes(torch.tensor([[1.0, 1.0, 1.0, 1.0]]), format="XYWH", canvas_size=(4, 4)),
-            tv_tensors.BoundingBoxes(torch.tensor([[1.5, 1.5, 1.0, 1.0]]), format="CXCYWH", canvas_size=(4, 4)),
-            tv_tensors.BoundingBoxes(torch.tensor([[1.5, 1.5, 1.0, 1.0, 45]]), format="CXCYWHR", canvas_size=(4, 4)),
-            tv_tensors.BoundingBoxes(torch.tensor([[1.0, 1.0, 1.0, 1.0, 45.0]]), format="XYWHR", canvas_size=(4, 4)),
-            tv_tensors.BoundingBoxes(
-                torch.tensor([[1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 1.0]]), format="XYXYXYXY", canvas_size=(4, 4)
-            ),
-        ],
+@pytest.mark.parametrize(
+    "boxes",
+    [
+        tv_tensors.BoundingBoxes(torch.tensor([[1.0, 1.0, 2.0, 2.0]]), format="XYXY", canvas_size=(4, 4)),
+        tv_tensors.BoundingBoxes(torch.tensor([[1.0, 1.0, 1.0, 1.0]]), format="XYWH", canvas_size=(4, 4)),
+        tv_tensors.BoundingBoxes(torch.tensor([[1.5, 1.5, 1.0, 1.0]]), format="CXCYWH", canvas_size=(4, 4)),
+        tv_tensors.BoundingBoxes(torch.tensor([[1.5, 1.5, 1.0, 1.0, 45]]), format="CXCYWHR", canvas_size=(4, 4)),
+        tv_tensors.BoundingBoxes(torch.tensor([[1.0, 1.0, 1.0, 1.0, 45.0]]), format="XYWHR", canvas_size=(4, 4)),
+        tv_tensors.BoundingBoxes(
+            torch.tensor([[1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0, 1.0]]), format="XYXYXYXY", canvas_size=(4, 4)
+        ),
+    ],
+)
+def test_convert_bounding_boxes_to_keypoints(boxes: tv_tensors.BoundingBoxes):
+    kp = F.convert_bounding_boxes_to_keypoints(boxes)
+    assert kp.shape == (boxes.shape[0], 4, 2)
+    assert kp.dtype == boxes.dtype
+
+    # We manually convert the kp back into a BoundingBoxes, and convert that
+    # bbox back into the original `boxes` format to compare against it.
+    if F._meta.is_rotated_bounding_box_format(boxes.format):
+        reconverted = kp.reshape(-1, 8)
+        intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY
+    else:
+        reconverted = torch.cat([kp[..., 0, :], kp[..., 2, :]], dim=-1)
+        intermediate_format = tv_tensors.BoundingBoxFormat.XYXY
+
+    reconverted_bbox = F.convert_bounding_box_format(
+        tv_tensors.BoundingBoxes(reconverted, format=intermediate_format, canvas_size=kp.canvas_size),
+        new_format=boxes.format,
     )
-    def test_convert_bounding_boxes_to_points(self, boxes: tv_tensors.BoundingBoxes):
-        kp = F.convert_bounding_boxes_to_points(boxes)
-        assert kp.shape == (boxes.shape[0], 4, 2)
-        assert kp.dtype == boxes.dtype
-
-        # We manually convert the kp back into a BoundingBoxes, and convert that
-        # bbox back into the original `boxes` format to compare against it.
-        if F._meta.is_rotated_bounding_box_format(boxes.format):
-            reconverted = kp.reshape(-1, 8)
-            intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY
-        else:
-            reconverted = torch.cat([kp[..., 0, :], kp[..., 2, :]], dim=-1)
-            intermediate_format = tv_tensors.BoundingBoxFormat.XYXY
-
-        reconverted_bbox = F.convert_bounding_box_format(
-            tv_tensors.BoundingBoxes(reconverted, format=intermediate_format, canvas_size=kp.canvas_size),
-            new_format=boxes.format,
-        )
-        assert_equal(reconverted_bbox, boxes, atol=1e-5, rtol=0)
+    assert_equal(reconverted_bbox, boxes, atol=1e-5, rtol=0)

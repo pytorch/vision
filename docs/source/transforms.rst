@@ -459,6 +459,7 @@ functionals
     v2.functional.to_pil_image
     v2.functional.to_dtype
     v2.functional.convert_bounding_box_format
+    v2.functional.convert_bounding_boxes_to_keypoints
 
 
 Deprecated

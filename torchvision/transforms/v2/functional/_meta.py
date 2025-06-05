@@ -189,16 +189,9 @@ def _xyxyxyxy_to_keypoints(bounding_boxes: torch.Tensor) -> torch.Tensor:
     return bounding_boxes[:, [[0, 1], [2, 3], [4, 5], [6, 7]]]
 
 
-# TODOKP Should this be in the box ops? Or in utils? rename points->keypoints.
-def convert_bounding_boxes_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensors.KeyPoints:
+# Note: this doesn't have a corresponding transforms class.
+def convert_bounding_boxes_to_keypoints(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensors.KeyPoints:
     """Convert a set of bounding boxes to its edge points.
-
-    .. note::
-
-        This handles rotated :class:`tv_tensors.BoundingBoxes` formats
-        by first converting them to XYXYXYXY format.
-
-        Due to floating-point approximation, this may not be an exact computation.
 
     Args:
         bounding_boxes (tv_tensors.BoundingBoxes): A set of ``N`` bounding boxes (of shape ``[N, 4]``)
@@ -207,22 +200,19 @@ def convert_bounding_boxes_to_points(bounding_boxes: tv_tensors.BoundingBoxes) -
         tv_tensors.KeyPoints: The edges, as a polygon of shape ``[N, 4, 2]``
     """
     if is_rotated_bounding_box_format(bounding_boxes.format):
-        # We are working on a rotated bounding box
-        bbox = _convert_bounding_box_format(
-            bounding_boxes.as_subclass(torch.Tensor),
-            old_format=bounding_boxes.format,
-            new_format=BoundingBoxFormat.XYXYXYXY,
-            inplace=False,
-        )
-        return tv_tensors.KeyPoints(_xyxyxyxy_to_keypoints(bbox), canvas_size=bounding_boxes.canvas_size)
+        intermediate_format = BoundingBoxFormat.XYXYXYXY
+        to_keypoints = _xyxyxyxy_to_keypoints
+    else:
+        intermediate_format = BoundingBoxFormat.XYXY
+        to_keypoints = _xyxy_to_keypoints
 
     bbox = _convert_bounding_box_format(
         bounding_boxes.as_subclass(torch.Tensor),
         old_format=bounding_boxes.format,
-        new_format=BoundingBoxFormat.XYXY,
+        new_format=intermediate_format,
         inplace=False,
     )
-    return tv_tensors.KeyPoints(_xyxy_to_keypoints(bbox), canvas_size=bounding_boxes.canvas_size)
+    return tv_tensors.KeyPoints(to_keypoints(bbox), canvas_size=bounding_boxes.canvas_size)
 
 
 def _cxcywhr_to_xywhr(cxcywhr: torch.Tensor, inplace: bool) -> torch.Tensor:

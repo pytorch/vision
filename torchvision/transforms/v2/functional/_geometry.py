@@ -70,7 +70,7 @@ def horizontal_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, i
     shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
     keypoints[..., 0] = keypoints[..., 0].sub_(canvas_size[1]).neg_()
-    return keypoints.reshape(shape)
+    return clamp_keypoints(keypoints.reshape(shape), canvas_size=canvas_size)
 
 
 @_register_kernel_internal(horizontal_flip, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -164,7 +164,7 @@ def vertical_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int
     shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
     keypoints[..., 1] = keypoints[..., 1].sub_(canvas_size[0]).neg_()
-    return keypoints.reshape(shape)
+    return clamp_keypoints(keypoints.reshape(shape), canvas_size=canvas_size)
 
 
 def vertical_flip_bounding_boxes(
