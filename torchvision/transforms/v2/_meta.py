@@ -35,6 +35,7 @@ class ClampBoundingBoxes(Transform):
     def transform(self, inpt: tv_tensors.BoundingBoxes, params: dict[str, Any]) -> tv_tensors.BoundingBoxes:
         return F.clamp_bounding_boxes(inpt)  # type: ignore[return-value]
 
+
 class ClampKeyPoints(Transform):
     """Clamp keypoints to their corresponding image dimensions.
 

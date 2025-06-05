@@ -5444,6 +5444,7 @@ class TestClampBoundingBoxes:
     def test_transform(self):
         check_transform(transforms.ClampBoundingBoxes(), make_bounding_boxes())
 
+
 class TestClampKeyPoints:
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -5470,7 +5471,6 @@ class TestClampKeyPoints:
 
     def test_transform(self):
         check_transform(transforms.ClampKeyPoints(), make_keypoints())
-
 
 
 class TestInvert:
@@ -7195,6 +7195,7 @@ class TestUtils:
     def test_no_valid_input(self, query):
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
+
 
 @pytest.mark.parametrize(
     "boxes",
