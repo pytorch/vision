@@ -165,19 +165,6 @@ def get_bounding_boxes(flat_inputs: list[Any]) -> tv_tensors.BoundingBoxes:
         raise ValueError("No bounding boxes were found in the sample")
 
 
-# TODOKP this is unused and un-tested
-def get_keypoints(flat_inputs: list[Any]) -> tv_tensors.KeyPoints:
-    """Returns the KeyPoints in the input.
-
-    Assumes only one ``KeyPoints`` object is present
-    """
-    generator = (inpt for inpt in flat_inputs if isinstance(inpt, tv_tensors.KeyPoints))
-    try:
-        return next(generator)
-    except StopIteration:
-        raise ValueError("No Keypoints were found in the sample.")
-
-
 def query_chw(flat_inputs: list[Any]) -> tuple[int, int, int]:
     """Return Channel, Height, and Width."""
     chws = {
