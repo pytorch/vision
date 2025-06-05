@@ -6,7 +6,7 @@ from ._meta import (
     clamp_bounding_boxes,
     clamp_keypoints,
     convert_bounding_box_format,
-    convert_bounding_boxes_to_points,
+    convert_bounding_boxes_to_points,  #TODOKP also needs docs
     get_dimensions_image,
     get_dimensions_video,
     get_dimensions,
@@ -157,7 +157,6 @@ from ._misc import (
     normalize_image,
     normalize_video,
     sanitize_bounding_boxes,
-    sanitize_keypoints,
     to_dtype,
     to_dtype_image,
     to_dtype_video,

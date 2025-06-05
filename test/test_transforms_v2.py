@@ -5444,6 +5444,34 @@ class TestClampBoundingBoxes:
     def test_transform(self):
         check_transform(transforms.ClampBoundingBoxes(), make_bounding_boxes())
 
+class TestClampKeyPoints:
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_kernel(self, dtype, device):
+        keypoints = make_keypoints(dtype=dtype, device=device)
+        check_kernel(
+            F.clamp_keypoints,
+            keypoints,
+            canvas_size=keypoints.canvas_size,
+        )
+
+    def test_functional(self):
+        check_functional(F.clamp_keypoints, make_keypoints())
+
+    def test_errors(self):
+        input_tv_tensor = make_keypoints()
+        input_pure_tensor = input_tv_tensor.as_subclass(torch.Tensor)
+
+        with pytest.raises(ValueError, match="`canvas_size` has to be passed"):
+            F.clamp_keypoints(input_pure_tensor, canvas_size=None)
+
+        with pytest.raises(ValueError, match="`canvas_size` must not be passed"):
+            F.clamp_keypoints(input_tv_tensor, canvas_size=input_tv_tensor.canvas_size)
+
+    def test_transform(self):
+        check_transform(transforms.ClampKeyPoints(), make_keypoints())
+
+
 
 class TestInvert:
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.int16, torch.float32])

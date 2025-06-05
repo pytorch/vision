@@ -457,12 +457,13 @@ def clamp_bounding_boxes(
 def _clamp_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int]) -> torch.Tensor:
     dtype = keypoints.dtype
     keypoints = keypoints.clone() if keypoints.is_floating_point() else keypoints.float()
-    keypoints[..., 0].clamp_(min=0, max=canvas_size[1])
-    keypoints[..., 1].clamp_(min=0, max=canvas_size[0])
+    # Note that max is canvas_size[i] - 1 and not can canvas_size[i] like for
+    # bounding boxes.
+    keypoints[..., 0].clamp_(min=0, max=canvas_size[1] - 1)
+    keypoints[..., 1].clamp_(min=0, max=canvas_size[0] - 1)
     return keypoints.to(dtype=dtype)
 
 
-# TODOKP there is no corresponding transform and this isn't tested
 def clamp_keypoints(
     inpt: torch.Tensor,
     canvas_size: Optional[tuple[int, int]] = None,
@@ -473,7 +474,7 @@ def clamp_keypoints(
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
 
         if canvas_size is None:
-            raise ValueError("For pure tensor inputs, `canvas_size` have to be passed.")
+            raise ValueError("For pure tensor inputs, `canvas_size` has to be passed.")
         return _clamp_keypoints(inpt, canvas_size=canvas_size)
     elif isinstance(inpt, tv_tensors.KeyPoints):
         if canvas_size is not None:
