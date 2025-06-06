@@ -1307,7 +1307,7 @@ class TestHorizontalFlip:
     def _reference_horizontal_flip_keypoints(self, keypoints):
         affine_matrix = np.array(
             [
-                [-1, 0, keypoints.canvas_size[1]],
+                [-1, 0, keypoints.canvas_size[1] - 1],
                 [0, 1, 0],
             ],
         )
@@ -1907,7 +1907,7 @@ class TestVerticalFlip:
         affine_matrix = np.array(
             [
                 [1, 0, 0],
-                [0, -1, keypoints.canvas_size[0]],
+                [0, -1, keypoints.canvas_size[0] - 1],
             ],
         )
 
