@@ -4380,6 +4380,18 @@ class TestResizedCrop:
             new_canvas_size=size,
         )
 
+    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    def test_functional_bounding_boxes_correctness(self, format):
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
+
+        actual = F.resized_crop(bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE)
+        expected = self._reference_resized_crop_bounding_boxes(
+            bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE
+        )
+
+        assert_equal(actual, expected)
+        assert_equal(F.get_size(actual), F.get_size(expected))
+
     def _reference_resized_crop_keypoints(self, keypoints, *, top, left, height, width, size):
         new_height, new_width = size
 
@@ -4397,25 +4409,16 @@ class TestResizedCrop:
                 [0, 0, 1],
             ],
         )
-        affine_matrix = (resize_affine_matrix @ crop_affine_matrix)[:2, :]
-
-        return reference_affine_keypoints_helper(
+        intermediate_keypoints = reference_affine_keypoints_helper(
             keypoints,
-            affine_matrix=affine_matrix,
+            affine_matrix=crop_affine_matrix,
+            new_canvas_size=(height, width),
+        )
+        return reference_affine_keypoints_helper(
+            intermediate_keypoints,
+            affine_matrix=resize_affine_matrix,
             new_canvas_size=size,
         )
-
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
-    def test_functional_bounding_boxes_correctness(self, format):
-        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
-
-        actual = F.resized_crop(bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE)
-        expected = self._reference_resized_crop_bounding_boxes(
-            bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE
-        )
-
-        assert_equal(actual, expected)
-        assert_equal(F.get_size(actual), F.get_size(expected))
 
     def test_functional_keypoints_correctness(self):
         keypoints = make_keypoints(self.INPUT_SIZE)
