@@ -408,6 +408,7 @@ Miscellaneous
     v2.Lambda
     v2.SanitizeBoundingBoxes
     v2.ClampBoundingBoxes
+    v2.ClampKeyPoints
     v2.UniformTemporalSubsample
     v2.JPEG
 
@@ -421,6 +422,7 @@ Functionals
     v2.functional.erase
     v2.functional.sanitize_bounding_boxes
     v2.functional.clamp_bounding_boxes
+    v2.functional.clamp_keypoints
     v2.functional.uniform_temporal_subsample
     v2.functional.jpeg
 
@@ -457,6 +459,7 @@ functionals
     v2.functional.to_pil_image
     v2.functional.to_dtype
     v2.functional.convert_bounding_box_format
+    v2.functional.convert_bounding_boxes_to_keypoints
 
 
 Deprecated
