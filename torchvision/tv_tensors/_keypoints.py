@@ -11,33 +11,44 @@ from ._tv_tensor import TVTensor
 class KeyPoints(TVTensor):
     """:class:`torch.Tensor` subclass for tensors with shape ``[..., 2]`` that represent points in an image.
 
-    Each point is represented by its XY coordinates.
+    Each point is represented by its X and Y coordinates along the width and height dimensions, respectively.
 
     KeyPoints can be converted from :class:`torchvision.tv_tensors.BoundingBoxes`
     by :func:`torchvision.transforms.v2.functional.convert_bounding_boxes_to_points`.
 
     KeyPoints may represent any object that can be represented by sequences of 2D points:
-    - `Polygonal chains<https://en.wikipedia.org/wiki/Polygonal_chain>`, including polylines, Bézier curves, etc.,
-      which should be of shape ``[N_chains, N_points, 2]``, which is equal to ``[N_chains, N_segments + 1, 2]``
-    - Polygons, which should be of shape ``[N_polygons, N_points, 2]``, which is equal to ``[N_polygons, N_sides, 2]``
-    - Skeletons, which could be of shape ``[N_skeletons, N_bones, 2, 2]`` for pose-estimation models
+
+    - `Polygonal chains <https://en.wikipedia.org/wiki/Polygonal_chain>`_,
+      including polylines, Bézier curves, etc., which should be of shape
+      ``[N_chains, N_points, 2]``, which is equal to ``[N_chains, N_segments +
+      1, 2]``
+    - Polygons, which should be of shape ``[N_polygons, N_points, 2]``, which is
+      equal to ``[N_polygons, N_sides, 2]``
+    - Skeletons, which could be of shape ``[N_skeletons, N_bones, 2, 2]`` for
+      pose-estimation models
 
     .. note::
-
-        Like for :class:`torchvision.tv_tensors.BoundingBoxes`, there should only ever be a single
-        instance of the :class:`torchvision.tv_tensors.KeyPoints` class per sample
-        e.g. ``{"img": img, "poins_of_interest": KeyPoints(...)}``,
-        although one :class:`torchvision.tv_tensors.KeyPoints` object can contain multiple key points
+        Like for :class:`torchvision.tv_tensors.BoundingBoxes`, there should
+        only be a single instance of the
+        :class:`torchvision.tv_tensors.KeyPoints` class per sample e.g.
+        ``{"img": img, "poins_of_interest": KeyPoints(...)}``, although one
+        :class:`torchvision.tv_tensors.KeyPoints` object can contain multiple
+        key points
 
     Args:
-        data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
-        canvas_size (two-tuple of ints): Height and width of the corresponding image or video.
-        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
-            ``data``.
-        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
-            :class:`torch.Tensor`, the device is taken from it. Otherwise, the bounding box is constructed on the CPU.
-        requires_grad (bool, optional): Whether autograd should record operations on the bounding box. If omitted and
-            ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.
+        data: Any data that can be turned into a tensor with
+            :func:`torch.as_tensor`.
+        canvas_size (two-tuple of ints): Height and width of the corresponding
+            image or video.
+        dtype (torch.dtype, optional): Desired data type of the bounding box. If
+            omitted, will be inferred from ``data``.
+        device (torch.device, optional): Desired device of the bounding box. If
+            omitted and ``data`` is a :class:`torch.Tensor`, the device is taken
+            from it. Otherwise, the bounding box is constructed on the CPU.
+        requires_grad (bool, optional): Whether autograd should record
+            operations on the bounding box. If omitted and ``data`` is a
+            :class:`torch.Tensor`, the value is taken from it. Otherwise,
+            defaults to ``False``.
     """
 
     canvas_size: tuple[int, int]

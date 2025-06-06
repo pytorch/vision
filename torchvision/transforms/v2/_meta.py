@@ -40,7 +40,6 @@ class ClampKeyPoints(Transform):
     """Clamp keypoints to their corresponding image dimensions.
 
     The clamping is done according to the keypoints' ``canvas_size`` meta-data.
-
     """
 
     _transformed_types = (tv_tensors.KeyPoints,)

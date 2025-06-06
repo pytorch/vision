@@ -450,6 +450,7 @@ def clamp_keypoints(
     inpt: torch.Tensor,
     canvas_size: Optional[tuple[int, int]] = None,
 ) -> torch.Tensor:
+    """See :func:`~torchvision.transforms.v2.ClampKeyPoints` for details."""
     if not torch.jit.is_scripting():
         _log_api_usage_once(clamp_keypoints)
 
