@@ -29,7 +29,7 @@ on:
         required: false
         type: string
         default: main
-        
+
 permissions:
   id-token: write
   contents: read
