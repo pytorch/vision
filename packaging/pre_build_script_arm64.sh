@@ -6,7 +6,7 @@ echo "Building vision dependencies and wheel started."
 export SRC_PATH="$GITHUB_WORKSPACE/$SRC_DIR"
 export CMAKE_BUILD_TYPE="$BUILD_TYPE"
 export VCVARSALL_PATH="$DEPENDENCIES_DIR/VSBuildTools/VC/Auxiliary/Build/vcvarsall.bat"
-export CONDA_PREFIX="$DEPENDENCIES_DIR"
+export CONDA_PREFIX="$DEPENDENCIES_DIR/Library/"
 export PATH="$PATH:$CONDA_PREFIX/Library/bin"
 export DISTUTILS_USE_SDK=1
 export TRIPLET_FILE="triplets/x64-windows.cmake"
@@ -27,7 +27,6 @@ git clone https://github.com/microsoft/vcpkg.git
 cd vcpkg || exit
 ./bootstrap-vcpkg.sh
 
-
 # # Set vcpkg to only build release packages
 echo "set(VCPKG_BUILD_TYPE release)" >> "$TRIPLET_FILE"
 
@@ -36,7 +35,7 @@ echo "set(VCPKG_BUILD_TYPE release)" >> "$TRIPLET_FILE"
 ./vcpkg install libwebp:x64-windows --x-install-root="$DEPENDENCIES_DIR"
 ./vcpkg install libpng[tools]:x64-windows --x-install-root="$DEPENDENCIES_DIR"
 
-# Copy files using cp (replace robocopy)
+# Copy files using cp
 cp "$DEPENDENCIES_DIR/x64-windows/lib/libpng16.lib" "$DEPENDENCIES_DIR/x64-windows/lib/libpng.lib"
 cp "$DEPENDENCIES_DIR/x64-windows/bin/libpng16.dll" "$DEPENDENCIES_DIR/x64-windows/bin/libpng.dll"
 cp "$DEPENDENCIES_DIR/x64-windows/bin/libpng16.pdb" "$DEPENDENCIES_DIR/x64-windows/bin/libpng.pdb"
@@ -45,6 +44,10 @@ cp -r "$DEPENDENCIES_DIR/x64-windows/"* "$DEPENDENCIES_DIR/Library/"
 
 cp -r "$DEPENDENCIES_DIR/Library/tools/libpng/"* "$DEPENDENCIES_DIR/Library/bin/"
 cp -r "$DEPENDENCIES_DIR/Library/bin/"* "$SRC_PATH/torchvision"
+
+ls -l "$DEPENDENCIES_DIR/Library/"
+ls -l "$DEPENDENCIES_DIR/Library/bin/"
+ls -l "$SRC_PATH/torchvision"
 
 # Source directory
 cd "$SRC_PATH" || exit
