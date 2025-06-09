@@ -1,5 +1,3 @@
-from typing import List
-
 import PIL.Image
 import torch
 from torch.nn.functional import conv2d
@@ -682,7 +680,7 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
     return invert_image(video)
 
 
-def permute_channels(inpt: torch.Tensor, permutation: List[int]) -> torch.Tensor:
+def permute_channels(inpt: torch.Tensor, permutation: list[int]) -> torch.Tensor:
     """Permute the channels of the input according to the given permutation.
 
     This function supports plain :class:`~torch.Tensor`'s, :class:`PIL.Image.Image`'s, and
@@ -715,7 +713,7 @@ def permute_channels(inpt: torch.Tensor, permutation: List[int]) -> torch.Tensor
 
 @_register_kernel_internal(permute_channels, torch.Tensor)
 @_register_kernel_internal(permute_channels, tv_tensors.Image)
-def permute_channels_image(image: torch.Tensor, permutation: List[int]) -> torch.Tensor:
+def permute_channels_image(image: torch.Tensor, permutation: list[int]) -> torch.Tensor:
     shape = image.shape
     num_channels, height, width = shape[-3:]
 
@@ -733,10 +731,10 @@ def permute_channels_image(image: torch.Tensor, permutation: List[int]) -> torch
 
 
 @_register_kernel_internal(permute_channels, PIL.Image.Image)
-def _permute_channels_image_pil(image: PIL.Image.Image, permutation: List[int]) -> PIL.Image.Image:
+def _permute_channels_image_pil(image: PIL.Image.Image, permutation: list[int]) -> PIL.Image.Image:
     return to_pil_image(permute_channels_image(pil_to_tensor(image), permutation=permutation))
 
 
 @_register_kernel_internal(permute_channels, tv_tensors.Video)
-def permute_channels_video(video: torch.Tensor, permutation: List[int]) -> torch.Tensor:
+def permute_channels_video(video: torch.Tensor, permutation: list[int]) -> torch.Tensor:
     return permute_channels_image(video, permutation=permutation)

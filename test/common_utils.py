@@ -285,7 +285,7 @@ class ImagePair(TensorLikePair):
         **other_parameters,
     ):
         if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
-            actual, expected = [to_image(input) for input in [actual, expected]]
+            actual, expected = (to_image(input) for input in [actual, expected])
 
         super().__init__(actual, expected, **other_parameters)
         self.mae = mae
@@ -417,8 +417,15 @@ def make_bounding_boxes(
         format = tv_tensors.BoundingBoxFormat[format]
 
     dtype = dtype or torch.float32
+    int_dtype = dtype in (
+        torch.uint8,
+        torch.int8,
+        torch.int16,
+        torch.int32,
+        torch.int64,
+    )
 
-    h, w = [torch.randint(1, s, (num_boxes,)) for s in canvas_size]
+    h, w = (torch.randint(1, s, (num_boxes,)) for s in canvas_size)
     y = sample_position(h, canvas_size[0])
     x = sample_position(w, canvas_size[1])
     r = -360 * torch.rand((num_boxes,)) + 180
@@ -443,17 +450,17 @@ def make_bounding_boxes(
     elif format is tv_tensors.BoundingBoxFormat.XYXYXYXY:
         r_rad = r * torch.pi / 180.0
         cos, sin = torch.cos(r_rad), torch.sin(r_rad)
-        x1, y1 = x, y
-        x3 = x1 + w * cos
-        y3 = y1 - w * sin
-        x2 = x3 + h * sin
-        y2 = y3 + h * cos
-        x4 = x1 + h * sin
-        y4 = y1 + h * cos
-        parts = (x1, y1, x3, y3, x2, y2, x4, y4)
+        x1 = torch.round(x) if int_dtype else x
+        y1 = torch.round(y) if int_dtype else y
+        x2 = torch.round(x1 + w * cos) if int_dtype else x1 + w * cos
+        y2 = torch.round(y1 - w * sin) if int_dtype else y1 - w * sin
+        x3 = torch.round(x2 + h * sin) if int_dtype else x2 + h * sin
+        y3 = torch.round(y2 + h * cos) if int_dtype else y2 + h * cos
+        x4 = torch.round(x1 + h * sin) if int_dtype else x1 + h * sin
+        y4 = torch.round(y1 + h * cos) if int_dtype else y1 + h * cos
+        parts = (x1, y1, x2, y2, x3, y3, x4, y4)
     else:
         raise ValueError(f"Format {format} is not supported")
-
     return tv_tensors.BoundingBoxes(
         torch.stack(parts, dim=-1).to(dtype=dtype, device=device), format=format, canvas_size=canvas_size
     )

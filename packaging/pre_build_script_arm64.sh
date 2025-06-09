@@ -27,6 +27,7 @@ git clone https://github.com/microsoft/vcpkg.git
 cd vcpkg || exit
 ./bootstrap-vcpkg.sh
 
+
 # # Set vcpkg to only build release packages
 echo "set(VCPKG_BUILD_TYPE release)" >> "$TRIPLET_FILE"
 
@@ -41,6 +42,7 @@ cp "$DEPENDENCIES_DIR/x64-windows/bin/libpng16.dll" "$DEPENDENCIES_DIR/x64-windo
 cp "$DEPENDENCIES_DIR/x64-windows/bin/libpng16.pdb" "$DEPENDENCIES_DIR/x64-windows/bin/libpng.pdb"
 mkdir -p "$DEPENDENCIES_DIR/Library/"
 cp -r "$DEPENDENCIES_DIR/x64-windows/"* "$DEPENDENCIES_DIR/Library/"
+
 cp -r "$DEPENDENCIES_DIR/Library/tools/libpng/"* "$DEPENDENCIES_DIR/Library/bin/"
 cp -r "$DEPENDENCIES_DIR/Library/bin/"* "$SRC_PATH/torchvision"
 
@@ -58,22 +60,15 @@ pip install numpy==2.2.3
 
 if [ "$CHANNEL" = "release" ]; then
   echo "Installing latest stable version of PyTorch."
+
   pip3 install torch
 elif [ "$CHANNEL" = "test" ]; then
   echo "Installing PyTorch version $PYTORCH_VERSION."
   pip3 install torch=="$PYTORCH_VERSION"
+
 else
   echo "CHANNEL is not set, installing PyTorch from nightly."
   pip3 install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu
 fi
-
-# # Create wheel under dist folder
-# python setup.py bdist_wheel
-
-# # Check if build was successful
-# if [[ $? -ne 0 ]]; then
-#     echo "Failed on build_vision. (exit code = $?)"
-#     exit 1
-# fi
 
 echo "Dependencies install finished successfully."

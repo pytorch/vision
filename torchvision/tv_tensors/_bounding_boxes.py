@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
+
 from enum import Enum
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -24,8 +26,8 @@ class BoundingBoxFormat(Enum):
       cy being center of box, w, h being width and height. r is rotation angle
       in degrees.
     * ``XYXYXYXY``: rotated boxes represented via corners, x1, y1 being top
-      left, x2, y2 being bottom right, x3, y3 being bottom left, x4, y4 being
-      top right.
+      left, x2, y2 being top right, x3, y3 being bottom right, x4, y4 being
+      bottom left.
     """
 
     XYXY = "XYXY"
@@ -34,6 +36,14 @@ class BoundingBoxFormat(Enum):
     XYWHR = "XYWHR"
     CXCYWHR = "CXCYWHR"
     XYXYXYXY = "XYXYXYXY"
+
+
+# TODO: Once torchscript supports Enums with staticmethod
+# this can be put into BoundingBoxFormat as staticmethod
+def is_rotated_bounding_format(format: BoundingBoxFormat) -> bool:
+    return (
+        format == BoundingBoxFormat.XYWHR or format == BoundingBoxFormat.CXCYWHR or format == BoundingBoxFormat.XYXYXYXY
+    )
 
 
 class BoundingBoxes(TVTensor):
@@ -61,10 +71,10 @@ class BoundingBoxes(TVTensor):
     """
 
     format: BoundingBoxFormat
-    canvas_size: Tuple[int, int]
+    canvas_size: tuple[int, int]
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, format: Union[BoundingBoxFormat, str], canvas_size: Tuple[int, int], check_dims: bool = True) -> BoundingBoxes:  # type: ignore[override]
+    def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat | str, canvas_size: tuple[int, int], check_dims: bool = True) -> BoundingBoxes:  # type: ignore[override]
         if check_dims:
             if tensor.ndim == 1:
                 tensor = tensor.unsqueeze(0)
@@ -81,11 +91,11 @@ class BoundingBoxes(TVTensor):
         cls,
         data: Any,
         *,
-        format: Union[BoundingBoxFormat, str],
-        canvas_size: Tuple[int, int],
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: Optional[bool] = None,
+        format: BoundingBoxFormat | str,
+        canvas_size: tuple[int, int],
+        dtype: torch.dtype | None = None,
+        device: torch.device | str | int | None = None,
+        requires_grad: bool | None = None,
     ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         return cls._wrap(tensor, format=format, canvas_size=canvas_size)
@@ -95,7 +105,7 @@ class BoundingBoxes(TVTensor):
         cls,
         output: torch.Tensor,
         args: Sequence[Any] = (),
-        kwargs: Optional[Mapping[str, Any]] = None,
+        kwargs: Mapping[str, Any] | None = None,
     ) -> BoundingBoxes:
         # If there are BoundingBoxes instances in the output, their metadata got lost when we called
         # super().__torch_function__. We need to restore the metadata somehow, so we choose to take

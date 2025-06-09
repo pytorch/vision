@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 from PIL import Image
@@ -109,7 +109,7 @@ class SBDataset(VisionDataset):
             axis=0,
         )
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         img = Image.open(self.images[index]).convert("RGB")
         target = self._get_target(self.masks[index])
 

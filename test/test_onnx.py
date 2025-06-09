@@ -1,6 +1,6 @@
 import io
 from collections import OrderedDict
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import pytest
 import torch
@@ -404,7 +404,7 @@ class TestONNXExporter:
             },
         )
 
-    def get_image(self, rel_path: str, size: Tuple[int, int]) -> torch.Tensor:
+    def get_image(self, rel_path: str, size: tuple[int, int]) -> torch.Tensor:
         import os
 
         from PIL import Image
@@ -416,7 +416,7 @@ class TestONNXExporter:
 
         return F.convert_image_dtype(F.pil_to_tensor(image))
 
-    def get_test_images(self) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
+    def get_test_images(self) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
         return (
             [self.get_image("encode_jpeg/grace_hopper_517x606.jpg", (100, 320))],
             [self.get_image("fakedata/logos/rgb_pytorch.png", (250, 380))],
