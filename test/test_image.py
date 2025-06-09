@@ -934,6 +934,20 @@ def test_decode_webp(decode_fun, scripted):
     img += 123  # make sure image buffer wasn't freed by underlying decoding lib
 
 
+@pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
+def test_decode_webp_grayscale(decode_fun):
+    encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
+
+    # Note that we warn at the C++ layer because dispatching for decode_image
+    # doesn't happen until we hit C++. The C++ layer does not propagate
+    # warnings up to Python, so we can't test for them.
+    img = decode_fun(encoded_bytes, mode=ImageReadMode.GRAY)
+
+    # Note that because we do not support grayscale conversions, we expect
+    # that the number of color channels is still 3.
+    assert img.shape == (3, 100, 100)
+
+
 # This test is skipped by default because it requires webp images that we're not
 # including within the repo. The test images were downloaded manually from the
 # different pages of https://developers.google.com/speed/webp/gallery

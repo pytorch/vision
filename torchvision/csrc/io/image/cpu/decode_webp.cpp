@@ -32,6 +32,11 @@ torch::Tensor decode_webp(
       res == VP8_STATUS_OK, "WebPGetFeatures failed with error code ", res);
   TORCH_CHECK(
       !features.has_animation, "Animated webp files are not supported.");
+  TORCH_WARN_ONCE(
+      mode == IMAGE_READ_MODE_GRAY ||
+      mode == IMAGE_READ_MODE_GRAY_ALPHA,
+      "Webp does not support grayscale conversions. "
+      "The returned tensor will be in the colorspace of the original image.");
 
   auto return_rgb =
       should_this_return_rgb_or_rgba_let_me_know_in_the_comments_down_below_guys_see_you_in_the_next_video(
