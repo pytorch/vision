@@ -647,6 +647,183 @@ def reference_affine_rotated_bounding_boxes_helper(
     )
 
 
+def reference_perspective_bounding_boxes(bounding_boxes, *, coefficients, new_canvas_size=None, clamp=True):
+    format = bounding_boxes.format
+    canvas_size = new_canvas_size or bounding_boxes.canvas_size
+
+    def perspective_bounding_boxes(bounding_boxes):
+        dtype = bounding_boxes.dtype
+        device = bounding_boxes.device
+        m1 = np.array(
+            [
+                [coefficients[0], coefficients[1], coefficients[2]],
+                [coefficients[3], coefficients[4], coefficients[5]],
+            ]
+        )
+        m2 = np.array(
+            [
+                [coefficients[6], coefficients[7], 1.0],
+                [coefficients[6], coefficients[7], 1.0],
+            ]
+        )
+
+        # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
+        input_xyxy = F.convert_bounding_box_format(
+            bounding_boxes.to(dtype=torch.float64, device="cpu", copy=True),
+            old_format=format,
+            new_format=tv_tensors.BoundingBoxFormat.XYXY,
+            inplace=True,
+        )
+        x1, y1, x2, y2 = input_xyxy.squeeze(0).tolist()
+
+        points = np.array(
+            [
+                [x1, y1, 1.0],
+                [x2, y1, 1.0],
+                [x1, y2, 1.0],
+                [x2, y2, 1.0],
+            ]
+        )
+
+        numerator = points @ m1.T
+        denominator = points @ m2.T
+        transformed_points = numerator / denominator
+
+        output_xyxy = torch.Tensor(
+            [
+                float(np.min(transformed_points[:, 0])),
+                float(np.min(transformed_points[:, 1])),
+                float(np.max(transformed_points[:, 0])),
+                float(np.max(transformed_points[:, 1])),
+            ]
+        )
+
+        output = F.convert_bounding_box_format(
+            output_xyxy, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format
+        )
+
+        if clamp:
+            # It is important to clamp before casting, especially for CXCYWHR format, dtype=int64
+            output = F.clamp_bounding_boxes(
+                output,
+                format=format,
+                canvas_size=canvas_size,
+            )
+        else:
+            # We leave the bounding box as float32 so the caller gets the full precision to perform any additional
+            # operation
+            dtype = output.dtype
+
+        return output.to(dtype=dtype, device=device)
+
+    return tv_tensors.BoundingBoxes(
+        torch.cat([perspective_bounding_boxes(b) for b in bounding_boxes.reshape(-1, 4).unbind()], dim=0).reshape(
+            bounding_boxes.shape
+        ),
+        format=format,
+        canvas_size=canvas_size,
+    )
+
+
+def reference_perspective_rotated_bounding_boxes(bounding_boxes, *, coefficients, new_canvas_size=None, clamp=True):
+    format = bounding_boxes.format
+    canvas_size = new_canvas_size or bounding_boxes.canvas_size
+
+    def perspective_rotated_bounding_boxes(bounding_boxes):
+        dtype = bounding_boxes.dtype
+        device = bounding_boxes.device
+        m1 = np.array(
+            [
+                [coefficients[0], coefficients[1], coefficients[2]],
+                [coefficients[3], coefficients[4], coefficients[5]],
+            ]
+        )
+        m2 = np.array(
+            [
+                [coefficients[6], coefficients[7], 1.0],
+                [coefficients[6], coefficients[7], 1.0],
+            ]
+        )
+
+        # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
+        input_xyxyxyxy = F.convert_bounding_box_format(
+            bounding_boxes.to(device="cpu", copy=True),
+            old_format=format,
+            new_format=tv_tensors.BoundingBoxFormat.XYXYXYXY,
+            inplace=True,
+        )
+        x1, y1, x2, y2, x3, y3, x4, y4 = input_xyxyxyxy.squeeze(0).tolist()
+
+        points = np.array(
+            [
+                [x1, y1, 1.0],
+                [x2, y2, 1.0],
+                [x3, y3, 1.0],
+                [x4, y4, 1.0],
+            ]
+        )
+
+        numerator = points @ m1.astype(points.dtype).T
+        denominator = points @ m2.astype(points.dtype).T
+        transformed_points = numerator / denominator
+
+        output = torch.Tensor(
+            [
+                float(transformed_points[0, 0]),
+                float(transformed_points[0, 1]),
+                float(transformed_points[1, 0]),
+                float(transformed_points[1, 1]),
+                float(transformed_points[2, 0]),
+                float(transformed_points[2, 1]),
+                float(transformed_points[3, 0]),
+                float(transformed_points[3, 1]),
+            ]
+        )
+        output = _parallelogram_to_bounding_boxes(output)
+
+        output = F.convert_bounding_box_format(
+            output, old_format=tv_tensors.BoundingBoxFormat.XYXYXYXY, new_format=format
+        )
+
+        if torch.is_floating_point(output) and dtype in (
+            torch.uint8,
+            torch.int8,
+            torch.int16,
+            torch.int32,
+            torch.int64,
+        ):
+            # it is better to round before cast
+            output = torch.round(output)
+
+        if clamp:
+            # It is important to clamp before casting, especially for CXCYWHR format, dtype=int64
+            output = F.clamp_bounding_boxes(
+                output,
+                format=format,
+                canvas_size=canvas_size,
+            )
+        else:
+            # We leave the bounding box as float32 so the caller gets the full precision to perform any additional
+            # operation
+            dtype = output.dtype
+
+        return output.to(dtype=dtype, device=device)
+
+    return tv_tensors.BoundingBoxes(
+        torch.cat(
+            [
+                perspective_rotated_bounding_boxes(b)
+                for b in bounding_boxes.reshape(
+                    -1, 5 if format != tv_tensors.BoundingBoxFormat.XYXYXYXY else 8
+                ).unbind()
+            ],
+            dim=0,
+        ).reshape(bounding_boxes.shape),
+        format=format,
+        canvas_size=canvas_size,
+    )
+
+
 class TestResize:
     INPUT_SIZE = (17, 11)
     OUTPUT_SIZES = [17, [17], (17,), None, [12, 13], (12, 13)]
@@ -4259,7 +4436,7 @@ class TestPerspective:
         coefficients=COEFFICIENTS,
         start_end_points=START_END_POINTS,
     )
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_kernel_bounding_boxes(self, param, value, format):
         if param == "start_end_points":
             kwargs = dict(zip(["startpoints", "endpoints"], value))
@@ -4363,79 +4540,18 @@ class TestPerspective:
             assert_equal(actual, expected)
 
     def _reference_perspective_bounding_boxes(self, bounding_boxes, *, startpoints, endpoints):
-        format = bounding_boxes.format
-        canvas_size = bounding_boxes.canvas_size
-        dtype = bounding_boxes.dtype
-        device = bounding_boxes.device
 
         coefficients = _get_perspective_coeffs(endpoints, startpoints)
 
-        def perspective_bounding_boxes(bounding_boxes):
-            m1 = np.array(
-                [
-                    [coefficients[0], coefficients[1], coefficients[2]],
-                    [coefficients[3], coefficients[4], coefficients[5]],
-                ]
-            )
-            m2 = np.array(
-                [
-                    [coefficients[6], coefficients[7], 1.0],
-                    [coefficients[6], coefficients[7], 1.0],
-                ]
-            )
-
-            # Go to float before converting to prevent precision loss in case of CXCYWH -> XYXY and W or H is 1
-            input_xyxy = F.convert_bounding_box_format(
-                bounding_boxes.to(dtype=torch.float64, device="cpu", copy=True),
-                old_format=format,
-                new_format=tv_tensors.BoundingBoxFormat.XYXY,
-                inplace=True,
-            )
-            x1, y1, x2, y2 = input_xyxy.squeeze(0).tolist()
-
-            points = np.array(
-                [
-                    [x1, y1, 1.0],
-                    [x2, y1, 1.0],
-                    [x1, y2, 1.0],
-                    [x2, y2, 1.0],
-                ]
-            )
-
-            numerator = points @ m1.T
-            denominator = points @ m2.T
-            transformed_points = numerator / denominator
-
-            output_xyxy = torch.Tensor(
-                [
-                    float(np.min(transformed_points[:, 0])),
-                    float(np.min(transformed_points[:, 1])),
-                    float(np.max(transformed_points[:, 0])),
-                    float(np.max(transformed_points[:, 1])),
-                ]
-            )
-
-            output = F.convert_bounding_box_format(
-                output_xyxy, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format
-            )
-
-            # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-            return F.clamp_bounding_boxes(
-                output,
-                format=format,
-                canvas_size=canvas_size,
-            ).to(dtype=dtype, device=device)
-
-        return tv_tensors.BoundingBoxes(
-            torch.cat([perspective_bounding_boxes(b) for b in bounding_boxes.reshape(-1, 4).unbind()], dim=0).reshape(
-                bounding_boxes.shape
-            ),
-            format=format,
-            canvas_size=canvas_size,
+        helper = (
+            reference_perspective_rotated_bounding_boxes
+            if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
+            else reference_perspective_bounding_boxes
         )
+        return helper(bounding_boxes, coefficients=coefficients)
 
     @pytest.mark.parametrize(("startpoints", "endpoints"), START_END_POINTS)
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_correctness_perspective_bounding_boxes(self, startpoints, endpoints, format, dtype, device):

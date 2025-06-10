@@ -1753,10 +1753,13 @@ def perspective_bounding_boxes(
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
 
     original_shape = bounding_boxes.shape
+    original_dtype = bounding_boxes.dtype
+    is_rotated = tv_tensors.is_rotated_bounding_format(format)
+    intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
     # TODO: first cast to float if bbox is int64 before convert_bounding_box_format
     bounding_boxes = (
-        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=tv_tensors.BoundingBoxFormat.XYXY)
-    ).reshape(-1, 4)
+        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=intermediate_format)
+    ).reshape(-1, 8 if is_rotated else 4)
 
     dtype = bounding_boxes.dtype if torch.is_floating_point(bounding_boxes) else torch.float32
     device = bounding_boxes.device
@@ -1805,7 +1808,8 @@ def perspective_bounding_boxes(
     # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
     # Single point structure is similar to
     # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
-    points = bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
+    points = bounding_boxes if is_rotated else bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
+    points = points.reshape(-1, 2)
     points = torch.cat([points, torch.ones(points.shape[0], 1, device=points.device)], dim=-1)
     # 2) Now let's transform the points using perspective matrices
     #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
@@ -1817,20 +1821,22 @@ def perspective_bounding_boxes(
 
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
-    transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
+    if is_rotated:
+        transformed_points = transformed_points.reshape(-1, 8)
+        out_bboxes = _parallelogram_to_bounding_boxes(transformed_points)
+    else:
+        transformed_points = transformed_points.reshape(-1, 4, 2)
+        out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
+        out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
 
-    out_bboxes = clamp_bounding_boxes(
-        torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_boxes.dtype),
-        format=tv_tensors.BoundingBoxFormat.XYXY,
-        canvas_size=canvas_size,
-    )
+    out_bboxes = clamp_bounding_boxes(out_bboxes, format=intermediate_format, canvas_size=canvas_size)
 
-    # out_bboxes should be of shape [N boxes, 4]
-
-    return convert_bounding_box_format(
-        out_bboxes, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+    out_bboxes = convert_bounding_box_format(
+        out_bboxes, old_format=intermediate_format, new_format=format, inplace=True
     ).reshape(original_shape)
+
+    out_bboxes = out_bboxes.to(original_dtype)
+    return out_bboxes
 
 
 @_register_kernel_internal(perspective, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
