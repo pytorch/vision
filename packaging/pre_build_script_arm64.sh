@@ -56,7 +56,8 @@ python -m venv .venv
 echo "*" > .venv/.gitignore
 source .venv/Scripts/activate
 
-ls -l "$SRC_PATH"
+ls -l "$SRC_PATH/.venv"
+
 
 # Install dependencies
 pip install numpy==2.2.3
