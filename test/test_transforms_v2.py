@@ -3846,8 +3846,14 @@ class TestAutoAugmentTransforms:
 
 
 class TestConvertBoundingBoxFormat:
-    old_new_formats = list(itertools.permutations(SUPPORTED_BOX_FORMATS, 2))
-    old_new_formats += list(itertools.permutations(NEW_BOX_FORMATS, 2))
+    old_new_formats = list(
+        itertools.permutations(
+            [f for f in tv_tensors.BoundingBoxFormat if not tv_tensors.is_rotated_bounding_format(f)], 2
+        )
+    )
+    old_new_formats += list(
+        itertools.permutations([f for f in tv_tensors.BoundingBoxFormat if tv_tensors.is_rotated_bounding_format(f)], 2)
+    )
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_kernel(self, old_format, new_format):
@@ -3858,7 +3864,7 @@ class TestConvertBoundingBoxFormat:
             old_format=old_format,
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("inplace", [False, True])
     def test_kernel_noop(self, format, inplace):
         input = make_bounding_boxes(format=format).as_subclass(torch.Tensor)
