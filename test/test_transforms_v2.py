@@ -53,15 +53,6 @@ from torchvision.transforms.v2.functional._geometry import _get_perspective_coef
 from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
 
-# While we are working on adjusting transform functions
-# for rotated and oriented bounding boxes formats,
-# we limit the perimeter of tests to formats
-#  for which transform functions are already implemented.
-# In the future, this global variable will be replaced with `list(tv_tensors.BoundingBoxFormat)`
-# to support all available formats.
-SUPPORTED_BOX_FORMATS = [tv_tensors.BoundingBoxFormat[x] for x in ["XYXY", "XYWH", "CXCYWH"]]
-NEW_BOX_FORMATS = [tv_tensors.BoundingBoxFormat[x] for x in ["XYWHR", "CXCYWHR", "XYXYXYXY"]]
-
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
 
