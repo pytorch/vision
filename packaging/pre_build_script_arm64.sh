@@ -43,6 +43,7 @@ cp -r "$DEPENDENCIES_DIR/Library/tools/libpng/"* "$DEPENDENCIES_DIR/Library/bin/
 cp -r "$DEPENDENCIES_DIR/Library/bin/"* "$SRC_PATH/torchvision"
 
 ls -l "$DEPENDENCIES_DIR/Library/"
+ls -l "$DEPENDENCIES_DIR/Library/include"
 ls -l "$DEPENDENCIES_DIR/Library/bin/"
 ls -l "$SRC_PATH/torchvision"
 
