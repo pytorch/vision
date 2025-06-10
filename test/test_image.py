@@ -1,4 +1,5 @@
 import concurrent.futures
+import contextlib
 import glob
 import io
 import os
@@ -935,17 +936,29 @@ def test_decode_webp(decode_fun, scripted):
 
 
 @pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
-def test_decode_webp_grayscale(decode_fun):
+def test_decode_webp_grayscale(decode_fun, capfd):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
 
-    # Note that we warn at the C++ layer because dispatching for decode_image
-    # doesn't happen until we hit C++. The C++ layer does not propagate
-    # warnings up to Python, so we can't test for them.
-    img = decode_fun(encoded_bytes, mode=ImageReadMode.GRAY)
+    # We warn at the C++ layer because for decode_image(), we don't do the image
+    # type dispatch until we get to the C++ version of decode_image(). We could
+    # warn at the Python layer in decode_webp(), but then users would get a
+    # double wanring: one from the Python layer and one from the C++ layer.
+    #
+    # Because we use the TORCH_WARN_ONCE macro, we need to do this dance to
+    # temporarily always warn so we can test.
+    @contextlib.contextmanager
+    def set_always_warn():
+        torch._C._set_warnAlways(True)
+        yield
+        torch._C._set_warnAlways(False)
 
-    # Note that because we do not support grayscale conversions, we expect
-    # that the number of color channels is still 3.
-    assert img.shape == (3, 100, 100)
+    with set_always_warn():
+        img = decode_fun(encoded_bytes, mode=ImageReadMode.GRAY)
+        assert "Webp does not support grayscale conversions" in capfd.readouterr().err
+
+        # Note that because we do not support grayscale conversions, we expect
+        # that the number of color channels is still 3.
+        assert img.shape == (3, 100, 100)
 
 
 # This test is skipped by default because it requires webp images that we're not
