@@ -45,7 +45,7 @@ cp -r "$DEPENDENCIES_DIR/Library/bin/"* "$SRC_PATH/torchvision"
 ls -l "$DEPENDENCIES_DIR/Library/"
 ls -l "$DEPENDENCIES_DIR/Library/include"
 ls -l "$DEPENDENCIES_DIR/Library/bin/"
-ls -l "$SRC_PATH"
+
 
 # Source directory
 cd "$SRC_PATH" || exit
@@ -55,6 +55,8 @@ python -m pip install --upgrade pip
 python -m venv .venv
 echo "*" > .venv/.gitignore
 source .venv/Scripts/activate
+
+ls -l "$SRC_PATH"
 
 # Install dependencies
 pip install numpy==2.2.3
