@@ -4770,7 +4770,7 @@ class TestNormalize:
 
 
 class TestClampBoundingBoxes:
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel(self, format, dtype, device):
@@ -4782,7 +4782,7 @@ class TestClampBoundingBoxes:
             canvas_size=bounding_boxes.canvas_size,
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_functional(self, format):
         check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format))
 
