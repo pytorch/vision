@@ -1889,7 +1889,7 @@ class TestRotate:
         expand=[False, True],
         center=_EXHAUSTIVE_TYPE_AFFINE_KWARGS["center"],
     )
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
@@ -2025,6 +2025,13 @@ class TestRotate:
         x, y = recenter_xy
         if bounding_boxes.format is tv_tensors.BoundingBoxFormat.XYXY:
             translate = [x, y, x, y]
+        elif bounding_boxes.format is tv_tensors.BoundingBoxFormat.XYXYXYXY:
+            translate = [x, y, x, y, x, y, x, y]
+        elif (
+            bounding_boxes.format is tv_tensors.BoundingBoxFormat.CXCYWHR
+            or bounding_boxes.format is tv_tensors.BoundingBoxFormat.XYWHR
+        ):
+            translate = [x, y, 0.0, 0.0, 0.0]
         else:
             translate = [x, y, 0.0, 0.0]
         return tv_tensors.wrap(
@@ -2049,7 +2056,12 @@ class TestRotate:
             expand=expand, canvas_size=bounding_boxes.canvas_size, affine_matrix=affine_matrix
         )
 
-        output = reference_affine_bounding_boxes_helper(
+        helper = (
+            reference_affine_rotated_bounding_boxes_helper
+            if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
+            else reference_affine_bounding_boxes_helper
+        )
+        output = helper(
             bounding_boxes,
             affine_matrix=affine_matrix,
             new_canvas_size=new_canvas_size,
@@ -2060,7 +2072,7 @@ class TestRotate:
             bounding_boxes
         )
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
@@ -2073,7 +2085,7 @@ class TestRotate:
         torch.testing.assert_close(actual, expected)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
 
-    @pytest.mark.parametrize("format", SUPPORTED_BOX_FORMATS)
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
