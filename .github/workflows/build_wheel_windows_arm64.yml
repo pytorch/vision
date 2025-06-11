@@ -1,0 +1,51 @@
+name: Build Windows Arm64 Torchvision Wheel
+
+on:
+  pull_request: null
+  push:
+    branches:
+      - nightly
+      - main
+      - release/*
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: Build type
+        required: true
+        type: choice
+        options:
+          - Release
+          # - Debug not available
+        default: Release
+      repository_name:
+        description: Torchvision repository (username/repo)
+        required: false
+        type: string
+        default: pytorch/vision
+      repository_branch:
+        description: Repository branch
+        required: false
+        type: string
+        default: main
+
+permissions:
+  id-token: write
+  contents: read
+  
+jobs:
+  trigger-test-infra:
+    strategy:
+      matrix:
+        python_version: ["3.12"] # only one for now  
+    runs-on: "windows-11-arm64"
+
+    steps:
+      - name: Trigger Test Infra workflow
+        uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows_arm64.yml@winarm64_wheels
+        with:
+          python_version: ${{ matrix.python_version }}
+          build_type: ${{ inputs.build_type }}
+          repository_name: ${{ inputs.repository_name }}
+          repository_branch: ${{ inputs.repository_branch }}
