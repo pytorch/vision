@@ -42,22 +42,22 @@ cp -r "$DEPENDENCIES_DIR/x64-windows/"* "$DEPENDENCIES_DIR/Library/"
 cp -r "$DEPENDENCIES_DIR/Library/tools/libpng/"* "$DEPENDENCIES_DIR/Library/bin/"
 cp -r "$DEPENDENCIES_DIR/Library/bin/"* "$SRC_PATH/torchvision"
 
-ls -l "$DEPENDENCIES_DIR/Library/"
-ls -l "$DEPENDENCIES_DIR/Library/include"
-ls -l "$DEPENDENCIES_DIR/Library/bin/"
-
-
 # Source directory
 cd "$SRC_PATH" || exit
+
+ls -la "$SRC_PATH"
 
 # Create virtual environment
 python -m pip install --upgrade pip
 python -m venv .venv
 echo "*" > .venv/.gitignore
-source .venv/Scripts/activate
+source .venv/bin/activate
 
-ls -l "$SRC_PATH/.venv"
+which python
 
+ls -l "$SRC_PATH/.venv/"
+
+ls -la "$SRC_PATH"
 
 # Install dependencies
 pip install numpy==2.2.3
