@@ -189,32 +189,6 @@ def _xyxyxyxy_to_keypoints(bounding_boxes: torch.Tensor) -> torch.Tensor:
     return bounding_boxes[:, [[0, 1], [2, 3], [4, 5], [6, 7]]]
 
 
-# Note: this doesn't have a corresponding transforms class.
-def convert_bounding_boxes_to_keypoints(bounding_boxes: tv_tensors.BoundingBoxes) -> tv_tensors.KeyPoints:
-    """Convert a set of bounding boxes to its edge points.
-
-    Args:
-        bounding_boxes (tv_tensors.BoundingBoxes): A set of ``N`` bounding boxes (of shape ``[N, 4]``)
-
-    Returns:
-        tv_tensors.KeyPoints: The edges, as a polygon of shape ``[N, 4, 2]``
-    """
-    if tv_tensors.is_rotated_bounding_format(bounding_boxes.format):
-        intermediate_format = BoundingBoxFormat.XYXYXYXY
-        to_keypoints = _xyxyxyxy_to_keypoints
-    else:
-        intermediate_format = BoundingBoxFormat.XYXY
-        to_keypoints = _xyxy_to_keypoints
-
-    bbox = _convert_bounding_box_format(
-        bounding_boxes.as_subclass(torch.Tensor),
-        old_format=bounding_boxes.format,
-        new_format=intermediate_format,
-        inplace=False,
-    )
-    return tv_tensors.KeyPoints(to_keypoints(bbox), canvas_size=bounding_boxes.canvas_size)
-
-
 def _cxcywhr_to_xywhr(cxcywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
     if not inplace:
         cxcywhr = cxcywhr.clone()

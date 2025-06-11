@@ -6,7 +6,6 @@ from ._meta import (
     clamp_bounding_boxes,
     clamp_keypoints,
     convert_bounding_box_format,
-    convert_bounding_boxes_to_keypoints,
     get_dimensions_image,
     get_dimensions_video,
     get_dimensions,
