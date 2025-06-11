@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+fcca6ff) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+6fb5bbe) &#x25BC</a>
     </div>
     
 
@@ -455,11 +455,12 @@ the TVTensors.</p>
 </div>
 <p>Under the hood, they are needed in <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> to correctly dispatch to the appropriate function
 for the input data.</p>
-<p><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.tv_tensors</span></code> supports four types of TVTensors:</p>
+<p><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.tv_tensors</span></code> supports five types of TVTensors:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="../../generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a></p></li>
 <li><p><a class="reference internal" href="../../generated/torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video" title="torchvision.tv_tensors.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a></p></li>
 <li><p><a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a></p></li>
+<li><p><a class="reference internal" href="../../generated/torchvision.tv_tensors.KeyPoints.html#torchvision.tv_tensors.KeyPoints" title="torchvision.tv_tensors.KeyPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPoints</span></code></a></p></li>
 <li><p><a class="reference internal" href="../../generated/torchvision.tv_tensors.Mask.html#torchvision.tv_tensors.Mask" title="torchvision.tv_tensors.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mask</span></code></a></p></li>
 </ul>
 </section>
@@ -505,17 +506,29 @@ parameters.</p>
 <p>Some TVTensors require additional metadata to be passed in ordered to be constructed. For example,
 <a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a> requires the coordinate format as well as the size of the
 corresponding image (<code class="docutils literal notranslate"><span class="pre">canvas_size</span></code>) alongside the actual values. These
-metadata are required to properly transform the bounding boxes.</p>
+metadata are required to properly transform the bounding boxes.
+In a similar fashion, <a class="reference internal" href="../../generated/torchvision.tv_tensors.KeyPoints.html#torchvision.tv_tensors.KeyPoints" title="torchvision.tv_tensors.KeyPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPoints</span></code></a> also require the <code class="docutils literal notranslate"><span class="pre">canvas_size</span></code> metadata to be added.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">bboxes</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span></a><span class="p">(</span>
     <span class="p">[[</span><span class="mi">17</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">344</span><span class="p">,</span> <span class="mi">495</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">]],</span>
     <span class="nb">format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="o">=</span><a href="https://docs.pytorch.org/docs/stable/generated/torch.Tensor.shape.html#torch.Tensor.shape" title="torch.Tensor.shape" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-attribute"><span class="n">image</span><span class="o">.</span><span class="n">shape</span></a><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">bboxes</span><span class="p">)</span>
+
+
+<span class="n">keypoints</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">KeyPoints</span></a><span class="p">(</span>
+    <span class="p">[[</span><span class="mi">17</span><span class="p">,</span> <span class="mi">16</span><span class="p">],</span> <span class="p">[</span><span class="mi">344</span><span class="p">,</span> <span class="mi">495</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">]],</span>
+    <span class="n">canvas_size</span><span class="o">=</span><a href="https://docs.pytorch.org/docs/stable/generated/torch.Tensor.shape.html#torch.Tensor.shape" title="torch.Tensor.shape" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-attribute"><span class="n">image</span><span class="o">.</span><span class="n">shape</span></a><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">keypoints</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>BoundingBoxes([[ 17,  16, 344, 495],
                [  0,  10,   0,  10]], format=BoundingBoxFormat.XYXY, canvas_size=torch.Size([512, 512]))
+KeyPoints([[ 17,  16],
+           [344, 495],
+           [  0,  10],
+           [  0,  10]], canvas_size=torch.Size([512, 512]))
 </pre></div>
 </div>
 </section>
