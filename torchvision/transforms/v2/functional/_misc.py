@@ -320,6 +320,7 @@ def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale:
     return to_dtype_image(video, dtype, scale=scale)
 
 
+@_register_kernel_internal(to_dtype, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 @_register_kernel_internal(to_dtype, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
 @_register_kernel_internal(to_dtype, tv_tensors.Mask, tv_tensor_wrapper=False)
 def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
