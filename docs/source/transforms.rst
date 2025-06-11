@@ -101,7 +101,7 @@ range of the inputs.
 V1 or V2? Which one should I use?
 ---------------------------------
 
-**TL;DR** We recommending using the ``torchvision.transforms.v2`` transforms
+**TL;DR** We recommend using the ``torchvision.transforms.v2`` transforms
 instead of those in ``torchvision.transforms``. They're faster and they can do
 more things. Just change the import and you should be good to go. Moving
 forward, new features and improvements will only be considered for the v2
