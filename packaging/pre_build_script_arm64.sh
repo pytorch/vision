@@ -55,6 +55,8 @@ source .venv/Scripts/activate
 
 which python
 
+pip list
+
 ls -l "$SRC_PATH/.venv/"
 
 ls -la "$SRC_PATH"
@@ -74,5 +76,7 @@ else
   echo "CHANNEL is not set, installing PyTorch from nightly."
   pip3 install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu
 fi
+
+pip list
 
 echo "Dependencies install finished successfully."
