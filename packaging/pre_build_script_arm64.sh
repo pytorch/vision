@@ -51,7 +51,7 @@ ls -la "$SRC_PATH"
 python -m pip install --upgrade pip
 python -m venv .venv
 echo "*" > .venv/.gitignore
-source .venv/bin/activate
+source .venv/Scripts/activate
 
 which python
 
