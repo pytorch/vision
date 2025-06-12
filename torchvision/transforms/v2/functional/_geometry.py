@@ -407,6 +407,10 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
         torch.int32,
         torch.int64,
     )
+    if int_dtype:
+        # Does not apply the transformation to `int` boxes as the rounding error
+        # will typically not ensure the resulting box has a rectangular shape.
+        return parallelogram.clone()
 
     out_boxes = parallelogram.clone()
 
@@ -415,12 +419,14 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
     dy13 = parallelogram[..., 5] - parallelogram[..., 1]
     dx42 = parallelogram[..., 2] - parallelogram[..., 6]
     dy42 = parallelogram[..., 3] - parallelogram[..., 7]
+    dx12 = parallelogram[..., 2] - parallelogram[..., 0]
+    dy12 = parallelogram[..., 1] - parallelogram[..., 3]
     diag13 = torch.sqrt(dx13**2 + dy13**2)
     diag24 = torch.sqrt(dx42**2 + dy42**2)
     mask = diag13 > diag24
 
     # Calculate rotation angle in radians
-    r_rad = torch.atan2(parallelogram[..., 1] - parallelogram[..., 3], parallelogram[..., 2] - parallelogram[..., 0])
+    r_rad = torch.atan2(dy12, dx12)
     cos, sin = torch.cos(r_rad), torch.sin(r_rad)
 
     # Calculate width using the angle between diagonal and rotation
@@ -432,7 +438,6 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
 
     delta_x = torch.round(w * cos).to(dtype) if int_dtype else w * cos
     delta_y = torch.round(w * sin).to(dtype) if int_dtype else w * sin
-
     # Update coordinates to form a rectangle
     # Keeping the points (x1, y1) and (x3, y3) unchanged.
     out_boxes[..., 2] = torch.where(mask, parallelogram[..., 0] + delta_x, parallelogram[..., 2])
@@ -478,6 +483,9 @@ def resize_bounding_boxes(
         )
         transformed_points = xyxyxyxy_boxes.mul(ratios)
         out_bboxes = _parallelogram_to_bounding_boxes(transformed_points)
+        out_bboxes = clamp_bounding_boxes(
+            out_bboxes, format=tv_tensors.BoundingBoxFormat.XYXYXYXY, canvas_size=(new_height, new_width)
+        )
         return (
             convert_bounding_box_format(
                 out_bboxes,

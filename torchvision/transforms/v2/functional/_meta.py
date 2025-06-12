@@ -353,7 +353,7 @@ def _clamp_bounding_boxes(
 
 
 def _order_bounding_boxes_points(
-    bounding_boxes: torch.Tensor, indices: torch.Tensor | None = None
+    bounding_boxes: torch.Tensor, indices: Optional[torch.Tensor] = None
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Re-order points in bounding boxes based on specific criteria or provided indices.
 
@@ -372,20 +372,20 @@ def _order_bounding_boxes_points(
             - reordered_boxes: The bounding boxes with reordered points
     """
     if indices is None:
-        output_xyxyxyxy = bounding_boxes.clone().reshape(-1, 8)
+        output_xyxyxyxy = bounding_boxes.reshape(-1, 8)
         x, y = output_xyxyxyxy[..., 0::2], output_xyxyxyxy[..., 1::2]
         y_max = torch.max(y, dim=1, keepdim=True)[0]
-        _, x1 = (y_max - y).div(y_max).add(x.add(1).mul(100)).min(dim=1)
+        _, x1 = ((y_max - y) / y_max + (x + 1) * 100).min(dim=1)
         indices = torch.ones_like(output_xyxyxyxy)
         indices[..., 0] = x1.mul(2)
         indices.cumsum_(1).remainder_(8)
     return indices, bounding_boxes.gather(1, indices.to(torch.int64))
 
 
-def area(box: torch.Tensor) -> torch.Tensor:
-    x1, y1, x2, y2, x3, y3, x4, y4 = box.clone().reshape(-1, 8).unbind(-1)
-    w = (y2 - y1) ** 2 + (x2 - x1) ** 2
-    h = (y3 - y2) ** 2 + (x3 - x2) ** 2
+def _area(box: torch.Tensor) -> torch.Tensor:
+    x1, y1, x2, y2, x3, y3, x4, y4 = box.reshape(-1, 8).unbind(-1)
+    w = torch.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
+    h = torch.sqrt((y3 - y2) ** 2 + (x3 - x2) ** 2)
     return w * h
 
 
@@ -421,19 +421,21 @@ def _clamp_along_y_axis(
         [x.unsqueeze(1) for x in [z, (b2 + b3) / 2, b23, -b23 / a + b2, x3, y3, b23, b23 * a + b3]], dim=1
     )
     case_d = torch.zeros_like(case_c)
+    case_e = torch.cat([x.unsqueeze(1) for x in [x1.clamp(0), y1, x2.clamp(0), y2, x3, y3, x4, y4]], dim=1)
 
     cond_a = x1.lt(0).logical_and(x2.ge(0)).logical_and(x3.ge(0)).logical_and(x4.ge(0))
-    cond_a = cond_a.logical_and(area(case_a) > area(case_b))
+    cond_a = cond_a.logical_and(_area(case_a) > _area(case_b))
     cond_a = cond_a.logical_or(x1.lt(0).logical_and(x2.ge(0)).logical_and(x3.ge(0)).logical_and(x4.le(0)))
     cond_b = x1.lt(0).logical_and(x2.ge(0)).logical_and(x3.ge(0)).logical_and(x4.ge(0))
-    cond_b = cond_b.logical_and(area(case_a) <= area(case_b))
+    cond_b = cond_b.logical_and(_area(case_a) <= _area(case_b))
     cond_b = cond_b.logical_or(x1.lt(0).logical_and(x2.le(0)).logical_and(x3.ge(0)).logical_and(x4.ge(0)))
     cond_c = x1.lt(0).logical_and(x2.le(0)).logical_and(x3.ge(0)).logical_and(x4.le(0))
     cond_d = x1.lt(0).logical_and(x2.le(0)).logical_and(x3.le(0)).logical_and(x4.le(0))
+    cond_e = x1.isclose(x2)
 
     for cond, case in zip(
-        [cond_a, cond_b, cond_c, cond_d],
-        [case_a, case_b, case_c, case_d],
+        [cond_a, cond_b, cond_c, cond_d, cond_e],
+        [case_a, case_b, case_c, case_d, case_e],
     ):
         bounding_boxes = torch.where(cond.unsqueeze(1).repeat(1, 8), case.reshape(-1, 8), bounding_boxes)
     return bounding_boxes.to(original_dtype).reshape(original_shape)
@@ -442,6 +444,26 @@ def _clamp_along_y_axis(
 def _clamp_rotated_bounding_boxes(
     bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: tuple[int, int]
 ) -> torch.Tensor:
+    """
+    Clamp rotated bounding boxes to ensure they stay within the canvas boundaries.
+
+    This function handles rotated bounding boxes by:
+    1. Converting them to XYXYXYXY format (8 coordinates representing 4 corners).
+    2. Re-ordering the points in the bounding boxes to ensure (x1, y1) corresponds to the point with the lowest x value
+    2. Translates the points (x1, y1), (x2, y2) and (x3, y3)
+        to ensure the bounding box does not go out beyond the left boundary of the canvas.
+    3. Rotate the bounding box four times and apply the same transformation to each vertex to ensure
+        the box does not go beyond the top, right, and bottom boundaries.
+    3. Converting back to the original format and re-order the points as in the original input.
+
+    Args:
+        bounding_boxes (torch.Tensor): Tensor containing rotated bounding box coordinates
+        format (BoundingBoxFormat): The format of the input bounding boxes
+        canvas_size (tuple[int, int]): The size of the canvas as (height, width)
+
+    Returns:
+        torch.Tensor: Clamped bounding boxes in the original format and shape
+    """
     original_shape = bounding_boxes.shape
     original_dtype = bounding_boxes.dtype
     bounding_boxes = bounding_boxes.clone() if bounding_boxes.is_floating_point() else bounding_boxes.float()
