@@ -2827,16 +2827,6 @@ class TestElastic:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
         bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
-        if tv_tensors.is_rotated_bounding_format(format):
-            # generated test rotated boxes can be out of the canvas size
-            # but elastic transformation expect the boxes to be clamped
-            # Also by convention the integer boxes should be allowed to
-            # reach width and height. But the grid for the elastic transform
-            # only covers up to width - 1 and height -1. So we are tricking the
-            # test by making sure we are clamping the boxes up to width - 1 and height -1.
-            bounding_boxes.canvas_size = (bounding_boxes.canvas_size[0] - 1, bounding_boxes.canvas_size[1] - 1)
-            bounding_boxes = F.clamp_bounding_boxes(bounding_boxes)
-            bounding_boxes.canvas_size = (bounding_boxes.canvas_size[0] + 1, bounding_boxes.canvas_size[1] + 1)
 
         check_kernel(
             F.elastic_bounding_boxes,
