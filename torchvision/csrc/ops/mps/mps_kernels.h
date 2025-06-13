@@ -277,28 +277,29 @@ kernel void deformable_im2col_kernel(
     constant T*           input_ptr     [[ buffer(0) ]],
     constant T*           offset_ptr    [[ buffer(1) ]],
     constant T*           mask_ptr      [[ buffer(2) ]],
-    constant int&         height        [[ buffer(3) ]],
-    constant int&         width         [[ buffer(4) ]],
-    constant int&         weight_h      [[ buffer(5) ]],
-    constant int&         weight_w      [[ buffer(6) ]],
-    constant int&         pad_h         [[ buffer(7) ]],
-    constant int&         pad_w         [[ buffer(8) ]],
-    constant int&         stride_h      [[ buffer(9) ]],
-    constant int&         stride_w      [[ buffer(10)]],
-    constant int&         dilation_h    [[ buffer(11)]],
-    constant int&         dilation_w    [[ buffer(12)]],
-    constant int&         batch_size      [[ buffer(13)]],
-    constant int&         n_in_channels [[ buffer(14)]],
-    constant int&         n_offset_grps [[ buffer(15)]],
-    constant int&         out_h         [[ buffer(16)]],
-    constant int&         out_w         [[ buffer(17)]],
-    constant bool&        use_mask      [[ buffer(18)]],
-    device T*             columns_ptr   [[ buffer(19)]],
+    constant int2&        input_size    [[ buffer(3) ]],   // (height, width)
+    constant int2&        weight_size   [[ buffer(4) ]],   // (weight_h, weight_w)
+    constant int2&        pad           [[ buffer(5) ]],   // (pad_h, pad_w)
+    constant int2&        stride        [[ buffer(6) ]],   // (stride_h, stride_w)
+    constant int2&        dilation      [[ buffer(7) ]],   // (dilation_h, dilation_w)
+    constant int&         batch_size    [[ buffer(8) ]],
+    constant int&         n_in_channels [[ buffer(9) ]],
+    constant int&         n_offset_grps [[ buffer(10)]],
+    constant int2&        out_size      [[ buffer(11)]],   // (out_h, out_w)
+    constant bool&        use_mask      [[ buffer(12)]],
+    device T*             columns_ptr   [[ buffer(13)]],
     uint                  tid           [[ thread_position_in_grid ]],
-    uint                  tpg           [[ threads_per_grid ]])
+    uint                  tpg           [[ threads_per_grid ]]
+)
 {
+    int height = input_size.x, width = input_size.y;
+    int weight_h = weight_size.x, weight_w = weight_size.y;
+    int pad_h = pad.x, pad_w = pad.y;
+    int stride_h = stride.x, stride_w = stride.y;
+    int dilation_h = dilation.x, dilation_w = dilation.y;
+    int out_h = out_size.x, out_w = out_size.y;
+
     int total = out_w * out_h * batch_size * n_in_channels;
-    int gridSize = tpg;
     if (tid >= total) {
         return;
     }
@@ -355,32 +356,26 @@ kernel void deformable_im2col_kernel(
     }
 }
 
-#define REGISTER_DEFORMABLE_IM2COL_OP(DTYPE)                                  \
-template                                                                      \
-[[host_name("deformable_im2col_" #DTYPE)]]                                    \
-kernel void deformable_im2col_kernel<DTYPE>(                                  \
-    constant DTYPE*           input_ptr    [[ buffer(0) ]],                   \
-    constant DTYPE*           offset_ptr   [[ buffer(1) ]],                   \
-    constant DTYPE*           mask_ptr     [[ buffer(2) ]],                   \
-    constant int&                 height       [[ buffer(3) ]],               \
-    constant int&                 width        [[ buffer(4) ]],               \
-    constant int&                 weight_h     [[ buffer(5) ]],               \
-    constant int&                 weight_w     [[ buffer(6) ]],               \
-    constant int&                 pad_h        [[ buffer(7) ]],               \
-    constant int&                 pad_w        [[ buffer(8) ]],               \
-    constant int&                 stride_h     [[ buffer(9) ]],               \
-    constant int&                 stride_w     [[ buffer(10)]],               \
-    constant int&                 dilation_h   [[ buffer(11)]],               \
-    constant int&                 dilation_w   [[ buffer(12)]],               \
-    constant int&                 batch_sz     [[ buffer(13)]],               \
-    constant int&                 n_in_channels[[ buffer(14)]],               \
-    constant int&                 n_offset_grps[[ buffer(15)]],               \
-    constant int&                 out_h        [[ buffer(16)]],               \
-    constant int&                 out_w        [[ buffer(17)]],               \
-    constant bool&                use_mask     [[ buffer(18)]],               \
-    device DTYPE*                 columns_ptr  [[ buffer(19)]],               \
-    uint                          tid          [[ thread_position_in_grid ]], \
-    uint                          tpg           [[ threads_per_grid ]]);
+#define REGISTER_DEFORMABLE_IM2COL_OP(DTYPE)                                         \
+template                                                                             \
+[[host_name("deformable_im2col_" #DTYPE)]]                                           \
+kernel void deformable_im2col_kernel<DTYPE>(                                         \
+    constant DTYPE*               input_ptr        [[ buffer(0) ]],                  \
+    constant DTYPE*               offset_ptr       [[ buffer(1) ]],                  \
+    constant DTYPE*               mask_ptr         [[ buffer(2) ]],                  \
+    constant int2&                input_size       [[ buffer(3) ]],   /* (h, w) */   \
+    constant int2&                weight_size      [[ buffer(4) ]],   /* (h, w) */   \
+    constant int2&                pad              [[ buffer(5) ]],   /* (h, w) */   \
+    constant int2&                stride           [[ buffer(6) ]],   /* (h, w) */   \
+    constant int2&                dilation         [[ buffer(7) ]],   /* (h, w) */   \
+    constant int&                 batch_size       [[ buffer(8) ]],                  \
+    constant int&                 n_in_channels    [[ buffer(9) ]],                  \
+    constant int&                 n_offset_grps    [[ buffer(10)]],                  \
+    constant int2&                out_size         [[ buffer(11)]],  /* (h, w) */    \
+    constant bool&                use_mask         [[ buffer(12)]],                  \
+    device DTYPE*                 columns_ptr      [[ buffer(13)]],                  \
+    uint                          tid              [[ thread_position_in_grid ]],    \
+    uint                          tpg              [[ threads_per_grid ]]);
 
 template<typename T, typename integer_t>
 kernel void roi_align(

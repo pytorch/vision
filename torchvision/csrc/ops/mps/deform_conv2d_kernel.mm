@@ -35,20 +35,30 @@ at::Tensor deform_conv2d_forward_kernel(
   TORCH_CHECK(offset_c.ndimension() == 4, "Offset tensor must be 4D");
   TORCH_CHECK(!use_mask || mask_c.ndimension() == 4, "Mask tensor must be 4D if use_mask is true");
   TORCH_CHECK(input_c.is_mps(), "input must be a MPS tensor");
+  TORCH_CHECK(weight.is_mps(), "weight must be a MPS tensor");
+  TORCH_CHECK(offset.is_mps(), "offset must be a MPS tensor");
+  TORCH_CHECK(mask.is_mps(), "mask must be a MPS tensor");
+  TORCH_CHECK(bias.is_mps(), "bias must be a MPS tensor");
 
   at::DeviceGuard guard(input_c.device());
 
-  int batch = input_c.size(0);
-  int in_channels = input_c.size(1);
-  int in_h = input_c.size(2);
-  int in_w = input_c.size(3);
-  int weight_h = weight_c.size(2);
-  int weight_w = weight_c.size(3);
-  int out_channels = weight_c.size(0);
-  int ker_h = dilation_h * (weight_h - 1) + 1;
-  int ker_w = dilation_w * (weight_w - 1) + 1;
-  int out_h = ((in_h + 2 * pad_h - ker_h) / stride_h) + 1;
-  int out_w = ((in_w + 2 * pad_w - ker_w) / stride_w) + 1;
+  uint32_t batch = input_c.size(0);
+  uint32_t in_channels = input_c.size(1);
+  uint32_t in_h = input_c.size(2);
+  uint32_t in_w = input_c.size(3);
+  uint32_t weight_h = weight_c.size(2);
+  uint32_t weight_w = weight_c.size(3);
+  uint32_t out_channels = weight_c.size(0);
+  uint32_t ker_h = dilation_h * (weight_h - 1) + 1;
+  uint32_t ker_w = dilation_w * (weight_w - 1) + 1;
+  uint32_t out_h = ((in_h + 2 * pad_h - ker_h) / stride_h) + 1;
+  uint32_t out_w = ((in_w + 2 * pad_w - ker_w) / stride_w) + 1;
+  uint32_t pad_h_u = static_cast<uint32_t>(pad_h);
+  uint32_t pad_w_u = static_cast<uint32_t>(pad_w);
+  uint32_t stride_h_u = static_cast<uint32_t>(stride_h);
+  uint32_t stride_w_u = static_cast<uint32_t>(stride_w);
+  uint32_t dilation_h_u = static_cast<uint32_t>(dilation_h);
+  uint32_t dilation_w_u = static_cast<uint32_t>(dilation_w);
 
   TORCH_CHECK(weight_c.size(1) * n_weight_grps == in_channels,
     "Input channels (", in_channels, 
@@ -103,8 +113,13 @@ at::Tensor deform_conv2d_forward_kernel(
       id<MTLComputeCommandEncoder> computeEncoder = mpsStream->commandEncoder();
       [computeEncoder setComputePipelineState:pipelineState];
       at::native::mps::mtl_setArgs(computeEncoder, inputBuffer, offsetBuffer, maskBuffer,
-                                   in_h, in_w, weight_h, weight_w, pad_h, pad_w, stride_h, stride_w, 
-                                   dilation_h, dilation_w, batch, in_channels, n_offset_grps, out_h, out_w,
+                                   std::array<uint32_t, 2>{in_h, in_w},
+                                   std::array<uint32_t, 2>{weight_h, weight_w},
+                                   std::array<uint32_t, 2>{pad_h_u, pad_w_u},
+                                   std::array<uint32_t, 2>{stride_h_u, stride_w_u},
+                                   std::array<uint32_t, 2>{dilation_h_u, dilation_w_u},
+                                   batch, in_channels, n_offset_grps,
+                                   std::array<uint32_t, 2>{out_h, out_w},
                                    use_mask, outputBuffer);
       [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
     }
