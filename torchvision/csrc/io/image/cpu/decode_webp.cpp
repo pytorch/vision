@@ -33,6 +33,13 @@ torch::Tensor decode_webp(
   TORCH_CHECK(
       !features.has_animation, "Animated webp files are not supported.");
 
+  if (mode == IMAGE_READ_MODE_GRAY ||
+      mode == IMAGE_READ_MODE_GRAY_ALPHA) {
+    TORCH_WARN_ONCE(
+        "Webp does not support grayscale conversions. "
+        "The returned tensor will be in the colorspace of the original image.");
+  }
+
   auto return_rgb =
       should_this_return_rgb_or_rgba_let_me_know_in_the_comments_down_below_guys_see_you_in_the_next_video(
           mode, features.has_alpha);

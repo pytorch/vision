@@ -101,7 +101,7 @@ range of the inputs.
 V1 or V2? Which one should I use?
 ---------------------------------
 
-**TL;DR** We recommending using the ``torchvision.transforms.v2`` transforms
+**TL;DR** We recommend using the ``torchvision.transforms.v2`` transforms
 instead of those in ``torchvision.transforms``. They're faster and they can do
 more things. Just change the import and you should be good to go. Moving
 forward, new features and improvements will only be considered for the v2
@@ -408,6 +408,7 @@ Miscellaneous
     v2.Lambda
     v2.SanitizeBoundingBoxes
     v2.ClampBoundingBoxes
+    v2.ClampKeyPoints
     v2.UniformTemporalSubsample
     v2.JPEG
 
@@ -421,6 +422,7 @@ Functionals
     v2.functional.erase
     v2.functional.sanitize_bounding_boxes
     v2.functional.clamp_bounding_boxes
+    v2.functional.clamp_keypoints
     v2.functional.uniform_temporal_subsample
     v2.functional.jpeg
 
