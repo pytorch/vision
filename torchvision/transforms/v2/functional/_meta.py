@@ -121,6 +121,11 @@ def get_size_bounding_boxes(bounding_box: tv_tensors.BoundingBoxes) -> list[int]
     return list(bounding_box.canvas_size)
 
 
+@_register_kernel_internal(get_size, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
+def get_size_keypoints(keypoints: tv_tensors.KeyPoints) -> list[int]:
+    return list(keypoints.canvas_size)
+
+
 def get_num_frames(inpt: torch.Tensor) -> int:
     if torch.jit.is_scripting():
         return get_num_frames_video(inpt)
@@ -174,6 +179,14 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     xyxy[..., :2].mul_(2).add_(xyxy[..., 2:]).div_(2, rounding_mode=None if xyxy.is_floating_point() else "floor")
 
     return xyxy
+
+
+def _xyxy_to_keypoints(bounding_boxes: torch.Tensor) -> torch.Tensor:
+    return bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
+
+
+def _xyxyxyxy_to_keypoints(bounding_boxes: torch.Tensor) -> torch.Tensor:
+    return bounding_boxes[:, [[0, 1], [2, 3], [4, 5], [6, 7]]]
 
 
 def _cxcywhr_to_xywhr(cxcywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
@@ -263,14 +276,6 @@ def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xyxyxyxy[..., :5].to(dtype)
 
 
-def is_rotated_bounding_box_format(format: BoundingBoxFormat) -> bool:
-    return format.value in [
-        BoundingBoxFormat.XYWHR.value,
-        BoundingBoxFormat.CXCYWHR.value,
-        BoundingBoxFormat.XYXYXYXY.value,
-    ]
-
-
 def _convert_bounding_box_format(
     bounding_boxes: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, inplace: bool = False
 ) -> torch.Tensor:
@@ -278,7 +283,7 @@ def _convert_bounding_box_format(
     if new_format == old_format:
         return bounding_boxes
 
-    if is_rotated_bounding_box_format(old_format) ^ is_rotated_bounding_box_format(new_format):
+    if tv_tensors.is_rotated_bounding_format(old_format) ^ tv_tensors.is_rotated_bounding_format(new_format):
         raise ValueError("Cannot convert between rotated and unrotated bounding boxes.")
 
     # TODO: Add _xywh_to_cxcywh and _cxcywh_to_xywh to improve performance
@@ -403,3 +408,35 @@ def clamp_bounding_boxes(
         raise TypeError(
             f"Input can either be a plain tensor or a bounding box tv_tensor, but got {type(inpt)} instead."
         )
+
+
+def _clamp_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int]) -> torch.Tensor:
+    dtype = keypoints.dtype
+    keypoints = keypoints.clone() if keypoints.is_floating_point() else keypoints.float()
+    # Note that max is canvas_size[i] - 1 and not can canvas_size[i] like for
+    # bounding boxes.
+    keypoints[..., 0].clamp_(min=0, max=canvas_size[1] - 1)
+    keypoints[..., 1].clamp_(min=0, max=canvas_size[0] - 1)
+    return keypoints.to(dtype=dtype)
+
+
+def clamp_keypoints(
+    inpt: torch.Tensor,
+    canvas_size: Optional[tuple[int, int]] = None,
+) -> torch.Tensor:
+    """See :func:`~torchvision.transforms.v2.ClampKeyPoints` for details."""
+    if not torch.jit.is_scripting():
+        _log_api_usage_once(clamp_keypoints)
+
+    if torch.jit.is_scripting() or is_pure_tensor(inpt):
+
+        if canvas_size is None:
+            raise ValueError("For pure tensor inputs, `canvas_size` has to be passed.")
+        return _clamp_keypoints(inpt, canvas_size=canvas_size)
+    elif isinstance(inpt, tv_tensors.KeyPoints):
+        if canvas_size is not None:
+            raise ValueError("For keypoints tv_tensor inputs, `canvas_size` must not be passed.")
+        output = _clamp_keypoints(inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size)
+        return tv_tensors.wrap(output, like=inpt)
+    else:
+        raise TypeError(f"Input can either be a plain tensor or a keypoints tv_tensor, but got {type(inpt)} instead.")

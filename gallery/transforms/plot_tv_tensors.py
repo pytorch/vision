@@ -46,11 +46,12 @@ assert image.data_ptr() == tensor.data_ptr()
 # Under the hood, they are needed in :mod:`torchvision.transforms.v2` to correctly dispatch to the appropriate function
 # for the input data.
 #
-# :mod:`torchvision.tv_tensors` supports four types of TVTensors:
+# :mod:`torchvision.tv_tensors` supports five types of TVTensors:
 #
 # * :class:`~torchvision.tv_tensors.Image`
 # * :class:`~torchvision.tv_tensors.Video`
 # * :class:`~torchvision.tv_tensors.BoundingBoxes`
+# * :class:`~torchvision.tv_tensors.KeyPoints`
 # * :class:`~torchvision.tv_tensors.Mask`
 #
 # What can I do with a TVTensor?
@@ -96,6 +97,7 @@ print(image.shape, image.dtype)
 # :class:`~torchvision.tv_tensors.BoundingBoxes` requires the coordinate format as well as the size of the
 # corresponding image (``canvas_size``) alongside the actual values. These
 # metadata are required to properly transform the bounding boxes.
+# In a similar fashion, :class:`~torchvision.tv_tensors.KeyPoints` also require the ``canvas_size`` metadata to be added.
 
 bboxes = tv_tensors.BoundingBoxes(
     [[17, 16, 344, 495], [0, 10, 0, 10]],
@@ -103,6 +105,13 @@ bboxes = tv_tensors.BoundingBoxes(
     canvas_size=image.shape[-2:]
 )
 print(bboxes)
+
+
+keypoints = tv_tensors.KeyPoints(
+    [[17, 16], [344, 495], [0, 10], [0, 10]],
+    canvas_size=image.shape[-2:]
+)
+print(keypoints)
 
 # %%
 # Using ``tv_tensors.wrap()``
