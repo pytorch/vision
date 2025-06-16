@@ -27,7 +27,6 @@ jobs:
       test-infra-ref: x64windows_test
       with-xpu: enable
 
- 
   build:
     needs: generate-matrix
     strategy:
