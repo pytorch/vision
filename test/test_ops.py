@@ -7,6 +7,7 @@ from typing import Callable
 
 import numpy as np
 import pytest
+import time
 import torch
 import torch.fx
 import torch.nn.functional as F
@@ -615,6 +616,31 @@ class TestRoIAlign(RoIOpTester):
         model = PoolWrapper(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
         self._helper_jit_boxes_list(model)
 
+    @needs_mps
+    def test_performance_mps(self):
+        # Regression test for https://github.com/pytorch/pytorch/issues/124850
+        execution_time_ms_threshold = 1000 # ms = 1 second
+
+        num_imgs, n_channels, img_size, img_size = 1, 256, 200, 200
+        spatial_scale = 0.25
+        output_size = 7
+        sampling_ratio = 2
+        aligned = False
+        dtype = torch.float32
+        device = "mps"
+
+        x = torch.randint(50, 100, size=(num_imgs, n_channels, img_size, img_size), dtype=dtype).to(device)
+        rois = self._make_rois(img_size, num_imgs, dtype).to(device)
+
+        start = time.time()
+        _ = ops.roi_align(x, rois, output_size, spatial_scale, sampling_ratio, aligned)
+        torch.mps.synchronize()
+        end_execution = time.time()
+        execution_time_ms = 1000 * (end_execution - start)
+
+        assert (
+            execution_time_ms < execution_time_ms_threshold
+        ), f"Expected execution to take < {execution_time_ms_threshold} ms, actually took {execution_time_ms} ms"
 
 class TestPSRoIAlign(RoIOpTester):
     mps_backward_atol = 5e-2
