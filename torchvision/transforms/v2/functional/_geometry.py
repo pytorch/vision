@@ -924,9 +924,9 @@ def _affine_bounding_boxes_with_expand(
         return bounding_boxes, canvas_size
 
     original_shape = bounding_boxes.shape
-    original_dtype = bounding_boxes.dtype
-    bounding_boxes = bounding_boxes.clone() if bounding_boxes.is_floating_point() else bounding_boxes.float()
     dtype = bounding_boxes.dtype
+    need_cast = not bounding_boxes.is_floating_point()
+    bounding_boxes = bounding_boxes.float() if need_cast else bounding_boxes.clone()
     device = bounding_boxes.device
     is_rotated = tv_tensors.is_rotated_bounding_format(format)
     intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
@@ -947,7 +947,7 @@ def _affine_bounding_boxes_with_expand(
     transposed_affine_matrix = (
         torch.tensor(
             affine_vector,
-            dtype=dtype,
+            dtype=bounding_boxes.dtype,
             device=device,
         )
         .reshape(2, 3)
@@ -961,7 +961,7 @@ def _affine_bounding_boxes_with_expand(
         points = bounding_boxes.reshape(-1, 2)
     else:
         points = bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
-    points = torch.cat([points, torch.ones(points.shape[0], 1, device=device, dtype=dtype)], dim=-1)
+    points = torch.cat([points, torch.ones(points.shape[0], 1, device=device, dtype=bounding_boxes.dtype)], dim=-1)
     # 2) Now let's transform the points using affine matrix
     transformed_points = torch.matmul(points, transposed_affine_matrix)
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
@@ -985,7 +985,7 @@ def _affine_bounding_boxes_with_expand(
                 [float(width), float(height), 1.0],
                 [float(width), 0.0, 1.0],
             ],
-            dtype=dtype,
+            dtype=bounding_boxes.dtype,
             device=device,
         )
         new_points = torch.matmul(points, transposed_affine_matrix)
@@ -1002,7 +1002,10 @@ def _affine_bounding_boxes_with_expand(
         out_bboxes, old_format=intermediate_format, new_format=format, inplace=True
     ).reshape(original_shape)
 
-    out_bboxes = out_bboxes.to(original_dtype)
+    if need_cast:
+        if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+            out_bboxes.round_()
+        out_bboxes = out_bboxes.to(dtype)
     return out_bboxes, canvas_size
 
 

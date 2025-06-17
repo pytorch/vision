@@ -181,7 +181,8 @@ def _cxcywhr_to_xywhr(cxcywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
         cxcywhr = cxcywhr.clone()
 
     dtype = cxcywhr.dtype
-    if not cxcywhr.is_floating_point():
+    need_cast = not cxcywhr.is_floating_point()
+    if need_cast:
         cxcywhr = cxcywhr.float()
 
     half_wh = cxcywhr[..., 2:-1].div(-2, rounding_mode=None if cxcywhr.is_floating_point() else "floor").abs_()
@@ -192,7 +193,11 @@ def _cxcywhr_to_xywhr(cxcywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
     # (cy + width / 2 * sin - height / 2 * cos) = y1
     cxcywhr[..., 1].add_(half_wh[..., 0].mul(sin)).sub_(half_wh[..., 1].mul(cos))
 
-    return cxcywhr.to(dtype)
+    if need_cast:
+        cxcywhr.round_()
+        cxcywhr = cxcywhr.to(dtype)
+
+    return cxcywhr
 
 
 def _xywhr_to_cxcywhr(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
@@ -200,7 +205,8 @@ def _xywhr_to_cxcywhr(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
         xywhr = xywhr.clone()
 
     dtype = xywhr.dtype
-    if not xywhr.is_floating_point():
+    need_cast = not xywhr.is_floating_point()
+    if need_cast:
         xywhr = xywhr.float()
 
     half_wh = xywhr[..., 2:-1].div(-2, rounding_mode=None if xywhr.is_floating_point() else "floor").abs_()
@@ -211,7 +217,11 @@ def _xywhr_to_cxcywhr(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
     # (y1 - width / 2 * sin + height / 2 * cos) = cy
     xywhr[..., 1].sub_(half_wh[..., 0].mul(sin)).add_(half_wh[..., 1].mul(cos))
 
-    return xywhr.to(dtype)
+    if need_cast:
+        xywhr.round_()
+        xywhr = xywhr.to(dtype)
+
+    return xywhr
 
 
 def _xywhr_to_xyxyxyxy(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
@@ -220,7 +230,8 @@ def _xywhr_to_xyxyxyxy(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
         xywhr = xywhr.clone()
 
     dtype = xywhr.dtype
-    if not xywhr.is_floating_point():
+    need_cast = not xywhr.is_floating_point()
+    if need_cast:
         xywhr = xywhr.float()
 
     wh = xywhr[..., 2:-1]
@@ -239,7 +250,12 @@ def _xywhr_to_xyxyxyxy(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
     xywhr[..., 6].add_(wh[..., 1].mul(sin))
     # y1 + h * cos = y4
     xywhr[..., 7].add_(wh[..., 1].mul(cos))
-    return xywhr.to(dtype)
+
+    if need_cast:
+        xywhr.round_()
+        xywhr = xywhr.to(dtype)
+
+    return xywhr
 
 
 def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
@@ -248,7 +264,8 @@ def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
         xyxyxyxy = xyxyxyxy.clone()
 
     dtype = xyxyxyxy.dtype
-    if not xyxyxyxy.is_floating_point():
+    need_cast = not xyxyxyxy.is_floating_point()
+    if need_cast:
         xyxyxyxy = xyxyxyxy.float()
 
     r_rad = torch.atan2(xyxyxyxy[..., 1].sub(xyxyxyxy[..., 3]), xyxyxyxy[..., 2].sub(xyxyxyxy[..., 0]))
@@ -260,7 +277,12 @@ def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     # sqrt((x2 - x3) ** 2 + (y2 - y3) ** 2) = h
     xyxyxyxy[..., 3] = xyxyxyxy[..., 4].pow(2).add(xyxyxyxy[..., 5].pow(2)).sqrt()
     xyxyxyxy[..., 4] = r_rad.div_(torch.pi).mul_(180.0)
-    return xyxyxyxy[..., :5].to(dtype)
+
+    if need_cast:
+        xyxyxyxy.round_()
+        xyxyxyxy = xyxyxyxy.to(dtype)
+
+    return xyxyxyxy[..., :5]
 
 
 def _convert_bounding_box_format(
@@ -423,14 +445,14 @@ def _clamp_along_y_axis(
     case_d = torch.zeros_like(case_c)
     case_e = torch.cat([x.unsqueeze(1) for x in [x1.clamp(0), y1, x2.clamp(0), y2, x3, y3, x4, y4]], dim=1)
 
-    cond_a = x1.lt(0).logical_and(x2.ge(0)).logical_and(x3.ge(0)).logical_and(x4.ge(0))
+    cond_a = (x1 < 0).logical_and(x2 >= 0).logical_and(x3 >= 0).logical_and(x4 >= 0)
     cond_a = cond_a.logical_and(_area(case_a) > _area(case_b))
-    cond_a = cond_a.logical_or(x1.lt(0).logical_and(x2.ge(0)).logical_and(x3.ge(0)).logical_and(x4.le(0)))
-    cond_b = x1.lt(0).logical_and(x2.ge(0)).logical_and(x3.ge(0)).logical_and(x4.ge(0))
+    cond_a = cond_a.logical_or((x1 < 0).logical_and(x2 >= 0).logical_and(x3 >= 0).logical_and(x4 <= 0))
+    cond_b = (x1 < 0).logical_and(x2 >= 0).logical_and(x3 >= 0).logical_and(x4 >= 0)
     cond_b = cond_b.logical_and(_area(case_a) <= _area(case_b))
-    cond_b = cond_b.logical_or(x1.lt(0).logical_and(x2.le(0)).logical_and(x3.ge(0)).logical_and(x4.ge(0)))
-    cond_c = x1.lt(0).logical_and(x2.le(0)).logical_and(x3.ge(0)).logical_and(x4.le(0))
-    cond_d = x1.lt(0).logical_and(x2.le(0)).logical_and(x3.le(0)).logical_and(x4.le(0))
+    cond_b = cond_b.logical_or((x1 < 0).logical_and(x2 <= 0).logical_and(x3 >= 0).logical_and(x4 >= 0))
+    cond_c = (x1 < 0).logical_and(x2 <= 0).logical_and(x3 >= 0).logical_and(x4 <= 0)
+    cond_d = (x1 < 0).logical_and(x2 <= 0).logical_and(x3 <= 0).logical_and(x4 <= 0)
     cond_e = x1.isclose(x2)
 
     for cond, case in zip(
@@ -465,15 +487,17 @@ def _clamp_rotated_bounding_boxes(
         torch.Tensor: Clamped bounding boxes in the original format and shape
     """
     original_shape = bounding_boxes.shape
-    original_dtype = bounding_boxes.dtype
-    bounding_boxes = bounding_boxes.clone() if bounding_boxes.is_floating_point() else bounding_boxes.float()
+    dtype = bounding_boxes.dtype
+    acceptable_dtypes = [torch.float64]  # Ensure consistency between CPU and GPU.
+    need_cast = dtype not in acceptable_dtypes
+    bounding_boxes = bounding_boxes.to(torch.float64) if need_cast else bounding_boxes.clone()
     out_boxes = (
         convert_bounding_box_format(
             bounding_boxes, old_format=format, new_format=tv_tensors.BoundingBoxFormat.XYXYXYXY, inplace=True
         )
     ).reshape(-1, 8)
 
-    for _ in range(4):
+    for _ in range(4):  # Iterate over the 4 vertices.
         indices, out_boxes = _order_bounding_boxes_points(out_boxes)
         out_boxes = _clamp_along_y_axis(out_boxes)
         _, out_boxes = _order_bounding_boxes_points(out_boxes, indices)
@@ -488,7 +512,10 @@ def _clamp_rotated_bounding_boxes(
         out_boxes, old_format=tv_tensors.BoundingBoxFormat.XYXYXYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
-    out_boxes = out_boxes.to(original_dtype)
+    if need_cast:
+        if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+            out_boxes.round_()
+        out_boxes = out_boxes.to(dtype)
     return out_boxes
 
 

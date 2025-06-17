@@ -608,22 +608,19 @@ def reference_affine_rotated_bounding_boxes_helper(
         )
 
         if torch.is_floating_point(output) and int_dtype:
-            # it is better to round before cast
+            # It is important to round before cast.
             output = torch.round(output)
 
-        if clamp:
-            # It is important to clamp before casting, especially for CXCYWHR format, dtype=int64
-            output = F.clamp_bounding_boxes(
-                output,
+        # For rotated boxes, it is important to cast before clamping.
+        return (
+            F.clamp_bounding_boxes(
+                output.to(dtype=dtype, device=device),
                 format=format,
                 canvas_size=canvas_size,
             )
-        else:
-            # We leave the bounding box as float32 so the caller gets the full precision to perform any additional
-            # operation
-            dtype = output.dtype
-
-        return output.to(dtype=dtype, device=device)
+            if clamp
+            else output.to(dtype=output.dtype, device=device)
+        )
 
     return tv_tensors.BoundingBoxes(
         torch.cat(
