@@ -1215,19 +1215,37 @@ def test_deform_conv2d_opcheck(dtype, device, requires_grad):
     out_h = (height + 2 * padding[0] - dilation[0] * (kernel_size[0] - 1) - 1) // stride[0] + 1
     out_w = (width + 2 * padding[1] - dilation[1] * (kernel_size[1] - 1) - 1) // stride[1] + 1
     x = torch.randn(batch_size, channels_in, height, width, dtype=dtype, device=device, requires_grad=requires_grad)
-    offset = torch.randn(batch_size, 2 * kernel_size[0] * kernel_size[1], out_h, out_w,
-                         dtype=dtype, device=device, requires_grad=requires_grad)
-    weight = torch.randn(out_channels, channels_in // groups, kernel_size[0], kernel_size[1],
-                         dtype=dtype, device=device, requires_grad=requires_grad)
-    bias = torch.randn(out_channels, dtype=dtype, device=device, requires_grad=requires_grad)
-    use_mask = True
-    mask = torch.sigmoid(torch.randn(
+    offset = torch.randn(
         batch_size,
-        kernel_size[0] * kernel_size[1],
+        2 * kernel_size[0] * kernel_size[1],
         out_h,
         out_w,
-        dtype=dtype, device=device, requires_grad=requires_grad
-    ))
+        dtype=dtype,
+        device=device,
+        requires_grad=requires_grad,
+    )
+    weight = torch.randn(
+        out_channels,
+        channels_in // groups,
+        kernel_size[0],
+        kernel_size[1],
+        dtype=dtype,
+        device=device,
+        requires_grad=requires_grad,
+    )
+    bias = torch.randn(out_channels, dtype=dtype, device=device, requires_grad=requires_grad)
+    use_mask = True
+    mask = torch.sigmoid(
+        torch.randn(
+            batch_size,
+            kernel_size[0] * kernel_size[1],
+            out_h,
+            out_w,
+            dtype=dtype,
+            device=device,
+            requires_grad=requires_grad,
+        )
+    )
     kwargs = {
         "offset": offset,
         "weight": weight,
@@ -1244,7 +1262,6 @@ def test_deform_conv2d_opcheck(dtype, device, requires_grad):
         "mask": mask,  # no modulation in this test
     }
     optests.opcheck(torch.ops.torchvision.deform_conv2d, args=(x,), kwargs=kwargs)
-
 
 
 class TestFrozenBNT:
