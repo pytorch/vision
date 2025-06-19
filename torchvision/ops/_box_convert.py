@@ -94,6 +94,8 @@ def _box_cxcywhr_to_xywhr(boxes: Tensor) -> Tensor:
     Returns:
         boxes (Tensor(N, 5)): rotated boxes in (x1, y1, w, h, r) format.
     """
+    dtype = boxes.dtype
+    need_cast = not boxes.is_floating_point()
     cx, cy, w, h, r = boxes.unbind(-1)
     r_rad = r * torch.pi / 180.0
     cos, sin = torch.cos(r_rad), torch.sin(r_rad)
@@ -102,6 +104,9 @@ def _box_cxcywhr_to_xywhr(boxes: Tensor) -> Tensor:
     y1 = cy - h / 2 * cos + w / 2 * sin
     boxes = torch.stack((x1, y1, w, h, r), dim=-1)
 
+    if need_cast:
+        boxes.round_()
+        boxes = boxes.to(dtype)
     return boxes
 
 
@@ -117,6 +122,8 @@ def _box_xywhr_to_cxcywhr(boxes: Tensor) -> Tensor:
     Returns:
         boxes (Tensor[N, 5]): rotated boxes in (cx, cy, w, h, r) format.
     """
+    dtype = boxes.dtype
+    need_cast = not boxes.is_floating_point()
     x1, y1, w, h, r = boxes.unbind(-1)
     r_rad = r * torch.pi / 180.0
     cos, sin = torch.cos(r_rad), torch.sin(r_rad)
@@ -125,6 +132,9 @@ def _box_xywhr_to_cxcywhr(boxes: Tensor) -> Tensor:
     cy = y1 - w / 2 * sin + h / 2 * cos
 
     boxes = torch.stack([cx, cy, w, h, r], dim=-1)
+    if need_cast:
+        boxes.round_()
+        boxes = boxes.to(dtype)
     return boxes
 
 
@@ -145,6 +155,8 @@ def _box_xywhr_to_xyxyxyxy(boxes: Tensor) -> Tensor:
     Returns:
         boxes (Tensor(N, 8)): rotated boxes in (x1, y1, x2, y2, x3, y3, x4, y4) format.
     """
+    dtype = boxes.dtype
+    need_cast = not boxes.is_floating_point()
     x1, y1, w, h, r = boxes.unbind(-1)
     r_rad = r * torch.pi / 180.0
     cos, sin = torch.cos(r_rad), torch.sin(r_rad)
@@ -156,7 +168,11 @@ def _box_xywhr_to_xyxyxyxy(boxes: Tensor) -> Tensor:
     x4 = x1 + h * sin
     y4 = y1 + h * cos
 
-    return torch.stack((x1, y1, x2, y2, x3, y3, x4, y4), dim=-1)
+    boxes = torch.stack((x1, y1, x2, y2, x3, y3, x4, y4), dim=-1)
+    if need_cast:
+        boxes.round_()
+        boxes = boxes.to(dtype)
+    return boxes
 
 
 def _box_xyxyxyxy_to_xywhr(boxes: Tensor) -> Tensor:
@@ -175,6 +191,8 @@ def _box_xyxyxyxy_to_xywhr(boxes: Tensor) -> Tensor:
     Returns:
         boxes (Tensor[N, 5]): rotated boxes in (x1, y1, w, h, r) format.
     """
+    dtype = boxes.dtype
+    need_cast = not boxes.is_floating_point()
     x1, y1, x2, y2, x3, y3, x4, y4 = boxes.unbind(-1)
     r_rad = torch.atan2(y1 - y2, x2 - x1)
     r = r_rad * 180 / torch.pi
@@ -183,5 +201,7 @@ def _box_xyxyxyxy_to_xywhr(boxes: Tensor) -> Tensor:
     h = ((x3 - x2) ** 2 + (y3 - y2) ** 2).sqrt()
 
     boxes = torch.stack((x1, y1, w, h, r), dim=-1)
-
+    if need_cast:
+        boxes.round_()
+        boxes = boxes.to(dtype)
     return boxes
