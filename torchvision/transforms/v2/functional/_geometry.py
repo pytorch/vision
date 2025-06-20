@@ -1104,8 +1104,9 @@ def _affine_bounding_boxes_with_expand(
 
     original_shape = bounding_boxes.shape
     dtype = bounding_boxes.dtype
-    need_cast = not bounding_boxes.is_floating_point()
-    bounding_boxes = bounding_boxes.float() if need_cast else bounding_boxes.clone()
+    acceptable_dtypes = [torch.float64]  # Ensure consistency between CPU and GPU.
+    need_cast = dtype not in acceptable_dtypes
+    bounding_boxes = bounding_boxes.to(torch.float64) if need_cast else bounding_boxes.clone()
     device = bounding_boxes.device
     is_rotated = tv_tensors.is_rotated_bounding_format(format)
     intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
@@ -2397,11 +2398,11 @@ def elastic_bounding_boxes(
 
     original_shape = bounding_boxes.shape
     # TODO: first cast to float if bbox is int64 before convert_bounding_box_format
-    intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
+    intermediate_format = tv_tensors.BoundingBoxFormat.CXCYWHR if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
 
     bounding_boxes = (
         convert_bounding_box_format(bounding_boxes.clone(), old_format=format, new_format=intermediate_format)
-    ).reshape(-1, 8 if is_rotated else 4)
+    ).reshape(-1, 5 if is_rotated else 4)
 
     id_grid = _create_identity_grid(canvas_size, device=device, dtype=dtype)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
@@ -2409,7 +2410,7 @@ def elastic_bounding_boxes(
     inv_grid = id_grid.sub_(displacement)
 
     # Get points from bboxes
-    points = bounding_boxes if is_rotated else bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
+    points = bounding_boxes[:, :2] if is_rotated else bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
     points = points.reshape(-1, 2)
     if points.is_floating_point():
         points = points.ceil_()
@@ -2421,8 +2422,8 @@ def elastic_bounding_boxes(
     transformed_points = inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
 
     if is_rotated:
-        transformed_points = transformed_points.reshape(-1, 8)
-        out_bboxes = _parallelogram_to_bounding_boxes(transformed_points).to(bounding_boxes.dtype)
+        transformed_points = transformed_points.reshape(-1, 2)
+        out_bboxes = torch.cat([transformed_points, bounding_boxes[:, 2:]], dim=1).to(bounding_boxes.dtype)
     else:
         transformed_points = transformed_points.reshape(-1, 4, 2)
         out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)

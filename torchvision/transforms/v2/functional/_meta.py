@@ -409,23 +409,17 @@ def _order_bounding_boxes_points(
     if indices is None:
         output_xyxyxyxy = bounding_boxes.reshape(-1, 8)
         x, y = output_xyxyxyxy[..., 0::2], output_xyxyxyxy[..., 1::2]
-        y_max = torch.max(y, dim=1, keepdim=True)[0]
-        _, x1 = ((y_max - y) / y_max + (x + 1) * 100).min(dim=1)
+        y_max = torch.max(y.abs(), dim=1, keepdim=True)[0]
+        _, x1 = (y / y_max + (x + 1) * 100).min(dim=1)
         indices = torch.ones_like(output_xyxyxyxy)
         indices[..., 0] = x1.mul(2)
         indices.cumsum_(1).remainder_(8)
     return indices, bounding_boxes.gather(1, indices.to(torch.int64))
 
 
-def _area(box: torch.Tensor) -> torch.Tensor:
-    x1, y1, x2, y2, x3, y3, x4, y4 = box.reshape(-1, 8).unbind(-1)
-    w = torch.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
-    h = torch.sqrt((y3 - y2) ** 2 + (x3 - x2) ** 2)
-    return w * h
-
-
 def _clamp_along_y_axis(
     bounding_boxes: torch.Tensor,
+    canvas_size: tuple[int, int],
 ) -> torch.Tensor:
     """
     Adjusts bounding boxes along the y-axis based on specific conditions.
@@ -448,29 +442,33 @@ def _clamp_along_y_axis(
     b2 = y2 + x2 / a
     b3 = y3 - a * x3
     b4 = y4 + x4 / a
-    b23 = (b2 - b3) / 2 * a / (1 + a**2)
-    z = torch.zeros_like(b1)
-    case_a = torch.cat([x.unsqueeze(1) for x in [z, b1, x2, y2, x3, y3, x3 - x2, y3 + b1 - y2]], dim=1)
-    case_b = torch.cat([x.unsqueeze(1) for x in [z, b4, x2 - x1, y2 - y1 + b4, x3, y3, x4, y4]], dim=1)
-    case_c = torch.cat(
-        [x.unsqueeze(1) for x in [z, (b2 + b3) / 2, b23, -b23 / a + b2, x3, y3, b23, b23 * a + b3]], dim=1
+    c = a / (1 + a**2)
+    b1 = b2.clamp(0).clamp(b1, b3)
+    b4 = b3.clamp(max=canvas_size[0]).clamp(b2, b4)
+    case_a = torch.stack(
+        (
+            (b4 - b1) * c,
+            (b4 - b1) * c * a + b1,
+            (b2 - b1) * c,
+            (b1 - b2) * c / a + b2,
+            x3,
+            y3,
+            (b4 - b3) * c,
+            (b3 - b4) * c / a + b4,
+        ),
+        dim=-1,
     )
-    case_d = torch.zeros_like(case_c)
-    case_e = torch.cat([x.unsqueeze(1) for x in [x1.clamp(0), y1, x2.clamp(0), y2, x3, y3, x4, y4]], dim=1)
+    case_b = bounding_boxes.clone()
+    case_b[..., 0].clamp_(0)
+    case_b[..., 6].clamp_(0)
+    case_c = torch.zeros_like(case_b)
 
-    cond_a = (x1 < 0).logical_and(x2 >= 0).logical_and(x3 >= 0).logical_and(x4 >= 0)
-    cond_a = cond_a.logical_and(_area(case_a) > _area(case_b))
-    cond_a = cond_a.logical_or((x1 < 0).logical_and(x2 >= 0).logical_and(x3 >= 0).logical_and(x4 <= 0))
-    cond_b = (x1 < 0).logical_and(x2 >= 0).logical_and(x3 >= 0).logical_and(x4 >= 0)
-    cond_b = cond_b.logical_and(_area(case_a) <= _area(case_b))
-    cond_b = cond_b.logical_or((x1 < 0).logical_and(x2 <= 0).logical_and(x3 >= 0).logical_and(x4 >= 0))
-    cond_c = (x1 < 0).logical_and(x2 <= 0).logical_and(x3 >= 0).logical_and(x4 <= 0)
-    cond_d = (x1 < 0).logical_and(x2 <= 0).logical_and(x3 <= 0).logical_and(x4 <= 0)
-    cond_e = x1.isclose(x2)
-
+    cond_a = x1 < 0
+    cond_b = y1.isclose(y2, rtol=1e-05, atol=1e-05)
+    cond_c = (x1 <= 0).logical_and(x2 <= 0).logical_and(x3 <= 0).logical_and(x4 <= 0)
     for cond, case in zip(
-        [cond_a, cond_b, cond_c, cond_d, cond_e],
-        [case_a, case_b, case_c, case_d, case_e],
+        [cond_a, cond_b, cond_c],
+        [case_a, case_b, case_c],
     ):
         bounding_boxes = torch.where(cond.unsqueeze(1).repeat(1, 8), case.reshape(-1, 8), bounding_boxes)
     return bounding_boxes.to(original_dtype).reshape(original_shape)
@@ -512,7 +510,7 @@ def _clamp_rotated_bounding_boxes(
 
     for _ in range(4):  # Iterate over the 4 vertices.
         indices, out_boxes = _order_bounding_boxes_points(out_boxes)
-        out_boxes = _clamp_along_y_axis(out_boxes)
+        out_boxes = _clamp_along_y_axis(out_boxes, canvas_size)
         _, out_boxes = _order_bounding_boxes_points(out_boxes, indices)
         # rotate 90 degrees counter clock wise
         out_boxes[:, ::2], out_boxes[:, 1::2] = (
