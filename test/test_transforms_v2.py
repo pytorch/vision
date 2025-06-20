@@ -4413,7 +4413,6 @@ class TestResizedCrop:
                 [0, 0, 1],
             ],
         )
-        affine_matrix = (resize_affine_matrix @ crop_affine_matrix)[:2, :]
 
         helper = (
             reference_affine_rotated_bounding_boxes_helper
@@ -4421,11 +4420,7 @@ class TestResizedCrop:
             else reference_affine_bounding_boxes_helper
         )
 
-        bounding_boxes = helper(
-            bounding_boxes,
-            affine_matrix=crop_affine_matrix,
-            new_canvas_size=(height, width)
-        )
+        bounding_boxes = helper(bounding_boxes, affine_matrix=crop_affine_matrix, new_canvas_size=(height, width))
 
         return helper(
             bounding_boxes,
