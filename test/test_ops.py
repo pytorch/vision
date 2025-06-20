@@ -929,6 +929,7 @@ optests.generate_opcheck_tests(
 
 class TestDeformConv:
     dtype = torch.float64
+    mps_dtype = torch.float32
 
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
         stride_h, stride_w = _pair(stride)
@@ -1050,12 +1051,11 @@ class TestDeformConv:
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
-    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("batch_sz", (0, 33))
-    @pytest.mark.opcheck_only_one()
     def test_forward(self, device, contiguous, batch_sz, dtype=None):
-        dtype = dtype or self.dtype
+        dtype = self.mps_dtype if device == "mps" else dtype or self.dtype
         x, _, offset, mask, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz, dtype)
         in_channels = 6
         out_channels = 2
@@ -1201,13 +1201,67 @@ class TestDeformConv:
         torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
 
 
-optests.generate_opcheck_tests(
-    testcase=TestDeformConv,
-    namespaces=["torchvision"],
-    failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
-    additional_decorators=[],
-    test_utils=OPTESTS,
-)
+@pytest.mark.parametrize("dtype", (torch.float16, torch.float32, torch.float64))
+@pytest.mark.parametrize("device", cpu_and_cuda())
+@pytest.mark.parametrize("requires_grad", (True, False))
+def test_deform_conv2d_opcheck(dtype, device, requires_grad):
+    batch_size, channels_in, height, width = 1, 6, 10, 10
+    kernel_size = (3, 3)
+    stride = (1, 1)
+    padding = (1, 1)
+    dilation = (1, 1)
+    groups = 2
+    out_channels = 4
+    out_h = (height + 2 * padding[0] - dilation[0] * (kernel_size[0] - 1) - 1) // stride[0] + 1
+    out_w = (width + 2 * padding[1] - dilation[1] * (kernel_size[1] - 1) - 1) // stride[1] + 1
+    x = torch.randn(batch_size, channels_in, height, width, dtype=dtype, device=device, requires_grad=requires_grad)
+    offset = torch.randn(
+        batch_size,
+        2 * kernel_size[0] * kernel_size[1],
+        out_h,
+        out_w,
+        dtype=dtype,
+        device=device,
+        requires_grad=requires_grad,
+    )
+    weight = torch.randn(
+        out_channels,
+        channels_in // groups,
+        kernel_size[0],
+        kernel_size[1],
+        dtype=dtype,
+        device=device,
+        requires_grad=requires_grad,
+    )
+    bias = torch.randn(out_channels, dtype=dtype, device=device, requires_grad=requires_grad)
+    use_mask = True
+    mask = torch.sigmoid(
+        torch.randn(
+            batch_size,
+            kernel_size[0] * kernel_size[1],
+            out_h,
+            out_w,
+            dtype=dtype,
+            device=device,
+            requires_grad=requires_grad,
+        )
+    )
+    kwargs = {
+        "offset": offset,
+        "weight": weight,
+        "bias": bias,
+        "stride_h": stride[0],
+        "stride_w": stride[1],
+        "pad_h": padding[0],
+        "pad_w": padding[1],
+        "dilation_h": dilation[0],
+        "dilation_w": dilation[1],
+        "groups": groups,
+        "offset_groups": 1,
+        "use_mask": use_mask,
+        "mask": mask,  # no modulation in this test
+    }
+    optests.opcheck(torch.ops.torchvision.deform_conv2d, args=(x,), kwargs=kwargs)
 
 
 class TestFrozenBNT:
