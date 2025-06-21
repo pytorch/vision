@@ -1,3 +1,78 @@
+# name: Build Windows Wheels
+
+# on:
+#   pull_request:
+#   push:
+#     branches:
+#       - nightly
+#       - main
+#       - release/*
+#     tags:
+#         # NOTE: Binary build pipelines should only get triggered on release candidate builds
+#         # Release candidate tags look like: v1.11.0-rc1
+#         - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
+#   workflow_dispatch:
+
+# permissions:
+#   id-token: write
+#   contents: read
+
+
+# jobs:
+#   build_x64:
+#     strategy:
+#       matrix:
+#         python-version: ["3.12"]
+#         include:
+#           - repository: pytorch/vision
+#             smoke-test-script: test/smoke_test.py
+#             package-name: torchvision
+#             iswinarm64: true
+#     name: ${{ matrix.repository }}-test-x64
+#     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
+#     with:
+#       repository: ${{ matrix.repository }}
+#       ref: ""
+#       test-infra-repository: alinpahontu2912/test-infra
+#       test-infra-ref: x64windows_test
+#       package-name: ${{ matrix.package-name }}
+#       smoke-test-script: ${{ matrix.smoke-test-script }}
+
+#   generate-matrix:
+#     uses: alinpahontu2912/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
+#     with:
+#       package-type: wheel
+#       os: windows
+#       test-infra-repository: alinpahontu2912/test-infra
+#       test-infra-ref: x64windows_test
+#       with-xpu: enable
+
+#   build:
+#     needs: generate-matrix
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         include:
+#           - repository: pytorch/vision
+#             pre-script: packaging/pre_build_script.sh
+#             env-script: packaging/windows/internal/vc_env_helper.bat
+#             post-script: "python packaging/wheel/relocate.py"
+#             smoke-test-script: test/smoke_test.py
+#             package-name: torchvision
+#     name: ${{ matrix.repository }}
+#     uses: alinpahontu2912/test-infra/.github/workflows/build_wheels_windows.yml@x64windows_test
+#     with:
+#       repository: ${{ matrix.repository }}
+#       ref: ""
+#       test-infra-repository: alinpahontu2912/test-infra
+#       test-infra-ref: x64windows_test
+#       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
+#       pre-script: ${{ matrix.pre-script }}
+#       env-script: ${{ matrix.env-script }}
+#       post-script: ${{ matrix.post-script }}
+#       package-name: ${{ matrix.package-name }}
+#       smoke-test-script: ${{ matrix.smoke-test-script }}
+#       trigger-event: ${{ github.event_name }}
 name: Build Windows Wheels
 
 on:
