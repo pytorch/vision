@@ -26,6 +26,7 @@ cd vcpkg || exit
 ./bootstrap-vcpkg.sh
 
 # Set vcpkg to only build release packages
+
 echo "set(VCPKG_BUILD_TYPE release)" >> "$TRIPLET_FILE"
 
 # Install dependencies using vcpkg
@@ -34,6 +35,7 @@ echo "set(VCPKG_BUILD_TYPE release)" >> "$TRIPLET_FILE"
 ./vcpkg install libpng[tools]:arm64-windows --x-install-root="$DEPENDENCIES_DIR"
 
 # Copy files using cp
+
 cp "$DEPENDENCIES_DIR/arm64-windows/lib/libpng16.lib" "$DEPENDENCIES_DIR/arm64-windows/lib/libpng.lib"
 cp "$DEPENDENCIES_DIR/arm64-windows/bin/libpng16.dll" "$DEPENDENCIES_DIR/arm64-windows/bin/libpng.dll"
 cp "$DEPENDENCIES_DIR/arm64-windows/bin/libpng16.pdb" "$DEPENDENCIES_DIR/arm64-windows/bin/libpng.pdb"
