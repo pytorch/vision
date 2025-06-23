@@ -38,7 +38,7 @@ instructions](https://pytorch.org/get-started/locally/). Note that the official
 instructions may ask you to install torchvision itself. If you are doing development
 on torchvision, you should not install prebuilt torchvision packages.
 
-**Optionally**, install `libpng`, `libjpeg-turbo` and `libwebp1 if you want to enable
+**Optionally**, install `libpng`, `libjpeg-turbo` and `libwebp` if you want to enable
 support for
 native encoding / decoding of PNG, JPEG and WebP formats in
 [torchvision.io](https://pytorch.org/vision/stable/io.html#image):
