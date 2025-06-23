@@ -43,7 +43,7 @@ class Image(TVTensor):
 
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if tensor.ndim < 2:
-            raise ValueError
+            raise ValueError(f"Tensor must be 2D or higher, got {tensor.ndim}D tensor.")
         elif tensor.ndim == 2:
             tensor = tensor.unsqueeze(0)
 

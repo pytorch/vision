@@ -194,11 +194,12 @@ def query_size(flat_inputs: list[Any]) -> tuple[int, int]:
                 tv_tensors.Video,
                 tv_tensors.Mask,
                 tv_tensors.BoundingBoxes,
+                tv_tensors.KeyPoints,
             ),
         )
     }
     if not sizes:
-        raise TypeError("No image, video, mask or bounding box was found in the sample")
+        raise TypeError("No image, video, mask, bounding box of keypoint was found in the sample")
     elif len(sizes) > 1:
         raise ValueError(f"Found multiple HxW dimensions in the sample: {sequence_to_str(sorted(sizes))}")
     h, w = sizes.pop()
