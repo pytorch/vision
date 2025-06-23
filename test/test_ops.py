@@ -2035,4 +2035,5 @@ class TestDropBlock:
 
 
 if __name__ == "__main__":
-    pytest.main([__file__])
+    import sys
+    pytest.main([__file__] + sys.argv)
