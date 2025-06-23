@@ -3,8 +3,7 @@
 #include "mps_helpers.h"
 #include "mps_kernels.h"
 
-namespace vision {
-namespace ops {
+namespace vision::ops {
 
 namespace {
 
@@ -193,5 +192,4 @@ TORCH_LIBRARY_IMPL(torchvision, MPS, m) {
   m.impl(TORCH_SELECTIVE_NAME("torchvision::_roi_align_backward"), TORCH_FN(roi_align_backward_kernel));
 }
 
-} // namespace ops
-} // namespace vision
+} // namespace vision::ops
