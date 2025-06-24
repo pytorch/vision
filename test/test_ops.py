@@ -1200,15 +1200,16 @@ class TestDeformConv:
         # Non-regression test for https://github.com/pytorch/vision/issues/4078
         torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
 
+
 # NS: Removeme once bacward is implemented
 def xfail_if_mps(x):
     mps_xfail_param = pytest.param("mps", marks=(pytest.mark.needs_mps, pytest.mark.xfail))
     new_pytestmark = []
     for mark in x.pytestmark:
         if isinstance(mark, pytest.Mark) and mark.name == "parametrize":
-            if mark.args[0] == 'device':
+            if mark.args[0] == "device":
                 params = cpu_and_cuda() + (mps_xfail_param,)
-                new_pytestmark.append(pytest.mark.parametrize('device', params))
+                new_pytestmark.append(pytest.mark.parametrize("device", params))
                 continue
         new_pytestmark.append(mark)
     x.__dict__["pytestmark"] = new_pytestmark
@@ -1220,8 +1221,10 @@ optests.generate_opcheck_tests(
     namespaces=["torchvision"],
     failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
     # Skip tests due to unimplemented backward
-    additional_decorators={"test_aot_dispatch_dynamic__test_forward" : [xfail_if_mps],
-                           "test_autograd_registration__test_forward" : [xfail_if_mps]},
+    additional_decorators={
+        "test_aot_dispatch_dynamic__test_forward": [xfail_if_mps],
+        "test_autograd_registration__test_forward": [xfail_if_mps],
+    },
     test_utils=OPTESTS,
 )
 
