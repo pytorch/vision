@@ -320,6 +320,7 @@ def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale:
     return to_dtype_image(video, dtype, scale=scale)
 
 
+@_register_kernel_internal(to_dtype, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 @_register_kernel_internal(to_dtype, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
 @_register_kernel_internal(to_dtype, tv_tensors.Mask, tv_tensor_wrapper=False)
 def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
@@ -405,16 +406,27 @@ def _get_sanitize_bounding_boxes_mask(
     min_area: float = 1.0,
 ) -> torch.Tensor:
 
-    bounding_boxes = _convert_bounding_box_format(
-        bounding_boxes, new_format=tv_tensors.BoundingBoxFormat.XYXY, old_format=format
-    )
+    is_rotated = tv_tensors.is_rotated_bounding_format(format)
+    intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
+    bounding_boxes = _convert_bounding_box_format(bounding_boxes, new_format=intermediate_format, old_format=format)
 
     image_h, image_w = canvas_size
-    ws, hs = bounding_boxes[:, 2] - bounding_boxes[:, 0], bounding_boxes[:, 3] - bounding_boxes[:, 1]
+    if is_rotated:
+        dx12 = bounding_boxes[..., 0] - bounding_boxes[..., 2]
+        dy12 = bounding_boxes[..., 1] - bounding_boxes[..., 3]
+        dx23 = bounding_boxes[..., 3] - bounding_boxes[..., 5]
+        dy23 = bounding_boxes[..., 4] - bounding_boxes[..., 6]
+        ws = torch.sqrt(dx12**2 + dy12**2)
+        hs = torch.sqrt(dx23**2 + dy23**2)
+    else:
+        ws, hs = bounding_boxes[:, 2] - bounding_boxes[:, 0], bounding_boxes[:, 3] - bounding_boxes[:, 1]
     valid = (ws >= min_size) & (hs >= min_size) & (bounding_boxes >= 0).all(dim=-1) & (ws * hs >= min_area)
     # TODO: Do we really need to check for out of bounds here? All
     # transforms should be clamping anyway, so this should never happen?
     image_h, image_w = canvas_size
     valid &= (bounding_boxes[:, 0] <= image_w) & (bounding_boxes[:, 2] <= image_w)
     valid &= (bounding_boxes[:, 1] <= image_h) & (bounding_boxes[:, 3] <= image_h)
+    if is_rotated:
+        valid &= (bounding_boxes[..., 4] <= image_w) & (bounding_boxes[..., 5] <= image_h)
+        valid &= (bounding_boxes[..., 6] <= image_w) & (bounding_boxes[..., 7] <= image_h)
     return valid
