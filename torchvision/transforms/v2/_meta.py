@@ -34,3 +34,15 @@ class ClampBoundingBoxes(Transform):
 
     def transform(self, inpt: tv_tensors.BoundingBoxes, params: dict[str, Any]) -> tv_tensors.BoundingBoxes:
         return F.clamp_bounding_boxes(inpt)  # type: ignore[return-value]
+
+
+class ClampKeyPoints(Transform):
+    """Clamp keypoints to their corresponding image dimensions.
+
+    The clamping is done according to the keypoints' ``canvas_size`` meta-data.
+    """
+
+    _transformed_types = (tv_tensors.KeyPoints,)
+
+    def transform(self, inpt: tv_tensors.KeyPoints, params: dict[str, Any]) -> tv_tensors.KeyPoints:
+        return F.clamp_keypoints(inpt)  # type: ignore[return-value]
