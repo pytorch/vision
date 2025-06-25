@@ -6,9 +6,6 @@ echo "Building vision dependencies and wheel started."
 export SRC_PATH="$GITHUB_WORKSPACE/$SRC_DIR"
 export CMAKE_BUILD_TYPE="$BUILD_TYPE"
 export VCVARSALL_PATH="$DEPENDENCIES_DIR/VSBuildTools/VC/Auxiliary/Build/vcvarsall.bat"
-export CONDA_PREFIX="$DEPENDENCIES_DIR"
-export PATH="$PATH:$CONDA_PREFIX/Library/bin"
-export DISTUTILS_USE_SDK=1
 export TRIPLET_FILE="triplets/arm64-windows.cmake"
 export PYTORCH_VERSION="$PYTORCH_VERSION"
 export CHANNEL="$CHANNEL"
@@ -26,7 +23,6 @@ cd vcpkg || exit
 ./bootstrap-vcpkg.sh
 
 # Set vcpkg to only build release packages
-
 echo "set(VCPKG_BUILD_TYPE release)" >> "$TRIPLET_FILE"
 
 # Install dependencies using vcpkg
@@ -35,7 +31,6 @@ echo "set(VCPKG_BUILD_TYPE release)" >> "$TRIPLET_FILE"
 ./vcpkg install libpng[tools]:arm64-windows --x-install-root="$DEPENDENCIES_DIR"
 
 # Copy files using cp
-
 cp "$DEPENDENCIES_DIR/arm64-windows/lib/libpng16.lib" "$DEPENDENCIES_DIR/arm64-windows/lib/libpng.lib"
 cp "$DEPENDENCIES_DIR/arm64-windows/bin/libpng16.dll" "$DEPENDENCIES_DIR/arm64-windows/bin/libpng.dll"
 cp "$DEPENDENCIES_DIR/arm64-windows/bin/libpng16.pdb" "$DEPENDENCIES_DIR/arm64-windows/bin/libpng.pdb"
