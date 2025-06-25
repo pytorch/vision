@@ -1201,7 +1201,7 @@ class TestDeformConv:
         torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
 
 
-# NS: Removeme once bacward is implemented
+# NS: Remove me once backward is implemented for MPS
 def xfail_if_mps(x):
     mps_xfail_param = pytest.param("mps", marks=(pytest.mark.needs_mps, pytest.mark.xfail))
     new_pytestmark = []
