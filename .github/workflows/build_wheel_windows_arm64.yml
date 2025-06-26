@@ -1,10 +1,10 @@
 name: Build Windows ARM64 Wheels
 
 on:
+  pull_request:
+    paths:
+      - .github/workflows/build_wheel_windows_arm64.yml
   push:
-    pull_request:
-      paths:
-        - .github/workflows/build_wheel_windows_arm64.yml
     branches:
       - nightly
       - release/*
