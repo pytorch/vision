@@ -43,6 +43,7 @@ jobs:
       ref: ""
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
+      setup-miniconda: true
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
       post-script: ${{ matrix.post-script }}
