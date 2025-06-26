@@ -1,11 +1,12 @@
 name: Build Windows ARM64 Wheels
 
 on:
-  pull_request:
   push:
+    pull_request:
+      paths:
+        - .github/workflows/build_wheel_windows_arm64.yml
     branches:
       - nightly
-      - main
       - release/*
     tags:
         # NOTE: Binary build pipelines should only get triggered on release candidate builds
