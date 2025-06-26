@@ -917,6 +917,44 @@ class TestNMS:
         empty = torch.empty((0,), dtype=torch.int64)
         torch.testing.assert_close(empty, ops.batched_nms(empty, None, None, None))
 
+    @pytest.mark.parametrize("op_name", ["nms", "batched_nms"])
+    def test_nms_compile_tensor_iou_threshold(self, op_name):
+        """Test that NMS operations can be compiled when iou_threshold is a tensor"""
+        # This test addresses GitHub issue pytorch/pytorch#156722
+
+        if not is_compile_supported("cpu"):
+            pytest.skip("torch.compile not supported on this platform")
+
+        if op_name == "nms":
+
+            def model_fn(boxes, scores):
+                return ops.nms(boxes, scores, torch.tensor(0.5))
+
+            boxes = torch.rand(100, 4)
+            scores = torch.rand(100)
+            args = (boxes, scores)
+        else:  # batched_nms
+
+            def model_fn(boxes, scores, idxs):
+                return ops.batched_nms(boxes, scores, idxs, torch.tensor(0.5))
+
+            boxes = torch.rand(100, 4)
+            scores = torch.rand(100)
+            idxs = torch.randint(0, 10, (100,))
+            args = (boxes, scores, idxs)
+
+        # Test that compilation works
+        compiled_fn = torch.compile(model_fn, backend="eager")
+
+        # Get expected result without compilation
+        expected = model_fn(*args)
+
+        # Get result with compilation
+        result = compiled_fn(*args)
+
+        # Results should match
+        torch.testing.assert_close(result, expected, msg=f"{op_name} compilation with tensor iou_threshold failed")
+
 
 optests.generate_opcheck_tests(
     testcase=TestNMS,

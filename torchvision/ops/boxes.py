@@ -45,6 +45,11 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(nms)
     _assert_has_ops()
+
+    # Handle case where iou_threshold is a tensor (e.g., from torch.tensor(0.5))
+    if isinstance(iou_threshold, torch.Tensor):
+        iou_threshold = iou_threshold.item()
+
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
 
@@ -74,6 +79,11 @@ def batched_nms(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(batched_nms)
+
+    # Handle case where iou_threshold is a tensor (e.g., from torch.tensor(0.5))
+    if isinstance(iou_threshold, torch.Tensor):
+        iou_threshold = iou_threshold.item()
+
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
     # and https://github.com/pytorch/vision/pull/8925
