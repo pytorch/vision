@@ -11,7 +11,7 @@ on:
 
 jobs:
   python-source-and-configs:
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.8
     permissions:
       id-token: write
       contents: read
@@ -41,7 +41,7 @@ jobs:
         fi
 
   # c-source:
-  #   uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+  #   uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.8
   #   permissions:
   #     id-token: write
   #     contents: read
@@ -71,7 +71,7 @@ jobs:
 
 
   python-types:
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.8
     permissions:
       id-token: write
       contents: read
@@ -104,7 +104,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Run BC Lint Action
-  #       uses: pytorch/test-infra/.github/actions/bc-lint@main
+  #       uses: pytorch/test-infra/.github/actions/bc-lint@release/2.8
   #       with:
   #         repo: ${{ github.event.pull_request.head.repo.full_name }}
   #         base_sha: ${{ github.event.pull_request.base.sha }}

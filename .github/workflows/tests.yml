@@ -26,7 +26,7 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "12.6"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.8
     permissions:
       id-token: write
       contents: read
@@ -57,7 +57,7 @@ jobs:
           - "3.12"
         runner: ["macos-m1-stable"]
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/macos_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/macos_job.yml@release/2.8
     with:
       repository: pytorch/vision
       timeout: 240
@@ -89,7 +89,7 @@ jobs:
         #     gpu-arch-type: cuda
         #     gpu-arch-version: "11.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
+    uses: pytorch/test-infra/.github/workflows/windows_job.yml@release/2.8
     permissions:
       id-token: write
       contents: read
@@ -112,7 +112,7 @@ jobs:
         ./.github/scripts/unittest.sh
 
   # onnx:
-  #   uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+  #   uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.8
   #   permissions:
   #     id-token: write
   #     contents: read
@@ -146,7 +146,7 @@ jobs:
   #       echo '::endgroup::'
 
   unittests-extended:
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.8
     permissions:
       id-token: write
       contents: read
