@@ -5589,6 +5589,54 @@ class TestClampBoundingBoxes:
         else:
             assert_equal(out, expected_clamped_output)
 
+class TestSetClampingMode:
+
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("constructor_clamping_mode", ("hard", "none"))  # TODOBB add soft
+    @pytest.mark.parametrize("desired_clamping_mode", ("hard", "none"))  # TODOBB add soft
+    def test_setter(self, format, constructor_clamping_mode, desired_clamping_mode):
+
+        in_boxes = make_bounding_boxes(format=format, clamping_mode=constructor_clamping_mode)
+        out_boxes = transforms.SetClampingMode(clamping_mode=desired_clamping_mode)(in_boxes)
+
+        assert in_boxes.clamping_mode == constructor_clamping_mode  # input is unchanged: no leak
+        assert out_boxes.clamping_mode == desired_clamping_mode
+    
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("constructor_clamping_mode", ("hard", "none"))  # TODOBB add soft
+    def test_pipeline_no_leak(self, format, constructor_clamping_mode):
+
+        class AssertClampingMode(transforms.Transform):
+            def __init__(self, expected_clamping_mode):
+                super().__init__()
+                self.expected_clamping_mode = expected_clamping_mode
+
+            _transformed_types = (tv_tensors.BoundingBoxes,)
+            
+            def transform(self, inpt, _):
+                assert inpt.clamping_mode == self.expected_clamping_mode
+                return inpt
+
+        t = transforms.Compose(
+            [
+                transforms.SetClampingMode("none"),
+                AssertClampingMode("none"),
+                transforms.SetClampingMode("hard"),
+                AssertClampingMode("hard"),
+                transforms.SetClampingMode("none"),
+                AssertClampingMode("none"),
+                transforms.ClampBoundingBoxes("hard")
+            ]
+        )
+
+        in_boxes = make_bounding_boxes(format=format, clamping_mode=constructor_clamping_mode)
+        out_boxes = t(in_boxes)
+
+        assert in_boxes.clamping_mode == constructor_clamping_mode  # input is unchanged: no leak
+
+        # assert that the output boxes clamping_mode is the one set by the last SetClampingMode.
+        # ClampBoundingBoxes doesn't set clamping_mode.
+        assert out_boxes.clamping_mode == "none"
 
 
 class TestClampKeyPoints:
@@ -7376,3 +7424,4 @@ class TestUtils:
     def test_no_valid_input(self, query):
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
+
