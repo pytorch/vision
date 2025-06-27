@@ -5529,9 +5529,10 @@ class TestClampBoundingBoxes:
         input_pure_tensor = input_tv_tensor.as_subclass(torch.Tensor)
         format, canvas_size = input_tv_tensor.format, input_tv_tensor.canvas_size
 
-        for format_, canvas_size_ in [(None, None), (format, None), (None, canvas_size)]:
+        for format_, canvas_size_, clamping_mode_ in itertools.product(
+            (format, None), (canvas_size, None), (input_tv_tensor.clamping_mode, None)):
             with pytest.raises(
-                ValueError, match="For pure tensor inputs, `format` and `canvas_size` have to be passed."
+                ValueError, match="For pure tensor inputs, `format`, `canvas_size` and `clamping_mode` have to be passed."
             ):
                 F.clamp_bounding_boxes(input_pure_tensor, format=format_, canvas_size=canvas_size_)
 

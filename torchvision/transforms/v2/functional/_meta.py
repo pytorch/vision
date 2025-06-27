@@ -551,7 +551,6 @@ def clamp_bounding_boxes(
 
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
 
-        # TODOBB
         if format is None or canvas_size is None or clamping_mode is None:
             raise ValueError("For pure tensor inputs, `format`, `canvas_size` and `clamping_mode` have to be passed.")
         if tv_tensors.is_rotated_bounding_format(format):
