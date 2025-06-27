@@ -23,7 +23,7 @@ def wrap(wrappee, *, like, **kwargs):
         wrappee (Tensor): The tensor to convert.
         like (:class:`~torchvision.tv_tensors.TVTensor`): The reference.
             ``wrappee`` will be converted into the same subclass as ``like``.
-        kwargs: Can contain "format" and "canvas_size" if ``like`` is a :class:`~torchvision.tv_tensor.BoundingBoxes`.
+        kwargs: Can contain "format", "canvas_size" and "clamping_mode" if ``like`` is a :class:`~torchvision.tv_tensor.BoundingBoxes`.
             Ignored otherwise.
     """
     if isinstance(like, BoundingBoxes):
@@ -31,6 +31,7 @@ def wrap(wrappee, *, like, **kwargs):
             wrappee,
             format=kwargs.get("format", like.format),
             canvas_size=kwargs.get("canvas_size", like.canvas_size),
+            clamping_mode=kwargs.get("clamping_mode", like.clamping_mode),
         )
     elif isinstance(like, KeyPoints):
         return KeyPoints._wrap(wrappee, canvas_size=kwargs.get("canvas_size", like.canvas_size))
