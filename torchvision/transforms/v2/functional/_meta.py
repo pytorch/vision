@@ -5,6 +5,7 @@ import torch
 from torchvision import tv_tensors
 from torchvision.transforms import _functional_pil as _FP
 from torchvision.tv_tensors import BoundingBoxFormat
+from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE 
 
 from torchvision.utils import _log_api_usage_once
 
@@ -370,8 +371,11 @@ def convert_bounding_box_format(
 
 
 def _clamp_bounding_boxes(
-    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: tuple[int, int]
+    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: tuple[int, int],
+    clamping_mode: Optional[CLAMPING_MODE_TYPE],  # TODOBB shouldn't be Optional
 ) -> torch.Tensor:
+    if clamping_mode is not None and clamping_mode == "none":
+        return bounding_boxes.clone()
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
     in_dtype = bounding_boxes.dtype
@@ -477,7 +481,8 @@ def _clamp_along_y_axis(
 
 
 def _clamp_rotated_bounding_boxes(
-    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: tuple[int, int]
+    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: tuple[int, int],
+    clamping_mode: Optional[CLAMPING_MODE_TYPE],  # TODOBB shouldn't be Optional
 ) -> torch.Tensor:
     """
     Clamp rotated bounding boxes to ensure they stay within the canvas boundaries.
@@ -499,6 +504,8 @@ def _clamp_rotated_bounding_boxes(
     Returns:
         torch.Tensor: Clamped bounding boxes in the original format and shape
     """
+    if clamping_mode is not None and clamping_mode == "none":
+        return bounding_boxes.clone()
     original_shape = bounding_boxes.shape
     dtype = bounding_boxes.dtype
     acceptable_dtypes = [torch.float64]  # Ensure consistency between CPU and GPU.
@@ -536,6 +543,7 @@ def clamp_bounding_boxes(
     inpt: torch.Tensor,
     format: Optional[BoundingBoxFormat] = None,
     canvas_size: Optional[tuple[int, int]] = None,
+    clamping_mode: Optional[CLAMPING_MODE_TYPE] = None,
 ) -> torch.Tensor:
     """See :func:`~torchvision.transforms.v2.ClampBoundingBoxes` for details."""
     if not torch.jit.is_scripting():
@@ -543,22 +551,25 @@ def clamp_bounding_boxes(
 
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
 
-        if format is None or canvas_size is None:
-            raise ValueError("For pure tensor inputs, `format` and `canvas_size` have to be passed.")
+        # TODOBB
+        if format is None or canvas_size is None or clamping_mode is None:
+            raise ValueError("For pure tensor inputs, `format`, `canvas_size` and `clamping_mode` have to be passed.")
         if tv_tensors.is_rotated_bounding_format(format):
-            return _clamp_rotated_bounding_boxes(inpt, format=format, canvas_size=canvas_size)
+            return _clamp_rotated_bounding_boxes(inpt, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
         else:
-            return _clamp_bounding_boxes(inpt, format=format, canvas_size=canvas_size)
+            return _clamp_bounding_boxes(inpt, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
     elif isinstance(inpt, tv_tensors.BoundingBoxes):
         if format is not None or canvas_size is not None:
             raise ValueError("For bounding box tv_tensor inputs, `format` and `canvas_size` must not be passed.")
+        if clamping_mode is None:
+            clamping_mode = inpt.clamping_mode
         if tv_tensors.is_rotated_bounding_format(inpt.format):
             output = _clamp_rotated_bounding_boxes(
-                inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size
+                inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size, clamping_mode=clamping_mode
             )
         else:
             output = _clamp_bounding_boxes(
-                inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size
+                inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size, clamping_mode=clamping_mode
             )
         return tv_tensors.wrap(output, like=inpt)
     else:

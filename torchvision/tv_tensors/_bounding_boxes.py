@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 
 from enum import Enum
-from typing import Any, Literal
+from typing import Any
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -46,7 +46,12 @@ def is_rotated_bounding_format(format: BoundingBoxFormat) -> bool:
     )
 
 
-CLAMPING_MODE_TYPE = Literal["hard", "soft", "none"]
+# TODOBB consider making this a Literal instead. Tried briefly and got
+# torchscript errors, leaving to str for now.
+# CLAMPING_MODE_TYPE = Literal["hard", "soft", "none"]
+CLAMPING_MODE_TYPE = str 
+
+# TODOBB All docs. Add any new API to rst files, add tutorial[s].
 
 
 class BoundingBoxes(TVTensor):
@@ -65,6 +70,7 @@ class BoundingBoxes(TVTensor):
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         format (BoundingBoxFormat, str): Format of the bounding box.
         canvas_size (two-tuple of ints): Height and width of the corresponding image or video.
+        clamping_mode: TODOBB
         dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
             ``data``.
         device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
@@ -89,6 +95,7 @@ class BoundingBoxes(TVTensor):
         bounding_boxes = tensor.as_subclass(cls)
         bounding_boxes.format = format
         bounding_boxes.canvas_size = canvas_size
+        # TODOBB validate values
         bounding_boxes.clamping_mode = clamping_mode
         return bounding_boxes
 
@@ -98,13 +105,13 @@ class BoundingBoxes(TVTensor):
         *,
         format: BoundingBoxFormat | str,
         canvas_size: tuple[int, int],
-        clamping_mode: CLAMPING_MODE_TYPE = "soft",
+        clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB change default to soft!
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,
     ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return cls._wrap(tensor, format=format, canvas_size=canvas_size)
+        return cls._wrap(tensor, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
 
     @classmethod
     def _wrap_output(

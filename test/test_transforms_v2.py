@@ -5506,20 +5506,23 @@ class TestNormalize:
 
 class TestClampBoundingBoxes:
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("clamping_mode", ("hard", "none"))  # TODOBB add soft
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel(self, format, dtype, device):
-        bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
+    def test_kernel(self, format, clamping_mode, dtype, device):
+        bounding_boxes = make_bounding_boxes(format=format, clamping_mode=clamping_mode, dtype=dtype, device=device)
         check_kernel(
             F.clamp_bounding_boxes,
             bounding_boxes,
             format=bounding_boxes.format,
             canvas_size=bounding_boxes.canvas_size,
+            clamping_mode=clamping_mode,
         )
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
-    def test_functional(self, format):
-        check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format))
+    @pytest.mark.parametrize("clamping_mode", ("hard", "none"))   # TODOBB add soft
+    def test_functional(self, format, clamping_mode):
+        check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format, clamping_mode=clamping_mode))
 
     def test_errors(self):
         input_tv_tensor = make_bounding_boxes()
@@ -5540,6 +5543,47 @@ class TestClampBoundingBoxes:
 
     def test_transform(self):
         check_transform(transforms.ClampBoundingBoxes(), make_bounding_boxes())
+    
+    @pytest.mark.parametrize("rotated", (True, False))
+    @pytest.mark.parametrize("constructor_clamping_mode", ("hard", "none"))
+    @pytest.mark.parametrize("clamping_mode", ("hard", "none", None))  # TODOBB add soft here.
+    @pytest.mark.parametrize("pass_pure_tensor", (True, False))
+    @pytest.mark.parametrize("fn", [F.clamp_bounding_boxes, transform_cls_to_functional(transforms.ClampBoundingBoxes)])
+    def test_clamping_mode(self, rotated, constructor_clamping_mode, clamping_mode, pass_pure_tensor, fn):
+        # This test checks 2 things:
+        # - That passing clamping_mode=None to the clamp_bounding_boxes
+        #   functional (or to the class) relies on the box's `.clamping_mode`
+        #   attribute
+        # - That clamping happens when it should, and only when it should, i.e.
+        #   when the clamping mode is not "none". It doesn't validate the
+        #   nunmerical results, only that clamping happened. For that, we create
+        #   a large 100x100 box inside of a small 10x10 image.
+
+        if pass_pure_tensor and fn is not F.clamp_bounding_boxes:
+            # Only the functional supports pure tensors, not the class
+            return
+        if pass_pure_tensor and clamping_mode is None:
+            # cannot leave clamping_mode=None when passing pure tensor
+            return
+
+        if rotated:
+            boxes = tv_tensors.BoundingBoxes([0, 0, 100, 100, 0], format="XYWHR", canvas_size=(10, 10), clamping_mode=constructor_clamping_mode)
+            expected_clamped_output = torch.tensor([[0, 0, 10, 10, 0]])
+        else:
+            boxes = tv_tensors.BoundingBoxes([0, 100, 0, 100], format="XYXY", canvas_size=(10, 10), clamping_mode=constructor_clamping_mode)
+            expected_clamped_output = torch.tensor([[0, 10, 0, 10]])
+
+        if pass_pure_tensor:
+            out = fn(boxes.as_subclass(torch.Tensor), format=boxes.format, canvas_size=boxes.canvas_size, clamping_mode=clamping_mode)
+        else:
+            out = fn(boxes, clamping_mode=clamping_mode)
+
+        clamping_mode_prevailing = constructor_clamping_mode if clamping_mode is None else clamping_mode
+        if clamping_mode_prevailing == "none":
+            assert_equal(boxes, out)  # should be a pass-through
+        else:
+            assert_equal(out, expected_clamped_output)
+
 
 
 class TestClampKeyPoints:
