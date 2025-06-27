@@ -446,7 +446,7 @@ def _clamp_y_intercept(
     bounding_boxes: torch.Tensor,
     original_bounding_boxes: torch.Tensor,
     canvas_size: tuple[int, int],
-    clamping: str = "hard",
+    clamping_mode: str = "hard",
 ) -> torch.Tensor:
     """
     Apply clamping to bounding box y-intercepts. This function handles two clamping strategies:
@@ -464,10 +464,10 @@ def _clamp_y_intercept(
     b1, b2, b3, b4 = b.unbind(-1)
 
     # Clamp y-intercepts (soft clamping)
-    b1 = b2.clamp(0).clamp(b1, b3)
-    b4 = b3.clamp(max=canvas_size[0]).clamp(b2, b4)
+    b1 = b2.clamp(b1, b3).clamp(0, canvas_size[0])
+    b4 = b3.clamp(b2, b4).clamp(0, canvas_size[0])
 
-    if clamping == "hard":
+    if clamping_mode == "hard":
         # Get y-intercepts from original bounding boxes
         _, b = _get_slope_and_intercept(original_bounding_boxes)
         _, b2, b3, _ = b.unbind(-1)
@@ -490,7 +490,7 @@ def _clamp_along_y_axis(
     bounding_boxes: torch.Tensor,
     original_bounding_boxes: torch.Tensor,
     canvas_size: tuple[int, int],
-    clamping: str = "hard",
+    clamping_mode: str = "hard",
 ) -> torch.Tensor:
     """
     Adjusts bounding boxes along the y-axis based on specific conditions.
@@ -503,7 +503,7 @@ def _clamp_along_y_axis(
         bounding_boxes (torch.Tensor): A tensor containing bounding box coordinates.
         original_bounding_boxes (torch.Tensor): The original bounding boxes before any clamping is applied.
         canvas_size (tuple[int, int]): The size of the canvas as (height, width).
-        clamping (str, optional): The clamping strategy to use. Defaults to "hard".
+        clamping_mode (str, optional): The clamping strategy to use. Defaults to "hard".
 
     Returns:
         torch.Tensor: The adjusted bounding boxes.
@@ -519,7 +519,7 @@ def _clamp_along_y_axis(
     # Calculate slopes (a) and y-intercepts (b) for all lines in the bounding boxes
     a, b = _get_slope_and_intercept(bounding_boxes)
     x1, y1, x2, y2, x3, y3, x4, y4 = bounding_boxes.unbind(-1)
-    b = _clamp_y_intercept(bounding_boxes, original_bounding_boxes, canvas_size, clamping)
+    b = _clamp_y_intercept(bounding_boxes, original_bounding_boxes, canvas_size, clamping_mode)
 
     case_a = _get_intersection_point(a, b)
     case_b = bounding_boxes.clone()
@@ -537,7 +537,8 @@ def _clamp_along_y_axis(
         [case_a, case_b, case_c],
     ):
         bounding_boxes = torch.where(cond.unsqueeze(1).repeat(1, 8), case.reshape(-1, 8), bounding_boxes)
-    bounding_boxes[..., 0].clamp_(0)  # Clamp x1 to 0
+    if clamping_mode == "hard":
+        bounding_boxes[..., 0].clamp_(0)  # Clamp x1 to 0
 
     if need_cast:
         if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
