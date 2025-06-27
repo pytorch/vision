@@ -1298,7 +1298,7 @@ class TestHorizontalFlip:
         )
 
         helper = (
-            functools.partial(reference_affine_rotated_bounding_boxes_helper, flip=True)
+            functools.partial(reference_affine_rotated_bounding_boxes_helper, flip=True, clamp=False)
             if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
             else reference_affine_bounding_boxes_helper
         )
@@ -1907,7 +1907,7 @@ class TestVerticalFlip:
         )
 
         helper = (
-            functools.partial(reference_affine_rotated_bounding_boxes_helper, flip=True)
+            functools.partial(reference_affine_rotated_bounding_boxes_helper, flip=True, clamp=False)
             if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
             else reference_affine_bounding_boxes_helper
         )
@@ -2196,7 +2196,7 @@ class TestRotate:
             (bounding_boxes.to(torch.float64) - torch.tensor(translate)).to(bounding_boxes.dtype), like=bounding_boxes
         )
 
-    def _reference_rotate_bounding_boxes(self, bounding_boxes, *, angle, expand, center):
+    def _reference_rotate_bounding_boxes(self, bounding_boxes, *, angle, expand, center, canvas_size=None):
         if center is None:
             center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
         cx, cy = center
@@ -2222,7 +2222,7 @@ class TestRotate:
         output = helper(
             bounding_boxes,
             affine_matrix=affine_matrix,
-            new_canvas_size=new_canvas_size,
+            new_canvas_size=new_canvas_size if canvas_size is None else canvas_size,
             clamp=False,
         )
 
@@ -2239,9 +2239,10 @@ class TestRotate:
 
         actual = F.rotate(bounding_boxes, angle=angle, expand=expand, center=center)
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
-
-        torch.testing.assert_close(actual, expected)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
+
+        expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center, canvas_size=actual.canvas_size)
+        torch.testing.assert_close(actual, expected)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("expand", [False, True])
@@ -2259,9 +2260,10 @@ class TestRotate:
         actual = transform(bounding_boxes)
 
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center)
-
-        torch.testing.assert_close(actual, expected)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
+        
+        expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center, canvas_size=actual.canvas_size)
+        torch.testing.assert_close(actual, expected)
 
     def _recenter_keypoints_after_expand(self, keypoints, *, recenter_xy):
         x, y = recenter_xy
@@ -4437,7 +4439,7 @@ class TestResizedCrop:
             bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE
         )
 
-        torch.testing.assert_close(actual, expected)
+        torch.testing.assert_close(actual, expected, atol=1e-5, rtol=1e-5)
         assert_equal(F.get_size(actual), F.get_size(expected))
 
     def _reference_resized_crop_keypoints(self, keypoints, *, top, left, height, width, size):

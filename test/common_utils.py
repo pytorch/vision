@@ -468,18 +468,6 @@ def make_bounding_boxes(
     else:
         raise ValueError(f"Format {format} is not supported")
     out_boxes = torch.stack(parts, dim=-1).to(dtype=dtype, device=device)
-    if tv_tensors.is_rotated_bounding_format(format):
-        # Rotated bounding boxes are not inherently confined within the canvas, so clamping is applied.
-        # Transform tests allow a 2-pixel tolerance relative to the canvas size.
-        # To prevent discrepancies when clamping with different canvas sizes, we add a 2-pixel buffer.
-        buffer = 4
-        out_boxes = clamp_bounding_boxes(
-            out_boxes, format=format, canvas_size=(canvas_size[0] - buffer, canvas_size[1] - buffer)
-        )
-        if format is tv_tensors.BoundingBoxFormat.XYWHR or format is tv_tensors.BoundingBoxFormat.CXCYWHR:
-            out_boxes[:, :2] += buffer // 2
-        elif format is tv_tensors.BoundingBoxFormat.XYXYXYXY:
-            out_boxes[:, :] += buffer // 2
     return tv_tensors.BoundingBoxes(out_boxes, format=format, canvas_size=canvas_size)
 
 

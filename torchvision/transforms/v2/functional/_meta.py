@@ -410,16 +410,87 @@ def _order_bounding_boxes_points(
         output_xyxyxyxy = bounding_boxes.reshape(-1, 8)
         x, y = output_xyxyxyxy[..., 0::2], output_xyxyxyxy[..., 1::2]
         y_max = torch.max(y.abs(), dim=1, keepdim=True)[0]
-        _, x1 = (y / y_max + (x + 1) * 100).min(dim=1)
+        x_max = torch.max(x.abs(), dim=1, keepdim=True)[0]
+        _, x1 = (y / y_max + (x / x_max) * 100).min(dim=1)
         indices = torch.ones_like(output_xyxyxyxy)
         indices[..., 0] = x1.mul(2)
         indices.cumsum_(1).remainder_(8)
     return indices, bounding_boxes.gather(1, indices.to(torch.int64))
 
 
+def _get_slope_and_intercept(box: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Calculate the slope and y-intercept of the lines defined by consecutive vertices in a bounding box.
+    This function computes the slope (a) and y-intercept (b) for each line segment in a bounding box,
+    where each line is defined by two consecutive vertices.
+    """
+    x, y = box[..., ::2], box[..., 1::2]
+    a = y.diff(append=y[..., 0:1]) / x.diff(append=x[..., 0:1])
+    b = y - a * x
+    return a, b
+
+
+def _get_intersection_point(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """
+    Calculate the intersection point of two lines defined by their slopes and y-intercepts.
+    This function computes the intersection points between pairs of lines, where each line
+    is defined by the equation y = ax + b (slope and y-intercept form).
+    """
+    batch_size = a.shape[0]
+    x = b.diff(prepend=b[..., 3:4]).neg() / a.diff(prepend=a[..., 3:4])
+    y = a * x + b
+    return torch.cat((x.unsqueeze(-1), y.unsqueeze(-1)), dim=-1).view(batch_size, 8)
+
+
+def _clamp_y_intercept(
+    bounding_boxes: torch.Tensor,
+    original_bounding_boxes: torch.Tensor,
+    canvas_size: tuple[int, int],
+    clamping: str = "hard",
+) -> torch.Tensor:
+    """
+    Apply clamping to bounding box y-intercepts. This function handles two clamping strategies:
+    - Hard clamping: Ensures all box vertices stay within canvas boundaries, finding the largest
+      angle-preserving box enclosed within the original box and the image canvas.
+    - Soft clamping: Allows some vertices to extend beyond the canvas, finding the smallest
+      angle-preserving box that encloses the intersection of the original box and the image canvas.
+
+    The function first calculates the slopes and y-intercepts of the lines forming the bounding box,
+    then applies various constraints to ensure the clamping conditions are respected.
+    """
+
+    a, b = _get_slope_and_intercept(bounding_boxes)
+    a1, a2, a3, a4 = a.unbind(-1)
+    b1, b2, b3, b4 = b.unbind(-1)
+
+    # Clamp y-intercepts (soft clamping)
+    b1 = b2.clamp(0).clamp(b1, b3)
+    b4 = b3.clamp(max=canvas_size[0]).clamp(b2, b4)
+
+    if clamping == "hard":
+        # Get y-intercepts from original bounding boxes
+        _, b = _get_slope_and_intercept(original_bounding_boxes)
+        _, b2, b3, _ = b.unbind(-1)
+
+        # Set b1 and b4 to the average of their clamped values
+        b1 = b4 = (b1.clamp(0, canvas_size[0]) + b4.clamp(0, canvas_size[0])) / 2
+
+        # Ensure b2 and b3 defined the box of maximum area after clamping b1 and b4
+        b2.clamp_(b1 * a2 / a1, b4).clamp_((a1 - a2) * canvas_size[1] + b1)
+        b2.clamp_(b3 * a2 / a3, b4).clamp_((a3 - a2) * canvas_size[1] + b3)
+        b3.clamp_(max=canvas_size[0] * (1 - a3 / a4) + b4 * a3 / a4)
+        b3.clamp_(max=canvas_size[0] * (1 - a3 / a2) + b2 * a3 / a2)
+        b3.clamp_(b1, (a2 - a3) * canvas_size[1] + b2)
+        b3.clamp_(b1, (a4 - a3) * canvas_size[1] + b4)
+
+    return torch.stack([b1, b2, b3, b4], dim=-1)
+
+
 def _clamp_along_y_axis(
     bounding_boxes: torch.Tensor,
+    original_bounding_boxes: torch.Tensor,
     canvas_size: tuple[int, int],
+    clamping: str = "hard",
 ) -> torch.Tensor:
     """
     Adjusts bounding boxes along the y-axis based on specific conditions.
@@ -430,52 +501,53 @@ def _clamp_along_y_axis(
 
     Args:
         bounding_boxes (torch.Tensor): A tensor containing bounding box coordinates.
+        original_bounding_boxes (torch.Tensor): The original bounding boxes before any clamping is applied.
+        canvas_size (tuple[int, int]): The size of the canvas as (height, width).
+        clamping (str, optional): The clamping strategy to use. Defaults to "hard".
 
     Returns:
         torch.Tensor: The adjusted bounding boxes.
     """
-    original_dtype = bounding_boxes.dtype
+    dtype = bounding_boxes.dtype
+    acceptable_dtypes = [torch.float64]  # Ensure consistency between CPU and GPU.
+    need_cast = dtype not in acceptable_dtypes
+    eps = 1e-06  # Ensure consistency between CPU and GPU.
     original_shape = bounding_boxes.shape
-    x1, y1, x2, y2, x3, y3, x4, y4 = bounding_boxes.reshape(-1, 8).unbind(-1)
-    a = (y2 - y1) / (x2 - x1)
-    b1 = y1 - a * x1
-    b2 = y2 + x2 / a
-    b3 = y3 - a * x3
-    b4 = y4 + x4 / a
-    c = a / (1 + a**2)
-    b1 = b2.clamp(0).clamp(b1, b3)
-    b4 = b3.clamp(max=canvas_size[0]).clamp(b2, b4)
-    case_a = torch.stack(
-        (
-            (b4 - b1) * c,
-            (b4 - b1) * c * a + b1,
-            (b2 - b1) * c,
-            (b1 - b2) * c / a + b2,
-            x3,
-            y3,
-            (b4 - b3) * c,
-            (b3 - b4) * c / a + b4,
-        ),
-        dim=-1,
-    )
+    bounding_boxes = bounding_boxes.reshape(-1, 8)
+    original_bounding_boxes = original_bounding_boxes.reshape(-1, 8)
+
+    # Calculate slopes (a) and y-intercepts (b) for all lines in the bounding boxes
+    a, b = _get_slope_and_intercept(bounding_boxes)
+    x1, y1, x2, y2, x3, y3, x4, y4 = bounding_boxes.unbind(-1)
+    b = _clamp_y_intercept(bounding_boxes, original_bounding_boxes, canvas_size, clamping)
+
+    case_a = _get_intersection_point(a, b)
     case_b = bounding_boxes.clone()
-    case_b[..., 0].clamp_(0)
-    case_b[..., 6].clamp_(0)
+    case_b[..., 0].clamp_(0)  # Clamp x1 to 0
+    case_b[..., 6].clamp_(0)  # Clamp x4 to 0
     case_c = torch.zeros_like(case_b)
 
-    cond_a = x1 < 0
-    cond_b = y1.isclose(y2, rtol=1e-05, atol=1e-05)
-    cond_c = (x1 <= 0).logical_and(x2 <= 0).logical_and(x3 <= 0).logical_and(x4 <= 0)
-    for cond, case in zip(
+    cond_a = (x1 < eps) & ~case_a.isnan().any(-1)  # First point is outside left boundary
+    cond_b = y1.isclose(y2, rtol=eps, atol=eps) | y3.isclose(y4, rtol=eps, atol=eps)  # First line is nearly vertical
+    cond_c = (x1 <= 0) & (x2 <= 0) & (x3 <= 0) & (x4 <= 0)  # All points outside left boundary
+    cond_c = cond_c | y1.isclose(y4, rtol=eps, atol=eps) | y2.isclose(y3, rtol=eps, atol=eps) | (cond_b & x1.isclose(x2, rtol=eps, atol=eps))  # First line is nearly horizontal
+
+    for (cond, case) in zip(
         [cond_a, cond_b, cond_c],
         [case_a, case_b, case_c],
     ):
         bounding_boxes = torch.where(cond.unsqueeze(1).repeat(1, 8), case.reshape(-1, 8), bounding_boxes)
-    return bounding_boxes.to(original_dtype).reshape(original_shape)
+    bounding_boxes[..., 0].clamp_(0)  # Clamp x1 to 0
+
+    if need_cast:
+        if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+            bounding_boxes.round_()
+        bounding_boxes = bounding_boxes.to(dtype)
+    return bounding_boxes.reshape(original_shape)
 
 
 def _clamp_rotated_bounding_boxes(
-    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: tuple[int, int]
+    bounding_boxes: torch.Tensor, format: BoundingBoxFormat, canvas_size: tuple[int, int], clamping_mode: str = "soft"
 ) -> torch.Tensor:
     """
     Clamp rotated bounding boxes to ensure they stay within the canvas boundaries.
@@ -508,14 +580,21 @@ def _clamp_rotated_bounding_boxes(
         )
     ).reshape(-1, 8)
 
+    original_boxes = out_boxes.clone()
     for _ in range(4):  # Iterate over the 4 vertices.
         indices, out_boxes = _order_bounding_boxes_points(out_boxes)
-        out_boxes = _clamp_along_y_axis(out_boxes, canvas_size)
+        _, original_boxes = _order_bounding_boxes_points(original_boxes, indices)
+        out_boxes = _clamp_along_y_axis(out_boxes, original_boxes, canvas_size, clamping_mode)
         _, out_boxes = _order_bounding_boxes_points(out_boxes, indices)
+        _, original_boxes = _order_bounding_boxes_points(original_boxes, indices)
         # rotate 90 degrees counter clock wise
         out_boxes[:, ::2], out_boxes[:, 1::2] = (
             out_boxes[:, 1::2].clone(),
             canvas_size[1] - out_boxes[:, ::2].clone(),
+        )
+        original_boxes[:, ::2], original_boxes[:, 1::2] = (
+            original_boxes[:, 1::2].clone(),
+            canvas_size[1] - original_boxes[:, ::2].clone(),
         )
         canvas_size = (canvas_size[1], canvas_size[0])
 
@@ -525,7 +604,8 @@ def _clamp_rotated_bounding_boxes(
 
     if need_cast:
         if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
-            out_boxes.round_()
+            # Adding epsilon to ensure consistency between CPU and GPU rounding.
+            out_boxes.add_(1e-7).round_()
         out_boxes = out_boxes.to(dtype)
     return out_boxes
 
