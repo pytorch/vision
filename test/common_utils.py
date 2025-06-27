@@ -21,7 +21,7 @@ from PIL import Image
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import clamp_bounding_boxes, to_image, to_pil_image
+from torchvision.transforms.v2.functional import to_image, to_pil_image
 
 
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])

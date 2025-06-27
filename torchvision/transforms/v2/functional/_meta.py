@@ -530,7 +530,12 @@ def _clamp_along_y_axis(
     cond_a = (x1 < eps) & ~case_a.isnan().any(-1)  # First point is outside left boundary
     cond_b = y1.isclose(y2, rtol=eps, atol=eps) | y3.isclose(y4, rtol=eps, atol=eps)  # First line is nearly vertical
     cond_c = (x1 <= 0) & (x2 <= 0) & (x3 <= 0) & (x4 <= 0)  # All points outside left boundary
-    cond_c = cond_c | y1.isclose(y4, rtol=eps, atol=eps) | y2.isclose(y3, rtol=eps, atol=eps) | (cond_b & x1.isclose(x2, rtol=eps, atol=eps))  # First line is nearly horizontal
+    cond_c = (
+        cond_c
+        | y1.isclose(y4, rtol=eps, atol=eps)
+        | y2.isclose(y3, rtol=eps, atol=eps)
+        | (cond_b & x1.isclose(x2, rtol=eps, atol=eps))
+    )  # First line is nearly horizontal
 
     for (cond, case) in zip(
         [cond_a, cond_b, cond_c],

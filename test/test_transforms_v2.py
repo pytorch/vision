@@ -2241,7 +2241,9 @@ class TestRotate:
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
 
-        expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center, canvas_size=actual.canvas_size)
+        expected = self._reference_rotate_bounding_boxes(
+            bounding_boxes, angle=angle, expand=expand, center=center, canvas_size=actual.canvas_size
+        )
         torch.testing.assert_close(actual, expected)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
@@ -2261,8 +2263,10 @@ class TestRotate:
 
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
-        
-        expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center, canvas_size=actual.canvas_size)
+
+        expected = self._reference_rotate_bounding_boxes(
+            bounding_boxes, **params, expand=expand, center=center, canvas_size=actual.canvas_size
+        )
         torch.testing.assert_close(actual, expected)
 
     def _recenter_keypoints_after_expand(self, keypoints, *, recenter_xy):
