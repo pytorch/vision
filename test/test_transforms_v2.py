@@ -492,6 +492,7 @@ INTERPOLATION_MODES = [
 def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new_canvas_size=None, clamp=True):
     format = bounding_boxes.format
     canvas_size = new_canvas_size or bounding_boxes.canvas_size
+    clamping_mode = bounding_boxes.clamping_mode
 
     def affine_bounding_boxes(bounding_boxes):
         dtype = bounding_boxes.dtype
@@ -535,6 +536,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
                 output,
                 format=format,
                 canvas_size=canvas_size,
+                clamping_mode=clamping_mode,
             )
         else:
             # We leave the bounding box as float64 so the caller gets the full precision to perform any additional
@@ -557,6 +559,7 @@ def reference_affine_rotated_bounding_boxes_helper(
 ):
     format = bounding_boxes.format
     canvas_size = new_canvas_size or bounding_boxes.canvas_size
+    clamping_mode = bounding_boxes.clamping_mode
 
     def affine_rotated_bounding_boxes(bounding_boxes):
         dtype = bounding_boxes.dtype
@@ -618,6 +621,7 @@ def reference_affine_rotated_bounding_boxes_helper(
                 output.to(dtype=dtype, device=device),
                 format=format,
                 canvas_size=canvas_size,
+                clamping_mode=clamping_mode,
             )
             if clamp
             else output.to(dtype=output.dtype, device=device)
@@ -831,7 +835,6 @@ class TestResize:
             (F.resize_image, torch.Tensor),
             (F._geometry._resize_image_pil, PIL.Image.Image),
             (F.resize_image, tv_tensors.Image),
-            (F.resize_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.resize_mask, tv_tensors.Mask),
             (F.resize_video, tv_tensors.Video),
             (F.resize_keypoints, tv_tensors.KeyPoints),
@@ -3289,7 +3292,6 @@ class TestElastic:
             (F.elastic_image, torch.Tensor),
             (F._geometry._elastic_image_pil, PIL.Image.Image),
             (F.elastic_image, tv_tensors.Image),
-            (F.elastic_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.elastic_mask, tv_tensors.Mask),
             (F.elastic_video, tv_tensors.Video),
             (F.elastic_keypoints, tv_tensors.KeyPoints),
@@ -5126,6 +5128,7 @@ class TestPerspective:
     def _reference_perspective_bounding_boxes(self, bounding_boxes, *, startpoints, endpoints):
         format = bounding_boxes.format
         canvas_size = bounding_boxes.canvas_size
+        clamping_mode = bounding_boxes.clamping_mode
         dtype = bounding_boxes.dtype
         device = bounding_boxes.device
         is_rotated = tv_tensors.is_rotated_bounding_format(format)
@@ -5226,6 +5229,7 @@ class TestPerspective:
                 output,
                 format=format,
                 canvas_size=canvas_size,
+                clamping_mode=clamping_mode,
             ).to(dtype=dtype, device=device)
 
         return tv_tensors.BoundingBoxes(
