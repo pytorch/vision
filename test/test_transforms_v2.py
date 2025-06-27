@@ -5524,7 +5524,7 @@ class TestClampBoundingBoxes:
         )
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
-    @pytest.mark.parametrize("clamping_mode", ("hard", "none"))   # TODOBB add soft
+    @pytest.mark.parametrize("clamping_mode", ("hard", "none"))  # TODOBB add soft
     def test_functional(self, format, clamping_mode):
         check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format, clamping_mode=clamping_mode))
 
@@ -5534,9 +5534,11 @@ class TestClampBoundingBoxes:
         format, canvas_size = input_tv_tensor.format, input_tv_tensor.canvas_size
 
         for format_, canvas_size_, clamping_mode_ in itertools.product(
-            (format, None), (canvas_size, None), (input_tv_tensor.clamping_mode, None)):
+            (format, None), (canvas_size, None), (input_tv_tensor.clamping_mode, None)
+        ):
             with pytest.raises(
-                ValueError, match="For pure tensor inputs, `format`, `canvas_size` and `clamping_mode` have to be passed."
+                ValueError,
+                match="For pure tensor inputs, `format`, `canvas_size` and `clamping_mode` have to be passed.",
             ):
                 F.clamp_bounding_boxes(input_pure_tensor, format=format_, canvas_size=canvas_size_)
 
@@ -5548,7 +5550,7 @@ class TestClampBoundingBoxes:
 
     def test_transform(self):
         check_transform(transforms.ClampBoundingBoxes(), make_bounding_boxes())
-    
+
     @pytest.mark.parametrize("rotated", (True, False))
     @pytest.mark.parametrize("constructor_clamping_mode", ("hard", "none"))
     @pytest.mark.parametrize("clamping_mode", ("hard", "none", None))  # TODOBB add soft here.
@@ -5572,14 +5574,23 @@ class TestClampBoundingBoxes:
             return
 
         if rotated:
-            boxes = tv_tensors.BoundingBoxes([0, 0, 100, 100, 0], format="XYWHR", canvas_size=(10, 10), clamping_mode=constructor_clamping_mode)
+            boxes = tv_tensors.BoundingBoxes(
+                [0, 0, 100, 100, 0], format="XYWHR", canvas_size=(10, 10), clamping_mode=constructor_clamping_mode
+            )
             expected_clamped_output = torch.tensor([[0, 0, 10, 10, 0]])
         else:
-            boxes = tv_tensors.BoundingBoxes([0, 100, 0, 100], format="XYXY", canvas_size=(10, 10), clamping_mode=constructor_clamping_mode)
+            boxes = tv_tensors.BoundingBoxes(
+                [0, 100, 0, 100], format="XYXY", canvas_size=(10, 10), clamping_mode=constructor_clamping_mode
+            )
             expected_clamped_output = torch.tensor([[0, 10, 0, 10]])
 
         if pass_pure_tensor:
-            out = fn(boxes.as_subclass(torch.Tensor), format=boxes.format, canvas_size=boxes.canvas_size, clamping_mode=clamping_mode)
+            out = fn(
+                boxes.as_subclass(torch.Tensor),
+                format=boxes.format,
+                canvas_size=boxes.canvas_size,
+                clamping_mode=clamping_mode,
+            )
         else:
             out = fn(boxes, clamping_mode=clamping_mode)
 
@@ -5589,8 +5600,8 @@ class TestClampBoundingBoxes:
         else:
             assert_equal(out, expected_clamped_output)
 
-class TestSetClampingMode:
 
+class TestSetClampingMode:
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("constructor_clamping_mode", ("hard", "none"))  # TODOBB add soft
     @pytest.mark.parametrize("desired_clamping_mode", ("hard", "none"))  # TODOBB add soft
@@ -5601,18 +5612,17 @@ class TestSetClampingMode:
 
         assert in_boxes.clamping_mode == constructor_clamping_mode  # input is unchanged: no leak
         assert out_boxes.clamping_mode == desired_clamping_mode
-    
+
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("constructor_clamping_mode", ("hard", "none"))  # TODOBB add soft
     def test_pipeline_no_leak(self, format, constructor_clamping_mode):
-
         class AssertClampingMode(transforms.Transform):
             def __init__(self, expected_clamping_mode):
                 super().__init__()
                 self.expected_clamping_mode = expected_clamping_mode
 
             _transformed_types = (tv_tensors.BoundingBoxes,)
-            
+
             def transform(self, inpt, _):
                 assert inpt.clamping_mode == self.expected_clamping_mode
                 return inpt
@@ -5625,7 +5635,7 @@ class TestSetClampingMode:
                 AssertClampingMode("hard"),
                 transforms.SetClampingMode("none"),
                 AssertClampingMode("none"),
-                transforms.ClampBoundingBoxes("hard")
+                transforms.ClampBoundingBoxes("hard"),
             ]
         )
 
@@ -7424,4 +7434,3 @@ class TestUtils:
     def test_no_valid_input(self, query):
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
-

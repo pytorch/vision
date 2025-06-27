@@ -49,7 +49,7 @@ def is_rotated_bounding_format(format: BoundingBoxFormat) -> bool:
 # TODOBB consider making this a Literal instead. Tried briefly and got
 # torchscript errors, leaving to str for now.
 # CLAMPING_MODE_TYPE = Literal["hard", "soft", "none"]
-CLAMPING_MODE_TYPE = str 
+CLAMPING_MODE_TYPE = str
 
 # TODOBB All docs. Add any new API to rst files, add tutorial[s].
 

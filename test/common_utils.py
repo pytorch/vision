@@ -475,7 +475,10 @@ def make_bounding_boxes(
         # numerical issues during the testing
         buffer = 4
         out_boxes = clamp_bounding_boxes(
-            out_boxes, format=format, canvas_size=(canvas_size[0] - buffer, canvas_size[1] - buffer), clamping_mode=clamping_mode
+            out_boxes,
+            format=format,
+            canvas_size=(canvas_size[0] - buffer, canvas_size[1] - buffer),
+            clamping_mode=clamping_mode,
         )
         if format is tv_tensors.BoundingBoxFormat.XYWHR or format is tv_tensors.BoundingBoxFormat.CXCYWHR:
             out_boxes[:, :2] += buffer // 2

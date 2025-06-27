@@ -1,8 +1,8 @@
-from typing import Any, Union, Optional
+from typing import Any, Optional, Union
 
 from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE 
+from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE
 
 
 class ConvertBoundingBoxFormat(Transform):
@@ -33,6 +33,7 @@ class ClampBoundingBoxes(Transform):
         clamping_mode: TODOBB more docs. Default is None which relies on the input box' clamping_mode attribute.
 
     """
+
     def __init__(self, clamping_mode: Optional[CLAMPING_MODE_TYPE] = None) -> None:
         super().__init__()
         self.clamping_mode = clamping_mode
@@ -57,6 +58,7 @@ class ClampKeyPoints(Transform):
 
 class SetClampingMode(Transform):
     """TODOBB"""
+
     def __init__(self, clamping_mode: CLAMPING_MODE_TYPE) -> None:
         super().__init__()
         # TODOBB validate mode
