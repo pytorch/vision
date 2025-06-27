@@ -1,14 +1,20 @@
 .. _transforms:
 
-Transforming and augmenting images
-==================================
+Transforming images, videos, boxes and more
+===========================================
 
 .. currentmodule:: torchvision.transforms
 
 Torchvision supports common computer vision transformations in the
-``torchvision.transforms`` and ``torchvision.transforms.v2`` modules. Transforms
-can be used to transform or augment data for training or inference of different
-tasks (image classification, detection, segmentation, video classification).
+``torchvision.transforms.v2`` module. Transforms can be used to transform and
+augment data, for both training or inference. The following objects are
+supported:
+
+- Images as pure tensors, :class:`~torchvision.tv_tensors.Image` or PIL image
+- Videos as :class:`~torchvision.tv_tensors.Video` 
+- Aligned and rotated bounding boxes as :class:`~torchvision.tv_tensors.BoundingBoxes` 
+- Segmentation and detection masks as :class:`~torchvision.tv_tensors.Mask` 
+- KeyPoints as :class:`~torchvision.tv_tensors.KeyPoints`.
 
 .. code:: python
 
@@ -111,9 +117,9 @@ In Torchvision 0.15 (March 2023), we released a new set of transforms available
 in the ``torchvision.transforms.v2`` namespace. These transforms have a lot of
 advantages compared to the v1 ones (in ``torchvision.transforms``):
 
-- They can transform images **but also** bounding boxes, masks, or videos. This
-  provides support for tasks beyond image classification: detection, segmentation,
-  video classification, etc. See
+- They can transform images **but also** bounding boxes, masks, videos and
+  keypoints. This provides support for tasks beyond image classification:
+  detection, segmentation, video classification, etc. See
   :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`
   and :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`.
 - They support more transforms like :class:`~torchvision.transforms.v2.CutMix`
