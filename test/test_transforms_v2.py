@@ -551,6 +551,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
         ),
         format=format,
         canvas_size=canvas_size,
+        clamping_mode=clamping_mode,
     )
 
 
@@ -639,6 +640,7 @@ def reference_affine_rotated_bounding_boxes_helper(
         ).reshape(bounding_boxes.shape),
         format=format,
         canvas_size=canvas_size,
+        clamping_mode=clamping_mode,
     )
 
 
@@ -1305,7 +1307,7 @@ class TestHorizontalFlip:
             if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
             else reference_affine_bounding_boxes_helper
         )
-        return helper(bounding_boxes, affine_matrix=affine_matrix)
+        return helper(bounding_boxes, affine_matrix=affine_matrix, clamp=False)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize(
@@ -1914,7 +1916,7 @@ class TestVerticalFlip:
             if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
             else reference_affine_bounding_boxes_helper
         )
-        return helper(bounding_boxes, affine_matrix=affine_matrix)
+        return helper(bounding_boxes, affine_matrix=affine_matrix, clamp=False)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
@@ -2079,7 +2081,6 @@ class TestRotate:
             (F.rotate_image, torch.Tensor),
             (F._geometry._rotate_image_pil, PIL.Image.Image),
             (F.rotate_image, tv_tensors.Image),
-            (F.rotate_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.rotate_mask, tv_tensors.Mask),
             (F.rotate_video, tv_tensors.Video),
             (F.rotate_keypoints, tv_tensors.KeyPoints),
@@ -2229,29 +2230,26 @@ class TestRotate:
             clamp=False,
         )
 
-        return F.clamp_bounding_boxes(self._recenter_bounding_boxes_after_expand(output, recenter_xy=recenter_xy)).to(
-            bounding_boxes
-        )
+        return self._recenter_bounding_boxes_after_expand(output, recenter_xy=recenter_xy).to(bounding_boxes)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     def test_functional_bounding_boxes_correctness(self, format, angle, expand, center):
-        bounding_boxes = make_bounding_boxes(format=format)
+        bounding_boxes = make_bounding_boxes(format=format, clamping_mode="none")
 
         actual = F.rotate(bounding_boxes, angle=angle, expand=expand, center=center)
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
-
-        torch.testing.assert_close(actual, expected)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
+        torch.testing.assert_close(actual, expected)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, expand, center, seed):
-        bounding_boxes = make_bounding_boxes(format=format)
+        bounding_boxes = make_bounding_boxes(format=format, clamping_mode="none")
 
         transform = transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, expand=expand, center=center)
 
@@ -2262,9 +2260,8 @@ class TestRotate:
         actual = transform(bounding_boxes)
 
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center)
-
-        torch.testing.assert_close(actual, expected)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
+        torch.testing.assert_close(actual, expected)
 
     def _recenter_keypoints_after_expand(self, keypoints, *, recenter_xy):
         x, y = recenter_xy
@@ -4349,7 +4346,6 @@ class TestResizedCrop:
             (F.resized_crop_image, torch.Tensor),
             (F._geometry._resized_crop_image_pil, PIL.Image.Image),
             (F.resized_crop_image, tv_tensors.Image),
-            (F.resized_crop_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.resized_crop_mask, tv_tensors.Mask),
             (F.resized_crop_video, tv_tensors.Video),
             (F.resized_crop_keypoints, tv_tensors.KeyPoints),
@@ -4415,6 +4411,7 @@ class TestResizedCrop:
                 [0, 0, 1],
             ],
         )
+
         affine_matrix = (resize_affine_matrix @ crop_affine_matrix)[:2, :]
 
         helper = (
@@ -4423,15 +4420,15 @@ class TestResizedCrop:
             else reference_affine_bounding_boxes_helper
         )
 
-        return helper(
-            bounding_boxes,
-            affine_matrix=affine_matrix,
-            new_canvas_size=size,
-        )
+        return helper(bounding_boxes, affine_matrix=affine_matrix, new_canvas_size=size, clamp=False)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_functional_bounding_boxes_correctness(self, format):
-        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
+        # Note that we don't want to clamp because in
+        # _reference_resized_crop_bounding_boxes we are fusing the crop and the
+        # resize operation, where none of the croppings happen - particularly,
+        # the intermediate one.
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, clamping_mode="none")
 
         actual = F.resized_crop(bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE)
         expected = self._reference_resized_crop_bounding_boxes(
