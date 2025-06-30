@@ -462,19 +462,6 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
         torch.Tensor: Tensor of same shape as input containing the rectangle coordinates.
                      The output maintains the same dtype as the input.
     """
-    dtype = parallelogram.dtype
-    int_dtype = dtype in (
-        torch.uint8,
-        torch.int8,
-        torch.int16,
-        torch.int32,
-        torch.int64,
-    )
-    if int_dtype:
-        # Does not apply the transformation to `int` boxes as the rounding error
-        # will typically not ensure the resulting box has a rectangular shape.
-        return parallelogram.clone()
-
     out_boxes = parallelogram.clone()
 
     # Calculate parallelogram diagonal vectors
@@ -499,8 +486,8 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
         diag24 * torch.abs(torch.sin(torch.atan2(dx42, dy42) - r_rad)),
     )
 
-    delta_x = torch.round(w * cos).to(dtype) if int_dtype else w * cos
-    delta_y = torch.round(w * sin).to(dtype) if int_dtype else w * sin
+    delta_x = w * cos
+    delta_y = w * sin
     # Update coordinates to form a rectangle
     # Keeping the points (x1, y1) and (x3, y3) unchanged.
     out_boxes[..., 2] = torch.where(mask, parallelogram[..., 0] + delta_x, parallelogram[..., 2])
@@ -1196,8 +1183,6 @@ def _affine_bounding_boxes_with_expand(
     ).reshape(original_shape)
 
     if need_cast:
-        if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
-            out_bboxes.round_()
         out_bboxes = out_bboxes.to(dtype)
     return out_bboxes, canvas_size
 

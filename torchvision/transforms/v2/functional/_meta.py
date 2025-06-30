@@ -578,8 +578,6 @@ def _clamp_along_y_axis(
         bounding_boxes[..., 0].clamp_(0)  # Clamp x1 to 0
 
     if need_cast:
-        if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
-            bounding_boxes.round_()
         bounding_boxes = bounding_boxes.to(dtype)
     return bounding_boxes.reshape(original_shape)
 
@@ -646,9 +644,6 @@ def _clamp_rotated_bounding_boxes(
     ).reshape(original_shape)
 
     if need_cast:
-        if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
-            # Adding epsilon to ensure consistency between CPU and GPU rounding.
-            out_boxes.add_(1e-7).round_()
         out_boxes = out_boxes.to(dtype)
     return out_boxes
 

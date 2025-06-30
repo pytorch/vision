@@ -564,13 +564,6 @@ def reference_affine_rotated_bounding_boxes_helper(
 
     def affine_rotated_bounding_boxes(bounding_boxes):
         dtype = bounding_boxes.dtype
-        int_dtype = dtype in (
-            torch.uint8,
-            torch.int8,
-            torch.int16,
-            torch.int32,
-            torch.int64,
-        )
         device = bounding_boxes.device
 
         # Go to float before converting to prevent precision loss in case of CXCYWHR -> XYXYXYXY and W or H is 1
@@ -605,16 +598,11 @@ def reference_affine_rotated_bounding_boxes_helper(
         )
 
         output = output[[2, 3, 0, 1, 6, 7, 4, 5]] if flip else output
-        if not int_dtype:
-            output = _parallelogram_to_bounding_boxes(output)
+        output = _parallelogram_to_bounding_boxes(output)
 
         output = F.convert_bounding_box_format(
             output, old_format=tv_tensors.BoundingBoxFormat.XYXYXYXY, new_format=format
         )
-
-        if torch.is_floating_point(output) and int_dtype:
-            # It is important to round before cast.
-            output = torch.round(output)
 
         # For rotated boxes, it is important to cast before clamping.
         return (
@@ -760,6 +748,8 @@ class TestResize:
     def test_kernel_bounding_boxes(self, format, size, use_max_size, dtype, device):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
 
         bounding_boxes = make_bounding_boxes(
             format=format,
@@ -1212,6 +1202,8 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
         check_kernel(
             F.horizontal_flip_bounding_boxes,
@@ -1441,6 +1433,8 @@ class TestAffine:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, param, value, format, dtype, device):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
         self._check_kernel(
             F.affine_bounding_boxes,
@@ -1823,6 +1817,8 @@ class TestVerticalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
         check_kernel(
             F.vertical_flip_bounding_boxes,
@@ -2021,6 +2017,8 @@ class TestRotate:
         kwargs = {param: value}
         if param != "angle":
             kwargs["angle"] = self._MINIMAL_AFFINE_KWARGS["angle"]
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
 
         bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
 
@@ -3236,6 +3234,8 @@ class TestElastic:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, format, dtype, device):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
 
         check_kernel(
@@ -3399,6 +3399,8 @@ class TestCrop:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_bounding_boxes(self, kwargs, format, dtype, device):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
         check_kernel(F.crop_bounding_boxes, bounding_boxes, format=format, **kwargs)
 
@@ -3576,6 +3578,8 @@ class TestCrop:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_functional_bounding_box_correctness(self, kwargs, format, dtype, device):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
 
         actual = F.crop(bounding_boxes, **kwargs)
@@ -3590,6 +3594,8 @@ class TestCrop:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, output_size, format, dtype, device, seed):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         input_size = [s * 2 for s in output_size]
         bounding_boxes = make_bounding_boxes(input_size, format=format, dtype=dtype, device=device)
 
@@ -4267,6 +4273,10 @@ class TestConvertBoundingBoxFormat:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn_type", ["functional", "transform"])
     def test_correctness(self, old_format, new_format, dtype, device, fn_type):
+        if not dtype.is_floating_point and (
+            tv_tensors.is_rotated_bounding_format(old_format) or tv_tensors.is_rotated_bounding_format(new_format)
+        ):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(format=old_format, dtype=dtype, device=device)
 
         if fn_type == "functional":
@@ -4706,6 +4716,8 @@ class TestPad:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
     def test_bounding_boxes_correctness(self, padding, format, dtype, device, fn):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
 
         actual = fn(bounding_boxes, padding=padding)
@@ -4876,6 +4888,8 @@ class TestCenterCrop:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
     def test_bounding_boxes_correctness(self, output_size, format, dtype, device, fn):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, dtype=dtype, device=device)
 
         actual = fn(bounding_boxes, output_size)
@@ -5242,6 +5256,8 @@ class TestPerspective:
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_correctness_perspective_bounding_boxes(self, startpoints, endpoints, format, dtype, device):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(format=format, dtype=dtype, device=device)
 
         actual = F.perspective(bounding_boxes, startpoints=startpoints, endpoints=endpoints)
@@ -5511,6 +5527,8 @@ class TestClampBoundingBoxes:
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel(self, format, clamping_mode, dtype, device):
+        if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
         bounding_boxes = make_bounding_boxes(format=format, clamping_mode=clamping_mode, dtype=dtype, device=device)
         check_kernel(
             F.clamp_bounding_boxes,
@@ -6938,14 +6956,11 @@ def test_classification_preset(image_type, label_type, dataset_return_type, to_t
 
 
 @pytest.mark.parametrize("input_size", [(17, 11), (11, 17), (11, 11)])
-@pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
 @pytest.mark.parametrize("device", cpu_and_cuda())
-def test_parallelogram_to_bounding_boxes(input_size, dtype, device):
+def test_parallelogram_to_bounding_boxes(input_size, device):
     # Assert that applying `_parallelogram_to_bounding_boxes` to rotated boxes
     # does not modify the input.
-    bounding_boxes = make_bounding_boxes(
-        input_size, format=tv_tensors.BoundingBoxFormat.XYXYXYXY, dtype=dtype, device=device
-    )
+    bounding_boxes = make_bounding_boxes(input_size, format=tv_tensors.BoundingBoxFormat.XYXYXYXY, device=device)
     actual = _parallelogram_to_bounding_boxes(bounding_boxes)
     torch.testing.assert_close(actual, bounding_boxes, rtol=0, atol=1)
 
