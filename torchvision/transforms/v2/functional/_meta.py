@@ -543,7 +543,6 @@ def _clamp_along_y_axis(
     dtype = bounding_boxes.dtype
     acceptable_dtypes = [torch.float64]  # Ensure consistency between CPU and GPU.
     need_cast = dtype not in acceptable_dtypes
-    eps = 1e-06  # Ensure consistency between CPU and GPU.
     original_shape = bounding_boxes.shape
     bounding_boxes = bounding_boxes.reshape(-1, 8)
     original_bounding_boxes = original_bounding_boxes.reshape(-1, 8)
@@ -559,14 +558,14 @@ def _clamp_along_y_axis(
     case_b[..., 6].clamp_(0)  # Clamp x4 to 0
     case_c = torch.zeros_like(case_b)
 
-    cond_a = (x1 < eps) & ~case_a.isnan().any(-1)  # First point is outside left boundary
-    cond_b = y1.isclose(y2, rtol=eps, atol=eps) | y3.isclose(y4, rtol=eps, atol=eps)  # First line is nearly vertical
+    cond_a = (x1 < 0) & ~case_a.isnan().any(-1)  # First point is outside left boundary
+    cond_b = y1.isclose(y2) | y3.isclose(y4)  # First line is nearly vertical
     cond_c = (x1 <= 0) & (x2 <= 0) & (x3 <= 0) & (x4 <= 0)  # All points outside left boundary
     cond_c = (
         cond_c
-        | y1.isclose(y4, rtol=eps, atol=eps)
-        | y2.isclose(y3, rtol=eps, atol=eps)
-        | (cond_b & x1.isclose(x2, rtol=eps, atol=eps))
+        | y1.isclose(y4)
+        | y2.isclose(y3)
+        | (cond_b & x1.isclose(x2))
     )  # First line is nearly horizontal
 
     for (cond, case) in zip(
@@ -574,8 +573,6 @@ def _clamp_along_y_axis(
         [case_a, case_b, case_c],
     ):
         bounding_boxes = torch.where(cond.unsqueeze(1).repeat(1, 8), case.reshape(-1, 8), bounding_boxes)
-    if clamping_mode == "hard":
-        bounding_boxes[..., 0].clamp_(0)  # Clamp x1 to 0
 
     if need_cast:
         bounding_boxes = bounding_boxes.to(dtype)
