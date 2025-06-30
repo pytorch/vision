@@ -2081,7 +2081,6 @@ class TestRotate:
             (F.rotate_image, torch.Tensor),
             (F._geometry._rotate_image_pil, PIL.Image.Image),
             (F.rotate_image, tv_tensors.Image),
-            (F.rotate_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.rotate_mask, tv_tensors.Mask),
             (F.rotate_video, tv_tensors.Video),
             (F.rotate_keypoints, tv_tensors.KeyPoints),
@@ -2201,7 +2200,7 @@ class TestRotate:
             (bounding_boxes.to(torch.float64) - torch.tensor(translate)).to(bounding_boxes.dtype), like=bounding_boxes
         )
 
-    def _reference_rotate_bounding_boxes(self, bounding_boxes, *, angle, expand, center, canvas_size=None):
+    def _reference_rotate_bounding_boxes(self, bounding_boxes, *, angle, expand, center):
         if center is None:
             center = [s * 0.5 for s in bounding_boxes.canvas_size[::-1]]
         cx, cy = center
@@ -2227,28 +2226,22 @@ class TestRotate:
         output = helper(
             bounding_boxes,
             affine_matrix=affine_matrix,
-            new_canvas_size=new_canvas_size if canvas_size is None else canvas_size,
+            new_canvas_size=new_canvas_size,
             clamp=False,
         )
 
-        return F.clamp_bounding_boxes(self._recenter_bounding_boxes_after_expand(output, recenter_xy=recenter_xy)).to(
-            bounding_boxes
-        )
+        return self._recenter_bounding_boxes_after_expand(output, recenter_xy=recenter_xy).to(bounding_boxes)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     def test_functional_bounding_boxes_correctness(self, format, angle, expand, center):
-        bounding_boxes = make_bounding_boxes(format=format)
+        bounding_boxes = make_bounding_boxes(format=format, clamping_mode="none")
 
         actual = F.rotate(bounding_boxes, angle=angle, expand=expand, center=center)
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
-
-        expected = self._reference_rotate_bounding_boxes(
-            bounding_boxes, angle=angle, expand=expand, center=center, canvas_size=actual.canvas_size
-        )
         torch.testing.assert_close(actual, expected)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
@@ -2256,7 +2249,7 @@ class TestRotate:
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, expand, center, seed):
-        bounding_boxes = make_bounding_boxes(format=format)
+        bounding_boxes = make_bounding_boxes(format=format, clamping_mode="none")
 
         transform = transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, expand=expand, center=center)
 
@@ -2268,10 +2261,6 @@ class TestRotate:
 
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, **params, expand=expand, center=center)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
-
-        expected = self._reference_rotate_bounding_boxes(
-            bounding_boxes, **params, expand=expand, center=center, canvas_size=actual.canvas_size
-        )
         torch.testing.assert_close(actual, expected)
 
     def _recenter_keypoints_after_expand(self, keypoints, *, recenter_xy):

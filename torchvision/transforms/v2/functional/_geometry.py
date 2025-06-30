@@ -1449,6 +1449,7 @@ def rotate_bounding_boxes(
     angle: float,
     expand: bool = False,
     center: Optional[list[float]] = None,
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     return _affine_bounding_boxes_with_expand(
         bounding_boxes,
@@ -1460,6 +1461,7 @@ def rotate_bounding_boxes(
         shear=[0.0, 0.0],
         center=center,
         expand=expand,
+        clamping_mode=clamping_mode,
     )
 
 
@@ -1474,6 +1476,7 @@ def _rotate_bounding_boxes_dispatch(
         angle=angle,
         expand=expand,
         center=center,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
