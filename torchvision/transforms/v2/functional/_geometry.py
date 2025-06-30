@@ -2620,11 +2620,18 @@ def center_crop_bounding_boxes(
     format: tv_tensors.BoundingBoxFormat,
     canvas_size: tuple[int, int],
     output_size: list[int],
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *canvas_size)
     return crop_bounding_boxes(
-        bounding_boxes, format, top=crop_top, left=crop_left, height=crop_height, width=crop_width
+        bounding_boxes,
+        format,
+        top=crop_top,
+        left=crop_left,
+        height=crop_height,
+        width=crop_width,
+        clamping_mode=clamping_mode,
     )
 
 
@@ -2633,7 +2640,11 @@ def _center_crop_bounding_boxes_dispatch(
     inpt: tv_tensors.BoundingBoxes, output_size: list[int]
 ) -> tv_tensors.BoundingBoxes:
     output, canvas_size = center_crop_bounding_boxes(
-        inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size, output_size=output_size
+        inpt.as_subclass(torch.Tensor),
+        format=inpt.format,
+        canvas_size=inpt.canvas_size,
+        output_size=output_size,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
@@ -2780,9 +2791,14 @@ def resized_crop_bounding_boxes(
     height: int,
     width: int,
     size: list[int],
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
-    bounding_boxes, canvas_size = crop_bounding_boxes(bounding_boxes, format, top, left, height, width)
-    return resize_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size, size=size)
+    bounding_boxes, canvas_size = crop_bounding_boxes(
+        bounding_boxes, format, top, left, height, width, clamping_mode=clamping_mode
+    )
+    return resize_bounding_boxes(
+        bounding_boxes, format=format, canvas_size=canvas_size, size=size, clamping_mode=clamping_mode
+    )
 
 
 @_register_kernel_internal(resized_crop, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
@@ -2790,7 +2806,14 @@ def _resized_crop_bounding_boxes_dispatch(
     inpt: tv_tensors.BoundingBoxes, top: int, left: int, height: int, width: int, size: list[int], **kwargs
 ) -> tv_tensors.BoundingBoxes:
     output, canvas_size = resized_crop_bounding_boxes(
-        inpt.as_subclass(torch.Tensor), format=inpt.format, top=top, left=left, height=height, width=width, size=size
+        inpt.as_subclass(torch.Tensor),
+        format=inpt.format,
+        top=top,
+        left=left,
+        height=height,
+        width=width,
+        size=size,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 

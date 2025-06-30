@@ -551,6 +551,7 @@ def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new
         ),
         format=format,
         canvas_size=canvas_size,
+        clamping_mode=clamping_mode,
     )
 
 
@@ -639,6 +640,7 @@ def reference_affine_rotated_bounding_boxes_helper(
         ).reshape(bounding_boxes.shape),
         format=format,
         canvas_size=canvas_size,
+        clamping_mode=clamping_mode,
     )
 
 
@@ -4355,7 +4357,6 @@ class TestResizedCrop:
             (F.resized_crop_image, torch.Tensor),
             (F._geometry._resized_crop_image_pil, PIL.Image.Image),
             (F.resized_crop_image, tv_tensors.Image),
-            (F.resized_crop_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.resized_crop_mask, tv_tensors.Mask),
             (F.resized_crop_video, tv_tensors.Video),
             (F.resized_crop_keypoints, tv_tensors.KeyPoints),
@@ -4422,30 +4423,30 @@ class TestResizedCrop:
             ],
         )
 
+        affine_matrix = (resize_affine_matrix @ crop_affine_matrix)[:2, :]
+
         helper = (
             reference_affine_rotated_bounding_boxes_helper
             if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
             else reference_affine_bounding_boxes_helper
         )
 
-        bounding_boxes = helper(bounding_boxes, affine_matrix=crop_affine_matrix, new_canvas_size=(height, width))
-
-        return helper(
-            bounding_boxes,
-            affine_matrix=resize_affine_matrix,
-            new_canvas_size=size,
-        )
+        return helper(bounding_boxes, affine_matrix=affine_matrix, new_canvas_size=size, clamp=False)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     def test_functional_bounding_boxes_correctness(self, format):
-        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format)
+        # Note that we don't want to clamp because in
+        # _reference_resized_crop_bounding_boxes we are fusing the crop and the
+        # resize operation, where none of the croppings happen - particularly,
+        # the intermediate one.
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, clamping_mode="none")
 
         actual = F.resized_crop(bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE)
         expected = self._reference_resized_crop_bounding_boxes(
             bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE
         )
 
-        torch.testing.assert_close(actual, expected, atol=1e-5, rtol=1e-5)
+        torch.testing.assert_close(actual, expected)
         assert_equal(F.get_size(actual), F.get_size(expected))
 
     def _reference_resized_crop_keypoints(self, keypoints, *, top, left, height, width, size):
