@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+e347ef9) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+80cb38e) &#x25BC</a>
     </div>
     
 
@@ -484,7 +484,7 @@ where our samples are just images, bounding boxes and labels:</p>
 </pre></div>
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>I&#39;m transforming an image of shape torch.Size([3, 256, 256]) with bboxes = BoundingBoxes([[ 0, 10, 10, 20],
-               [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=hard)
+               [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=soft)
 label = 3
 </pre></div>
 </div>
@@ -493,7 +493,7 @@ label = 3
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Output image shape: torch.Size([3, 224, 224])
 out_bboxes = BoundingBoxes([[224,   8, 224,  17],
-               [196,  44, 218,  62]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224), clamping_mode=hard)
+               [196,  44, 218,  62]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224), clamping_mode=soft)
 out_label = 3
 </pre></div>
 </div>
@@ -532,10 +532,10 @@ an example on the built-in transform <a class="reference internal" href="../../g
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>The input bboxes are:
 BoundingBoxes([[ 0, 10, 10, 20],
-               [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=hard)
+               [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=soft)
 The transformed bboxes are:
 BoundingBoxes([[246,  10, 256,  20],
-               [186,  50, 206,  70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=hard)
+               [186,  50, 206,  70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=soft)
 </pre></div>
 </div>
 <section id="basics-override-the-transform-method">
@@ -567,10 +567,10 @@ to inherit from <a class="reference internal" href="../../generated/torchvision.
 I&#39;m transforming bounding boxes! inpt.canvas_size = (256, 256)
 The input bboxes are:
 BoundingBoxes([[ 0, 10, 10, 20],
-               [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=hard)
+               [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=soft)
 The transformed bboxes are:
 BoundingBoxes([[100, 110, 110, 120],
-               [150, 150, 170, 170]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=hard)
+               [150, 150, 170, 170]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=soft)
 </pre></div>
 </div>
 <p>An important thing to note is that when we call <code class="docutils literal notranslate"><span class="pre">my_custom_transform</span></code> on
@@ -634,7 +634,7 @@ using <a class="reference internal" href="../../generated/torchvision.transforms
 <a class="reference internal" href="../../generated/torchvision.transforms.v2.query_size.html#torchvision.transforms.v2.query_size" title="torchvision.transforms.v2.query_size"><code class="xref py py-func docutils literal notranslate"><span class="pre">query_size()</span></code></a>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">make_params()</span></code> should return a dict (or actually, anything you want) that
 will then be passed to <code class="docutils literal notranslate"><span class="pre">transform()</span></code>.</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.011 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.010 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-transforms-plot-custom-transforms-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/3f3cbe5cc8b5758610d0ab95995b0b8c/plot_custom_transforms.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_custom_transforms.ipynb</span></code></a></p>

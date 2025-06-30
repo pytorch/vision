@@ -221,7 +221,7 @@ In a similar fashion, :class:`~torchvision.tv_tensors.KeyPoints` also require th
  .. code-block:: none
 
     BoundingBoxes([[ 17,  16, 344, 495],
-                   [  0,  10,   0,  10]], format=BoundingBoxFormat.XYXY, canvas_size=torch.Size([512, 512]), clamping_mode=hard)
+                   [  0,  10,   0,  10]], format=BoundingBoxFormat.XYXY, canvas_size=torch.Size([512, 512]), clamping_mode=soft)
     KeyPoints([[ 17,  16],
                [344, 495],
                [  0,  10],

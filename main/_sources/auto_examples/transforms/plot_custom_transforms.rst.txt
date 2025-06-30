@@ -107,7 +107,7 @@ where our samples are just images, bounding boxes and labels:
  .. code-block:: none
 
     I'm transforming an image of shape torch.Size([3, 256, 256]) with bboxes = BoundingBoxes([[ 0, 10, 10, 20],
-                   [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=hard)
+                   [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=soft)
     label = 3
 
 
@@ -128,7 +128,7 @@ where our samples are just images, bounding boxes and labels:
 
     Output image shape: torch.Size([3, 224, 224])
     out_bboxes = BoundingBoxes([[224,   8, 224,  17],
-                   [196,  44, 218,  62]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224), clamping_mode=hard)
+                   [196,  44, 218,  62]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224), clamping_mode=soft)
     out_label = 3
 
 
@@ -184,10 +184,10 @@ an example on the built-in transform :class:`~torchvision.transforms.v2.RandomHo
 
     The input bboxes are:
     BoundingBoxes([[ 0, 10, 10, 20],
-                   [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=hard)
+                   [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=soft)
     The transformed bboxes are:
     BoundingBoxes([[246,  10, 256,  20],
-                   [186,  50, 206,  70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=hard)
+                   [186,  50, 206,  70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=soft)
 
 
 
@@ -238,10 +238,10 @@ to inherit from :class:`~torchvision.transforms.v2.Transform` and override the
     I'm transforming bounding boxes! inpt.canvas_size = (256, 256)
     The input bboxes are:
     BoundingBoxes([[ 0, 10, 10, 20],
-                   [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=hard)
+                   [50, 50, 70, 70]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=soft)
     The transformed bboxes are:
     BoundingBoxes([[100, 110, 110, 120],
-                   [150, 150, 170, 170]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=hard)
+                   [150, 150, 170, 170]], format=BoundingBoxFormat.XYXY, canvas_size=(256, 256), clamping_mode=soft)
 
 
 
@@ -334,7 +334,7 @@ will then be passed to ``transform()``.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.011 seconds)
+   **Total running time of the script:** (0 minutes 0.010 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_custom_transforms.py:
