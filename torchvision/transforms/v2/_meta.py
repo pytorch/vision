@@ -67,6 +67,6 @@ class SetClampingMode(Transform):
     _transformed_types = (tv_tensors.BoundingBoxes,)
 
     def transform(self, inpt: tv_tensors.BoundingBoxes, params: dict[str, Any]) -> tv_tensors.BoundingBoxes:
-        out = inpt.clone()
+        out: tv_tensors.BoundingBoxes = inpt.clone()  # type: ignore[assignment]
         out.clamping_mode = self.clamping_mode
         return out

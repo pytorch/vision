@@ -81,7 +81,7 @@ class BoundingBoxes(TVTensor):
 
     format: BoundingBoxFormat
     canvas_size: tuple[int, int]
-    clamping_mode: CLAMPING_MODE_T
+    clamping_mode: CLAMPING_MODE_TYPE
 
     @classmethod
     def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat | str, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE = "soft", check_dims: bool = True) -> BoundingBoxes:  # type: ignore[override]
