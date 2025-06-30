@@ -479,7 +479,7 @@ def _clamp_y_intercept(
     b1 = b2.clamp(b1, b3).clamp(0, canvas_size[0])
     b4 = b3.clamp(b2, b4).clamp(0, canvas_size[0])
 
-    if clamping_mode == "hard":
+    if clamping_mode is not None and clamping_mode == "hard":
         # Hard clamping: Average b1 and b4, and adjust b2 and b3 for maximum area
         b1 = b4 = (b1 + b4) / 2
 
@@ -574,7 +574,7 @@ def _clamp_along_y_axis(
         [case_a, case_b, case_c],
     ):
         bounding_boxes = torch.where(cond.unsqueeze(1).repeat(1, 8), case.reshape(-1, 8), bounding_boxes)
-    if clamping_mode == "hard":
+    if clamping_mode is not None and clamping_mode == "hard":
         bounding_boxes[..., 0].clamp_(0)  # Clamp x1 to 0
 
     if need_cast:
