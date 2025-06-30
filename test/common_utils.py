@@ -410,7 +410,7 @@ def make_bounding_boxes(
     canvas_size=DEFAULT_SIZE,
     *,
     format=tv_tensors.BoundingBoxFormat.XYXY,
-    clamping_mode="hard",  # TODOBB
+    clamping_mode="soft",
     num_boxes=1,
     dtype=None,
     device="cpu",

@@ -522,7 +522,7 @@ def resize_bounding_boxes(
     size: Optional[list[int]],
     max_size: Optional[int] = None,
     format: tv_tensors.BoundingBoxFormat = tv_tensors.BoundingBoxFormat.XYXY,
-    clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB soft
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     # We set the default format as `tv_tensors.BoundingBoxFormat.XYXY`
     # to ensure backward compatibility.
@@ -1108,7 +1108,7 @@ def _affine_bounding_boxes_with_expand(
     shear: list[float],
     center: Optional[list[float]] = None,
     expand: bool = False,
-    clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB soft
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     if bounding_boxes.numel() == 0:
         return bounding_boxes, canvas_size
@@ -1211,7 +1211,7 @@ def affine_bounding_boxes(
     scale: float,
     shear: list[float],
     center: Optional[list[float]] = None,
-    clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB soft
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> torch.Tensor:
     out_box, _ = _affine_bounding_boxes_with_expand(
         bounding_boxes,
@@ -1740,7 +1740,7 @@ def pad_bounding_boxes(
     canvas_size: tuple[int, int],
     padding: list[int],
     padding_mode: str = "constant",
-    clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB soft
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     if padding_mode not in ["constant"]:
         # TODO: add support of other padding modes
@@ -1858,7 +1858,7 @@ def crop_bounding_boxes(
     left: int,
     height: int,
     width: int,
-    clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB soft
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
 
     # Crop or implicit pad if left and/or top have negative values:
@@ -2098,7 +2098,7 @@ def perspective_bounding_boxes(
     startpoints: Optional[list[list[int]]],
     endpoints: Optional[list[list[int]]],
     coefficients: Optional[list[float]] = None,
-    clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB soft
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> torch.Tensor:
     if bounding_boxes.numel() == 0:
         return bounding_boxes
@@ -2413,7 +2413,7 @@ def elastic_bounding_boxes(
     format: tv_tensors.BoundingBoxFormat,
     canvas_size: tuple[int, int],
     displacement: torch.Tensor,
-    clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB soft
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> torch.Tensor:
     expected_shape = (1, canvas_size[0], canvas_size[1], 2)
     if not isinstance(displacement, torch.Tensor):
