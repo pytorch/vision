@@ -466,29 +466,54 @@ def _clamp_y_intercept(
     then applies various constraints to ensure the clamping conditions are respected.
     """
 
+    # Calculate slopes and y-intercepts for bounding boxes
     a, b = _get_slope_and_intercept(bounding_boxes)
     a1, a2, a3, a4 = a.unbind(-1)
     b1, b2, b3, b4 = b.unbind(-1)
 
-    # Clamp y-intercepts (soft clamping)
+    # Get y-intercepts from original bounding boxes
+    _, bm = _get_slope_and_intercept(original_bounding_boxes)
+    b1m, b2m, b3m, b4m = bm.unbind(-1)
+
+    # Soft clamping: Clamp y-intercepts within canvas boundaries
     b1 = b2.clamp(b1, b3).clamp(0, canvas_size[0])
     b4 = b3.clamp(b2, b4).clamp(0, canvas_size[0])
 
     if clamping_mode == "hard":
-        # Get y-intercepts from original bounding boxes
-        _, b = _get_slope_and_intercept(original_bounding_boxes)
-        _, b2, b3, _ = b.unbind(-1)
+        # Hard clamping: Average b1 and b4, and adjust b2 and b3 for maximum area
+        b1 = b4 = (b1 + b4) / 2
 
-        # Set b1 and b4 to the average of their clamped values
-        b1 = b4 = (b1.clamp(0, canvas_size[0]) + b4.clamp(0, canvas_size[0])) / 2
+        # Calculate candidate values for b2 based on geometric constraints
+        b2_candidates = torch.stack(
+            [
+                b1 * a2 / a1,  # Constraint at y=0
+                b3 * a2 / a3,  # Constraint at y=0
+                (a1 - a2) * canvas_size[1] + b1,  # Constraint at x=canvas_width
+                (a3 - a2) * canvas_size[1] + b3,  # Constraint at x=canvas_width
+            ],
+            dim=1,
+        )
+        # Take maximum value that doesn't exceed original b2
+        b2 = torch.max(b2_candidates, dim=1)[0].clamp(max=b2)
 
-        # Ensure b2 and b3 defined the box of maximum area after clamping b1 and b4
-        b2.clamp_(b1 * a2 / a1, b4).clamp_((a1 - a2) * canvas_size[1] + b1)
-        b2.clamp_(b3 * a2 / a3, b4).clamp_((a3 - a2) * canvas_size[1] + b3)
-        b3.clamp_(max=canvas_size[0] * (1 - a3 / a4) + b4 * a3 / a4)
-        b3.clamp_(max=canvas_size[0] * (1 - a3 / a2) + b2 * a3 / a2)
-        b3.clamp_(b1, (a2 - a3) * canvas_size[1] + b2)
-        b3.clamp_(b1, (a4 - a3) * canvas_size[1] + b4)
+        # Calculate candidate values for b3 based on geometric constraints
+        b3_candidates = torch.stack(
+            [
+                canvas_size[0] * (1 - a3 / a4) + b4 * a3 / a4,  # Constraint at y=canvas_height
+                canvas_size[0] * (1 - a3 / a2) + b2 * a3 / a2,  # Constraint at y=canvas_height
+                (a2 - a3) * canvas_size[1] + b2,  # Constraint at x=canvas_width
+                (a4 - a3) * canvas_size[1] + b4,  # Constraint at x=canvas_width
+            ],
+            dim=1,
+        )
+        # Take minimum value that doesn't go below original b3
+        b3 = torch.min(b3_candidates, dim=1)[0].clamp(min=b3)
+
+    # Final clamping to ensure y-intercepts are within original box bounds
+    b1.clamp_(b1m, b3m)
+    b3.clamp_(b1m, b3m)
+    b2.clamp_(b2m, b4m)
+    b4.clamp_(b2m, b4m)
 
     return torch.stack([b1, b2, b3, b4], dim=-1)
 
