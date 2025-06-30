@@ -2237,7 +2237,7 @@ class TestRotate:
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     def test_functional_bounding_boxes_correctness(self, format, angle, expand, center):
-        bounding_boxes = make_bounding_boxes(format=format, clamping_mode=None)
+        bounding_boxes = make_bounding_boxes(format=format, clamping_mode="none")
 
         actual = F.rotate(bounding_boxes, angle=angle, expand=expand, center=center)
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
@@ -2249,7 +2249,7 @@ class TestRotate:
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, expand, center, seed):
-        bounding_boxes = make_bounding_boxes(format=format, clamping_mode=None)
+        bounding_boxes = make_bounding_boxes(format=format, clamping_mode="none")
 
         transform = transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, expand=expand, center=center)
 
@@ -4428,7 +4428,7 @@ class TestResizedCrop:
         # _reference_resized_crop_bounding_boxes we are fusing the crop and the
         # resize operation, where none of the croppings happen - particularly,
         # the intermediate one.
-        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, clamping_mode=None)
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, clamping_mode="none")
 
         actual = F.resized_crop(bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE)
         expected = self._reference_resized_crop_bounding_boxes(
