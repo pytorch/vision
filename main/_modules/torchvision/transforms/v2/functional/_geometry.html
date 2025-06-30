@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+6aee5ed) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+9235ee1) &#x25BC</a>
     </div>
     
 
@@ -433,6 +433,7 @@
     <span class="n">pil_to_tensor</span><span class="p">,</span>
     <span class="n">to_pil_image</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.tv_tensors._bounding_boxes</span><span class="w"> </span><span class="kn">import</span> <span class="n">CLAMPING_MODE_TYPE</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
@@ -934,6 +935,7 @@
     <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
     <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXY</span><span class="p">,</span>
+    <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;hard&quot;</span><span class="p">,</span>  <span class="c1"># TODOBB soft</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
     <span class="c1"># We set the default format as `tv_tensors.BoundingBoxFormat.XYXY`</span>
     <span class="c1"># to ensure backward compatibility.</span>
@@ -959,7 +961,10 @@
         <span class="n">transformed_points</span> <span class="o">=</span> <span class="n">xyxyxyxy_boxes</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">ratios</span><span class="p">)</span>
         <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">_parallelogram_to_bounding_boxes</span><span class="p">(</span><span class="n">transformed_points</span><span class="p">)</span>
         <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span>
-            <span class="n">out_bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXYXYXY</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="p">(</span><span class="n">new_height</span><span class="p">,</span> <span class="n">new_width</span><span class="p">)</span>
+            <span class="n">out_bboxes</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXYXYXY</span><span class="p">,</span>
+            <span class="n">canvas_size</span><span class="o">=</span><span class="p">(</span><span class="n">new_height</span><span class="p">,</span> <span class="n">new_width</span><span class="p">),</span>
+            <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">convert_bounding_box_format</span><span class="p">(</span>
@@ -985,7 +990,12 @@
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">resize_bounding_boxes</span><span class="p">(</span>
-        <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span>
+        <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span>
+        <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+        <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span>
+        <span class="n">max_size</span><span class="o">=</span><span class="n">max_size</span><span class="p">,</span>
+        <span class="n">clamping_mode</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">clamping_mode</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
@@ -1511,6 +1521,7 @@
     <span class="n">shear</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">expand</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;hard&quot;</span><span class="p">,</span>  <span class="c1"># TODOBB soft</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
     <span class="k">if</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">canvas_size</span>
@@ -1589,7 +1600,9 @@
         <span class="n">new_width</span><span class="p">,</span> <span class="n">new_height</span> <span class="o">=</span> <span class="n">_compute_affine_output_size</span><span class="p">(</span><span class="n">affine_vector</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
         <span class="n">canvas_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">new_height</span><span class="p">,</span> <span class="n">new_width</span><span class="p">)</span>
 
-    <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span><span class="n">out_bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">intermediate_format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
+    <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span>
+        <span class="n">out_bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">intermediate_format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span>
+    <span class="p">)</span>
     <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">convert_bounding_box_format</span><span class="p">(</span>
         <span class="n">out_bboxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="n">intermediate_format</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">original_shape</span><span class="p">)</span>
@@ -1610,6 +1623,7 @@
     <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">shear</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;hard&quot;</span><span class="p">,</span>  <span class="c1"># TODOBB soft</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">out_box</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_affine_bounding_boxes_with_expand</span><span class="p">(</span>
         <span class="n">bounding_boxes</span><span class="p">,</span>
@@ -1621,6 +1635,7 @@
         <span class="n">shear</span><span class="o">=</span><span class="n">shear</span><span class="p">,</span>
         <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">,</span>
         <span class="n">expand</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">out_box</span>
 
@@ -1644,6 +1659,7 @@
         <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">,</span>
         <span class="n">shear</span><span class="o">=</span><span class="n">shear</span><span class="p">,</span>
         <span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">,</span>
+        <span class="n">clamping_mode</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">clamping_mode</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
@@ -2136,6 +2152,7 @@
     <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">padding</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">padding_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span><span class="p">,</span>
+    <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;hard&quot;</span><span class="p">,</span>  <span class="c1"># TODOBB soft</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
     <span class="k">if</span> <span class="n">padding_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;constant&quot;</span><span class="p">]:</span>
         <span class="c1"># TODO: add support of other padding modes</span>
@@ -2158,7 +2175,10 @@
     <span class="n">width</span> <span class="o">+=</span> <span class="n">left</span> <span class="o">+</span> <span class="n">right</span>
     <span class="n">canvas_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">),</span> <span class="n">canvas_size</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">clamp_bounding_boxes</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span><span class="p">),</span>
+        <span class="n">canvas_size</span><span class="p">,</span>
+    <span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">pad</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -2171,6 +2191,7 @@
         <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span>
         <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">,</span>
         <span class="n">padding_mode</span><span class="o">=</span><span class="n">padding_mode</span><span class="p">,</span>
+        <span class="n">clamping_mode</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">clamping_mode</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
@@ -2249,6 +2270,7 @@
     <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;hard&quot;</span><span class="p">,</span>  <span class="c1"># TODOBB soft</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
 
     <span class="c1"># Crop or implicit pad if left and/or top have negative values:</span>
@@ -2267,7 +2289,10 @@
     <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXYXYXY</span><span class="p">:</span>
         <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">_parallelogram_to_bounding_boxes</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">),</span> <span class="n">canvas_size</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">clamp_bounding_boxes</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span><span class="p">),</span>
+        <span class="n">canvas_size</span><span class="p">,</span>
+    <span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">crop</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -2275,7 +2300,13 @@
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">top</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">left</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">width</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">crop_bounding_boxes</span><span class="p">(</span>
-        <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="n">top</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">width</span>
+        <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span>
+        <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+        <span class="n">top</span><span class="o">=</span><span class="n">top</span><span class="p">,</span>
+        <span class="n">left</span><span class="o">=</span><span class="n">left</span><span class="p">,</span>
+        <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span>
+        <span class="n">width</span><span class="o">=</span><span class="n">width</span><span class="p">,</span>
+        <span class="n">clamping_mode</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">clamping_mode</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
 
@@ -2479,6 +2510,7 @@
     <span class="n">startpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">endpoints</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]],</span>
     <span class="n">coefficients</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;hard&quot;</span><span class="p">,</span>  <span class="c1"># TODOBB soft</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">bounding_boxes</span>
@@ -2543,7 +2575,9 @@
         <span class="n">out_bbox_mins</span><span class="p">,</span> <span class="n">out_bbox_maxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">aminmax</span><span class="p">(</span><span class="n">transformed_points</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">out_bbox_mins</span><span class="p">,</span> <span class="n">out_bbox_maxs</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span><span class="n">out_bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">intermediate_format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
+    <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span>
+        <span class="n">out_bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">intermediate_format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span>
+    <span class="p">)</span>
 
     <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">convert_bounding_box_format</span><span class="p">(</span>
         <span class="n">out_bboxes</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="n">intermediate_format</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
@@ -2598,6 +2632,7 @@
         <span class="n">startpoints</span><span class="o">=</span><span class="n">startpoints</span><span class="p">,</span>
         <span class="n">endpoints</span><span class="o">=</span><span class="n">endpoints</span><span class="p">,</span>
         <span class="n">coefficients</span><span class="o">=</span><span class="n">coefficients</span><span class="p">,</span>
+        <span class="n">clamping_mode</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">clamping_mode</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 
@@ -2790,6 +2825,7 @@
     <span class="nb">format</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;hard&quot;</span><span class="p">,</span>  <span class="c1"># TODOBB soft</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="n">expected_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">canvas_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">displacement</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
@@ -2842,9 +2878,7 @@
         <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">out_bbox_mins</span><span class="p">,</span> <span class="n">out_bbox_maxs</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
     <span class="n">out_bboxes</span> <span class="o">=</span> <span class="n">clamp_bounding_boxes</span><span class="p">(</span>
-        <span class="n">out_bboxes</span><span class="p">,</span>
-        <span class="nb">format</span><span class="o">=</span><span class="n">intermediate_format</span><span class="p">,</span>
-        <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span>
+        <span class="n">out_bboxes</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">intermediate_format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">convert_bounding_box_format</span><span class="p">(</span>
@@ -2857,7 +2891,11 @@
     <span class="n">inpt</span><span class="p">:</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">displacement</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">elastic_bounding_boxes</span><span class="p">(</span>
-        <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">displacement</span><span class="o">=</span><span class="n">displacement</span>
+        <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span>
+        <span class="nb">format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+        <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span>
+        <span class="n">displacement</span><span class="o">=</span><span class="n">displacement</span><span class="p">,</span>
+        <span class="n">clamping_mode</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">clamping_mode</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
 

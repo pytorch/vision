@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+6aee5ed) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+9235ee1) &#x25BC</a>
     </div>
     
 
@@ -461,6 +461,14 @@
     <span class="p">)</span>
 
 
+<span class="c1"># TODOBB consider making this a Literal instead. Tried briefly and got</span>
+<span class="c1"># torchscript errors, leaving to str for now.</span>
+<span class="c1"># CLAMPING_MODE_TYPE = Literal[&quot;hard&quot;, &quot;soft&quot;, &quot;none&quot;]</span>
+<span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="nb">str</span>
+
+<span class="c1"># TODOBB All docs. Add any new API to rst files, add tutorial[s].</span>
+
+
 <div class="viewcode-block" id="BoundingBoxes"><a class="viewcode-back" href="../../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BoundingBoxes</span><span class="p">(</span><span class="n">TVTensor</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``.</span>
 
@@ -477,6 +485,7 @@
 <span class="sd">        data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.</span>
 <span class="sd">        format (BoundingBoxFormat, str): Format of the bounding box.</span>
 <span class="sd">        canvas_size (two-tuple of ints): Height and width of the corresponding image or video.</span>
+<span class="sd">        clamping_mode: TODOBB</span>
 <span class="sd">        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from</span>
 <span class="sd">            ``data``.</span>
 <span class="sd">        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a</span>
@@ -487,9 +496,10 @@
 
     <span class="nb">format</span><span class="p">:</span> <span class="n">BoundingBoxFormat</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_wrap</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">BoundingBoxFormat</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">check_dims</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_wrap</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">BoundingBoxFormat</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;soft&quot;</span><span class="p">,</span> <span class="n">check_dims</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
         <span class="k">if</span> <span class="n">check_dims</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">tensor</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
@@ -500,6 +510,8 @@
         <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
         <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="nb">format</span>
         <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">canvas_size</span> <span class="o">=</span> <span class="n">canvas_size</span>
+        <span class="c1"># TODOBB validate values</span>
+        <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">clamping_mode</span> <span class="o">=</span> <span class="n">clamping_mode</span>
         <span class="k">return</span> <span class="n">bounding_boxes</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span>
@@ -508,12 +520,13 @@
         <span class="o">*</span><span class="p">,</span>
         <span class="nb">format</span><span class="p">:</span> <span class="n">BoundingBoxFormat</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;hard&quot;</span><span class="p">,</span>  <span class="c1"># TODOBB change default to soft!</span>
         <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">requires_grad</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_wrap_output</span><span class="p">(</span>
@@ -529,19 +542,28 @@
         <span class="c1"># something like some_xyxy_bbox + some_xywh_bbox; we don&#39;t guard against those cases.</span>
         <span class="n">flat_params</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tree_flatten</span><span class="p">(</span><span class="n">args</span> <span class="o">+</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="k">if</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="p">()))</span>  <span class="c1"># type: ignore[operator]</span>
         <span class="n">first_bbox_from_args</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">flat_params</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">BoundingBoxes</span><span class="p">))</span>
-        <span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span> <span class="o">=</span> <span class="n">first_bbox_from_args</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">first_bbox_from_args</span><span class="o">.</span><span class="n">canvas_size</span>
+        <span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">first_bbox_from_args</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+            <span class="n">first_bbox_from_args</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span>
+            <span class="n">first_bbox_from_args</span><span class="o">.</span><span class="n">clamping_mode</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">BoundingBoxes</span><span class="p">):</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="n">BoundingBoxes</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">check_dims</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">BoundingBoxes</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span>
+                <span class="n">output</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span><span class="p">,</span> <span class="n">check_dims</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
             <span class="c1"># This branch exists for chunk() and unbind()</span>
             <span class="n">output</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">output</span><span class="p">)(</span>
-                <span class="n">BoundingBoxes</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">check_dims</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">output</span>
+                <span class="n">BoundingBoxes</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span>
+                    <span class="n">part</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span><span class="p">,</span> <span class="n">check_dims</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">output</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">output</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">tensor_contents</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_repr</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_repr</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clamping_mode</span><span class="p">)</span></div>
 </pre></div>
 
              </article>
