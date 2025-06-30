@@ -5615,7 +5615,6 @@ class TestSetClampingMode:
     def test_setter(self, format, constructor_clamping_mode, desired_clamping_mode):
 
         in_boxes = make_bounding_boxes(format=format, clamping_mode=constructor_clamping_mode)
-        assert in_boxes.clamping_mode == constructor_clamping_mode  # input is unchanged: no leak
         out_boxes = transforms.SetClampingMode(clamping_mode=desired_clamping_mode)(in_boxes)
 
         assert in_boxes.clamping_mode == constructor_clamping_mode  # input is unchanged: no leak
