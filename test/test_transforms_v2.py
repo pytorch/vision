@@ -1301,11 +1301,11 @@ class TestHorizontalFlip:
         )
 
         helper = (
-            functools.partial(reference_affine_rotated_bounding_boxes_helper, flip=True, clamp=False)
+            functools.partial(reference_affine_rotated_bounding_boxes_helper, flip=True)
             if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
             else reference_affine_bounding_boxes_helper
         )
-        return helper(bounding_boxes, affine_matrix=affine_matrix)
+        return helper(bounding_boxes, affine_matrix=affine_matrix, clamp=False)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize(
@@ -1910,11 +1910,11 @@ class TestVerticalFlip:
         )
 
         helper = (
-            functools.partial(reference_affine_rotated_bounding_boxes_helper, flip=True, clamp=False)
+            functools.partial(reference_affine_rotated_bounding_boxes_helper, flip=True)
             if tv_tensors.is_rotated_bounding_format(bounding_boxes.format)
             else reference_affine_bounding_boxes_helper
         )
-        return helper(bounding_boxes, affine_matrix=affine_matrix)
+        return helper(bounding_boxes, affine_matrix=affine_matrix, clamp=False)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
