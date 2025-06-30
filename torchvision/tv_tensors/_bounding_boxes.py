@@ -105,7 +105,7 @@ class BoundingBoxes(TVTensor):
         *,
         format: BoundingBoxFormat | str,
         canvas_size: tuple[int, int],
-        clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB change default to soft!
+        clamping_mode: CLAMPING_MODE_TYPE = "soft",
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,

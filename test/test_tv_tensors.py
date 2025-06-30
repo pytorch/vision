@@ -406,3 +406,8 @@ def test_return_type_input():
         tv_tensors.set_return_type("typo")
 
     tv_tensors.set_return_type("tensor")
+
+
+def test_box_clamping_mode_default():
+    assert tv_tensors.BoundingBoxes([0, 0, 10, 10], format="XYXY", canvas_size=(100, 100)).clamping_mode == "soft"
+    assert tv_tensors.BoundingBoxes([0, 0, 10, 10, 0], format="XYWHR", canvas_size=(100, 100)).clamping_mode == "soft"

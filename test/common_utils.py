@@ -21,7 +21,7 @@ from PIL import Image
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import clamp_bounding_boxes, to_image, to_pil_image
+from torchvision.transforms.v2.functional import to_image, to_pil_image
 
 
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
@@ -410,7 +410,7 @@ def make_bounding_boxes(
     canvas_size=DEFAULT_SIZE,
     *,
     format=tv_tensors.BoundingBoxFormat.XYXY,
-    clamping_mode="hard",  # TODOBB
+    clamping_mode="soft",
     num_boxes=1,
     dtype=None,
     device="cpu",
@@ -469,21 +469,6 @@ def make_bounding_boxes(
     else:
         raise ValueError(f"Format {format} is not supported")
     out_boxes = torch.stack(parts, dim=-1).to(dtype=dtype, device=device)
-    if tv_tensors.is_rotated_bounding_format(format):
-        # The rotated bounding boxes are not guaranteed to be within the canvas by design,
-        # so we apply clamping. We also add a 2 buffer to the canvas size to avoid
-        # numerical issues during the testing
-        buffer = 4
-        out_boxes = clamp_bounding_boxes(
-            out_boxes,
-            format=format,
-            canvas_size=(canvas_size[0] - buffer, canvas_size[1] - buffer),
-            clamping_mode=clamping_mode,
-        )
-        if format is tv_tensors.BoundingBoxFormat.XYWHR or format is tv_tensors.BoundingBoxFormat.CXCYWHR:
-            out_boxes[:, :2] += buffer // 2
-        elif format is tv_tensors.BoundingBoxFormat.XYXYXYXY:
-            out_boxes[:, :] += buffer // 2
     return tv_tensors.BoundingBoxes(out_boxes, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
 
 
