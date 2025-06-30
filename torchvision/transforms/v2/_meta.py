@@ -1,7 +1,8 @@
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
+from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE
 
 
 class ConvertBoundingBoxFormat(Transform):
@@ -28,12 +29,19 @@ class ClampBoundingBoxes(Transform):
 
     The clamping is done according to the bounding boxes' ``canvas_size`` meta-data.
 
+    Args:
+        clamping_mode: TODOBB more docs. Default is None which relies on the input box' clamping_mode attribute.
+
     """
+
+    def __init__(self, clamping_mode: Optional[CLAMPING_MODE_TYPE] = None) -> None:
+        super().__init__()
+        self.clamping_mode = clamping_mode
 
     _transformed_types = (tv_tensors.BoundingBoxes,)
 
     def transform(self, inpt: tv_tensors.BoundingBoxes, params: dict[str, Any]) -> tv_tensors.BoundingBoxes:
-        return F.clamp_bounding_boxes(inpt)  # type: ignore[return-value]
+        return F.clamp_bounding_boxes(inpt, clamping_mode=self.clamping_mode)  # type: ignore[return-value]
 
 
 class ClampKeyPoints(Transform):
@@ -46,3 +54,19 @@ class ClampKeyPoints(Transform):
 
     def transform(self, inpt: tv_tensors.KeyPoints, params: dict[str, Any]) -> tv_tensors.KeyPoints:
         return F.clamp_keypoints(inpt)  # type: ignore[return-value]
+
+
+class SetClampingMode(Transform):
+    """TODOBB"""
+
+    def __init__(self, clamping_mode: CLAMPING_MODE_TYPE) -> None:
+        super().__init__()
+        # TODOBB validate mode
+        self.clamping_mode = clamping_mode
+
+    _transformed_types = (tv_tensors.BoundingBoxes,)
+
+    def transform(self, inpt: tv_tensors.BoundingBoxes, params: dict[str, Any]) -> tv_tensors.BoundingBoxes:
+        out: tv_tensors.BoundingBoxes = inpt.clone()  # type: ignore[assignment]
+        out.clamping_mode = self.clamping_mode
+        return out
