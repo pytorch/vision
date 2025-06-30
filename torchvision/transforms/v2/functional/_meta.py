@@ -676,7 +676,7 @@ def clamp_bounding_boxes(
     elif isinstance(inpt, tv_tensors.BoundingBoxes):
         if format is not None or canvas_size is not None:
             raise ValueError("For bounding box tv_tensor inputs, `format` and `canvas_size` must not be passed.")
-        if clamping_mode is None:
+        if clamping_mode is not None and clamping_mode == "auto":
             clamping_mode = inpt.clamping_mode
         if tv_tensors.is_rotated_bounding_format(inpt.format):
             output = _clamp_rotated_bounding_boxes(

@@ -2237,7 +2237,7 @@ class TestRotate:
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     def test_functional_bounding_boxes_correctness(self, format, angle, expand, center):
-        bounding_boxes = make_bounding_boxes(format=format, clamping_mode="none")
+        bounding_boxes = make_bounding_boxes(format=format, clamping_mode=None)
 
         actual = F.rotate(bounding_boxes, angle=angle, expand=expand, center=center)
         expected = self._reference_rotate_bounding_boxes(bounding_boxes, angle=angle, expand=expand, center=center)
@@ -2249,7 +2249,7 @@ class TestRotate:
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_bounding_boxes_correctness(self, format, expand, center, seed):
-        bounding_boxes = make_bounding_boxes(format=format, clamping_mode="none")
+        bounding_boxes = make_bounding_boxes(format=format, clamping_mode=None)
 
         transform = transforms.RandomRotation(**self._CORRECTNESS_TRANSFORM_AFFINE_RANGES, expand=expand, center=center)
 
@@ -4428,7 +4428,7 @@ class TestResizedCrop:
         # _reference_resized_crop_bounding_boxes we are fusing the crop and the
         # resize operation, where none of the croppings happen - particularly,
         # the intermediate one.
-        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, clamping_mode="none")
+        bounding_boxes = make_bounding_boxes(self.INPUT_SIZE, format=format, clamping_mode=None)
 
         actual = F.resized_crop(bounding_boxes, **self.CROP_KWARGS, size=self.OUTPUT_SIZE)
         expected = self._reference_resized_crop_bounding_boxes(
@@ -5531,7 +5531,7 @@ class TestClampBoundingBoxes:
         format, canvas_size = input_tv_tensor.format, input_tv_tensor.canvas_size
 
         for format_, canvas_size_, clamping_mode_ in itertools.product(
-            (format, None), (canvas_size, None), (input_tv_tensor.clamping_mode, None)
+            (format, None), (canvas_size, None), (input_tv_tensor.clamping_mode, "auto")
         ):
             with pytest.raises(
                 ValueError,
@@ -5550,7 +5550,7 @@ class TestClampBoundingBoxes:
 
     @pytest.mark.parametrize("rotated", (True, False))
     @pytest.mark.parametrize("constructor_clamping_mode", ("hard", None))
-    @pytest.mark.parametrize("clamping_mode", ("hard", None, None))  # TODOBB add soft here.
+    @pytest.mark.parametrize("clamping_mode", ("hard", None, "auto"))  # TODOBB add soft here.
     @pytest.mark.parametrize("pass_pure_tensor", (True, False))
     @pytest.mark.parametrize("fn", [F.clamp_bounding_boxes, transform_cls_to_functional(transforms.ClampBoundingBoxes)])
     def test_clamping_mode(self, rotated, constructor_clamping_mode, clamping_mode, pass_pure_tensor, fn):
@@ -5560,14 +5560,14 @@ class TestClampBoundingBoxes:
         #   attribute
         # - That clamping happens when it should, and only when it should, i.e.
         #   when the clamping mode is not None. It doesn't validate the
-        #   nunmerical results, only that clamping happened. For that, we create
+        #   numerical results, only that clamping happened. For that, we create
         #   a large 100x100 box inside of a small 10x10 image.
 
         if pass_pure_tensor and fn is not F.clamp_bounding_boxes:
             # Only the functional supports pure tensors, not the class
             return
-        if pass_pure_tensor and clamping_mode is None:
-            # cannot leave clamping_mode=None when passing pure tensor
+        if pass_pure_tensor and clamping_mode == "auto":
+            # cannot leave clamping_mode="auto" when passing pure tensor
             return
 
         if rotated:
@@ -5591,7 +5591,7 @@ class TestClampBoundingBoxes:
         else:
             out = fn(boxes, clamping_mode=clamping_mode)
 
-        clamping_mode_prevailing = constructor_clamping_mode if clamping_mode is None else clamping_mode
+        clamping_mode_prevailing = constructor_clamping_mode if clamping_mode == "auto" else clamping_mode
         if clamping_mode_prevailing is None:
             assert_equal(boxes, out)  # should be a pass-through
         else:
