@@ -5592,7 +5592,7 @@ class TestClampBoundingBoxes:
             out = fn(boxes, clamping_mode=clamping_mode)
 
         clamping_mode_prevailing = constructor_clamping_mode if clamping_mode is None else clamping_mode
-        if clamping_mode_prevailing == None:
+        if clamping_mode_prevailing is None:
             assert_equal(boxes, out)  # should be a pass-through
         else:
             assert_equal(out, expected_clamped_output)
@@ -5643,7 +5643,7 @@ class TestSetClampingMode:
 
         # assert that the output boxes clamping_mode is the one set by the last SetClampingMode.
         # ClampBoundingBoxes doesn't set clamping_mode.
-        assert out_boxes.clamping_mode == None
+        assert out_boxes.clamping_mode is None
 
 
 class TestClampKeyPoints:

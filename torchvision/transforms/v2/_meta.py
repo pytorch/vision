@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
