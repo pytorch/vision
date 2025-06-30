@@ -410,6 +410,7 @@ def make_bounding_boxes(
     canvas_size=DEFAULT_SIZE,
     *,
     format=tv_tensors.BoundingBoxFormat.XYXY,
+    clamping_mode="hard",  # TODOBB
     num_boxes=1,
     dtype=None,
     device="cpu",
@@ -468,7 +469,7 @@ def make_bounding_boxes(
     else:
         raise ValueError(f"Format {format} is not supported")
     out_boxes = torch.stack(parts, dim=-1).to(dtype=dtype, device=device)
-    return tv_tensors.BoundingBoxes(out_boxes, format=format, canvas_size=canvas_size)
+    return tv_tensors.BoundingBoxes(out_boxes, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
 
 
 def make_detection_masks(size=DEFAULT_SIZE, *, num_masks=1, dtype=None, device="cpu"):
