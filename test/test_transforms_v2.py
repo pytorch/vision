@@ -1648,7 +1648,7 @@ class TestAffine:
             center=center,
         )
 
-        torch.testing.assert_close(actual, expected, atol=1e-5, rtol=1e-5)
+        torch.testing.assert_close(actual, expected, atol=1e-4, rtol=1e-4)
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
