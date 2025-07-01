@@ -104,16 +104,10 @@ def horizontal_flip_bounding_boxes(
         bounding_boxes[:, 0::2].sub_(canvas_size[1]).neg_()
         bounding_boxes = bounding_boxes[:, [2, 3, 0, 1, 6, 7, 4, 5]]
     elif format == tv_tensors.BoundingBoxFormat.XYWHR:
-
-        dtype = bounding_boxes.dtype
-        if not torch.is_floating_point(bounding_boxes):
-            # Casting to float to support cos and sin computations.
-            bounding_boxes = bounding_boxes.to(torch.float32)
         angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
         bounding_boxes[:, 0].add_(bounding_boxes[:, 2].mul(angle_rad.cos())).sub_(canvas_size[1]).neg_()
         bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin()))
         bounding_boxes[:, 4].neg_()
-        bounding_boxes = bounding_boxes.to(dtype)
     else:  # format == tv_tensors.BoundingBoxFormat.CXCYWHR:
         bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
         bounding_boxes[:, 4].neg_()
@@ -192,15 +186,10 @@ def vertical_flip_bounding_boxes(
         bounding_boxes[:, 1::2].sub_(canvas_size[0]).neg_()
         bounding_boxes = bounding_boxes[:, [2, 3, 0, 1, 6, 7, 4, 5]]
     elif format == tv_tensors.BoundingBoxFormat.XYWHR:
-        dtype = bounding_boxes.dtype
-        if not torch.is_floating_point(bounding_boxes):
-            # Casting to float to support cos and sin computations.
-            bounding_boxes = bounding_boxes.to(torch.float64)
         angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
         bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin())).sub_(canvas_size[0]).neg_()
         bounding_boxes[:, 0].add_(bounding_boxes[:, 2].mul(angle_rad.cos()))
         bounding_boxes[:, 4].neg_().add_(180)
-        bounding_boxes = bounding_boxes.to(dtype)
     else:  # format == tv_tensors.BoundingBoxFormat.CXCYWHR:
         bounding_boxes[:, 1].sub_(canvas_size[0]).neg_()
         bounding_boxes[:, 4].neg_().add_(180)
@@ -462,19 +451,6 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
         torch.Tensor: Tensor of same shape as input containing the rectangle coordinates.
                      The output maintains the same dtype as the input.
     """
-    dtype = parallelogram.dtype
-    int_dtype = dtype in (
-        torch.uint8,
-        torch.int8,
-        torch.int16,
-        torch.int32,
-        torch.int64,
-    )
-    if int_dtype:
-        # Does not apply the transformation to `int` boxes as the rounding error
-        # will typically not ensure the resulting box has a rectangular shape.
-        return parallelogram.clone()
-
     out_boxes = parallelogram.clone()
 
     # Calculate parallelogram diagonal vectors
@@ -499,8 +475,8 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
         diag24 * torch.abs(torch.sin(torch.atan2(dx42, dy42) - r_rad)),
     )
 
-    delta_x = torch.round(w * cos).to(dtype) if int_dtype else w * cos
-    delta_y = torch.round(w * sin).to(dtype) if int_dtype else w * sin
+    delta_x = w * cos
+    delta_y = w * sin
     # Update coordinates to form a rectangle
     # Keeping the points (x1, y1) and (x3, y3) unchanged.
     out_boxes[..., 2] = torch.where(mask, parallelogram[..., 0] + delta_x, parallelogram[..., 2])
@@ -1115,9 +1091,8 @@ def _affine_bounding_boxes_with_expand(
 
     original_shape = bounding_boxes.shape
     dtype = bounding_boxes.dtype
-    acceptable_dtypes = [torch.float64]  # Ensure consistency between CPU and GPU.
-    need_cast = dtype not in acceptable_dtypes
-    bounding_boxes = bounding_boxes.to(torch.float64) if need_cast else bounding_boxes.clone()
+    need_cast = not bounding_boxes.is_floating_point()
+    bounding_boxes = bounding_boxes.float() if need_cast else bounding_boxes.clone()
     device = bounding_boxes.device
     is_rotated = tv_tensors.is_rotated_bounding_format(format)
     intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
@@ -1196,8 +1171,6 @@ def _affine_bounding_boxes_with_expand(
     ).reshape(original_shape)
 
     if need_cast:
-        if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
-            out_bboxes.round_()
         out_bboxes = out_bboxes.to(dtype)
     return out_bboxes, canvas_size
 
