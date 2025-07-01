@@ -69,9 +69,6 @@ def test_bbox_instance(data, format):
 )
 @pytest.mark.parametrize("scripted", (False, True))
 def test_bbox_format(format, is_rotated_expected, scripted):
-    if isinstance(format, str):
-        format = tv_tensors.BoundingBoxFormat[(format.upper())]
-
     fn = tv_tensors.is_rotated_bounding_format
     if scripted:
         fn = torch.jit.script(fn)
@@ -97,13 +94,12 @@ def test_bbox_format(format, is_rotated_expected, scripted):
 )
 @pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
 def test_bbox_format_dtype(format, support_integer_dtype, input_dtype):
-    print(format, support_integer_dtype, input_dtype)
+    tensor = torch.randint(0, 32, size=(5, 2), dtype=input_dtype)
     if not input_dtype.is_floating_point and not support_integer_dtype:
-        pytest.xfail("Rotated bounding boxes should be floating point tensors")
-        bboxes = tv_tensors.BoundingBoxes(torch.randint(0, 32, size=(5, 2)), format=format, canvas_size=(32, 32))
+        with pytest.raises(ValueError, match="Rotated bounding boxes should be floating point tensors"):
+            tv_tensors.BoundingBoxes(tensor, format=format, canvas_size=(32, 32))
     else:
-        bboxes = tv_tensors.BoundingBoxes(torch.rand(size=(5, 2)), format=format, canvas_size=(32, 32))
-        assert isinstance(bboxes, torch.Tensor)
+        tv_tensors.BoundingBoxes(tensor, format=format, canvas_size=(32, 32))
 
 
 def test_bbox_dim_error():
@@ -437,5 +433,5 @@ def test_return_type_input():
 
 
 def test_box_clamping_mode_default():
-    assert tv_tensors.BoundingBoxes([0, 0, 10, 10], format="XYXY", canvas_size=(100, 100)).clamping_mode == "soft"
-    assert tv_tensors.BoundingBoxes([0, 0, 10, 10, 0], format="XYWHR", canvas_size=(100, 100)).clamping_mode == "soft"
+    assert tv_tensors.BoundingBoxes([0., 0., 10., 10.], format="XYXY", canvas_size=(100, 100)).clamping_mode == "soft"
+    assert tv_tensors.BoundingBoxes([0., 0., 10., 10., 0.], format="XYWHR", canvas_size=(100, 100)).clamping_mode == "soft"
