@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+fb3926e) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.23.0a0+646341d) &#x25BC</a>
     </div>
     
 
@@ -468,8 +468,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;format should be str or BoundingBoxFormat, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="nb">format</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
-<span class="c1"># TODOBB consider making this a Literal instead. Tried briefly and got</span>
-<span class="c1"># torchscript errors, leaving to str for now.</span>
+<span class="c1"># This should ideally be a Literal, but torchscript fails.</span>
 <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 <span class="c1"># TODOBB All docs. Add any new API to rst files, add tutorial[s].</span>
@@ -511,12 +510,15 @@
                 <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">tensor</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected a 1D or 2D tensor, got </span><span class="si">{</span><span class="n">tensor</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hard&quot;</span><span class="p">,</span> <span class="s2">&quot;soft&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;clamping_mode must be None, hard or soft, got </span><span class="si">{</span><span class="n">clamping_mode</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="nb">format</span> <span class="o">=</span> <span class="n">BoundingBoxFormat</span><span class="p">[</span><span class="nb">format</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
+
         <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
         <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="nb">format</span>
         <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">canvas_size</span> <span class="o">=</span> <span class="n">canvas_size</span>
-        <span class="c1"># TODOBB validate values</span>
         <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">clamping_mode</span> <span class="o">=</span> <span class="n">clamping_mode</span>
         <span class="k">return</span> <span class="n">bounding_boxes</span>
 
