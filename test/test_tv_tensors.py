@@ -77,6 +77,33 @@ def test_bbox_format(format, is_rotated_expected, scripted):
         fn = torch.jit.script(fn)
     assert fn(format) == is_rotated_expected
 
+@pytest.mark.parametrize(
+    "format, support_integer_dtype",
+    [
+        ("XYXY", True),
+        ("XYWH", True),
+        ("CXCYWH", True),
+        ("XYXYXYXY", False),
+        ("XYWHR", False),
+        ("CXCYWHR", False),
+        (tv_tensors.BoundingBoxFormat.XYXY, True),
+        (tv_tensors.BoundingBoxFormat.XYWH, True),
+        (tv_tensors.BoundingBoxFormat.CXCYWH, True),
+        (tv_tensors.BoundingBoxFormat.XYXYXYXY, False),
+        (tv_tensors.BoundingBoxFormat.XYWHR, False),
+        (tv_tensors.BoundingBoxFormat.CXCYWHR, False),
+    ],
+)
+@pytest.mark.parametrize("input_dtype", [torch.float32, torch.float64, torch.uint8])
+def test_bbox_format_dtype(format, support_integer_dtype, input_dtype):
+    print(format, support_integer_dtype, input_dtype)
+    if not input_dtype.is_floating_point and not support_integer_dtype:
+        pytest.xfail("Rotated bounding boxes should be floating point tensors")
+        bboxes = tv_tensors.BoundingBoxes(torch.randint(0, 32, size=(5, 2)), format=format, canvas_size=(32, 32))
+    else:
+        bboxes = tv_tensors.BoundingBoxes(torch.rand(size=(5, 2)), format=format, canvas_size=(32, 32))
+        assert isinstance(bboxes, torch.Tensor)
+
 
 def test_bbox_dim_error():
     data_3d = [[[1, 2, 3, 4]]]
