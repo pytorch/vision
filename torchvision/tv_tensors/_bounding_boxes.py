@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -40,16 +40,22 @@ class BoundingBoxFormat(Enum):
 
 # TODO: Once torchscript supports Enums with staticmethod
 # this can be put into BoundingBoxFormat as staticmethod
-def is_rotated_bounding_format(format: BoundingBoxFormat) -> bool:
-    return (
-        format == BoundingBoxFormat.XYWHR or format == BoundingBoxFormat.CXCYWHR or format == BoundingBoxFormat.XYXYXYXY
-    )
+def is_rotated_bounding_format(format: BoundingBoxFormat | str) -> bool:
+    if isinstance(format, BoundingBoxFormat):
+        return (
+            format == BoundingBoxFormat.XYWHR
+            or format == BoundingBoxFormat.CXCYWHR
+            or format == BoundingBoxFormat.XYXYXYXY
+        )
+    elif isinstance(format, str):
+        return format in ("XYWHR", "CXCYWHR", "XYXYXYXY")
+    else:
+        raise ValueError(f"format should be str or BoundingBoxFormat, got {type(format)}")
 
 
 # TODOBB consider making this a Literal instead. Tried briefly and got
 # torchscript errors, leaving to str for now.
-# CLAMPING_MODE_TYPE = Literal["hard", "soft", "none"]
-CLAMPING_MODE_TYPE = str
+CLAMPING_MODE_TYPE = Optional[str]
 
 # TODOBB All docs. Add any new API to rst files, add tutorial[s].
 
@@ -105,12 +111,14 @@ class BoundingBoxes(TVTensor):
         *,
         format: BoundingBoxFormat | str,
         canvas_size: tuple[int, int],
-        clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB change default to soft!
+        clamping_mode: CLAMPING_MODE_TYPE = "soft",
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,
     ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        if not torch.is_floating_point(tensor) and is_rotated_bounding_format(format):
+            raise ValueError(f"Rotated bounding boxes should be floating point tensors, got {tensor.dtype}.")
         return cls._wrap(tensor, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
 
     @classmethod
