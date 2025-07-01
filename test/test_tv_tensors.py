@@ -77,6 +77,7 @@ def test_bbox_format(format, is_rotated_expected, scripted):
         fn = torch.jit.script(fn)
     assert fn(format) == is_rotated_expected
 
+
 @pytest.mark.parametrize(
     "format, support_integer_dtype",
     [
