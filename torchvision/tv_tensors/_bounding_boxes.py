@@ -42,7 +42,11 @@ class BoundingBoxFormat(Enum):
 # this can be put into BoundingBoxFormat as staticmethod
 def is_rotated_bounding_format(format: Union[BoundingBoxFormat, str]) -> bool:
     if isinstance(format, BoundingBoxFormat):
-        return (format == BoundingBoxFormat.XYWHR or format == BoundingBoxFormat.CXCYWHR or format == BoundingBoxFormat.XYXYXYXY)
+        return (
+            format == BoundingBoxFormat.XYWHR
+            or format == BoundingBoxFormat.CXCYWHR
+            or format == BoundingBoxFormat.XYXYXYXY
+        )
     elif isinstance(format, str):
         return format in ("XYWHR", "CXCYWHR", "XYXYXYXY")
     else:
