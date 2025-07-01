@@ -104,16 +104,10 @@ def horizontal_flip_bounding_boxes(
         bounding_boxes[:, 0::2].sub_(canvas_size[1]).neg_()
         bounding_boxes = bounding_boxes[:, [2, 3, 0, 1, 6, 7, 4, 5]]
     elif format == tv_tensors.BoundingBoxFormat.XYWHR:
-
-        dtype = bounding_boxes.dtype
-        if not torch.is_floating_point(bounding_boxes):
-            # Casting to float to support cos and sin computations.
-            bounding_boxes = bounding_boxes.to(torch.float32)
         angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
         bounding_boxes[:, 0].add_(bounding_boxes[:, 2].mul(angle_rad.cos())).sub_(canvas_size[1]).neg_()
         bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin()))
         bounding_boxes[:, 4].neg_()
-        bounding_boxes = bounding_boxes.to(dtype)
     else:  # format == tv_tensors.BoundingBoxFormat.CXCYWHR:
         bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
         bounding_boxes[:, 4].neg_()
@@ -192,15 +186,10 @@ def vertical_flip_bounding_boxes(
         bounding_boxes[:, 1::2].sub_(canvas_size[0]).neg_()
         bounding_boxes = bounding_boxes[:, [2, 3, 0, 1, 6, 7, 4, 5]]
     elif format == tv_tensors.BoundingBoxFormat.XYWHR:
-        dtype = bounding_boxes.dtype
-        if not torch.is_floating_point(bounding_boxes):
-            # Casting to float to support cos and sin computations.
-            bounding_boxes = bounding_boxes.to(torch.float64)
         angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
         bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin())).sub_(canvas_size[0]).neg_()
         bounding_boxes[:, 0].add_(bounding_boxes[:, 2].mul(angle_rad.cos()))
         bounding_boxes[:, 4].neg_().add_(180)
-        bounding_boxes = bounding_boxes.to(dtype)
     else:  # format == tv_tensors.BoundingBoxFormat.CXCYWHR:
         bounding_boxes[:, 1].sub_(canvas_size[0]).neg_()
         bounding_boxes[:, 4].neg_().add_(180)
@@ -1102,9 +1091,8 @@ def _affine_bounding_boxes_with_expand(
 
     original_shape = bounding_boxes.shape
     dtype = bounding_boxes.dtype
-    acceptable_dtypes = [torch.float64]  # Ensure consistency between CPU and GPU.
-    need_cast = dtype not in acceptable_dtypes
-    bounding_boxes = bounding_boxes.to(torch.float64) if need_cast else bounding_boxes.clone()
+    need_cast = not bounding_boxes.is_floating_point()
+    bounding_boxes = bounding_boxes.float() if need_cast else bounding_boxes.clone()
     device = bounding_boxes.device
     is_rotated = tv_tensors.is_rotated_bounding_format(format)
     intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY

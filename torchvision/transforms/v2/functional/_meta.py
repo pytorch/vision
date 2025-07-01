@@ -540,9 +540,6 @@ def _clamp_along_y_axis(
     Returns:
         torch.Tensor: The adjusted bounding boxes.
     """
-    dtype = bounding_boxes.dtype
-    acceptable_dtypes = [torch.float64]  # Ensure consistency between CPU and GPU.
-    need_cast = dtype not in acceptable_dtypes
     original_shape = bounding_boxes.shape
     bounding_boxes = bounding_boxes.reshape(-1, 8)
     original_bounding_boxes = original_bounding_boxes.reshape(-1, 8)
@@ -561,12 +558,7 @@ def _clamp_along_y_axis(
     cond_a = (x1 < 0) & ~case_a.isnan().any(-1)  # First point is outside left boundary
     cond_b = y1.isclose(y2) | y3.isclose(y4)  # First line is nearly vertical
     cond_c = (x1 <= 0) & (x2 <= 0) & (x3 <= 0) & (x4 <= 0)  # All points outside left boundary
-    cond_c = (
-        cond_c
-        | y1.isclose(y4)
-        | y2.isclose(y3)
-        | (cond_b & x1.isclose(x2))
-    )  # First line is nearly horizontal
+    cond_c = cond_c | y1.isclose(y4) | y2.isclose(y3) | (cond_b & x1.isclose(x2))  # First line is nearly horizontal
 
     for (cond, case) in zip(
         [cond_a, cond_b, cond_c],
@@ -574,8 +566,6 @@ def _clamp_along_y_axis(
     ):
         bounding_boxes = torch.where(cond.unsqueeze(1).repeat(1, 8), case.reshape(-1, 8), bounding_boxes)
 
-    if need_cast:
-        bounding_boxes = bounding_boxes.to(dtype)
     return bounding_boxes.reshape(original_shape)
 
 
@@ -608,10 +598,7 @@ def _clamp_rotated_bounding_boxes(
     if clamping_mode is not None and clamping_mode == "none":
         return bounding_boxes.clone()
     original_shape = bounding_boxes.shape
-    dtype = bounding_boxes.dtype
-    acceptable_dtypes = [torch.float64]  # Ensure consistency between CPU and GPU.
-    need_cast = dtype not in acceptable_dtypes
-    bounding_boxes = bounding_boxes.to(torch.float64) if need_cast else bounding_boxes.clone()
+    bounding_boxes = bounding_boxes.clone()
     out_boxes = (
         convert_bounding_box_format(
             bounding_boxes, old_format=format, new_format=tv_tensors.BoundingBoxFormat.XYXYXYXY, inplace=True
@@ -640,8 +627,6 @@ def _clamp_rotated_bounding_boxes(
         out_boxes, old_format=tv_tensors.BoundingBoxFormat.XYXYXYXY, new_format=format, inplace=True
     ).reshape(original_shape)
 
-    if need_cast:
-        out_boxes = out_boxes.to(dtype)
     return out_boxes
 
 
