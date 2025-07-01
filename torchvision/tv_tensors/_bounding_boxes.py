@@ -53,8 +53,7 @@ def is_rotated_bounding_format(format: BoundingBoxFormat | str) -> bool:
         raise ValueError(f"format should be str or BoundingBoxFormat, got {type(format)}")
 
 
-# TODOBB consider making this a Literal instead. Tried briefly and got
-# torchscript errors, leaving to str for now.
+# This should ideally be a Literal, but torchscript fails.
 CLAMPING_MODE_TYPE = Optional[str]
 
 # TODOBB All docs. Add any new API to rst files, add tutorial[s].
@@ -96,12 +95,15 @@ class BoundingBoxes(TVTensor):
                 tensor = tensor.unsqueeze(0)
             elif tensor.ndim != 2:
                 raise ValueError(f"Expected a 1D or 2D tensor, got {tensor.ndim}D")
+        if clamping_mode is not None and clamping_mode not in ("hard", "soft"):
+            raise ValueError(f"clamping_mode must be None, hard or soft, got {clamping_mode}.")
+
         if isinstance(format, str):
             format = BoundingBoxFormat[format.upper()]
+
         bounding_boxes = tensor.as_subclass(cls)
         bounding_boxes.format = format
         bounding_boxes.canvas_size = canvas_size
-        # TODOBB validate values
         bounding_boxes.clamping_mode = clamping_mode
         return bounding_boxes
 

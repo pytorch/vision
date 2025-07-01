@@ -5526,7 +5526,7 @@ class TestNormalize:
 
 class TestClampBoundingBoxes:
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
-    @pytest.mark.parametrize("clamping_mode", ("hard", None))  # TODOBB add soft
+    @pytest.mark.parametrize("clamping_mode", ("soft", "hard", None))
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel(self, format, clamping_mode, dtype, device):
@@ -5542,7 +5542,7 @@ class TestClampBoundingBoxes:
         )
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
-    @pytest.mark.parametrize("clamping_mode", ("hard", None))  # TODOBB add soft
+    @pytest.mark.parametrize("clamping_mode", ("soft", "hard", None))
     def test_functional(self, format, clamping_mode):
         check_functional(F.clamp_bounding_boxes, make_bounding_boxes(format=format, clamping_mode=clamping_mode))
 
@@ -5566,12 +5566,17 @@ class TestClampBoundingBoxes:
             ):
                 F.clamp_bounding_boxes(input_tv_tensor, format=format_, canvas_size=canvas_size_)
 
+        with pytest.raises(ValueError, match="clamping_mode must be soft,"):
+            F.clamp_bounding_boxes(input_tv_tensor, clamping_mode="bad")
+        with pytest.raises(ValueError, match="clamping_mode must be soft,"):
+            transforms.ClampBoundingBoxes(clamping_mode="bad")(input_tv_tensor)
+
     def test_transform(self):
         check_transform(transforms.ClampBoundingBoxes(), make_bounding_boxes())
 
     @pytest.mark.parametrize("rotated", (True, False))
-    @pytest.mark.parametrize("constructor_clamping_mode", ("hard", None))
-    @pytest.mark.parametrize("clamping_mode", ("hard", None, "auto"))  # TODOBB add soft here.
+    @pytest.mark.parametrize("constructor_clamping_mode", ("soft", "hard", None))
+    @pytest.mark.parametrize("clamping_mode", ("soft", "hard", None, "auto"))
     @pytest.mark.parametrize("pass_pure_tensor", (True, False))
     @pytest.mark.parametrize("fn", [F.clamp_bounding_boxes, transform_cls_to_functional(transforms.ClampBoundingBoxes)])
     def test_clamping_mode(self, rotated, constructor_clamping_mode, clamping_mode, pass_pure_tensor, fn):
@@ -5624,8 +5629,8 @@ class TestClampBoundingBoxes:
 
 class TestSetClampingMode:
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
-    @pytest.mark.parametrize("constructor_clamping_mode", ("hard", None))  # TODOBB add soft
-    @pytest.mark.parametrize("desired_clamping_mode", ("hard", None))  # TODOBB add soft
+    @pytest.mark.parametrize("constructor_clamping_mode", ("soft", "hard", None))
+    @pytest.mark.parametrize("desired_clamping_mode", ("soft", "hard", None))
     def test_setter(self, format, constructor_clamping_mode, desired_clamping_mode):
 
         in_boxes = make_bounding_boxes(format=format, clamping_mode=constructor_clamping_mode)
@@ -5635,7 +5640,7 @@ class TestSetClampingMode:
         assert out_boxes.clamping_mode == desired_clamping_mode
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
-    @pytest.mark.parametrize("constructor_clamping_mode", ("hard", None))  # TODOBB add soft
+    @pytest.mark.parametrize("constructor_clamping_mode", ("soft", "hard", None))
     def test_pipeline_no_leak(self, format, constructor_clamping_mode):
         class AssertClampingMode(transforms.Transform):
             def __init__(self, expected_clamping_mode):
@@ -5668,6 +5673,10 @@ class TestSetClampingMode:
         # assert that the output boxes clamping_mode is the one set by the last SetClampingMode.
         # ClampBoundingBoxes doesn't set clamping_mode.
         assert out_boxes.clamping_mode is None
+
+    def test_error(self):
+        with pytest.raises(ValueError, match="clamping_mode must be"):
+            transforms.SetClampingMode("bad")
 
 
 class TestClampKeyPoints:
