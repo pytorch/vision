@@ -40,7 +40,7 @@ class BoundingBoxFormat(Enum):
 
 # TODO: Once torchscript supports Enums with staticmethod
 # this can be put into BoundingBoxFormat as staticmethod
-def is_rotated_bounding_format(format: Union[BoundingBoxFormat, str]) -> bool:
+def is_rotated_bounding_format(format: BoundingBoxFormat | str) -> bool:
     if isinstance(format, BoundingBoxFormat):
         return (
             format == BoundingBoxFormat.XYWHR
