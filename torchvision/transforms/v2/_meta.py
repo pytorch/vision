@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
@@ -34,7 +34,9 @@ class ClampBoundingBoxes(Transform):
 
     """
 
-    def __init__(self, clamping_mode: Optional[CLAMPING_MODE_TYPE] = None) -> None:
+    # TODOBB consider "auto" to be a Literal, make sur torchscript is still happy
+    # TODOBB validate clamping_mode
+    def __init__(self, clamping_mode: Union[CLAMPING_MODE_TYPE, str] = "auto") -> None:
         super().__init__()
         self.clamping_mode = clamping_mode
 

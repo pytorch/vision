@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 import PIL.Image
 import torch
@@ -376,7 +376,7 @@ def _clamp_bounding_boxes(
     canvas_size: tuple[int, int],
     clamping_mode: CLAMPING_MODE_TYPE,
 ) -> torch.Tensor:
-    if clamping_mode is not None and clamping_mode == "none":
+    if clamping_mode is None:
         return bounding_boxes.clone()
     # TODO: Investigate if it makes sense from a performance perspective to have an implementation for every
     #  BoundingBoxFormat instead of converting back and forth
@@ -479,7 +479,7 @@ def _clamp_y_intercept(
     b1 = b2.clamp(b1, b3).clamp(0, canvas_size[0])
     b4 = b3.clamp(b2, b4).clamp(0, canvas_size[0])
 
-    if clamping_mode == "hard":
+    if clamping_mode is not None and clamping_mode == "hard":
         # Hard clamping: Average b1 and b4, and adjust b2 and b3 for maximum area
         b1 = b4 = (b1 + b4) / 2
 
@@ -595,7 +595,7 @@ def _clamp_rotated_bounding_boxes(
     Returns:
         torch.Tensor: Clamped bounding boxes in the original format and shape
     """
-    if clamping_mode is not None and clamping_mode == "none":
+    if clamping_mode is None:
         return bounding_boxes.clone()
     original_shape = bounding_boxes.shape
     bounding_boxes = bounding_boxes.clone()
@@ -634,7 +634,7 @@ def clamp_bounding_boxes(
     inpt: torch.Tensor,
     format: Optional[BoundingBoxFormat] = None,
     canvas_size: Optional[tuple[int, int]] = None,
-    clamping_mode: Optional[CLAMPING_MODE_TYPE] = None,
+    clamping_mode: Union[CLAMPING_MODE_TYPE, str] = "auto",
 ) -> torch.Tensor:
     """See :func:`~torchvision.transforms.v2.ClampBoundingBoxes` for details."""
     if not torch.jit.is_scripting():
@@ -642,7 +642,7 @@ def clamp_bounding_boxes(
 
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
 
-        if format is None or canvas_size is None or clamping_mode is None:
+        if format is None or canvas_size is None or (clamping_mode is not None and clamping_mode == "auto"):
             raise ValueError("For pure tensor inputs, `format`, `canvas_size` and `clamping_mode` have to be passed.")
         if tv_tensors.is_rotated_bounding_format(format):
             return _clamp_rotated_bounding_boxes(
@@ -653,7 +653,7 @@ def clamp_bounding_boxes(
     elif isinstance(inpt, tv_tensors.BoundingBoxes):
         if format is not None or canvas_size is not None:
             raise ValueError("For bounding box tv_tensor inputs, `format` and `canvas_size` must not be passed.")
-        if clamping_mode is None:
+        if clamping_mode is not None and clamping_mode == "auto":
             clamping_mode = inpt.clamping_mode
         if tv_tensors.is_rotated_bounding_format(inpt.format):
             output = _clamp_rotated_bounding_boxes(
