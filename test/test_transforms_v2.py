@@ -5593,7 +5593,7 @@ class TestClampBoundingBoxes:
 
         if rotated:
             boxes = tv_tensors.BoundingBoxes(
-                [0, 0, 100, 100, 0], format="XYWHR", canvas_size=(10, 10), clamping_mode=constructor_clamping_mode
+                [0., 0., 100., 100., 0.], format="XYWHR", canvas_size=(10, 10), clamping_mode=constructor_clamping_mode
             )
             expected_clamped_output = torch.tensor([[0.0, 0.0, 10.0, 10.0, 0.0]])
         else:
