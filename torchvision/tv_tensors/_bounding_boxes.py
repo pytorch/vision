@@ -53,8 +53,7 @@ def is_rotated_bounding_format(format: BoundingBoxFormat | str) -> bool:
         raise ValueError(f"format should be str or BoundingBoxFormat, got {type(format)}")
 
 
-# TODOBB consider making this a Literal instead. Tried briefly and got
-# torchscript errors, leaving to str for now.
+# This should ideally be a Literal, but torchscript fails.
 CLAMPING_MODE_TYPE = Optional[str]
 
 # TODOBB All docs. Add any new API to rst files, add tutorial[s].

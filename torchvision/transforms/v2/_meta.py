@@ -34,7 +34,6 @@ class ClampBoundingBoxes(Transform):
 
     """
 
-    # TODOBB consider "auto" to be a Literal, make sur torchscript is still happy
     def __init__(self, clamping_mode: Union[CLAMPING_MODE_TYPE, str] = "auto") -> None:
         super().__init__()
         self.clamping_mode = clamping_mode
