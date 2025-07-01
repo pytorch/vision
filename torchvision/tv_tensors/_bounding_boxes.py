@@ -99,11 +99,6 @@ class BoundingBoxes(TVTensor):
         bounding_boxes.clamping_mode = clamping_mode
         return bounding_boxes
 
-    @staticmethod
-    def _check_format(tensor: torch.Tensor, format: BoundingBoxFormat) -> None:
-        if not torch.is_floating_point(tensor) and is_rotated_bounding_format(format):
-            raise ValueError("Rotated bounding boxes should be floating point tensors")
-
     def __new__(
         cls,
         data: Any,
@@ -116,7 +111,8 @@ class BoundingBoxes(TVTensor):
         requires_grad: bool | None = None,
     ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        cls._check_format(tensor, format=format)
+        if not torch.is_floating_point(tensor) and is_rotated_bounding_format(format):
+            raise ValueError("Rotated bounding boxes should be floating point tensors")
         return cls._wrap(tensor, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
 
     @classmethod
