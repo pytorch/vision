@@ -13,19 +13,14 @@ class KeyPoints(TVTensor):
 
     Each point is represented by its X and Y coordinates along the width and height dimensions, respectively.
 
-    KeyPoints can be converted from :class:`torchvision.tv_tensors.BoundingBoxes`
-    by :func:`torchvision.transforms.v2.functional.convert_bounding_boxes_to_points`.
-
     KeyPoints may represent any object that can be represented by sequences of 2D points:
 
     - `Polygonal chains <https://en.wikipedia.org/wiki/Polygonal_chain>`_,
-      including polylines, Bézier curves, etc., which should be of shape
-      ``[N_chains, N_points, 2]``, which is equal to ``[N_chains, N_segments +
-      1, 2]``
-    - Polygons, which should be of shape ``[N_polygons, N_points, 2]``, which is
-      equal to ``[N_polygons, N_sides, 2]``
-    - Skeletons, which could be of shape ``[N_skeletons, N_bones, 2, 2]`` for
-      pose-estimation models
+      including polylines, Bézier curves, etc., which can be of shape
+      ``[N_chains, N_points, 2]``
+    - Polygons, which can be of shape ``[N_polygons, N_points, 2]``
+    - Skeletons, which can be of shape ``[N_skeletons, N_bones, 2, 2]`` for
+      pose-estimation models.
 
     .. note::
         Like for :class:`torchvision.tv_tensors.BoundingBoxes`, there should
