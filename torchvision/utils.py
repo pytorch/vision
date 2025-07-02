@@ -136,7 +136,7 @@ class _ImageDrawTV(ImageDraw.ImageDraw):
                 width=width,
                 fill=outline,
             )
-        self.rectangle(xy, fill=fill, outline=None, width=0)
+        self.polygon(xy, fill=fill, outline=None, width=0)
 
     def dashed_line(self, xy, fill=None, width=0, joint=None, dash_length=5, space_length=5):
         # Calculate the total length of the line
