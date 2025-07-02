@@ -15,10 +15,8 @@ import matplotlib.pyplot as plt
 
 
 import torch
-import torchvision.transforms.functional as F
 from torchvision import tv_tensors
 from torchvision.transforms import v2
-from torchvision.utils import draw_bounding_boxes
 from helpers import plot
 
 plt.rcParams["figure.figsize"] = [10, 5]
@@ -108,4 +106,3 @@ soft_center_crops_and_boxes = [
 
 plot([[(orig_img, orig_box)] + hard_center_crops_and_boxes,
       [(orig_img, soft_box)] + soft_center_crops_and_boxes])
-
