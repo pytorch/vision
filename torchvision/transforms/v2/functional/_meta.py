@@ -640,6 +640,9 @@ def clamp_bounding_boxes(
     if not torch.jit.is_scripting():
         _log_api_usage_once(clamp_bounding_boxes)
 
+    if clamping_mode is not None and clamping_mode not in ("soft", "hard", "auto"):
+        raise ValueError(f"clamping_mode must be soft, hard, auto or None, got {clamping_mode}")
+
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
 
         if format is None or canvas_size is None or (clamping_mode is not None and clamping_mode == "auto"):
