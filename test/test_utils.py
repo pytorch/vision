@@ -177,6 +177,17 @@ def test_draw_rotated_boxes():
     assert_equal(result, expected)
 
 
+@pytest.mark.skipif(PILLOW_VERSION < (10, 1), reason="The reference image is only valid for PIL >= 10.1")
+def test_draw_rotated_boxes_fill():
+    img = torch.full((3, 500, 500), 255, dtype=torch.uint8)
+    colors = ["blue", "yellow", (0, 255, 0), "black"]
+
+    result = utils.draw_bounding_boxes(img, rotated_boxes, colors=colors, fill=True)
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_rotated_boxes_fill.png")
+    expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+    assert_equal(result, expected)
+
+
 @pytest.mark.parametrize("fill", [True, False])
 def test_draw_boxes_dtypes(fill):
     img_uint8 = torch.full((3, 100, 100), 255, dtype=torch.uint8)

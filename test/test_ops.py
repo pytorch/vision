@@ -1201,67 +1201,32 @@ class TestDeformConv:
         torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
 
 
-@pytest.mark.parametrize("dtype", (torch.float16, torch.float32, torch.float64))
-@pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize("requires_grad", (True, False))
-def test_deform_conv2d_opcheck(dtype, device, requires_grad):
-    batch_size, channels_in, height, width = 1, 6, 10, 10
-    kernel_size = (3, 3)
-    stride = (1, 1)
-    padding = (1, 1)
-    dilation = (1, 1)
-    groups = 2
-    out_channels = 4
-    out_h = (height + 2 * padding[0] - dilation[0] * (kernel_size[0] - 1) - 1) // stride[0] + 1
-    out_w = (width + 2 * padding[1] - dilation[1] * (kernel_size[1] - 1) - 1) // stride[1] + 1
-    x = torch.randn(batch_size, channels_in, height, width, dtype=dtype, device=device, requires_grad=requires_grad)
-    offset = torch.randn(
-        batch_size,
-        2 * kernel_size[0] * kernel_size[1],
-        out_h,
-        out_w,
-        dtype=dtype,
-        device=device,
-        requires_grad=requires_grad,
-    )
-    weight = torch.randn(
-        out_channels,
-        channels_in // groups,
-        kernel_size[0],
-        kernel_size[1],
-        dtype=dtype,
-        device=device,
-        requires_grad=requires_grad,
-    )
-    bias = torch.randn(out_channels, dtype=dtype, device=device, requires_grad=requires_grad)
-    use_mask = True
-    mask = torch.sigmoid(
-        torch.randn(
-            batch_size,
-            kernel_size[0] * kernel_size[1],
-            out_h,
-            out_w,
-            dtype=dtype,
-            device=device,
-            requires_grad=requires_grad,
-        )
-    )
-    kwargs = {
-        "offset": offset,
-        "weight": weight,
-        "bias": bias,
-        "stride_h": stride[0],
-        "stride_w": stride[1],
-        "pad_h": padding[0],
-        "pad_w": padding[1],
-        "dilation_h": dilation[0],
-        "dilation_w": dilation[1],
-        "groups": groups,
-        "offset_groups": 1,
-        "use_mask": use_mask,
-        "mask": mask,  # no modulation in this test
-    }
-    optests.opcheck(torch.ops.torchvision.deform_conv2d, args=(x,), kwargs=kwargs)
+# NS: Remove me once backward is implemented for MPS
+def xfail_if_mps(x):
+    mps_xfail_param = pytest.param("mps", marks=(pytest.mark.needs_mps, pytest.mark.xfail))
+    new_pytestmark = []
+    for mark in x.pytestmark:
+        if isinstance(mark, pytest.Mark) and mark.name == "parametrize":
+            if mark.args[0] == "device":
+                params = cpu_and_cuda() + (mps_xfail_param,)
+                new_pytestmark.append(pytest.mark.parametrize("device", params))
+                continue
+        new_pytestmark.append(mark)
+    x.__dict__["pytestmark"] = new_pytestmark
+    return x
+
+
+optests.generate_opcheck_tests(
+    testcase=TestDeformConv,
+    namespaces=["torchvision"],
+    failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
+    # Skip tests due to unimplemented backward
+    additional_decorators={
+        "test_aot_dispatch_dynamic__test_forward": [xfail_if_mps],
+        "test_autograd_registration__test_forward": [xfail_if_mps],
+    },
+    test_utils=OPTESTS,
+)
 
 
 class TestFrozenBNT:
