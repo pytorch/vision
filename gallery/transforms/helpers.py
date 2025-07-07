@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import torch
 from torchvision.utils import draw_bounding_boxes, draw_segmentation_masks
 from torchvision import tv_tensors
+from torchvision.transforms import v2
 from torchvision.transforms.v2 import functional as F
 
 
@@ -24,6 +25,11 @@ def plot(imgs, row_title=None, bbox_width=3, **imshow_kwargs):
                     masks = target.get("masks")
                 elif isinstance(target, tv_tensors.BoundingBoxes):
                     boxes = target
+
+                    # Conversion necessary because draw_bounding_boxes() only
+                    # work with this specific format.
+                    if tv_tensors.is_rotated_bounding_format(boxes.format):
+                        boxes = v2.ConvertBoundingBoxFormat("xyxyxyxy")(boxes)
                 else:
                     raise ValueError(f"Unexpected target type: {type(target)}")
             img = F.to_image(img)

@@ -3,9 +3,12 @@
 Transforms on Rotated Bounding Boxes
 ===============================================================
 
-Introduction.
+This example illustrates how to define and use rotated bounding boxes. We'll
+cover how to define them, demonstrate their usage with some of the existing
+transforms, and finally some of their unique behavior in comparision to
+standard bounding boxes.
 
-First, some code to set everything up.
+First, a bit of setup code:
 """
 
 # %%
@@ -31,10 +34,17 @@ torch.manual_seed(0)
 orig_img = Image.open(Path('../assets') / 'leaning_tower.jpg')
 
 # %%
-# Rotated Bounding Boxes
-# ----------------------
-# Brief intro into what rotated bounding boxes are. Brief description of the
-# image.
+# Creating a Rotated Bounding Box
+# -------------------------------
+# Rotated bounding boxes are created by instantiating the
+# :class:`~torchvision.tv_tensors.BoundingBoxes` class. It's the `format`
+# parameter of the constructor that determines if a bounding box is rotated or
+# not. In this instance, we use the
+# :attr:`~torchvision.tv_tensors.BoundingBoxFormat` kind `CXCYWHR`. The first
+# two values are the `x` and `y` coordinates of the center of the bounding box.
+# The next two values are the `width` and `height` of the bounding box, and the
+# last value is the `rotation` of the bounding box.
+
 
 orig_box = tv_tensors.BoundingBoxes(
     [
@@ -43,11 +53,6 @@ orig_box = tv_tensors.BoundingBoxes(
     format="CXCYWHR",
     canvas_size=(orig_img.size[1], orig_img.size[0]),
 )
-
-# Note that this conversion is only necessary because our utilities for drawing
-# the bounding boxes expect this format. This conversion is not necessary in
-# actual training pipelines. TODO: verify with @NicolasHug, @AntoineSimoulin
-orig_box = v2.ConvertBoundingBoxFormat("xyxyxyxy")(orig_box)
 
 plot([(orig_img, orig_box)], bbox_width=10)
 
