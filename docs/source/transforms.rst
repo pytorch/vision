@@ -12,7 +12,7 @@ supported:
 
 - Images as pure tensors, :class:`~torchvision.tv_tensors.Image` or PIL image
 - Videos as :class:`~torchvision.tv_tensors.Video` 
-- Aligned and rotated bounding boxes as :class:`~torchvision.tv_tensors.BoundingBoxes` 
+- Axis-aligned and rotated bounding boxes as :class:`~torchvision.tv_tensors.BoundingBoxes` 
 - Segmentation and detection masks as :class:`~torchvision.tv_tensors.Mask` 
 - KeyPoints as :class:`~torchvision.tv_tensors.KeyPoints`.
 
@@ -119,7 +119,7 @@ advantages compared to the v1 ones (in ``torchvision.transforms``):
 
 - They can transform images **but also** bounding boxes, masks, videos and
   keypoints. This provides support for tasks beyond image classification:
-  detection, segmentation, video classification, etc. See
+  detection, segmentation, video classification, pose estimation, etc. See
   :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`
   and :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`.
 - They support more transforms like :class:`~torchvision.transforms.v2.CutMix`

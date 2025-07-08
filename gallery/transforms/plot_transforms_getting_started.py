@@ -84,7 +84,8 @@ plot([img, out])
 #
 # The Torchvision transforms in the ``torchvision.transforms.v2`` namespace
 # support tasks beyond image classification: they can also transform rotated or
-# aligned bounding boxes, segmentation / detection masks, videos, and keypoints.
+# axis-aligned bounding boxes, segmentation / detection masks, videos, and
+# keypoints.
 #
 # Let's briefly look at a detection example with bounding boxes.
 
