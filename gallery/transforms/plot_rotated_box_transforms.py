@@ -58,15 +58,19 @@ plot([(orig_img, orig_box)], bbox_width=10)
 
 # %%
 # Rotation
-# --------------
+# --------
+# Rotated bounding boxes maintain their rotation with respect to the image even
+# when the image itself is rotated through the
+# :class:`~torchvision.transforms.RandomRotation` transform.
 rotater = v2.RandomRotation(degrees=(0, 180), expand=True)
 rotated_imgs = [rotater((orig_img, orig_box)) for _ in range(4)]
 plot([(orig_img, orig_box)] + rotated_imgs, bbox_width=10)
 
 # %%
 # Padding
-# -------------
-# The rotated bounding boxes also respect padding transforms.
+# -------
+# Rotated bounding boxes also maintain their properties when the image is padded using
+# :class:`~torchvision.transforms.Pad`.
 padded_imgs_and_boxes = [
     v2.Pad(padding=padding)(orig_img, orig_box)
     for padding in (30, 50, 100, 200)
@@ -75,21 +79,26 @@ plot([(orig_img, orig_box)] + padded_imgs_and_boxes, bbox_width=10)
 
 # %%
 # Resizing
-# --------------
-# Note that the bounding box looking bigger in the small images is an artifact,
-# not reality. It is due to the the fact that we specify a fixed-size for the
-# width of the lines to draw. When the image is, say, only 30 pixels wide, a
-# line that is 3 pixels wide is relatively large. We could potentially try to
-# tweak the plotting function to avoid this appearance.
+# --------
+# Rotated bounding boxes are also resized along with an image in the
+# :class:`~torchvision.transforms.Resize` transform.
+#
+# Note that the bounding box looking bigger in the images with less pixels is
+# an artifact, not reality. That is merely the rasterised representation of the
+# bounding box's boundaries appearing bigger because we specify a fixed width of
+# that rasterized line. When the image is, say, only 30 pixels wide, a
+# line that is 3 pixels wide is relatively large.
 resized_imgs = [
     v2.Resize(size=size)(orig_img, orig_box)
     for size in (30, 50, 100, orig_img.size)
 ]
-plot([(orig_img, orig_box)] + resized_imgs, bbox_width=3)
+plot([(orig_img, orig_box)] + resized_imgs, bbox_width=5)
 
 # %%
 # Perspective
 # -----------
+# The rotated bounding box is also transformed along with the image when the
+# perspective is transformed with :class:`~torchvision.transforms.RandomPerspective`.
 perspective_transformer = v2.RandomPerspective(distortion_scale=0.6, p=1.0)
 perspective_imgs = [perspective_transformer(orig_img, orig_box) for _ in range(4)]
 plot([(orig_img, orig_box)] + perspective_imgs, bbox_width=10)
@@ -97,6 +106,8 @@ plot([(orig_img, orig_box)] + perspective_imgs, bbox_width=10)
 # %%
 # Elastic Transform
 # -----------------
+# The rotated bounding box is appropriately unchanged when going through the
+# :class:`~torchvision.transforms.ElasticTransform`.
 elastic_imgs = [
     v2.ElasticTransform(alpha=alpha)(orig_img, orig_box)
     for alpha in (100.0, 500.0, 1000.0, 2000.0)
@@ -106,14 +117,26 @@ plot([(orig_img, orig_box)] + elastic_imgs, bbox_width=10)
 # %%
 # Crop & Clamping Modes
 # ---------------------
-# This section doubles as the example for Crop and for explaining clamping
-# modes. My rationale for doing at both at once: any meaningful examples for
-# cropping are going to impact the bounding box, and the only way to make
-# sense of that is to also explain clamping modes. We should cover:
+# The :class:`~torchvision.transforms.CenterCrop` transform selectively crops
+# the image on a center location. The behavior of the rotated bounding box
+# depends on its `clamping_mode`. We can set the `clamping_mode` in the
+# :class:`~torchvision.tv_tensors.BoundingBoxes` constructur, or by directly
+# setting it after construction as we do in the example below.
 #
-# * Clamping mode kinds: hard, soft, None. Behavior of each, when to use them.
-# * Clamping mode defaults for: bounding boxes, functionals, transforms in
-#   general, ClampingBoundingBoxes() specifically.
+# There are two values for `clamping_mode`:
+#
+#  - `"soft"`: The default when constucting
+#    :class:`~torchvision.tv_tensors.BoundingBoxes`. <Insert semantic
+#    description for soft mode.>
+#  - `"hard"`: <Insert semantic description for hard mode.>
+#
+# For standard bounding boxes, both modes behave the same. We also need to
+# document:
+#
+#  - `clamping_mode` for individual kernels.
+#  - `clamping_mode` in :class:`~torchvision.transforms.v2.ClampBoundingBoxes`.
+#  - the new :class:`~torchvision.transforms.v2.SetClampingMode` transform.
+#
 assert orig_box.clamping_mode == "soft"
 hard_box = orig_box.clone()
 hard_box.clamping_mode = "hard"
