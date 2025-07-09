@@ -101,7 +101,7 @@ Transforms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates how to define and use rotated bounding boxes. We&#x27;ll cover how to define them, demonstrate their usage with some of the existing transforms, and finally some of their unique behavior in comparision to standard bounding boxes.">
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates how to define and use rotated bounding boxes.">
 
 .. only:: html
 

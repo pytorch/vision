@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+c50f694) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+b818d32) &#x25BC</a>
     </div>
     
 
@@ -419,10 +419,14 @@
               
   <section class="sphx-glr-example-title" id="transforms-on-rotated-bounding-boxes">
 <span id="sphx-glr-auto-examples-transforms-plot-rotated-box-transforms-py"></span><h1>Transforms on Rotated Bounding Boxes<a class="headerlink" href="#transforms-on-rotated-bounding-boxes" title="Permalink to this heading">¶</a></h1>
-<p>This example illustrates how to define and use rotated bounding boxes. We’ll
-cover how to define them, demonstrate their usage with some of the existing
-transforms, and finally some of their unique behavior in comparision to
-standard bounding boxes.</p>
+<p>This example illustrates how to define and use rotated bounding boxes.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Support for rotated bounding boxes was released in TorchVision 0.23 and is
+currently a BETA feature. We don’t expect the API to change, but there may
+be some rare edge-cases. If you find any issues, please report them on
+our bug tracker: <a class="reference external" href="https://github.com/pytorch/vision/issues?q=is:open+is:issue">https://github.com/pytorch/vision/issues?q=is:open+is:issue</a></p>
+</div>
 <p>First, a bit of setup code:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <a href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="pathlib.Path" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class"><span class="n">Path</span></a>
@@ -430,7 +434,7 @@ standard bounding boxes.</p>
 
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">tv_tensors</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.tv_tensors</span><span class="w"> </span><span class="kn">import</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">BoundingBoxes</span></a>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">v2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">helpers</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot</span>
 
@@ -449,14 +453,14 @@ standard bounding boxes.</p>
 <section id="creating-a-rotated-bounding-box">
 <h2>Creating a Rotated Bounding Box<a class="headerlink" href="#creating-a-rotated-bounding-box" title="Permalink to this heading">¶</a></h2>
 <p>Rotated bounding boxes are created by instantiating the
-<a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a> class. It’s the <cite>format</cite>
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a> class. It’s the <code class="docutils literal notranslate"><span class="pre">format</span></code>
 parameter of the constructor that determines if a bounding box is rotated or
-not. In this instance, we use the
-<a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxFormat.html#torchvision.tv_tensors.BoundingBoxFormat" title="torchvision.tv_tensors.BoundingBoxFormat"><code class="xref py py-attr docutils literal notranslate"><span class="pre">BoundingBoxFormat</span></code></a> kind <cite>CXCYWHR</cite>. The first
-two values are the <cite>x</cite> and <cite>y</cite> coordinates of the center of the bounding box.
-The next two values are the <cite>width</cite> and <cite>height</cite> of the bounding box, and the
-last value is the <cite>rotation</cite> of the bounding box.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">orig_box</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span></a><span class="p">(</span>
+not. In this instance, we use the CXCYWHR
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxFormat.html#torchvision.tv_tensors.BoundingBoxFormat" title="torchvision.tv_tensors.BoundingBoxFormat"><code class="xref py py-attr docutils literal notranslate"><span class="pre">BoundingBoxFormat</span></code></a>. The first two values are
+the X and Y coordinates of the center of the bounding box.  The next two
+values are the width and height of the bounding box, and the last value is the
+rotation of the bounding box, in degrees.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">orig_box</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">BoundingBoxes</span></a><span class="p">(</span>
     <span class="p">[</span>
         <span class="p">[</span><span class="mf">860.0</span><span class="p">,</span> <span class="mi">1100</span><span class="p">,</span> <span class="mi">570</span><span class="p">,</span> <span class="mi">1840</span><span class="p">,</span> <span class="o">-</span><span class="mi">7</span><span class="p">],</span>
     <span class="p">],</span>
@@ -468,21 +472,15 @@ last value is the <cite>rotation</cite> of the bounding box.</p>
 </pre></div>
 </div>
 <img src="../../_images/sphx_glr_plot_rotated_box_transforms_001.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_001.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/></section>
-<section id="rotation">
-<h2>Rotation<a class="headerlink" href="#rotation" title="Permalink to this heading">¶</a></h2>
-<p>Rotated bounding boxes maintain their rotation with respect to the image even
-when the image itself is rotated through the
-<a class="reference internal" href="../../generated/torchvision.transforms.RandomRotation.html#torchvision.transforms.RandomRotation" title="torchvision.transforms.RandomRotation"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomRotation</span></code></a> transform.</p>
+<section id="transforms-illustrations">
+<h2>Transforms illustrations<a class="headerlink" href="#transforms-illustrations" title="Permalink to this heading">¶</a></h2>
+<p>Using <a class="reference internal" href="../../generated/torchvision.transforms.RandomRotation.html#torchvision.transforms.RandomRotation" title="torchvision.transforms.RandomRotation"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomRotation</span></code></a>:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">rotater</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">RandomRotation</span></a><span class="p">(</span><span class="n">degrees</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">180</span><span class="p">),</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rotated_imgs</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">rotater</span><span class="p">((</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
 <span class="n">plot</span><span class="p">([(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)]</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">rotated_imgs</span></a><span class="p">,</span> <span class="n">bbox_width</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_plot_rotated_box_transforms_002.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_002.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/></section>
-<section id="padding">
-<h2>Padding<a class="headerlink" href="#padding" title="Permalink to this heading">¶</a></h2>
-<p>Rotated bounding boxes also maintain their properties when the image is padded using
-<a class="reference internal" href="../../generated/torchvision.transforms.Pad.html#torchvision.transforms.Pad" title="torchvision.transforms.Pad"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pad</span></code></a>.</p>
+<img src="../../_images/sphx_glr_plot_rotated_box_transforms_002.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_002.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/><p>Using <a class="reference internal" href="../../generated/torchvision.transforms.Pad.html#torchvision.transforms.Pad" title="torchvision.transforms.Pad"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pad</span></code></a>:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">padded_imgs_and_boxes</span></a> <span class="o">=</span> <span class="p">[</span>
     <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">Pad</span></a><span class="p">(</span><span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">)(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">padding</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
@@ -490,16 +488,7 @@ when the image itself is rotated through the
 <span class="n">plot</span><span class="p">([(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)]</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">padded_imgs_and_boxes</span></a><span class="p">,</span> <span class="n">bbox_width</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_plot_rotated_box_transforms_003.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_003.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/></section>
-<section id="resizing">
-<h2>Resizing<a class="headerlink" href="#resizing" title="Permalink to this heading">¶</a></h2>
-<p>Rotated bounding boxes are also resized along with an image in the
-<a class="reference internal" href="../../generated/torchvision.transforms.Resize.html#torchvision.transforms.Resize" title="torchvision.transforms.Resize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resize</span></code></a> transform.</p>
-<p>Note that the bounding box looking bigger in the images with less pixels is
-an artifact, not reality. That is merely the rasterised representation of the
-bounding box’s boundaries appearing bigger because we specify a fixed width of
-that rasterized line. When the image is, say, only 30 pixels wide, a
-line that is 3 pixels wide is relatively large.</p>
+<img src="../../_images/sphx_glr_plot_rotated_box_transforms_003.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_003.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/><p>Using <a class="reference internal" href="../../generated/torchvision.transforms.Resize.html#torchvision.transforms.Resize" title="torchvision.transforms.Resize"><code class="xref py py-class docutils literal notranslate"><span class="pre">Resize</span></code></a>:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">resized_imgs</span></a> <span class="o">=</span> <span class="p">[</span>
     <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">Resize</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.size" title="PIL.Image.Image.size" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-attribute"><span class="n">orig_img</span><span class="o">.</span><span class="n">size</span></a><span class="p">)</span>
@@ -507,74 +496,117 @@ line that is 3 pixels wide is relatively large.</p>
 <span class="n">plot</span><span class="p">([(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)]</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">resized_imgs</span></a><span class="p">,</span> <span class="n">bbox_width</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_plot_rotated_box_transforms_004.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_004.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/></section>
-<section id="perspective">
-<h2>Perspective<a class="headerlink" href="#perspective" title="Permalink to this heading">¶</a></h2>
-<p>The rotated bounding box is also transformed along with the image when the
-perspective is transformed with <a class="reference internal" href="../../generated/torchvision.transforms.RandomPerspective.html#torchvision.transforms.RandomPerspective" title="torchvision.transforms.RandomPerspective"><code class="xref py py-class docutils literal notranslate"><span class="pre">RandomPerspective</span></code></a>.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">perspective_transformer</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">RandomPerspective</span></a><span class="p">(</span><span class="n">distortion_scale</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">perspective_imgs</span></a> <span class="o">=</span> <span class="p">[</span><span class="n">perspective_transformer</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
-<span class="n">plot</span><span class="p">([(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)]</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">perspective_imgs</span></a><span class="p">,</span> <span class="n">bbox_width</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-<img src="../../_images/sphx_glr_plot_rotated_box_transforms_005.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_005.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/></section>
-<section id="elastic-transform">
-<h2>Elastic Transform<a class="headerlink" href="#elastic-transform" title="Permalink to this heading">¶</a></h2>
-<p>The rotated bounding box is appropriately unchanged when going through the
-<a class="reference internal" href="../../generated/torchvision.transforms.ElasticTransform.html#torchvision.transforms.ElasticTransform" title="torchvision.transforms.ElasticTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">ElasticTransform</span></code></a>.</p>
-<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">elastic_imgs</span></a> <span class="o">=</span> <span class="p">[</span>
-    <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">ElasticTransform</span></a><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">)(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">alpha</span> <span class="ow">in</span> <span class="p">(</span><span class="mf">100.0</span><span class="p">,</span> <span class="mf">500.0</span><span class="p">,</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="mf">2000.0</span><span class="p">)</span>
-<span class="p">]</span>
-<span class="n">plot</span><span class="p">([(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)]</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">elastic_imgs</span></a><span class="p">,</span> <span class="n">bbox_width</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-</pre></div>
-</div>
-<img src="../../_images/sphx_glr_plot_rotated_box_transforms_006.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_006.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/></section>
-<section id="crop-clamping-modes">
-<h2>Crop &amp; Clamping Modes<a class="headerlink" href="#crop-clamping-modes" title="Permalink to this heading">¶</a></h2>
-<p>The <a class="reference internal" href="../../generated/torchvision.transforms.CenterCrop.html#torchvision.transforms.CenterCrop" title="torchvision.transforms.CenterCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">CenterCrop</span></code></a> transform selectively crops
-the image on a center location. The behavior of the rotated bounding box
-depends on its <cite>clamping_mode</cite>. We can set the <cite>clamping_mode</cite> in the
-<a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a> constructur, or by directly
-setting it after construction as we do in the example below.</p>
-<p>There are two values for <cite>clamping_mode</cite>:</p>
+<img src="../../_images/sphx_glr_plot_rotated_box_transforms_004.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_004.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/><p>Note that the bounding box looking bigger in the images with less pixels is
+an artifact, not reality. That is merely the rasterised representation of the
+bounding box’s boundaries appearing bigger because we specify a fixed width of
+that rasterized line. When the image is, say, only 30 pixels wide, a
+line that is 3 pixels wide is relatively large.</p>
+</section>
+<section id="clamping-mode-and-its-effect-on-transforms">
+<span id="clamping-mode-tuto"></span><h2>Clamping Mode, and its effect on transforms<a class="headerlink" href="#clamping-mode-and-its-effect-on-transforms" title="Permalink to this heading">¶</a></h2>
+<p>Some transforms, such as <a class="reference internal" href="../../generated/torchvision.transforms.CenterCrop.html#torchvision.transforms.CenterCrop" title="torchvision.transforms.CenterCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">CenterCrop</span></code></a>, may
+result in having the transformed bounding box partially outside of the
+transformed (cropped) image. In general, this may happen on most of the
+<a class="reference internal" href="../../transforms.html#v2-api-ref"><span class="std std-ref">geometric transforms</span></a>.</p>
+<p>In such cases, the bounding box is clamped to the transformed image size based
+on its <code class="docutils literal notranslate"><span class="pre">clamping_mode</span></code> attribute.  There are three values for
+<code class="docutils literal notranslate"><span class="pre">clamping_mode</span></code>, which determines how the box is clamped after a
+transformation:</p>
 <blockquote>
 <div><ul class="simple">
-<li><p><cite>“soft”</cite>: The default when constucting
-<a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a>. &lt;Insert semantic
-description for soft mode.&gt;</p></li>
-<li><p><cite>“hard”</cite>: &lt;Insert semantic description for hard mode.&gt;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">None</span></code>: No clamping is applied, and the bounding box may be partially
+outside of the image.</p></li>
+<li><p><cite>“hard”</cite>:  The box is clamped to the image size, such that all its corners
+are within the image canvas. This potentially results in a loss of
+information, and it can lead to unintuitive resuts. But may be necessary
+for some applications e.g. if the model doesn’t support boxes outside of
+their image.</p></li>
+<li><p><cite>“soft”</cite>: . This is an intermediate mode between <code class="docutils literal notranslate"><span class="pre">None</span></code> and “hard”: the
+box is clamped, but not as strictly as in “hard” mode. Some box dimensions
+may still be outside of the image. This is the default when constucting
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a>.</p></li>
 </ul>
 </div></blockquote>
-<p>For standard bounding boxes, both modes behave the same. We also need to
-document:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p><cite>clamping_mode</cite> for individual kernels.</p></li>
-<li><p><cite>clamping_mode</cite> in <a class="reference internal" href="../../generated/torchvision.transforms.v2.ClampBoundingBoxes.html#torchvision.transforms.v2.ClampBoundingBoxes" title="torchvision.transforms.v2.ClampBoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClampBoundingBoxes</span></code></a>.</p></li>
-<li><p>the new <code class="xref py py-class docutils literal notranslate"><span class="pre">SetClampingMode</span></code> transform.</p></li>
-</ul>
-</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For axis-aligned bounding boxes, the <cite>“soft”</cite> and <cite>“hard”</cite> modes behave
+the same, as the bounding box is always clamped to the image size.</p>
+</div>
+<p>Let’s illustrate the clamping modes with
+<a class="reference internal" href="../../generated/torchvision.transforms.CenterCrop.html#torchvision.transforms.CenterCrop" title="torchvision.transforms.CenterCrop"><code class="xref py py-class docutils literal notranslate"><span class="pre">CenterCrop</span></code></a> transform:</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_box</span><span class="o">.</span><span class="n">clamping_mode</span></a> <span class="o">==</span> <span class="s2">&quot;soft&quot;</span>
-<span class="n">hard_box</span> <span class="o">=</span> <span class="n">orig_box</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
-<a href="https://docs.python.org/3/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">hard_box</span><span class="o">.</span><span class="n">clamping_mode</span></a> <span class="o">=</span> <span class="s2">&quot;hard&quot;</span>
 
+<span class="n">box_hard_clamping</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">BoundingBoxes</span></a><span class="p">(</span><span class="n">orig_box</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">orig_box</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_box</span><span class="o">.</span><span class="n">canvas_size</span></a><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="s2">&quot;hard&quot;</span><span class="p">)</span>
+
+<span class="n">box_no_clamping</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">BoundingBoxes</span></a><span class="p">(</span><span class="n">orig_box</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">orig_box</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_box</span><span class="o">.</span><span class="n">canvas_size</span></a><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+<a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">crop_sizes</span></a> <span class="o">=</span> <span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">1200</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.size" title="PIL.Image.Image.size" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-attribute"><span class="n">orig_img</span><span class="o">.</span><span class="n">size</span></a><span class="p">)</span>
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">soft_center_crops_and_boxes</span></a> <span class="o">=</span> <span class="p">[</span>
     <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">CenterCrop</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">1200</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.size" title="PIL.Image.Image.size" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-attribute"><span class="n">orig_img</span><span class="o">.</span><span class="n">size</span></a><span class="p">)</span>
+    <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">crop_sizes</span></a>
 <span class="p">]</span>
 
 <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">hard_center_crops_and_boxes</span></a> <span class="o">=</span> <span class="p">[</span>
-    <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">CenterCrop</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">hard_box</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">1200</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.size" title="PIL.Image.Image.size" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-attribute"><span class="n">orig_img</span><span class="o">.</span><span class="n">size</span></a><span class="p">)</span>
+    <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">CenterCrop</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">box_hard_clamping</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">crop_sizes</span></a>
 <span class="p">]</span>
 
-<span class="n">plot</span><span class="p">([[(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)]</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">soft_center_crops_and_boxes</span></a><span class="p">,</span>
-      <span class="p">[(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">hard_box</span><span class="p">)]</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">hard_center_crops_and_boxes</span></a><span class="p">],</span>
+<a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">no_clamping_center_crops_and_boxes</span></a> <span class="o">=</span> <span class="p">[</span>
+    <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">CenterCrop</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">box_no_clamping</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <a href="https://docs.python.org/3/library/stdtypes.html#tuple" title="builtins.tuple" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">crop_sizes</span></a>
+<span class="p">]</span>
+
+<span class="n">plot</span><span class="p">([[(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">box_hard_clamping</span><span class="p">)]</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">hard_center_crops_and_boxes</span></a><span class="p">,</span>
+      <span class="p">[(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)]</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">soft_center_crops_and_boxes</span></a><span class="p">,</span>
+      <span class="p">[(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">box_no_clamping</span><span class="p">)]</span> <span class="o">+</span> <a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">no_clamping_center_crops_and_boxes</span></a><span class="p">],</span>
      <span class="n">bbox_width</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../../_images/sphx_glr_plot_rotated_box_transforms_007.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_007.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 11.782 seconds)</p>
+<img src="../../_images/sphx_glr_plot_rotated_box_transforms_005.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_005.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/><p>The plot above shows the “hard” clamping mode, “soft” and <code class="docutils literal notranslate"><span class="pre">None</span></code>, in this
+order. While “soft” and <code class="docutils literal notranslate"><span class="pre">None</span></code> result in similar plots, they do not lead to
+the exact same clamped boxes. The non-clamped boxes will show dimensions that are further away from the image:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;boxes with soft clamping:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">soft_center_crops_and_boxes</span></a><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;boxes with no clamping:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">no_clamping_center_crops_and_boxes</span></a><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>boxes with soft clamping:
+[(&lt;PIL.Image.Image image mode=RGB size=800x800 at 0x7F78773AEDD0&gt;, BoundingBoxes([[478.8188, 400.9185, 570.0000, 874.1443,  -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(800, 800), clamping_mode=soft)), (&lt;PIL.Image.Image image mode=RGB size=1200x1200 at 0x7F78773AEE90&gt;, BoundingBoxes([[ 678.9319,  600.0001,  569.9992, 1278.9989,   -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1200, 1200), clamping_mode=soft)), (&lt;PIL.Image.Image image mode=RGB size=2000x2000 at 0x7F78773AEF80&gt;, BoundingBoxes([[1089.0000,  918.0000,  570.0001, 1840.0000,   -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(2000, 2000), clamping_mode=soft)), (&lt;PIL.Image.Image image mode=RGB size=2364x1542 at 0x7F78773AF040&gt;, BoundingBoxes([[1260.9314,  771.0001,  570.0002, 1623.5675,   -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1542, 2364), clamping_mode=soft))]
+
+boxes with no clamping:
+[(&lt;PIL.Image.Image image mode=RGB size=800x800 at 0x7F78773AE350&gt;, BoundingBoxes([[ 489.,  318.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(800, 800), clamping_mode=None)), (&lt;PIL.Image.Image image mode=RGB size=1200x1200 at 0x7F78773AE290&gt;, BoundingBoxes([[ 689.,  518.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1200, 1200), clamping_mode=None)), (&lt;PIL.Image.Image image mode=RGB size=2000x2000 at 0x7F78773AE1A0&gt;, BoundingBoxes([[1089.,  918.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(2000, 2000), clamping_mode=None)), (&lt;PIL.Image.Image image mode=RGB size=2364x1542 at 0x7F78773ADF90&gt;, BoundingBoxes([[1271.,  689.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1542, 2364), clamping_mode=None))]
+</pre></div>
+</div>
+</section>
+<section id="setting-the-clamping-mode">
+<h2>Setting the clamping mode<a class="headerlink" href="#setting-the-clamping-mode" title="Permalink to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">clamping_mode</span></code> attribute, which determines the clamping strategy that
+is applied to a box, can be set in different ways:</p>
+<ul class="simple">
+<li><p>When constructing the bounding box with its
+<a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a> constructor, as done in the example above.</p></li>
+<li><p>By directly setting the attribute on an existing instance, e.g. <code class="docutils literal notranslate"><span class="pre">boxes.clamping_mode</span> <span class="pre">=</span> <span class="pre">&quot;hard&quot;</span></code>.</p></li>
+<li><p>By calling the <code class="xref py py-class docutils literal notranslate"><span class="pre">SetClampingMode</span></code> transform.</p></li>
+</ul>
+<p>Also, remember that you can always clamp the bounding box manually by
+calling the <a class="reference internal" href="../../generated/torchvision.transforms.v2.ClampBoundingBoxes.html#torchvision.transforms.v2.ClampBoundingBoxes" title="torchvision.transforms.v2.ClampBoundingBoxes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ClampBoundingBoxes()</span></code></a> transform!
+Here’s an example illustrating all of these option:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">Compose</span></a><span class="p">([</span>
+    <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">CenterCrop</span></a><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">800</span><span class="p">,)),</span>  <span class="c1"># clamps according to the current clamping_mode</span>
+                                 <span class="c1"># attribute, in this case set by the constructor</span>
+    <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">SetClampingMode</span></a><span class="p">(</span><span class="kc">None</span><span class="p">),</span>  <span class="c1"># sets the clamping_mode attribute for future transforms</span>
+    <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">Pad</span></a><span class="p">(</span><span class="n">padding</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>  <span class="c1"># clamps according to the current clamping_mode</span>
+                        <span class="c1"># i.e. ``None``</span>
+    <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">v2</span><span class="o">.</span><span class="n">ClampBoundingBoxes</span></a><span class="p">(</span><span class="n">clamping_mode</span><span class="o">=</span><span class="s2">&quot;soft&quot;</span><span class="p">),</span>  <span class="c1"># clamps with &quot;soft&quot; mode.</span>
+<span class="p">])</span>
+
+<a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="PIL.Image.Image" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">out_img</span></a><span class="p">,</span> <span class="n">out_box</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">([(</span><a href="https://pillow.readthedocs.io/en/stable/reference/plugins.html#PIL.JpegImagePlugin.JpegImageFile" title="PIL.JpegImagePlugin.JpegImageFile" class="sphx-glr-backref-module-PIL-JpegImagePlugin sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">orig_img</span></a><span class="p">,</span> <span class="n">orig_box</span><span class="p">),</span> <span class="p">(</span><a href="https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image" title="PIL.Image.Image" class="sphx-glr-backref-module-PIL-Image sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">out_img</span></a><span class="p">,</span> <span class="n">out_box</span><span class="p">)],</span> <span class="n">bbox_width</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<img src="../../_images/sphx_glr_plot_rotated_box_transforms_006.png" srcset="../../_images/sphx_glr_plot_rotated_box_transforms_006.png" alt="plot rotated box transforms" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 6.736 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-transforms-plot-rotated-box-transforms-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/386871287a862951256b5cbd4944e4bb/plot_rotated_box_transforms.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_rotated_box_transforms.ipynb</span></code></a></p>
@@ -635,12 +667,9 @@ document:</p>
               <ul>
 <li><a class="reference internal" href="#">Transforms on Rotated Bounding Boxes</a><ul>
 <li><a class="reference internal" href="#creating-a-rotated-bounding-box">Creating a Rotated Bounding Box</a></li>
-<li><a class="reference internal" href="#rotation">Rotation</a></li>
-<li><a class="reference internal" href="#padding">Padding</a></li>
-<li><a class="reference internal" href="#resizing">Resizing</a></li>
-<li><a class="reference internal" href="#perspective">Perspective</a></li>
-<li><a class="reference internal" href="#elastic-transform">Elastic Transform</a></li>
-<li><a class="reference internal" href="#crop-clamping-modes">Crop &amp; Clamping Modes</a></li>
+<li><a class="reference internal" href="#transforms-illustrations">Transforms illustrations</a></li>
+<li><a class="reference internal" href="#clamping-mode-and-its-effect-on-transforms">Clamping Mode, and its effect on transforms</a></li>
+<li><a class="reference internal" href="#setting-the-clamping-mode">Setting the clamping mode</a></li>
 </ul>
 </li>
 </ul>

@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+c50f694) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+b818d32) &#x25BC</a>
     </div>
     
 
@@ -474,11 +474,16 @@
 <span class="c1"># This should ideally be a Literal, but torchscript fails.</span>
 <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
-<span class="c1"># TODOBB All docs. Add any new API to rst files, add tutorial[s].</span>
-
 
 <div class="viewcode-block" id="BoundingBoxes"><a class="viewcode-back" href="../../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BoundingBoxes</span><span class="p">(</span><span class="n">TVTensor</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``.</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        Support for rotated bounding boxes was released in TorchVision 0.23 and</span>
+<span class="sd">        is currently a BETA feature. We don&#39;t expect the API to change, but</span>
+<span class="sd">        there may be some rare edge-cases. If you find any issues, please report</span>
+<span class="sd">        them on our bug tracker:</span>
+<span class="sd">        https://github.com/pytorch/vision/issues?q=is:open+is:issue</span>
 
 <span class="sd">    Where ``N`` is the number of bounding boxes</span>
 <span class="sd">    and ``K`` is 4 for unrotated boxes, and 5 or 8 for rotated boxes.</span>
@@ -493,7 +498,8 @@
 <span class="sd">        data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.</span>
 <span class="sd">        format (BoundingBoxFormat, str): Format of the bounding box.</span>
 <span class="sd">        canvas_size (two-tuple of ints): Height and width of the corresponding image or video.</span>
-<span class="sd">        clamping_mode: TODOBB</span>
+<span class="sd">        clamping_mode: The clamping mode to use when applying transforms that may result in bounding boxes</span>
+<span class="sd">            partially outside of the image. Possible values are: &quot;soft&quot;, &quot;hard&quot;, or ``None``. Read more in :ref:`clamping_mode_tuto`.</span>
 <span class="sd">        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from</span>
 <span class="sd">            ``data``.</span>
 <span class="sd">        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a</span>
