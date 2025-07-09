@@ -10,7 +10,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Transforming and augmenting images &mdash; Torchvision main documentation</title>
+  <title>Transforming images, videos, boxes and more &mdash; Torchvision main documentation</title>
   
 
   
@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+9024472) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+c50f694) &#x25BC</a>
     </div>
     
 
@@ -314,7 +314,7 @@
             
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Transforming and augmenting images</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Transforming images, videos, boxes and more</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tv_tensors.html">TVTensors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
@@ -377,7 +377,7 @@
       </li>
 
         
-      <li>Transforming and augmenting images</li>
+      <li>Transforming images, videos, boxes and more</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
@@ -413,12 +413,19 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <section id="transforming-and-augmenting-images">
-<span id="transforms"></span><h1>Transforming and augmenting images<a class="headerlink" href="#transforming-and-augmenting-images" title="Permalink to this heading">¶</a></h1>
+  <section id="transforming-images-videos-boxes-and-more">
+<span id="transforms"></span><h1>Transforming images, videos, boxes and more<a class="headerlink" href="#transforming-images-videos-boxes-and-more" title="Permalink to this heading">¶</a></h1>
 <p>Torchvision supports common computer vision transformations in the
-<code class="docutils literal notranslate"><span class="pre">torchvision.transforms</span></code> and <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> modules. Transforms
-can be used to transform or augment data for training or inference of different
-tasks (image classification, detection, segmentation, video classification).</p>
+<code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> module. Transforms can be used to transform and
+augment data, for both training or inference. The following objects are
+supported:</p>
+<ul class="simple">
+<li><p>Images as pure tensors, <a class="reference internal" href="generated/torchvision.tv_tensors.Image.html#torchvision.tv_tensors.Image" title="torchvision.tv_tensors.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> or PIL image</p></li>
+<li><p>Videos as <a class="reference internal" href="generated/torchvision.tv_tensors.Video.html#torchvision.tv_tensors.Video" title="torchvision.tv_tensors.Video"><code class="xref py py-class docutils literal notranslate"><span class="pre">Video</span></code></a></p></li>
+<li><p>Axis-aligned and rotated bounding boxes as <a class="reference internal" href="generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a></p></li>
+<li><p>Segmentation and detection masks as <a class="reference internal" href="generated/torchvision.tv_tensors.Mask.html#torchvision.tv_tensors.Mask" title="torchvision.tv_tensors.Mask"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mask</span></code></a></p></li>
+<li><p>KeyPoints as <a class="reference internal" href="generated/torchvision.tv_tensors.KeyPoints.html#torchvision.tv_tensors.KeyPoints" title="torchvision.tv_tensors.KeyPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">KeyPoints</span></code></a>.</p></li>
+</ul>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Image Classification</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">v2</span>
@@ -500,9 +507,9 @@ transforms.</p>
 in the <code class="docutils literal notranslate"><span class="pre">torchvision.transforms.v2</span></code> namespace. These transforms have a lot of
 advantages compared to the v1 ones (in <code class="docutils literal notranslate"><span class="pre">torchvision.transforms</span></code>):</p>
 <ul class="simple">
-<li><p>They can transform images <strong>but also</strong> bounding boxes, masks, or videos. This
-provides support for tasks beyond image classification: detection, segmentation,
-video classification, etc. See
+<li><p>They can transform images <strong>and also</strong> bounding boxes, masks, videos and
+keypoints. This provides support for tasks beyond image classification:
+detection, segmentation, video classification, pose estimation, etc. See
 <a class="reference internal" href="auto_examples/transforms/plot_transforms_getting_started.html#sphx-glr-auto-examples-transforms-plot-transforms-getting-started-py"><span class="std std-ref">Getting started with transforms v2</span></a>
 and <a class="reference internal" href="auto_examples/transforms/plot_transforms_e2e.html#sphx-glr-auto-examples-transforms-plot-transforms-e2e-py"><span class="std std-ref">Transforms v2: End-to-end object detection/segmentation example</span></a>.</p></li>
 <li><p>They support more transforms like <a class="reference internal" href="generated/torchvision.transforms.v2.CutMix.html#torchvision.transforms.v2.CutMix" title="torchvision.transforms.v2.CutMix"><code class="xref py py-class docutils literal notranslate"><span class="pre">CutMix</span></code></a>
@@ -1411,7 +1418,7 @@ The new transform can be used standalone or mixed-and-matched with existing tran
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">Transforming and augmenting images</a><ul>
+<li><a class="reference internal" href="#">Transforming images, videos, boxes and more</a><ul>
 <li><a class="reference internal" href="#start-here">Start here</a></li>
 <li><a class="reference internal" href="#supported-input-types-and-conventions">Supported input types and conventions</a><ul>
 <li><a class="reference internal" href="#dtype-and-expected-value-range">Dtype and expected value range</a></li>
