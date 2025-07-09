@@ -159,6 +159,7 @@ plot([[(orig_img, box_hard_clamping)] + hard_center_crops_and_boxes,
 # the exact same clamped boxes. The non-clamped boxes will show dimensions that are further away from the image:
 print("boxes with soft clamping:")
 print(soft_center_crops_and_boxes)
+print()
 print("boxes with no clamping:")
 print(no_clamping_center_crops_and_boxes)
 
