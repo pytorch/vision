@@ -69,7 +69,7 @@ rotated_imgs = [rotater((orig_img, orig_box)) for _ in range(4)]
 plot([(orig_img, orig_box)] + rotated_imgs, bbox_width=10)
 
 # %%
-# Using # :class:`~torchvision.transforms.Pad`:
+# Using :class:`~torchvision.transforms.Pad`:
 padded_imgs_and_boxes = [
     v2.Pad(padding=padding)(orig_img, orig_box)
     for padding in (30, 50, 100, 200)
