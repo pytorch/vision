@@ -27,11 +27,10 @@ class ConvertBoundingBoxFormat(Transform):
 class ClampBoundingBoxes(Transform):
     """Clamp bounding boxes to their corresponding image dimensions.
 
-    The clamping is done according to the bounding boxes' ``canvas_size`` meta-data.
-
     Args:
-        clamping_mode: TODOBB more docs. Default is None which relies on the input box' clamping_mode attribute.
-
+        clamping_mode: Default is "auto" which relies on the input box'
+            ``clamping_mode`` attribute. Read more in :ref:`clamping_mode_tuto`
+            for more details on how to use this transform.
     """
 
     def __init__(self, clamping_mode: Union[CLAMPING_MODE_TYPE, str] = "auto") -> None:
@@ -57,7 +56,15 @@ class ClampKeyPoints(Transform):
 
 
 class SetClampingMode(Transform):
-    """TODOBB"""
+    """Sets the ``clamping_mode`` attribute of the bounding boxes for future transforms.
+
+
+
+    Args:
+        clamping_mode: The clamping mode to set. Possible values are: "soft",
+            "hard", or ``None``. Read more in :ref:`clamping_mode_tuto` for more
+            details on how to use this transform.
+    """
 
     def __init__(self, clamping_mode: CLAMPING_MODE_TYPE) -> None:
         super().__init__()
