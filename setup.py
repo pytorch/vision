@@ -194,7 +194,7 @@ def make_C_extension():
 
 def find_libpng():
     # Returns (found, include dir, library dir, library name)
-    if sys.platform in ("linux", "darwin"):
+    if sys.platform in ("linux", "darwin", "aix"):
         libpng_config = shutil.which("libpng-config")
         if libpng_config is None:
             warnings.warn("libpng-config not found")
