@@ -20,6 +20,7 @@ from torchvision.transforms.functional import (
     pil_to_tensor,
     to_pil_image,
 )
+from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE
 
 from torchvision.utils import _log_api_usage_once
 
@@ -103,16 +104,10 @@ def horizontal_flip_bounding_boxes(
         bounding_boxes[:, 0::2].sub_(canvas_size[1]).neg_()
         bounding_boxes = bounding_boxes[:, [2, 3, 0, 1, 6, 7, 4, 5]]
     elif format == tv_tensors.BoundingBoxFormat.XYWHR:
-
-        dtype = bounding_boxes.dtype
-        if not torch.is_floating_point(bounding_boxes):
-            # Casting to float to support cos and sin computations.
-            bounding_boxes = bounding_boxes.to(torch.float32)
         angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
         bounding_boxes[:, 0].add_(bounding_boxes[:, 2].mul(angle_rad.cos())).sub_(canvas_size[1]).neg_()
         bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin()))
         bounding_boxes[:, 4].neg_()
-        bounding_boxes = bounding_boxes.to(dtype)
     else:  # format == tv_tensors.BoundingBoxFormat.CXCYWHR:
         bounding_boxes[:, 0].sub_(canvas_size[1]).neg_()
         bounding_boxes[:, 4].neg_()
@@ -191,15 +186,10 @@ def vertical_flip_bounding_boxes(
         bounding_boxes[:, 1::2].sub_(canvas_size[0]).neg_()
         bounding_boxes = bounding_boxes[:, [2, 3, 0, 1, 6, 7, 4, 5]]
     elif format == tv_tensors.BoundingBoxFormat.XYWHR:
-        dtype = bounding_boxes.dtype
-        if not torch.is_floating_point(bounding_boxes):
-            # Casting to float to support cos and sin computations.
-            bounding_boxes = bounding_boxes.to(torch.float64)
         angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
         bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin())).sub_(canvas_size[0]).neg_()
         bounding_boxes[:, 0].add_(bounding_boxes[:, 2].mul(angle_rad.cos()))
         bounding_boxes[:, 4].neg_().add_(180)
-        bounding_boxes = bounding_boxes.to(dtype)
     else:  # format == tv_tensors.BoundingBoxFormat.CXCYWHR:
         bounding_boxes[:, 1].sub_(canvas_size[0]).neg_()
         bounding_boxes[:, 4].neg_().add_(180)
@@ -461,15 +451,6 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
         torch.Tensor: Tensor of same shape as input containing the rectangle coordinates.
                      The output maintains the same dtype as the input.
     """
-    dtype = parallelogram.dtype
-    int_dtype = dtype in (
-        torch.uint8,
-        torch.int8,
-        torch.int16,
-        torch.int32,
-        torch.int64,
-    )
-
     out_boxes = parallelogram.clone()
 
     # Calculate parallelogram diagonal vectors
@@ -477,12 +458,14 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
     dy13 = parallelogram[..., 5] - parallelogram[..., 1]
     dx42 = parallelogram[..., 2] - parallelogram[..., 6]
     dy42 = parallelogram[..., 3] - parallelogram[..., 7]
+    dx12 = parallelogram[..., 2] - parallelogram[..., 0]
+    dy12 = parallelogram[..., 1] - parallelogram[..., 3]
     diag13 = torch.sqrt(dx13**2 + dy13**2)
     diag24 = torch.sqrt(dx42**2 + dy42**2)
     mask = diag13 > diag24
 
     # Calculate rotation angle in radians
-    r_rad = torch.atan2(parallelogram[..., 1] - parallelogram[..., 3], parallelogram[..., 2] - parallelogram[..., 0])
+    r_rad = torch.atan2(dy12, dx12)
     cos, sin = torch.cos(r_rad), torch.sin(r_rad)
 
     # Calculate width using the angle between diagonal and rotation
@@ -492,9 +475,8 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
         diag24 * torch.abs(torch.sin(torch.atan2(dx42, dy42) - r_rad)),
     )
 
-    delta_x = torch.round(w * cos).to(dtype) if int_dtype else w * cos
-    delta_y = torch.round(w * sin).to(dtype) if int_dtype else w * sin
-
+    delta_x = w * cos
+    delta_y = w * sin
     # Update coordinates to form a rectangle
     # Keeping the points (x1, y1) and (x3, y3) unchanged.
     out_boxes[..., 2] = torch.where(mask, parallelogram[..., 0] + delta_x, parallelogram[..., 2])
@@ -516,6 +498,7 @@ def resize_bounding_boxes(
     size: Optional[list[int]],
     max_size: Optional[int] = None,
     format: tv_tensors.BoundingBoxFormat = tv_tensors.BoundingBoxFormat.XYXY,
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     # We set the default format as `tv_tensors.BoundingBoxFormat.XYXY`
     # to ensure backward compatibility.
@@ -540,6 +523,12 @@ def resize_bounding_boxes(
         )
         transformed_points = xyxyxyxy_boxes.mul(ratios)
         out_bboxes = _parallelogram_to_bounding_boxes(transformed_points)
+        out_bboxes = clamp_bounding_boxes(
+            out_bboxes,
+            format=tv_tensors.BoundingBoxFormat.XYXYXYXY,
+            canvas_size=(new_height, new_width),
+            clamping_mode=clamping_mode,
+        )
         return (
             convert_bounding_box_format(
                 out_bboxes,
@@ -564,7 +553,12 @@ def _resize_bounding_boxes_dispatch(
     inpt: tv_tensors.BoundingBoxes, size: Optional[list[int]], max_size: Optional[int] = None, **kwargs: Any
 ) -> tv_tensors.BoundingBoxes:
     output, canvas_size = resize_bounding_boxes(
-        inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size, size=size, max_size=max_size
+        inpt.as_subclass(torch.Tensor),
+        format=inpt.format,
+        canvas_size=inpt.canvas_size,
+        size=size,
+        max_size=max_size,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
@@ -1090,14 +1084,15 @@ def _affine_bounding_boxes_with_expand(
     shear: list[float],
     center: Optional[list[float]] = None,
     expand: bool = False,
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     if bounding_boxes.numel() == 0:
         return bounding_boxes, canvas_size
 
     original_shape = bounding_boxes.shape
-    original_dtype = bounding_boxes.dtype
-    bounding_boxes = bounding_boxes.clone() if bounding_boxes.is_floating_point() else bounding_boxes.float()
     dtype = bounding_boxes.dtype
+    need_cast = not bounding_boxes.is_floating_point()
+    bounding_boxes = bounding_boxes.float() if need_cast else bounding_boxes.clone()
     device = bounding_boxes.device
     is_rotated = tv_tensors.is_rotated_bounding_format(format)
     intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
@@ -1118,7 +1113,7 @@ def _affine_bounding_boxes_with_expand(
     transposed_affine_matrix = (
         torch.tensor(
             affine_vector,
-            dtype=dtype,
+            dtype=bounding_boxes.dtype,
             device=device,
         )
         .reshape(2, 3)
@@ -1132,7 +1127,7 @@ def _affine_bounding_boxes_with_expand(
         points = bounding_boxes.reshape(-1, 2)
     else:
         points = bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
-    points = torch.cat([points, torch.ones(points.shape[0], 1, device=device, dtype=dtype)], dim=-1)
+    points = torch.cat([points, torch.ones(points.shape[0], 1, device=device, dtype=bounding_boxes.dtype)], dim=-1)
     # 2) Now let's transform the points using affine matrix
     transformed_points = torch.matmul(points, transposed_affine_matrix)
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
@@ -1156,24 +1151,27 @@ def _affine_bounding_boxes_with_expand(
                 [float(width), float(height), 1.0],
                 [float(width), 0.0, 1.0],
             ],
-            dtype=dtype,
+            dtype=bounding_boxes.dtype,
             device=device,
         )
         new_points = torch.matmul(points, transposed_affine_matrix)
         tr = torch.amin(new_points, dim=0, keepdim=True)
         # Translate bounding boxes
-        out_bboxes.sub_(tr.repeat((1, 2)))
+        out_bboxes.sub_(tr.repeat((1, 4 if is_rotated else 2)))
         # Estimate meta-data for image with inverted=True
         affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         canvas_size = (new_height, new_width)
 
-    out_bboxes = clamp_bounding_boxes(out_bboxes, format=intermediate_format, canvas_size=canvas_size)
+    out_bboxes = clamp_bounding_boxes(
+        out_bboxes, format=intermediate_format, canvas_size=canvas_size, clamping_mode=clamping_mode
+    )
     out_bboxes = convert_bounding_box_format(
         out_bboxes, old_format=intermediate_format, new_format=format, inplace=True
     ).reshape(original_shape)
 
-    out_bboxes = out_bboxes.to(original_dtype)
+    if need_cast:
+        out_bboxes = out_bboxes.to(dtype)
     return out_bboxes, canvas_size
 
 
@@ -1186,6 +1184,7 @@ def affine_bounding_boxes(
     scale: float,
     shear: list[float],
     center: Optional[list[float]] = None,
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> torch.Tensor:
     out_box, _ = _affine_bounding_boxes_with_expand(
         bounding_boxes,
@@ -1197,6 +1196,7 @@ def affine_bounding_boxes(
         shear=shear,
         center=center,
         expand=False,
+        clamping_mode=clamping_mode,
     )
     return out_box
 
@@ -1220,6 +1220,7 @@ def _affine_bounding_boxes_dispatch(
         scale=scale,
         shear=shear,
         center=center,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt)
 
@@ -1421,6 +1422,7 @@ def rotate_bounding_boxes(
     angle: float,
     expand: bool = False,
     center: Optional[list[float]] = None,
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     return _affine_bounding_boxes_with_expand(
         bounding_boxes,
@@ -1432,6 +1434,7 @@ def rotate_bounding_boxes(
         shear=[0.0, 0.0],
         center=center,
         expand=expand,
+        clamping_mode=clamping_mode,
     )
 
 
@@ -1446,6 +1449,7 @@ def _rotate_bounding_boxes_dispatch(
         angle=angle,
         expand=expand,
         center=center,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
@@ -1712,6 +1716,7 @@ def pad_bounding_boxes(
     canvas_size: tuple[int, int],
     padding: list[int],
     padding_mode: str = "constant",
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     if padding_mode not in ["constant"]:
         # TODO: add support of other padding modes
@@ -1734,7 +1739,10 @@ def pad_bounding_boxes(
     width += left + right
     canvas_size = (height, width)
 
-    return clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size), canvas_size
+    return (
+        clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode),
+        canvas_size,
+    )
 
 
 @_register_kernel_internal(pad, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
@@ -1747,6 +1755,7 @@ def _pad_bounding_boxes_dispatch(
         canvas_size=inpt.canvas_size,
         padding=padding,
         padding_mode=padding_mode,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
@@ -1825,6 +1834,7 @@ def crop_bounding_boxes(
     left: int,
     height: int,
     width: int,
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
 
     # Crop or implicit pad if left and/or top have negative values:
@@ -1843,7 +1853,10 @@ def crop_bounding_boxes(
     if format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
         bounding_boxes = _parallelogram_to_bounding_boxes(bounding_boxes)
 
-    return clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size), canvas_size
+    return (
+        clamp_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode),
+        canvas_size,
+    )
 
 
 @_register_kernel_internal(crop, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
@@ -1851,7 +1864,13 @@ def _crop_bounding_boxes_dispatch(
     inpt: tv_tensors.BoundingBoxes, top: int, left: int, height: int, width: int
 ) -> tv_tensors.BoundingBoxes:
     output, canvas_size = crop_bounding_boxes(
-        inpt.as_subclass(torch.Tensor), format=inpt.format, top=top, left=left, height=height, width=width
+        inpt.as_subclass(torch.Tensor),
+        format=inpt.format,
+        top=top,
+        left=left,
+        height=height,
+        width=width,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
@@ -2055,6 +2074,7 @@ def perspective_bounding_boxes(
     startpoints: Optional[list[list[int]]],
     endpoints: Optional[list[list[int]]],
     coefficients: Optional[list[float]] = None,
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> torch.Tensor:
     if bounding_boxes.numel() == 0:
         return bounding_boxes
@@ -2062,10 +2082,13 @@ def perspective_bounding_boxes(
     perspective_coeffs = _perspective_coefficients(startpoints, endpoints, coefficients)
 
     original_shape = bounding_boxes.shape
+    original_dtype = bounding_boxes.dtype
+    is_rotated = tv_tensors.is_rotated_bounding_format(format)
+    intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
     # TODO: first cast to float if bbox is int64 before convert_bounding_box_format
     bounding_boxes = (
-        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=tv_tensors.BoundingBoxFormat.XYXY)
-    ).reshape(-1, 4)
+        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=intermediate_format)
+    ).reshape(-1, 8 if is_rotated else 4)
 
     dtype = bounding_boxes.dtype if torch.is_floating_point(bounding_boxes) else torch.float32
     device = bounding_boxes.device
@@ -2095,7 +2118,8 @@ def perspective_bounding_boxes(
     # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
     # Single point structure is similar to
     # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
-    points = bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
+    points = bounding_boxes if is_rotated else bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
+    points = points.reshape(-1, 2)
     points = torch.cat([points, torch.ones(points.shape[0], 1, device=points.device)], dim=-1)
     # 2) Now let's transform the points using perspective matrices
     #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
@@ -2107,20 +2131,24 @@ def perspective_bounding_boxes(
 
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
     # and compute bounding box from 4 transformed points:
-    transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
+    if is_rotated:
+        transformed_points = transformed_points.reshape(-1, 8)
+        out_bboxes = _parallelogram_to_bounding_boxes(transformed_points)
+    else:
+        transformed_points = transformed_points.reshape(-1, 4, 2)
+        out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
+        out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
 
     out_bboxes = clamp_bounding_boxes(
-        torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_boxes.dtype),
-        format=tv_tensors.BoundingBoxFormat.XYXY,
-        canvas_size=canvas_size,
+        out_bboxes, format=intermediate_format, canvas_size=canvas_size, clamping_mode=clamping_mode
     )
 
-    # out_bboxes should be of shape [N boxes, 4]
-
-    return convert_bounding_box_format(
-        out_bboxes, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+    out_bboxes = convert_bounding_box_format(
+        out_bboxes, old_format=intermediate_format, new_format=format, inplace=True
     ).reshape(original_shape)
+
+    out_bboxes = out_bboxes.to(original_dtype)
+    return out_bboxes
 
 
 def _compute_perspective_thetas(
@@ -2168,6 +2196,7 @@ def _perspective_bounding_boxes_dispatch(
         startpoints=startpoints,
         endpoints=endpoints,
         coefficients=coefficients,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt)
 
@@ -2360,6 +2389,7 @@ def elastic_bounding_boxes(
     format: tv_tensors.BoundingBoxFormat,
     canvas_size: tuple[int, int],
     displacement: torch.Tensor,
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> torch.Tensor:
     expected_shape = (1, canvas_size[0], canvas_size[1], 2)
     if not isinstance(displacement, torch.Tensor):
@@ -2373,15 +2403,18 @@ def elastic_bounding_boxes(
     # TODO: add in docstring about approximation we are doing for grid inversion
     device = bounding_boxes.device
     dtype = bounding_boxes.dtype if torch.is_floating_point(bounding_boxes) else torch.float32
+    is_rotated = tv_tensors.is_rotated_bounding_format(format)
 
     if displacement.dtype != dtype or displacement.device != device:
         displacement = displacement.to(dtype=dtype, device=device)
 
     original_shape = bounding_boxes.shape
     # TODO: first cast to float if bbox is int64 before convert_bounding_box_format
+    intermediate_format = tv_tensors.BoundingBoxFormat.CXCYWHR if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
+
     bounding_boxes = (
-        convert_bounding_box_format(bounding_boxes, old_format=format, new_format=tv_tensors.BoundingBoxFormat.XYXY)
-    ).reshape(-1, 4)
+        convert_bounding_box_format(bounding_boxes.clone(), old_format=format, new_format=intermediate_format)
+    ).reshape(-1, 5 if is_rotated else 4)
 
     id_grid = _create_identity_grid(canvas_size, device=device, dtype=dtype)
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
@@ -2389,7 +2422,8 @@ def elastic_bounding_boxes(
     inv_grid = id_grid.sub_(displacement)
 
     # Get points from bboxes
-    points = bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].reshape(-1, 2)
+    points = bounding_boxes[:, :2] if is_rotated else bounding_boxes[:, [[0, 1], [2, 1], [2, 3], [0, 3]]]
+    points = points.reshape(-1, 2)
     if points.is_floating_point():
         points = points.ceil_()
     index_xy = points.to(dtype=torch.long)
@@ -2399,16 +2433,20 @@ def elastic_bounding_boxes(
     t_size = torch.tensor(canvas_size[::-1], device=displacement.device, dtype=displacement.dtype)
     transformed_points = inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
 
-    transformed_points = transformed_points.reshape(-1, 4, 2)
-    out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
+    if is_rotated:
+        transformed_points = transformed_points.reshape(-1, 2)
+        out_bboxes = torch.cat([transformed_points, bounding_boxes[:, 2:]], dim=1).to(bounding_boxes.dtype)
+    else:
+        transformed_points = transformed_points.reshape(-1, 4, 2)
+        out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
+        out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_boxes.dtype)
+
     out_bboxes = clamp_bounding_boxes(
-        torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_boxes.dtype),
-        format=tv_tensors.BoundingBoxFormat.XYXY,
-        canvas_size=canvas_size,
+        out_bboxes, format=intermediate_format, canvas_size=canvas_size, clamping_mode=clamping_mode
     )
 
     return convert_bounding_box_format(
-        out_bboxes, old_format=tv_tensors.BoundingBoxFormat.XYXY, new_format=format, inplace=True
+        out_bboxes, old_format=intermediate_format, new_format=format, inplace=False
     ).reshape(original_shape)
 
 
@@ -2417,7 +2455,11 @@ def _elastic_bounding_boxes_dispatch(
     inpt: tv_tensors.BoundingBoxes, displacement: torch.Tensor, **kwargs
 ) -> tv_tensors.BoundingBoxes:
     output = elastic_bounding_boxes(
-        inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size, displacement=displacement
+        inpt.as_subclass(torch.Tensor),
+        format=inpt.format,
+        canvas_size=inpt.canvas_size,
+        displacement=displacement,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt)
 
@@ -2554,11 +2596,18 @@ def center_crop_bounding_boxes(
     format: tv_tensors.BoundingBoxFormat,
     canvas_size: tuple[int, int],
     output_size: list[int],
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *canvas_size)
     return crop_bounding_boxes(
-        bounding_boxes, format, top=crop_top, left=crop_left, height=crop_height, width=crop_width
+        bounding_boxes,
+        format,
+        top=crop_top,
+        left=crop_left,
+        height=crop_height,
+        width=crop_width,
+        clamping_mode=clamping_mode,
     )
 
 
@@ -2567,7 +2616,11 @@ def _center_crop_bounding_boxes_dispatch(
     inpt: tv_tensors.BoundingBoxes, output_size: list[int]
 ) -> tv_tensors.BoundingBoxes:
     output, canvas_size = center_crop_bounding_boxes(
-        inpt.as_subclass(torch.Tensor), format=inpt.format, canvas_size=inpt.canvas_size, output_size=output_size
+        inpt.as_subclass(torch.Tensor),
+        format=inpt.format,
+        canvas_size=inpt.canvas_size,
+        output_size=output_size,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
@@ -2714,9 +2767,14 @@ def resized_crop_bounding_boxes(
     height: int,
     width: int,
     size: list[int],
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
-    bounding_boxes, canvas_size = crop_bounding_boxes(bounding_boxes, format, top, left, height, width)
-    return resize_bounding_boxes(bounding_boxes, format=format, canvas_size=canvas_size, size=size)
+    bounding_boxes, canvas_size = crop_bounding_boxes(
+        bounding_boxes, format, top, left, height, width, clamping_mode=clamping_mode
+    )
+    return resize_bounding_boxes(
+        bounding_boxes, format=format, canvas_size=canvas_size, size=size, clamping_mode=clamping_mode
+    )
 
 
 @_register_kernel_internal(resized_crop, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
@@ -2724,7 +2782,14 @@ def _resized_crop_bounding_boxes_dispatch(
     inpt: tv_tensors.BoundingBoxes, top: int, left: int, height: int, width: int, size: list[int], **kwargs
 ) -> tv_tensors.BoundingBoxes:
     output, canvas_size = resized_crop_bounding_boxes(
-        inpt.as_subclass(torch.Tensor), format=inpt.format, top=top, left=left, height=height, width=width, size=size
+        inpt.as_subclass(torch.Tensor),
+        format=inpt.format,
+        top=top,
+        left=left,
+        height=height,
+        width=width,
+        size=size,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
