@@ -63,6 +63,13 @@ CLAMPING_MODE_TYPE = Optional[str]
 class BoundingBoxes(TVTensor):
     """:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``.
 
+    .. note::
+        Support for rotated bounding boxes was released in TorchVision 0.23 and
+        is currently a BETA feature. We don't expect the API to change, but
+        there may be some rare edge-cases. If you find any issues, please report
+        them on our bug tracker:
+        https://github.com/pytorch/vision/issues?q=is:open+is:issue
+
     Where ``N`` is the number of bounding boxes
     and ``K`` is 4 for unrotated boxes, and 5 or 8 for rotated boxes.
 

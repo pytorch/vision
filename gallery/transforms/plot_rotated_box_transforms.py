@@ -5,6 +5,12 @@ Transforms on Rotated Bounding Boxes
 
 This example illustrates how to define and use rotated bounding boxes.
 
+.. note::
+    Support for rotated bounding boxes was released in TorchVision 0.23 and is
+    currently a BETA feature. We don't expect the API to change, but there may
+    be some rare edge-cases. If you find any issues, please report them on
+    our bug tracker: https://github.com/pytorch/vision/issues?q=is:open+is:issue
+
 First, a bit of setup code:
 """
 
@@ -155,11 +161,12 @@ print("boxes with soft clamping:")
 print(soft_center_crops_and_boxes)
 print("boxes with no clamping:")
 print(no_clamping_center_crops_and_boxes)
+
 # %%
 #
 # Setting the clamping mode
 # --------------------------
-
+#
 # The ``clamping_mode`` attribute, which determines the clamping strategy that
 # is applied to a box, can be set in different ways:
 #
