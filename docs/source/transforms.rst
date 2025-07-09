@@ -117,7 +117,7 @@ In Torchvision 0.15 (March 2023), we released a new set of transforms available
 in the ``torchvision.transforms.v2`` namespace. These transforms have a lot of
 advantages compared to the v1 ones (in ``torchvision.transforms``):
 
-- They can transform images **but also** bounding boxes, masks, videos and
+- They can transform images **and also** bounding boxes, masks, videos and
   keypoints. This provides support for tasks beyond image classification:
   detection, segmentation, video classification, pose estimation, etc. See
   :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`

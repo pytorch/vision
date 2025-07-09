@@ -17,8 +17,8 @@ class KeyPoints(TVTensor):
 
     - `Polygonal chains <https://en.wikipedia.org/wiki/Polygonal_chain>`_,
       including polylines, Bézier curves, etc., which can be of shape
-      ``[N_chains, N_points, 2]``
-    - Polygons, which can be of shape ``[N_polygons, N_points, 2]``
+      ``[N_chains, N_points, 2]``.
+    - Polygons, which can be of shape ``[N_polygons, N_points, 2]``.
     - Skeletons, which can be of shape ``[N_skeletons, N_bones, 2, 2]`` for
       pose-estimation models.
 
