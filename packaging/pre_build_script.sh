@@ -1,12 +1,5 @@
 #!/bin/bash
 
-CONDA_CHANNEL=""
-
-# python python-freethreading build use conda-forge
-if [[ "${PYTHON_VERSION: -1}" == "t" ]]; then
-  CONDA_CHANNEL="-c conda-forge"
-fi
-
 if [[ "$(uname)" == Darwin ]]; then
   # Uninstall Conflicting jpeg brew formulae
   jpeg_packages=$(brew list | grep jpeg)
@@ -20,7 +13,7 @@ if [[ "$(uname)" == Darwin ]]; then
 fi
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
-  conda install -yv libpng libwebp ${CONDA_CHANNEL}
+  conda install libpng libwebp -yq
   # Installing webp also installs a non-turbo jpeg, so we uninstall jpeg stuff
   # before re-installing them
   conda uninstall libjpeg-turbo libjpeg -y
@@ -35,11 +28,11 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
 else
 
   if [[ "$ARCH" == "aarch64" ]]; then
-    conda install -yv libpng ${CONDA_CHANNEL}
+    conda install libpng -yq
     conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch-nightly
   fi
 
-  conda install -v libwebp ${CONDA_CHANNEL}
+  conda install libwebp -yq
   conda install libjpeg-turbo -c pytorch
   yum install -y freetype gnutls
   pip install auditwheel
