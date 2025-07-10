@@ -16,17 +16,20 @@ class BoundingBoxFormat(Enum):
 
     Available formats are:
 
-    * ``XYXY``
-    * ``XYWH``
-    * ``CXCYWH``
-    * ``XYWHR``: rotated boxes represented via corner, width and height, x1, y1
-      being top left, w, h being width and height. r is rotation angle in
+    * ``XYXY``: bounding box represented via corners; x1, y1 being top left;
+      x2, y2 being bottom right.
+    * ``XYWH``: bounding box represented via corner, width and height; x1, y1
+      being top left; w, h being width and height.
+    * ``CXCYWH``: bounding box represented via centre, width and height; cx,
+      cy being center of box; w, h being width and height.
+    * ``XYWHR``: rotated boxes represented via corner, width and height; x1, y1
+      being top left; w, h being width and height. r is rotation angle in
       degrees.
-    * ``CXCYWHR``: rotated boxes represented via centre, width and height, cx,
-      cy being center of box, w, h being width and height. r is rotation angle
+    * ``CXCYWHR``: rotated boxes represented via center, width and height; cx,
+      cy being center of box; w, h being width and height. r is rotation angle
       in degrees.
-    * ``XYXYXYXY``: rotated boxes represented via corners, x1, y1 being top
-      left, x2, y2 being top right, x3, y3 being bottom right, x4, y4 being
+    * ``XYXYXYXY``: rotated boxes represented via corners; x1, y1 being top
+      left; x2, y2 being top right; x3, y3 being bottom right; x4, y4 being
       bottom left.
     """
 
@@ -56,11 +59,16 @@ def is_rotated_bounding_format(format: BoundingBoxFormat | str) -> bool:
 # This should ideally be a Literal, but torchscript fails.
 CLAMPING_MODE_TYPE = Optional[str]
 
-# TODOBB All docs. Add any new API to rst files, add tutorial[s].
-
 
 class BoundingBoxes(TVTensor):
     """:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``.
+
+    .. note::
+        Support for rotated bounding boxes was released in TorchVision 0.23 and
+        is currently a BETA feature. We don't expect the API to change, but
+        there may be some rare edge-cases. If you find any issues, please report
+        them on our bug tracker:
+        https://github.com/pytorch/vision/issues?q=is:open+is:issue
 
     Where ``N`` is the number of bounding boxes
     and ``K`` is 4 for unrotated boxes, and 5 or 8 for rotated boxes.
@@ -75,7 +83,8 @@ class BoundingBoxes(TVTensor):
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         format (BoundingBoxFormat, str): Format of the bounding box.
         canvas_size (two-tuple of ints): Height and width of the corresponding image or video.
-        clamping_mode: TODOBB
+        clamping_mode: The clamping mode to use when applying transforms that may result in bounding boxes
+            partially outside of the image. Possible values are: "soft", "hard", or ``None``. Read more in :ref:`clamping_mode_tuto`.
         dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
             ``data``.
         device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
