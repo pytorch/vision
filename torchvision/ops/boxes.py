@@ -272,7 +272,30 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     return boxes
 
 
-def box_area(boxes: Tensor) -> Tensor:
+def box_area(boxes: Tensor, fmt: str = "xyxy") -> Tensor:
+    """
+    Computes the area of a set of bounding boxes from a given format.
+
+    Args:
+        boxes (Tensor[N, 4]): boxes for which the area will be computed. They
+            are expected to be in (x1, y1, x2, y2) format with
+            ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+        fmt (str): Format of given boxes. Supported formats are ['xyxy', 'cxcywh']. Default: "xyxy"
+
+    Returns:
+        Tensor[N]: the area for each box
+    """
+    if fmt == "xyxy":
+        boxes = box_area_xyxy(boxes=boxes)
+    elif fmt == "cxcywh":
+        boxes = box_area_cxcywh(boxes=boxes)
+    else:
+        raise ValueError(f"Unsupported Box Area Calculation for given fmt {fmt}")
+
+    return boxes
+
+
+def box_area_xyxy(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by their
     (x1, y1, x2, y2) coordinates.
@@ -286,12 +309,12 @@ def box_area(boxes: Tensor) -> Tensor:
         Tensor[N]: the area for each box
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(box_area)
+        _log_api_usage_once(box_area_xyxy)
     boxes = _upcast(boxes)
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
 
-def box_area_center(boxes: Tensor) -> Tensor:
+def box_area_cxcywh(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by their
     (cx, cy, w, h) coordinates.
@@ -305,16 +328,39 @@ def box_area_center(boxes: Tensor) -> Tensor:
         Tensor[N]: the area for each box
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(box_area_center)
+        _log_api_usage_once(box_area_cxcywh)
     boxes = _upcast(boxes)
     return boxes[:, 2] * boxes[:, 3]
 
 
+def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
+    """
+    Return intersection-over-union (Jaccard index) between two sets of boxes from a given format.
+
+    Args:
+        boxes1 (Tensor[N, 4]): first set of boxes
+        boxes2 (Tensor[M, 4]): second set of boxes
+        fmt (str): Format of given boxes. Supported formats are ['xyxy', 'cxcywh']. Default: "xyxy"
+
+
+    Returns:
+        Tensor[N, M]: the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
+    """
+    if fmt == "xyxy":
+        iou = box_iou_xyxy(boxes1=boxes1, boxes2=boxes2)
+    elif fmt == "cxcywh":
+        iou = box_iou_cxcywh(boxes1=boxes1, boxes2=boxes2)
+    else:
+        raise ValueError(f"Unsupported Box IoU Calculation for given fmt {fmt}")
+
+    return iou
+
+
 # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
 # with slight modifications
-def _box_inter_union(boxes1: Tensor, boxes2: Tensor) -> Tuple[Tensor, Tensor]:
-    area1 = box_area(boxes1)
-    area2 = box_area(boxes2)
+def _box_inter_union_xyxy(boxes1: Tensor, boxes2: Tensor) -> tuple[Tensor, Tensor]:
+    area1 = box_area(boxes1, fmt="xyxy")
+    area2 = box_area(boxes2, fmt="xyxy")
 
     lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
     rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
@@ -327,7 +373,7 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor) -> Tuple[Tensor, Tensor]:
     return inter, union
 
 
-def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
+def box_iou_xyxy(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     Return intersection-over-union (Jaccard index) between two sets of boxes.
 
@@ -342,15 +388,15 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
         Tensor[N, M]: the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(box_iou)
-    inter, union = _box_inter_union(boxes1, boxes2)
+        _log_api_usage_once(box_iou_xyxy)
+    inter, union = _box_inter_union_xyxy(boxes1, boxes2)
     iou = inter / union
     return iou
 
 
-def _box_inter_union_center(boxes1: Tensor, boxes2: Tensor) -> Tuple[Tensor, Tensor]:
-    area1 = box_area_center(boxes1)
-    area2 = box_area_center(boxes2)
+def _box_inter_union_cxcywh(boxes1: Tensor, boxes2: Tensor) -> Tuple[Tensor, Tensor]:
+    area1 = box_area(boxes1, fmt="cxcywh")
+    area2 = box_area(boxes2, fmt="cxcywh")
 
     lt = torch.max(boxes1[:, None, :2] - boxes1[:, None, 2:] / 2, boxes2[:, :2] - boxes2[:, 2:] / 2)  # [N,M,2]
     rb = torch.min(boxes1[:, None, :2] + boxes1[:, None, 2:] / 2, boxes2[:, :2] + boxes2[:, 2:] / 2)  # [N,M,2]
@@ -363,7 +409,7 @@ def _box_inter_union_center(boxes1: Tensor, boxes2: Tensor) -> Tuple[Tensor, Ten
     return inter, union
 
 
-def box_iou_center(boxes1: Tensor, boxes2: Tensor) -> Tensor:
+def box_iou_cxcywh(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     Return intersection-over-union (Jaccard index) between two sets of boxes.
 
@@ -378,8 +424,8 @@ def box_iou_center(boxes1: Tensor, boxes2: Tensor) -> Tensor:
         Tensor[N, M]: the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(box_iou_center)
-    inter, union = _box_inter_union_center(boxes1, boxes2)
+        _log_api_usage_once(box_iou_cxcywh)
+    inter, union = _box_inter_union_cxcywh(boxes1, boxes2)
     iou = inter / union
     return iou
 
@@ -403,7 +449,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(generalized_box_iou)
 
-    inter, union = _box_inter_union(boxes1, boxes2)
+    inter, union = _box_inter_union_xyxy(boxes1, boxes2)
     iou = inter / union
 
     lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])

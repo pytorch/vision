@@ -50,10 +50,8 @@ These utility functions perform various operations on bounding boxes.
     :template: function.rst
 
     box_area
-    box_area_center
     box_convert
     box_iou
-    box_iou_center
     clip_boxes_to_image
     complete_box_iou
     distance_box_iou
