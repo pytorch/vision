@@ -360,7 +360,6 @@ def _box_inter_union_xyxy(boxes1: Tensor, boxes2: Tensor) -> tuple[Tensor, Tenso
     area1 = box_area(boxes1, fmt="xyxy")
     area2 = box_area(boxes2, fmt="xyxy")
 
-
     lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
     rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
 
