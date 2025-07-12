@@ -1,4 +1,5 @@
 import concurrent.futures
+import contextlib
 import glob
 import io
 import os
@@ -398,7 +399,7 @@ def test_read_1_bit_png_consistency(shape, mode, tmpdir):
 def test_read_interlaced_png():
     imgs = list(get_images(INTERLACED_PNG, ".png"))
     with Image.open(imgs[0]) as im1, Image.open(imgs[1]) as im2:
-        assert not (im1.info.get("interlace") is im2.info.get("interlace"))
+        assert im1.info.get("interlace") is not im2.info.get("interlace")
     img1 = read_image(imgs[0])
     img2 = read_image(imgs[1])
     assert_equal(img1, img2)
@@ -934,6 +935,32 @@ def test_decode_webp(decode_fun, scripted):
     img += 123  # make sure image buffer wasn't freed by underlying decoding lib
 
 
+@pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
+def test_decode_webp_grayscale(decode_fun, capfd):
+    encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
+
+    # We warn at the C++ layer because for decode_image(), we don't do the image
+    # type dispatch until we get to the C++ version of decode_image(). We could
+    # warn at the Python layer in decode_webp(), but then users would get a
+    # double wanring: one from the Python layer and one from the C++ layer.
+    #
+    # Because we use the TORCH_WARN_ONCE macro, we need to do this dance to
+    # temporarily always warn so we can test.
+    @contextlib.contextmanager
+    def set_always_warn():
+        torch._C._set_warnAlways(True)
+        yield
+        torch._C._set_warnAlways(False)
+
+    with set_always_warn():
+        img = decode_fun(encoded_bytes, mode=ImageReadMode.GRAY)
+        assert "Webp does not support grayscale conversions" in capfd.readouterr().err
+
+        # Note that because we do not support grayscale conversions, we expect
+        # that the number of color channels is still 3.
+        assert img.shape == (3, 100, 100)
+
+
 # This test is skipped by default because it requires webp images that we're not
 # including within the repo. The test images were downloaded manually from the
 # different pages of https://developers.google.com/speed/webp/gallery
@@ -1040,7 +1067,7 @@ def test_decode_avif_heic_against_pil(decode_fun, mode, pil_mode, filename):
         from torchvision.utils import make_grid
 
         g = make_grid([img, from_pil])
-        F.to_pil_image(g).save((f"/home/nicolashug/out_images/{filename.name}.{pil_mode}.png"))
+        F.to_pil_image(g).save(f"/home/nicolashug/out_images/{filename.name}.{pil_mode}.png")
 
     is_decode_heic = getattr(decode_fun, "__name__", getattr(decode_fun, "name", None)) == "decode_heic"
     if mode == ImageReadMode.RGB and not is_decode_heic:

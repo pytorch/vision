@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import collections.abc
 import numbers
+from collections.abc import Sequence
 from contextlib import suppress
 
-from typing import Any, Callable, Dict, List, Literal, Sequence, Tuple, Type, Union
+from typing import Any, Callable, Literal
 
 import PIL.Image
 import torch
@@ -18,7 +19,7 @@ from torchvision.transforms.v2.functional import get_dimensions, get_size, is_pu
 from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
 
-def _setup_number_or_seq(arg: Union[int, float, Sequence[Union[int, float]]], name: str) -> Sequence[float]:
+def _setup_number_or_seq(arg: int | float | Sequence[int | float], name: str) -> Sequence[float]:
     if not isinstance(arg, (int, float, Sequence)):
         raise TypeError(f"{name} should be a number or a sequence of numbers. Got {type(arg)}")
     if isinstance(arg, Sequence) and len(arg) not in (1, 2):
@@ -38,7 +39,7 @@ def _setup_number_or_seq(arg: Union[int, float, Sequence[Union[int, float]]], na
     return arg
 
 
-def _check_fill_arg(fill: Union[_FillType, Dict[Union[Type, str], _FillType]]) -> None:
+def _check_fill_arg(fill: _FillType | dict[type | str, _FillType]) -> None:
     if isinstance(fill, dict):
         for value in fill.values():
             _check_fill_arg(value)
@@ -60,7 +61,7 @@ def _convert_fill_arg(fill: _FillType) -> _FillTypeJIT:
     return fill  # type: ignore[return-value]
 
 
-def _setup_fill_arg(fill: Union[_FillType, Dict[Union[Type, str], _FillType]]) -> Dict[Union[Type, str], _FillTypeJIT]:
+def _setup_fill_arg(fill: _FillType | dict[type | str, _FillType]) -> dict[type | str, _FillTypeJIT]:
     _check_fill_arg(fill)
 
     if isinstance(fill, dict):
@@ -80,12 +81,14 @@ def _get_fill(fill_dict, inpt_type):
         RuntimeError("This should never happen, please open an issue on the torchvision repo if you hit this.")
 
 
-def _check_padding_arg(padding: Union[int, Sequence[int]]) -> None:
-    if not isinstance(padding, (numbers.Number, tuple, list)):
-        raise TypeError("Got inappropriate padding arg")
+def _check_padding_arg(padding: int | Sequence[int]) -> None:
 
-    if isinstance(padding, (tuple, list)) and len(padding) not in [1, 2, 4]:
-        raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple")
+    err_msg = f"Padding must be an int or a 1, 2, or 4 element of tuple or list, got {padding}."
+    if isinstance(padding, (tuple, list)):
+        if len(padding) not in [1, 2, 4] or not all(isinstance(p, int) for p in padding):
+            raise ValueError(err_msg)
+    elif not isinstance(padding, int):
+        raise ValueError(err_msg)
 
 
 # TODO: let's use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)
@@ -139,7 +142,7 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
     return inputs[candidate_key]
 
 
-def _parse_labels_getter(labels_getter: Union[str, Callable[[Any], Any], None]) -> Callable[[Any], Any]:
+def _parse_labels_getter(labels_getter: str | Callable[[Any], Any] | None) -> Callable[[Any], Any]:
     if labels_getter == "default":
         return _find_labels_default_heuristic
     elif callable(labels_getter):
@@ -150,7 +153,7 @@ def _parse_labels_getter(labels_getter: Union[str, Callable[[Any], Any], None]) 
         raise ValueError(f"labels_getter should either be 'default', a callable, or None, but got {labels_getter}.")
 
 
-def get_bounding_boxes(flat_inputs: List[Any]) -> tv_tensors.BoundingBoxes:
+def get_bounding_boxes(flat_inputs: list[Any]) -> tv_tensors.BoundingBoxes:
     """Return the Bounding Boxes in the input.
 
     Assumes only one ``BoundingBoxes`` object is present.
@@ -162,7 +165,7 @@ def get_bounding_boxes(flat_inputs: List[Any]) -> tv_tensors.BoundingBoxes:
         raise ValueError("No bounding boxes were found in the sample")
 
 
-def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
+def query_chw(flat_inputs: list[Any]) -> tuple[int, int, int]:
     """Return Channel, Height, and Width."""
     chws = {
         tuple(get_dimensions(inpt))
@@ -177,7 +180,7 @@ def query_chw(flat_inputs: List[Any]) -> Tuple[int, int, int]:
     return c, h, w
 
 
-def query_size(flat_inputs: List[Any]) -> Tuple[int, int]:
+def query_size(flat_inputs: list[Any]) -> tuple[int, int]:
     """Return Height and Width."""
     sizes = {
         tuple(get_size(inpt))
@@ -191,32 +194,33 @@ def query_size(flat_inputs: List[Any]) -> Tuple[int, int]:
                 tv_tensors.Video,
                 tv_tensors.Mask,
                 tv_tensors.BoundingBoxes,
+                tv_tensors.KeyPoints,
             ),
         )
     }
     if not sizes:
-        raise TypeError("No image, video, mask or bounding box was found in the sample")
+        raise TypeError("No image, video, mask, bounding box of keypoint was found in the sample")
     elif len(sizes) > 1:
         raise ValueError(f"Found multiple HxW dimensions in the sample: {sequence_to_str(sorted(sizes))}")
     h, w = sizes.pop()
     return h, w
 
 
-def check_type(obj: Any, types_or_checks: Tuple[Union[Type, Callable[[Any], bool]], ...]) -> bool:
+def check_type(obj: Any, types_or_checks: tuple[type | Callable[[Any], bool], ...]) -> bool:
     for type_or_check in types_or_checks:
         if isinstance(obj, type_or_check) if isinstance(type_or_check, type) else type_or_check(obj):
             return True
     return False
 
 
-def has_any(flat_inputs: List[Any], *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
+def has_any(flat_inputs: list[Any], *types_or_checks: type | Callable[[Any], bool]) -> bool:
     for inpt in flat_inputs:
         if check_type(inpt, types_or_checks):
             return True
     return False
 
 
-def has_all(flat_inputs: List[Any], *types_or_checks: Union[Type, Callable[[Any], bool]]) -> bool:
+def has_all(flat_inputs: list[Any], *types_or_checks: type | Callable[[Any], bool]) -> bool:
     for type_or_check in types_or_checks:
         for inpt in flat_inputs:
             if isinstance(inpt, type_or_check) if isinstance(type_or_check, type) else type_or_check(inpt):

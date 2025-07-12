@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 import torch
 from torch import nn
@@ -43,7 +43,7 @@ def quantize_model(model: nn.Module, backend: str) -> None:
 
 
 def _fuse_modules(
-    model: nn.Module, modules_to_fuse: Union[List[str], List[List[str]]], is_qat: Optional[bool], **kwargs: Any
+    model: nn.Module, modules_to_fuse: Union[list[str], list[list[str]]], is_qat: Optional[bool], **kwargs: Any
 ):
     if is_qat is None:
         is_qat = model.training

@@ -2,7 +2,7 @@ import functools
 import inspect
 import warnings
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 from torch import nn
 
@@ -44,10 +44,10 @@ class IntermediateLayerGetter(nn.ModuleDict):
 
     _version = 2
     __annotations__ = {
-        "return_layers": Dict[str, str],
+        "return_layers": dict[str, str],
     }
 
-    def __init__(self, model: nn.Module, return_layers: Dict[str, str]) -> None:
+    def __init__(self, model: nn.Module, return_layers: dict[str, str]) -> None:
         if not set(return_layers).issubset([name for name, _ in model.named_children()]):
             raise ValueError("return_layers are not present in model")
         orig_return_layers = return_layers
@@ -149,7 +149,7 @@ M = TypeVar("M", bound=nn.Module)
 V = TypeVar("V")
 
 
-def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[Dict[str, Any]], Optional[W]]]]):
+def handle_legacy_interface(**weights: tuple[str, Union[Optional[W], Callable[[dict[str, Any]], Optional[W]]]]):
     """Decorates a model builder with the new interface to make it compatible with the old.
 
     In particular this handles two things:
@@ -232,7 +232,7 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[D
     return outer_wrapper
 
 
-def _ovewrite_named_param(kwargs: Dict[str, Any], param: str, new_value: V) -> None:
+def _ovewrite_named_param(kwargs: dict[str, Any], param: str, new_value: V) -> None:
     if param in kwargs:
         if kwargs[param] != new_value:
             raise ValueError(f"The parameter '{param}' expected value {new_value} but got {kwargs[param]} instead.")

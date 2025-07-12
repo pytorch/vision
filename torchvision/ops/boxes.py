@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import torch
 import torchvision
 from torch import Tensor
@@ -148,7 +146,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     return keep
 
 
-def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
+def clip_boxes_to_image(boxes: Tensor, size: tuple[int, int]) -> Tensor:
     """
     Clip boxes so that they lie inside an image of size ``size``.
 
@@ -211,8 +209,8 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     being width and height.
     r is rotation angle w.r.t to the box center by :math:`|r|` degrees counter clock wise in the image plan
 
-    ``'xyxyxyxy'``: boxes are represented via corners, x1, y1 being top left, x2, y2 bottom right,
-    x3, y3 bottom left, and x4, y4 top right.
+    ``'xyxyxyxy'``: boxes are represented via corners, x1, y1 being top left, x2, y2 top right,
+    x3, y3 bottom right, and x4, y4 bottom left.
 
     Args:
         boxes (Tensor[N, K]): boxes which will be converted. K is the number of coordinates (4 for unrotated bounding boxes, 5 or 8 for rotated bounding boxes)
@@ -361,6 +359,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
 def _box_inter_union_xyxy(boxes1: Tensor, boxes2: Tensor) -> tuple[Tensor, Tensor]:
     area1 = box_area(boxes1, fmt="xyxy")
     area2 = box_area(boxes2, fmt="xyxy")
+
 
     lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
     rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
@@ -519,7 +518,7 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     return diou
 
 
-def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tuple[Tensor, Tensor]:
+def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> tuple[Tensor, Tensor]:
 
     iou = box_iou(boxes1, boxes2)
     lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
@@ -532,9 +531,7 @@ def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tuple[Te
     x_g = (boxes2[:, 0] + boxes2[:, 2]) / 2
     y_g = (boxes2[:, 1] + boxes2[:, 3]) / 2
     # The distance between boxes' centers squared.
-    centers_distance_squared = (_upcast((x_p[:, None] - x_g[None, :])) ** 2) + (
-        _upcast((y_p[:, None] - y_g[None, :])) ** 2
-    )
+    centers_distance_squared = (_upcast(x_p[:, None] - x_g[None, :]) ** 2) + (_upcast(y_p[:, None] - y_g[None, :]) ** 2)
     # The distance IoU is the IoU penalized by a normalized
     # distance between boxes' centers squared.
     return iou - (centers_distance_squared / diagonal_distance_squared), iou

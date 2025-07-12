@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 import torch
 from torch import nn, Tensor
@@ -123,7 +123,7 @@ class QuantizableMobileNetV3(MobileNetV3):
 
 
 def _mobilenet_v3_model(
-    inverted_residual_setting: List[InvertedResidualConfig],
+    inverted_residual_setting: list[InvertedResidualConfig],
     last_channel: int,
     weights: Optional[WeightsEnum],
     progress: bool,
@@ -190,9 +190,11 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: MobileNet_V3_Large_QuantizedWeights.IMAGENET1K_QNNPACK_V1
-        if kwargs.get("quantize", False)
-        else MobileNet_V3_Large_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            MobileNet_V3_Large_QuantizedWeights.IMAGENET1K_QNNPACK_V1
+            if kwargs.get("quantize", False)
+            else MobileNet_V3_Large_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def mobilenet_v3_large(

@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from torch import nn, Tensor
 from torch.nn import functional as F
@@ -40,7 +40,7 @@ class LRASPP(nn.Module):
         self.backbone = backbone
         self.classifier = LRASPPHead(low_channels, high_channels, num_classes, inter_channels)
 
-    def forward(self, input: Tensor) -> Dict[str, Tensor]:
+    def forward(self, input: Tensor) -> dict[str, Tensor]:
         features = self.backbone(input)
         out = self.classifier(features)
         out = F.interpolate(out, size=input.shape[-2:], mode="bilinear", align_corners=False)
@@ -67,7 +67,7 @@ class LRASPPHead(nn.Module):
         self.low_classifier = nn.Conv2d(low_channels, num_classes, 1)
         self.high_classifier = nn.Conv2d(inter_channels, num_classes, 1)
 
-    def forward(self, input: Dict[str, Tensor]) -> Tensor:
+    def forward(self, input: dict[str, Tensor]) -> Tensor:
         low = input["low"]
         high = input["high"]
 

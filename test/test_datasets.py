@@ -14,7 +14,7 @@ import string
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
-from typing import Callable, Tuple, Union
+from typing import Callable, Union
 
 import datasets_utils
 import numpy as np
@@ -1146,6 +1146,7 @@ class OmniglotTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Omniglot
 
     ADDITIONAL_CONFIGS = combinations_grid(background=(True, False))
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         target_folder = (
@@ -1910,6 +1911,7 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
         target_type=("kingdom", "full", "genus", ["kingdom", "phylum", "class", "order", "family", "genus", "full"]),
         version=("2021_train",),
     )
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         categories = [
@@ -2038,6 +2040,8 @@ class SintelTestCase(datasets_utils.ImageDatasetTestCase):
 
     FLOW_H, FLOW_W = 3, 4
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "Sintel"
 
@@ -2103,6 +2107,8 @@ class KittiFlowTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.KittiFlow
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "test"))
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)), (np.ndarray, type(None)))
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "KittiFlow"
@@ -2223,6 +2229,8 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
 
     FLOW_H, FLOW_W = 3, 4
 
+    SUPPORT_TV_IMAGE_DECODE = True
+
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "FlyingThings3D"
 
@@ -2288,6 +2296,8 @@ class FlyingThings3DTestCase(datasets_utils.ImageDatasetTestCase):
 
 class HD1KTestCase(KittiFlowTestCase):
     DATASET_CLASS = datasets.HD1K
+
+    SUPPORT_TV_IMAGE_DECODE = True
 
     def inject_fake_data(self, tmpdir, config):
         root = pathlib.Path(tmpdir) / "hd1k"
@@ -3098,13 +3108,13 @@ class FallingThingsStereoTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, PIL.Image.Image, (np.ndarray, type(None)))
 
     @staticmethod
-    def _make_dummy_depth_map(root: str, name: str, size: Tuple[int, int]):
+    def _make_dummy_depth_map(root: str, name: str, size: tuple[int, int]):
         file = pathlib.Path(root) / name
         image = np.ones((size[0], size[1]), dtype=np.uint8)
         PIL.Image.fromarray(image).save(file)
 
     @staticmethod
-    def _make_scene_folder(root: str, scene_name: str, size: Tuple[int, int]) -> None:
+    def _make_scene_folder(root: str, scene_name: str, size: tuple[int, int]) -> None:
         root = pathlib.Path(root) / scene_name
         os.makedirs(root, exist_ok=True)
         # jpg images
@@ -3175,7 +3185,7 @@ class SceneFlowStereoTestCase(datasets_utils.ImageDatasetTestCase):
 
     @staticmethod
     def _create_pfm_folder(
-        root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: Tuple[int, int]
+        root: str, name: str, file_name_fn: Callable[..., str], num_examples: int, size: tuple[int, int]
     ) -> None:
         root = pathlib.Path(root) / name
         os.makedirs(root, exist_ok=True)
@@ -3258,7 +3268,7 @@ class InStereo2k(datasets_utils.ImageDatasetTestCase):
     ADDITIONAL_CONFIGS = combinations_grid(split=("train", "test"))
 
     @staticmethod
-    def _make_scene_folder(root: str, name: str, size: Tuple[int, int]):
+    def _make_scene_folder(root: str, name: str, size: tuple[int, int]):
         root = pathlib.Path(root) / name
         os.makedirs(root, exist_ok=True)
 

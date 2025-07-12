@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any
 
 import PIL.Image
 import torch
@@ -32,9 +32,9 @@ class Image(TVTensor):
         cls,
         data: Any,
         *,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[Union[torch.device, str, int]] = None,
-        requires_grad: Optional[bool] = None,
+        dtype: torch.dtype | None = None,
+        device: torch.device | str | int | None = None,
+        requires_grad: bool | None = None,
     ) -> Image:
         if isinstance(data, PIL.Image.Image):
             from torchvision.transforms.v2 import functional as F
@@ -43,7 +43,7 @@ class Image(TVTensor):
 
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
         if tensor.ndim < 2:
-            raise ValueError
+            raise ValueError(f"Tensor must be 2D or higher, got {tensor.ndim}D tensor.")
         elif tensor.ndim == 2:
             tensor = tensor.unsqueeze(0)
 

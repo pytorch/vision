@@ -79,12 +79,13 @@ plot([img, out])
 #     very easy: the v2 transforms are fully compatible with the v1 API, so you
 #     only need to change the import!
 #
-# Detection, Segmentation, Videos
+# Videos, boxes, masks, keypoints
 # -------------------------------
 #
-# The new Torchvision transforms in the ``torchvision.transforms.v2`` namespace
-# support tasks beyond image classification: they can also transform bounding
-# boxes, segmentation / detection masks, or videos.
+# The Torchvision transforms in the ``torchvision.transforms.v2`` namespace
+# support tasks beyond image classification: they can also transform rotated or
+# axis-aligned bounding boxes, segmentation / detection masks, videos, and
+# keypoints.
 #
 # Let's briefly look at a detection example with bounding boxes.
 
@@ -129,8 +130,9 @@ plot([(img, boxes), (out_img, out_boxes)])
 # TVTensors are :class:`torch.Tensor` subclasses. The available TVTensors are
 # :class:`~torchvision.tv_tensors.Image`,
 # :class:`~torchvision.tv_tensors.BoundingBoxes`,
-# :class:`~torchvision.tv_tensors.Mask`, and
-# :class:`~torchvision.tv_tensors.Video`.
+# :class:`~torchvision.tv_tensors.Mask`,
+# :class:`~torchvision.tv_tensors.Video`, and
+# :class:`~torchvision.tv_tensors.KeyPoints`.
 #
 # TVTensors look and feel just like regular tensors - they **are** tensors.
 # Everything that is supported on a plain :class:`torch.Tensor` like ``.sum()``

@@ -24,7 +24,7 @@ USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 # Note: the GPU video decoding stuff used to be called "video codec", which
 # isn't an accurate or descriptive name considering there are at least 2 other
-# video deocding backends in torchvision. I'm renaming this to "gpu video
+# video decoding backends in torchvision. I'm renaming this to "gpu video
 # decoder" where possible, keeping user facing names (like the env var below) to
 # the old scheme for BC.
 USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "1") == "1"
@@ -111,7 +111,8 @@ def get_requirements():
     ]
 
     # Excluding 8.3.* because of https://github.com/pytorch/vision/issues/4934
-    pillow_ver = " >= 5.3.0, !=8.3.*"
+    # TODO remove <11.3 bound and address corresponding deprecation warnings
+    pillow_ver = " >= 5.3.0, !=8.3.*, <11.3"
     pillow_req = "pillow-simd" if get_dist("pillow-simd") is not None else "pillow"
     requirements.append(pillow_req + pillow_ver)
 
@@ -211,7 +212,7 @@ def find_libpng():
             subprocess.run([libpng_config, "--version"], stdout=subprocess.PIPE).stdout.strip().decode("utf-8")
         )
         if png_version < min_version:
-            warnings.warn("libpng version {png_version} is less than minimum required version {min_version}")
+            warnings.warn(f"libpng version {png_version} is less than minimum required version {min_version}")
             return False, None, None, None
 
         include_dir = (
@@ -270,6 +271,14 @@ def find_library(header):
                 print(f"{searching_for}. Found in {prefix}.")
                 return True, None, None
             print(f"{searching_for}. Didn't find in {prefix}")
+
+    if sys.platform == "darwin":
+        HOMEBREW_PATH = Path("/opt/homebrew")
+        include_dir = HOMEBREW_PATH / "include"
+        library_dir = HOMEBREW_PATH / "lib"
+        if (include_dir / header).exists():
+            print(f"{searching_for}. Found in {include_dir}.")
+            return True, str(include_dir), str(library_dir)
 
     return False, None, None
 
@@ -440,7 +449,7 @@ def make_video_decoders_extensions():
 
         extensions.append(
             CppExtension(
-                # This is an aweful name. It should be "cpu_video_decoder". Keeping for BC.
+                # This is an awful name. It should be "cpu_video_decoder". Keeping for BC.
                 "torchvision.video_reader",
                 combined_src,
                 include_dirs=[

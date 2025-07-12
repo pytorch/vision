@@ -19,9 +19,9 @@ guarantees.
 
 In general, these scripts rely on the latest (not yet released) pytorch version
 or the latest torchvision version. This means that to use them, **you might need
-to install the latest pytorch and torchvision versions**, with e.g.::
+to install the latest pytorch and torchvision versions** following the `official
+instructions <https://pytorch.org/get-started/locally/>`_.
 
-    conda install pytorch torchvision -c pytorch-nightly
 
 If you need to rely on an older stable version of pytorch or torchvision, e.g.
 torchvision 0.10, then it's safer to use the scripts from that corresponding

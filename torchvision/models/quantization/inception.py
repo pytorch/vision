@@ -1,6 +1,6 @@
 import warnings
 from functools import partial
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -90,7 +90,7 @@ class QuantizableInceptionE(inception_module.InceptionE):
         self.myop2 = nn.quantized.FloatFunctional()
         self.myop3 = nn.quantized.FloatFunctional()
 
-    def _forward(self, x: Tensor) -> List[Tensor]:
+    def _forward(self, x: Tensor) -> list[Tensor]:
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)
@@ -198,9 +198,11 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1
-        if kwargs.get("quantize", False)
-        else Inception_V3_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+            if kwargs.get("quantize", False)
+            else Inception_V3_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def inception_v3(

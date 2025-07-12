@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -349,7 +349,7 @@ class CorrBlock(nn.Module):
         self.num_levels = num_levels
         self.radius = radius
 
-        self.corr_pyramid: List[Tensor] = [torch.tensor(0)]  # useless, but torchscript is otherwise confused :')
+        self.corr_pyramid: list[Tensor] = [torch.tensor(0)]  # useless, but torchscript is otherwise confused :')
 
         # The neighborhood of a centroid pixel x' is {x' + delta, ||delta||_inf <= radius}
         # so it's a square surrounding x', and its sides have a length of 2 * radius + 1
