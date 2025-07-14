@@ -112,7 +112,7 @@ def get_requirements():
 
     # Excluding 8.3.* because of https://github.com/pytorch/vision/issues/4934
     # TODO remove <11.3 bound and address corresponding deprecation warnings
-    pillow_ver = " >= 5.3.0, !=8.3.*, <11.3"
+    pillow_ver = " >= 5.3.0, !=8.3.*"
     pillow_req = "pillow-simd" if get_dist("pillow-simd") is not None else "pillow"
     requirements.append(pillow_req + pillow_ver)
 
