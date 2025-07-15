@@ -2,11 +2,11 @@ import numbers
 from collections.abc import Sequence
 from typing import Any, Literal, Optional, Union
 
-from ..utils import _Image_fromarray
-
 import numpy as np
 import torch
 from PIL import Image, ImageEnhance, ImageOps
+
+from ..utils import _Image_fromarray
 
 try:
     import accimage
