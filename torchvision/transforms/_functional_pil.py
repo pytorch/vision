@@ -2,6 +2,8 @@ import numbers
 from collections.abc import Sequence
 from typing import Any, Literal, Optional, Union
 
+from ..utils import _Image_fromarray
+
 import numpy as np
 import torch
 from PIL import Image, ImageEnhance, ImageOps
@@ -113,7 +115,7 @@ def adjust_hue(img: Image.Image, hue_factor: float) -> Image.Image:
     # This will over/underflow, as desired
     np_h += np.int32(hue_factor * 255).astype(np.uint8)
 
-    h = Image.fromarray(np_h, "L")
+    h = _Image_fromarray(np_h, "L")
 
     img = Image.merge("HSV", (h, s, v)).convert(input_mode)
     return img
@@ -342,7 +344,7 @@ def to_grayscale(img: Image.Image, num_output_channels: int) -> Image.Image:
         img = img.convert("L")
         np_img = np.array(img, dtype=np.uint8)
         np_img = np.dstack([np_img, np_img, np_img])
-        img = Image.fromarray(np_img, "RGB")
+        img = _Image_fromarray(np_img, "RGB")
     else:
         raise ValueError("num_output_channels should be either 1 or 3")
 
