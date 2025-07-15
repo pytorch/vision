@@ -8,10 +8,12 @@ from typing import Any, BinaryIO, Optional, Union
 
 import numpy as np
 import torch
-from PIL import Image, ImageColor, ImageDraw, ImageFont
+from PIL import __version__ as PILLOW_VERSION, Image, ImageColor, ImageDraw, ImageFont
 
+PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 
 __all__ = [
+    "_Image_fromarray",
     "make_grid",
     "save_image",
     "draw_bounding_boxes",
@@ -183,7 +185,6 @@ def _Image_fromarray(
     mode paramter. See:
       https://pillow.readthedocs.io/en/stable/releasenotes/11.3.0.html#image-fromarray-mode-parameter
     """
-    PILLOW_VERSION = tuple(int(x) for x in PIL.__version__.split("."))
     if PILLOW_VERSION >= (11, 3):
         return Image.fromarray(obj)
     else:

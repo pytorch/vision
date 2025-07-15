@@ -12,6 +12,7 @@ import warnings
 from subprocess import CalledProcessError, check_output, STDOUT
 
 import numpy as np
+import PIL
 import pytest
 import torch
 import torch.testing
