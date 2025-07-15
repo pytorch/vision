@@ -8,9 +8,9 @@ from typing import Any, BinaryIO, Optional, Union
 
 import numpy as np
 import torch
-from PIL import __version__ as PILLOW_VERSION, Image, ImageColor, ImageDraw, ImageFont
+from PIL import __version__ as PILLOW_VERSION_STRING, Image, ImageColor, ImageDraw, ImageFont
 
-PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
+PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION_STRING.split("."))
 
 __all__ = [
     "_Image_fromarray",
@@ -177,9 +177,9 @@ class _ImageDrawTV(ImageDraw.ImageDraw):
 
 
 def _Image_fromarray(
-    obj: Union[torch.Tensor, np.ndarray],
+    obj: np.ndarray,
     mode: Optional[str],
-) -> Image:
+) -> Image.Image:
     """
     A wrapper around PIL.Image.fromarray to mitigate the deprecation of the
     mode paramter. See:
