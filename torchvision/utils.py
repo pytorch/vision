@@ -8,6 +8,7 @@ from typing import Any, BinaryIO, Optional, Union
 
 import numpy as np
 import torch
+from packaging import version
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
 
@@ -172,6 +173,21 @@ class _ImageDrawTV(ImageDraw.ImageDraw):
                 segment_length -= dash_length_to_draw
                 x1, y1 = end_x, end_y
                 current_dash = not current_dash
+
+
+def _Image_fromarray(
+    obj: Union[torch.Tensor, np.ndarray],
+    mode: Optional[str],
+) -> Image:
+    """
+    A wrapper around PIL.Image.fromarray to mitigate the deprecation of the
+    mode paramter. See:
+      https://pillow.readthedocs.io/en/stable/releasenotes/11.3.0.html#image-fromarray-mode-parameter
+    """
+    if version.parse(Image.__version__) >= version.parse("11.3.0"):
+        return Image.fromarray(obj)
+    else:
+        return Image.fromarray(obj, mode)
 
 
 @torch.no_grad()

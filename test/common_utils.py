@@ -12,16 +12,15 @@ import warnings
 from subprocess import CalledProcessError, check_output, STDOUT
 
 import numpy as np
-import PIL.Image
 import pytest
 import torch
 import torch.testing
-from PIL import Image
 
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.v2.functional import to_image, to_pil_image
+from torchvision.utils import _Image_fromarray
 
 
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
@@ -147,7 +146,7 @@ def _create_data(height=3, width=3, channels=3, device="cpu"):
     if channels == 1:
         mode = "L"
         data = data[..., 0]
-    pil_img = Image.fromarray(data, mode=mode)
+    pil_img = _Image_fromarray(data, mode=mode)
     return tensor, pil_img
 
 
