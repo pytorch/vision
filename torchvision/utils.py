@@ -178,7 +178,7 @@ class _ImageDrawTV(ImageDraw.ImageDraw):
 
 def _Image_fromarray(
     obj: np.ndarray,
-    mode: Optional[str],
+    mode: str,
 ) -> Image.Image:
     """
     A wrapper around PIL.Image.fromarray to mitigate the deprecation of the
@@ -217,16 +217,18 @@ def _Image_fromarray(
         size = 1 if ndim == 1 else shape[1], shape[0]
 
         strides = arr.get("strides", None)
+        contiguous_obj: Union[np.ndarray, bytes] = obj
         if strides is not None:
+            # We require that the data is contiguous; if it is not, we need to
+            # convert it into a contiguous format.
             if hasattr(obj, "tobytes"):
-                obj = obj.tobytes()
+                contiguous_obj = obj.tobytes()
             elif hasattr(obj, "tostring"):
-                obj = obj.tostring()
+                contiguous_obj = obj.tostring()
             else:
-                msg = "'strides' requires either tobytes() or tostring()"
-                raise ValueError(msg)
+                raise ValueError("Unable to convert obj into contiguous format")
 
-        return Image.frombuffer(mode, size, obj, "raw", mode, 0, 1)
+        return Image.frombuffer(mode, size, contiguous_obj, "raw", mode, 0, 1)
     else:
         return Image.fromarray(obj, mode)
 
