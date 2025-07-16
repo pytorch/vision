@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+b818d32) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+f52c4f1) &#x25BC</a>
     </div>
     
 
@@ -421,10 +421,11 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageColor</span><span class="p">,</span> <span class="n">ImageDraw</span><span class="p">,</span> <span class="n">ImageFont</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">PILLOW_VERSION_STRING</span><span class="p">,</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageColor</span><span class="p">,</span> <span class="n">ImageDraw</span><span class="p">,</span> <span class="n">ImageFont</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;_Image_fromarray&quot;</span><span class="p">,</span>
     <span class="s2">&quot;make_grid&quot;</span><span class="p">,</span>
     <span class="s2">&quot;save_image&quot;</span><span class="p">,</span>
     <span class="s2">&quot;draw_bounding_boxes&quot;</span><span class="p">,</span>
@@ -585,6 +586,85 @@
                 <span class="n">segment_length</span> <span class="o">-=</span> <span class="n">dash_length_to_draw</span>
                 <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">end_x</span><span class="p">,</span> <span class="n">end_y</span>
                 <span class="n">current_dash</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">current_dash</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_Image_fromarray</span><span class="p">(</span>
+    <span class="n">obj</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A wrapper around PIL.Image.fromarray to mitigate the deprecation of the</span>
+<span class="sd">    mode paramter. See:</span>
+<span class="sd">      https://pillow.readthedocs.io/en/stable/releasenotes/11.3.0.html#image-fromarray-mode-parameter</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># This may throw if the version string is from an install that comes from a</span>
+    <span class="c1"># non-stable or development version. We&#39;ll fall back to the old behavior in</span>
+    <span class="c1"># such cases.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">PILLOW_VERSION</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">PILLOW_VERSION_STRING</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">PILLOW_VERSION</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">PILLOW_VERSION</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">PILLOW_VERSION</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="c1"># The actual PR that implements the deprecation has more context for why</span>
+        <span class="c1"># it was done, and also points out some problems:</span>
+        <span class="c1">#</span>
+        <span class="c1">#    https://github.com/python-pillow/Pillow/pull/9018</span>
+        <span class="c1">#</span>
+        <span class="c1"># Our use case falls into those problems. We actually rely on the old</span>
+        <span class="c1"># behavior of Image.fromarray():</span>
+        <span class="c1">#</span>
+        <span class="c1">#    new behavior: PIL will infer the image mode from the data passed</span>
+        <span class="c1">#                  in. That is, the type and shape determines the mode.</span>
+        <span class="c1">#</span>
+        <span class="c1">#    old behiavor: The mode will change how PIL reads the image,</span>
+        <span class="c1">#                  regardless of the data. That is, it will make the</span>
+        <span class="c1">#                  data work with the mode.</span>
+        <span class="c1">#</span>
+        <span class="c1"># Our uses of Image.fromarray() are effectively a &quot;turn into PIL image</span>
+        <span class="c1"># AND convert the kind&quot; operation. In particular, in</span>
+        <span class="c1"># functional.to_pil_image() and transforms.ToPILImage.</span>
+        <span class="c1">#</span>
+        <span class="c1"># However, Image.frombuffer() still performs this conversion. The code</span>
+        <span class="c1"># below is lifted from the new implementation of Image.fromarray(). We</span>
+        <span class="c1"># omit the code that infers the mode, and use the code that figures out</span>
+        <span class="c1"># from the data passed in (obj) what the correct parameters are to</span>
+        <span class="c1"># Image.frombuffer().</span>
+        <span class="c1">#</span>
+        <span class="c1"># Note that the alternate solution below does not work:</span>
+        <span class="c1">#</span>
+        <span class="c1">#    img = Image.fromarray(obj)</span>
+        <span class="c1">#    img = img.convert(mode)</span>
+        <span class="c1">#</span>
+        <span class="c1"># The resulting image has very different actual pixel values than before.</span>
+        <span class="c1">#</span>
+        <span class="c1"># TODO: Issue #9151. Pillow has an open PR to restore the functionality</span>
+        <span class="c1">#       we rely on:</span>
+        <span class="c1">#</span>
+        <span class="c1">#       https://github.com/python-pillow/Pillow/pull/9063</span>
+        <span class="c1">#</span>
+        <span class="c1">#       When that is part of a release, we can revisit this hack below.</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">__array_interface__</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="s2">&quot;shape&quot;</span><span class="p">]</span>
+        <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">strides</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;strides&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">contiguous_obj</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="k">if</span> <span class="n">strides</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># We require that the data is contiguous; if it is not, we need to</span>
+            <span class="c1"># convert it into a contiguous format.</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;tobytes&quot;</span><span class="p">):</span>
+                <span class="n">contiguous_obj</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;tostring&quot;</span><span class="p">):</span>
+                <span class="n">contiguous_obj</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">tostring</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unable to convert obj into contiguous format&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Image</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">contiguous_obj</span><span class="p">,</span> <span class="s2">&quot;raw&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="save_image"><a class="viewcode-back" href="../../generated/torchvision.utils.save_image.html#torchvision.utils.save_image">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
