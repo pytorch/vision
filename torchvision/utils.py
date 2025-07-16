@@ -10,7 +10,6 @@ import numpy as np
 import torch
 from PIL import __version__ as PILLOW_VERSION_STRING, Image, ImageColor, ImageDraw, ImageFont
 
-PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION_STRING.split("."))
 
 __all__ = [
     "_Image_fromarray",
@@ -185,7 +184,16 @@ def _Image_fromarray(
     mode paramter. See:
       https://pillow.readthedocs.io/en/stable/releasenotes/11.3.0.html#image-fromarray-mode-parameter
     """
-    if PILLOW_VERSION >= (11, 3):
+
+    # This may throw if the version string is from an install that comes from a
+    # non-stable or development version. We'll fall back to the old behavior in
+    # such cases.
+    try:
+        PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION_STRING.split("."))
+    except Exception:
+        PILLOW_VERSION = None
+
+    if PILLOW_VERSION is not None and PILLOW_VERSION >= (11, 3):
         # The actual PR that implements the deprecation has more context for why
         # it was done, and also points out some problems:
         #
