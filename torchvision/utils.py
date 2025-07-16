@@ -186,7 +186,47 @@ def _Image_fromarray(
       https://pillow.readthedocs.io/en/stable/releasenotes/11.3.0.html#image-fromarray-mode-parameter
     """
     if PILLOW_VERSION >= (11, 3):
-        return Image.fromarray(obj)
+        # We actually rely on the old behavior of Image.fromarray():
+        #
+        #   new behavior: PIL will infer the image mode from the data passed in.
+        #                 That is, the type and shape determines the mode.
+        #
+        #   old behiavor: The mode will change how PIL reads the image,
+        #                 regardless of the data. That is, it will make the data
+        #                 work with the mode.
+        #
+        # Our uses of Image.fromarray() are effectively a "turn into PIL image
+        # AND convert the kind" operation. In particular, in
+        # functional.to_pil_image() and transforms.ToPILImage.
+        #
+        # However, Image.frombuffer() still performs this conversion. The code
+        # below is lifted from the new implementation of Image.fromarray(). We
+        # omit the code that infers the mode, and use the code that figures out
+        # from the data passed in (obj) what the correct parameters are to
+        # Image.frombuffer().
+        #
+        # Note that the alternate solution below does not work:
+        #
+        #    img = Image.fromarray(obj)
+        #    img = img.convert(mode)
+        #
+        # The resulting image has very different actual pixel values than before.
+        arr = obj.__array_interface__
+        shape = arr["shape"]
+        ndim = len(shape)
+        size = 1 if ndim == 1 else shape[1], shape[0]
+
+        strides = arr.get("strides", None)
+        if strides is not None:
+            if hasattr(obj, "tobytes"):
+                obj = obj.tobytes()
+            elif hasattr(obj, "tostring"):
+                obj = obj.tostring()
+            else:
+                msg = "'strides' requires either tobytes() or tostring()"
+                raise ValueError(msg)
+
+        return Image.frombuffer(mode, size, obj, "raw", mode, 0, 1)
     else:
         return Image.fromarray(obj, mode)
 
