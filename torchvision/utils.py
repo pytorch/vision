@@ -186,14 +186,20 @@ def _Image_fromarray(
       https://pillow.readthedocs.io/en/stable/releasenotes/11.3.0.html#image-fromarray-mode-parameter
     """
     if PILLOW_VERSION >= (11, 3):
-        # We actually rely on the old behavior of Image.fromarray():
+        # The actual PR that implements the deprecation has more context for why
+        # it was done, and also points out some problems:
         #
-        #   new behavior: PIL will infer the image mode from the data passed in.
-        #                 That is, the type and shape determines the mode.
+        #    https://github.com/python-pillow/Pillow/pull/9018
         #
-        #   old behiavor: The mode will change how PIL reads the image,
-        #                 regardless of the data. That is, it will make the data
-        #                 work with the mode.
+        # Our use case falls into those problems. We actually rely on the old
+        # behavior of Image.fromarray():
+        #
+        #    new behavior: PIL will infer the image mode from the data passed
+        #                  in. That is, the type and shape determines the mode.
+        #
+        #    old behiavor: The mode will change how PIL reads the image,
+        #                  regardless of the data. That is, it will make the
+        #                  data work with the mode.
         #
         # Our uses of Image.fromarray() are effectively a "turn into PIL image
         # AND convert the kind" operation. In particular, in
@@ -211,6 +217,13 @@ def _Image_fromarray(
         #    img = img.convert(mode)
         #
         # The resulting image has very different actual pixel values than before.
+        #
+        # TODO: Issue #9151. Pillow has an open PR to restore the functionality
+        #       we rely on:
+        #
+        #       https://github.com/python-pillow/Pillow/pull/9063
+        #
+        #       When that is part of a release, we can revisit this hack below.
         arr = obj.__array_interface__
         shape = arr["shape"]
         ndim = len(shape)
