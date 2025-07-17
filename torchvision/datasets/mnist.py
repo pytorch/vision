@@ -11,8 +11,8 @@ from urllib.error import URLError
 
 import numpy as np
 import torch
-from PIL import Image
 
+from ..utils import _Image_fromarray
 from .utils import _flip_byte_order, check_integrity, download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
@@ -140,7 +140,7 @@ class MNIST(VisionDataset):
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        img = Image.fromarray(img.numpy(), mode="L")
+        img = _Image_fromarray(img.numpy(), mode="L")
 
         if self.transform is not None:
             img = self.transform(img)
@@ -478,7 +478,7 @@ class QMNIST(MNIST):
     def __getitem__(self, index: int) -> tuple[Any, Any]:
         # redefined to handle the compat flag
         img, target = self.data[index], self.targets[index]
-        img = Image.fromarray(img.numpy(), mode="L")
+        img = _Image_fromarray(img.numpy(), mode="L")
         if self.transform is not None:
             img = self.transform(img)
         if self.compat:
