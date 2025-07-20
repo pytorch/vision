@@ -266,7 +266,7 @@ def pil_loader(path: Union[str, Path]) -> Image.Image:
 
 # TODO: specify the return type
 def accimage_loader(path: Union[str, Path]) -> Any:
-    import accimage
+    import accimage  # @manual=fbcode//pytorch/accimage:accimage
 
     try:
         return accimage.Image(path)
