@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, List
 
 import PIL.Image
 import torch
@@ -78,7 +78,7 @@ class RandomErasing(_RandomApplyTransform):
         self.scale = scale
         self.ratio = ratio
         if isinstance(value, (int, float)):
-            self.value = [float(value)]
+            self.value: Optional[List[float]] = [float(value)]
         elif isinstance(value, str):
             self.value = None
         elif isinstance(value, (list, tuple)):
