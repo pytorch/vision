@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from collections.abc import Sequence
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Literal, Optional, Union
 
 import PIL.Image
 import torch
@@ -46,6 +46,8 @@ class RandomErasing(_RandomApplyTransform):
         >>> ])
     """
 
+    value: Optional[List[float]]
+
     _v1_transform_cls = _transforms.RandomErasing
 
     def _extract_params_for_v1_transform(self) -> dict[str, Any]:
@@ -59,7 +61,7 @@ class RandomErasing(_RandomApplyTransform):
         p: float = 0.5,
         scale: Sequence[float] = (0.02, 0.33),
         ratio: Sequence[float] = (0.3, 3.3),
-        value: Union[float, int, str, Sequence[Union[float, int]]] = 0.0,
+        value: Union[float, int, Literal["random"], Sequence[Union[float, int]]] = 0.0,
         inplace: bool = False,
     ):
         super().__init__(p=p)
@@ -78,7 +80,7 @@ class RandomErasing(_RandomApplyTransform):
         self.scale = scale
         self.ratio = ratio
         if isinstance(value, (int, float)):
-            self.value: Optional[List[float]] = [float(value)]
+            self.value = [float(value)]
         elif isinstance(value, str):
             self.value = None
         elif isinstance(value, (list, tuple)):
