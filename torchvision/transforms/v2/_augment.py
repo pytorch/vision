@@ -25,7 +25,7 @@ class RandomErasing(_RandomApplyTransform):
         p (float, optional): probability that the random erasing operation will be performed.
         scale (tuple of float, optional): range of proportion of erased area against input image.
         ratio (tuple of float, optional): range of aspect ratio of erased area.
-        value (number, str, or tuple of numbers): erasing value. Default is 0. If a single int, 
+        value (number, str, or tuple of numbers): erasing value. Default is 0. If a single int,
             it is used to erase all pixels. If a tuple of length 3, it is used to erase
             R, G, B channels respectively.
             If a str of 'random', erasing each pixel with random values.
