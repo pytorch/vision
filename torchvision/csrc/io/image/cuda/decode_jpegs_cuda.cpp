@@ -89,9 +89,9 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
   at::cuda::CUDAGuard device_guard(device);
 
   if (cudaJpegDecoder == nullptr || device != cudaJpegDecoder->target_device) {
-    if (cudaJpegDecoder != nullptr)
+    if (cudaJpegDecoder != nullptr) {
       cudaJpegDecoder.reset(new CUDAJpegDecoder(device));
-    else {
+    } else {
       cudaJpegDecoder = std::make_unique<CUDAJpegDecoder>(device);
       std::atexit([]() { cudaJpegDecoder.reset(); });
     }
