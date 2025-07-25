@@ -698,7 +698,8 @@ class RoIHeads(nn.Module):
             labels = labels.view(1, -1).expand_as(scores)
 
             # remove predictions with the background label
-            boxes = boxes[:, 1:]
+            boxes = boxes.reshape(-1, num_classes, 4)
+            boxes = boxes[..., 1:, :]
             scores = scores[:, 1:]
             labels = labels[:, 1:]
 
