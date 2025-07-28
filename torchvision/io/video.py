@@ -115,7 +115,7 @@ def write_video(
     # PyAV does not support floating point numbers with decimal point
     # and will throw OverflowException in case this is not the case
     if isinstance(fps, float):
-        fps = np.round(fps)
+        fps = int(np.round(fps))
 
     with av.open(filename, mode="w") as container:
         stream = container.add_stream(video_codec, rate=fps)
