@@ -6,7 +6,7 @@ import torch
 from PIL import Image, ImageEnhance, ImageOps
 
 try:
-    import accimage # @manual=fbcode//pytorch/accimage:accimage
+    import accimage
 except ImportError:
     accimage = None
 

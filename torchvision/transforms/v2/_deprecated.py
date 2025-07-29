@@ -2,7 +2,6 @@ import warnings
 from typing import Any, Dict, Union
 
 import numpy as np
-import numpy.typing as npt
 import PIL.Image
 import torch
 from torchvision.transforms import functional as _F
@@ -47,5 +46,5 @@ class ToTensor(Transform):
         )
         super().__init__()
 
-    def transform(self, inpt: Union[PIL.Image.Image, npt.NDArray], params: Dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: Union[PIL.Image.Image, np.ndarray], params: Dict[str, Any]) -> torch.Tensor:
         return _F.to_tensor(inpt)

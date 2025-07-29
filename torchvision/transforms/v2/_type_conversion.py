@@ -1,7 +1,6 @@
 from typing import Any, Dict, Optional, Union
 
 import numpy as np
-import numpy.typing as npt
 import PIL.Image
 import torch
 
@@ -35,7 +34,7 @@ class ToImage(Transform):
     _transformed_types = (is_pure_tensor, PIL.Image.Image, np.ndarray)
 
     def transform(
-        self, inpt: Union[torch.Tensor, PIL.Image.Image, npt.NDArray], params: Dict[str, Any]
+        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
     ) -> tv_tensors.Image:
         return F.to_image(inpt)
 
@@ -68,7 +67,7 @@ class ToPILImage(Transform):
         self.mode = mode
 
     def transform(
-        self, inpt: Union[torch.Tensor, PIL.Image.Image, npt.NDArray], params: Dict[str, Any]
+        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
     ) -> PIL.Image.Image:
         return F.to_pil_image(inpt, mode=self.mode)
 
