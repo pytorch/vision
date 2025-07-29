@@ -12,10 +12,10 @@ import torchvision.transforms as transforms
 import torchvision.transforms._functional_tensor as F_t
 import torchvision.transforms.functional as F
 from PIL import Image
-from torch._utils_internal import get_file_path_2 # @manual=fbcode//caffe2:utils_internal
+from torch._utils_internal import get_file_path_2
 
 try:
-    import accimage # @manual=fbcode//pytorch/accimage:accimage
+    import accimage
 except ImportError:
     accimage = None
 
