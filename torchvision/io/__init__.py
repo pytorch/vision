@@ -1,5 +1,5 @@
 try:
-    from ._load_gpu_decoder import _HAS_GPU_VIDEO_DECODER # @manual
+    from ._load_gpu_decoder import _HAS_GPU_VIDEO_DECODER
 except ModuleNotFoundError:
     _HAS_GPU_VIDEO_DECODER = False
 
