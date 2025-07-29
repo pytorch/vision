@@ -3,7 +3,7 @@ import sys
 
 import torch
 
-from ._internally_replaced_utils import _get_extension_path # @manual
+from ._internally_replaced_utils import _get_extension_path
 
 
 _HAS_OPS = False
@@ -60,7 +60,7 @@ def _check_cuda_version():
     """
     if not _HAS_OPS:
         return -1
-    from torch.version import cuda as torch_version_cuda # @manual=fbcode//caffe2:version
+    from torch.version import cuda as torch_version_cuda
 
     _version = torch.ops.torchvision._cuda_version()
     if _version != -1 and torch_version_cuda is not None:
