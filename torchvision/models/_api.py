@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, get_args, Iterable, List, Mapping, Optio
 
 from torch import nn
 
-from .._internally_replaced_utils import load_state_dict_from_url # @manual
+from .._internally_replaced_utils import load_state_dict_from_url
 
 
 __all__ = ["WeightsEnum", "Weights", "get_model", "get_model_builder", "get_model_weights", "get_weight", "list_models"]
