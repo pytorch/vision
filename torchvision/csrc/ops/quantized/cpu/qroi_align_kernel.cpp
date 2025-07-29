@@ -3,6 +3,10 @@
 
 #include "../../cpu/roi_align_common.h"
 
+#ifdef USE_FBGEMM
+#include <fbgemm/QuantUtils.h>
+#endif
+
 namespace vision {
 namespace ops {
 
