@@ -42,7 +42,11 @@ def drop_block2d(
     noise.bernoulli_(gamma)
 
     noise = F.pad(noise, [block_size // 2] * 4, value=0)
-    noise = F.max_pool2d(noise, stride=(1, 1), kernel_size=(block_size, block_size), padding=block_size // 2)
+    left_pad = right_pad = block_size // 2
+    if left_pad > 0 and block_size % 2 == 0:
+        left_pad -= 1
+    noise = F.pad(noise, pad=(left_pad, right_pad, left_pad, right_pad))
+    noise = F.max_pool2d(noise, stride=1, kernel_size=block_size)
     noise = 1 - noise
     normalize_scale = noise.numel() / (eps + noise.sum())
     if inplace:
