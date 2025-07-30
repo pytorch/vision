@@ -11,7 +11,6 @@ import random
 import re
 import shutil
 import string
-import sys
 import unittest
 import xml.etree.ElementTree as ET
 import zipfile
@@ -1904,7 +1903,6 @@ class Places365TestCase(datasets_utils.ImageDatasetTestCase):
             assert dataset.class_to_idx == class_to_idx
 
 
-@pytest.mark.skipif(sys.platform in ("win32", "cygwin"), reason="temporarily disabled on Windows")
 class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.INaturalist
     FEATURE_TYPES = (PIL.Image.Image, (int, tuple))
