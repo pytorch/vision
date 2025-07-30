@@ -26,8 +26,8 @@ class BoundingBoxFormat(Enum):
       cy being center of box, w, h being width and height. r is rotation angle
       in degrees.
     * ``XYXYXYXY``: rotated boxes represented via corners, x1, y1 being top
-      left, x2, y2 being bottom right, x3, y3 being bottom left, x4, y4 being
-      top right.
+      left, x2, y2 being top right, x3, y3 being bottom right, x4, y4 being
+      bottom left.
     """
 
     XYXY = "XYXY"
@@ -36,6 +36,14 @@ class BoundingBoxFormat(Enum):
     XYWHR = "XYWHR"
     CXCYWHR = "CXCYWHR"
     XYXYXYXY = "XYXYXYXY"
+
+
+# TODO: Once torchscript supports Enums with staticmethod
+# this can be put into BoundingBoxFormat as staticmethod
+def is_rotated_bounding_format(format: BoundingBoxFormat) -> bool:
+    return (
+        format == BoundingBoxFormat.XYWHR or format == BoundingBoxFormat.CXCYWHR or format == BoundingBoxFormat.XYXYXYXY
+    )
 
 
 class BoundingBoxes(TVTensor):

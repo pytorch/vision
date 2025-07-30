@@ -444,13 +444,13 @@ def make_bounding_boxes(
         r_rad = r * torch.pi / 180.0
         cos, sin = torch.cos(r_rad), torch.sin(r_rad)
         x1, y1 = x, y
-        x3 = x1 + w * cos
-        y3 = y1 - w * sin
-        x2 = x3 + h * sin
-        y2 = y3 + h * cos
+        x2 = x1 + w * cos
+        y2 = y1 - w * sin
+        x3 = x2 + h * sin
+        y3 = y2 + h * cos
         x4 = x1 + h * sin
         y4 = y1 + h * cos
-        parts = (x1, y1, x3, y3, x2, y2, x4, y4)
+        parts = (x1, y1, x2, y2, x3, y3, x4, y4)
     else:
         raise ValueError(f"Format {format} is not supported")
 
