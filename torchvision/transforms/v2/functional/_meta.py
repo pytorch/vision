@@ -252,13 +252,13 @@ def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
         xyxyxyxy = xyxyxyxy.float()
 
     r_rad = torch.atan2(xyxyxyxy[..., 1].sub(xyxyxyxy[..., 3]), xyxyxyxy[..., 2].sub(xyxyxyxy[..., 0]))
-    cos, sin = r_rad.cos(), r_rad.sin()
-    # x1, y1, x3, y3, (x2 - x1), (y2 - y1) x4, y4
-    xyxyxyxy[..., 4:6].sub_(xyxyxyxy[..., :2])
-    # (x2 - x1) * cos + (y1 - y2) * sin = w
-    xyxyxyxy[..., 2] = xyxyxyxy[..., 4].mul(cos).sub(xyxyxyxy[..., 5].mul(sin))
-    # (x2 - x1) * sin + (y2 - y1) * cos = h
-    xyxyxyxy[..., 3] = xyxyxyxy[..., 5].mul(cos).add(xyxyxyxy[..., 4].mul(sin))
+    # x1, y1, (x3 - x1), (y3 - y1), (x2 - x3), (y2 - y3) x4, y4
+    xyxyxyxy[..., 4:6].sub_(xyxyxyxy[..., 2:4])
+    xyxyxyxy[..., 2:4].sub_(xyxyxyxy[..., :2])
+    # sqrt((x3 - x1) ** 2 + (y1 - y3) ** 2) = w
+    xyxyxyxy[..., 2] = xyxyxyxy[..., 2].pow(2).add(xyxyxyxy[..., 3].pow(2)).sqrt()
+    # sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2) = h
+    xyxyxyxy[..., 3] = xyxyxyxy[..., 4].pow(2).add(xyxyxyxy[..., 5].pow(2)).sqrt()
     xyxyxyxy[..., 4] = r_rad.div_(torch.pi).mul_(180.0)
     return xyxyxyxy[..., :5].to(dtype)
 
