@@ -46,6 +46,14 @@ def is_rotated_bounding_format(format: BoundingBoxFormat) -> bool:
     )
 
 
+# TODOBB consider making this a Literal instead. Tried briefly and got
+# torchscript errors, leaving to str for now.
+# CLAMPING_MODE_TYPE = Literal["hard", "soft", "none"]
+CLAMPING_MODE_TYPE = str
+
+# TODOBB All docs. Add any new API to rst files, add tutorial[s].
+
+
 class BoundingBoxes(TVTensor):
     """:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``.
 
@@ -62,6 +70,7 @@ class BoundingBoxes(TVTensor):
         data: Any data that can be turned into a tensor with :func:`torch.as_tensor`.
         format (BoundingBoxFormat, str): Format of the bounding box.
         canvas_size (two-tuple of ints): Height and width of the corresponding image or video.
+        clamping_mode: TODOBB
         dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from
             ``data``.
         device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a
@@ -72,9 +81,10 @@ class BoundingBoxes(TVTensor):
 
     format: BoundingBoxFormat
     canvas_size: tuple[int, int]
+    clamping_mode: CLAMPING_MODE_TYPE
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat | str, canvas_size: tuple[int, int], check_dims: bool = True) -> BoundingBoxes:  # type: ignore[override]
+    def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat | str, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE = "soft", check_dims: bool = True) -> BoundingBoxes:  # type: ignore[override]
         if check_dims:
             if tensor.ndim == 1:
                 tensor = tensor.unsqueeze(0)
@@ -85,6 +95,8 @@ class BoundingBoxes(TVTensor):
         bounding_boxes = tensor.as_subclass(cls)
         bounding_boxes.format = format
         bounding_boxes.canvas_size = canvas_size
+        # TODOBB validate values
+        bounding_boxes.clamping_mode = clamping_mode
         return bounding_boxes
 
     def __new__(
@@ -93,12 +105,13 @@ class BoundingBoxes(TVTensor):
         *,
         format: BoundingBoxFormat | str,
         canvas_size: tuple[int, int],
+        clamping_mode: CLAMPING_MODE_TYPE = "hard",  # TODOBB change default to soft!
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,
     ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return cls._wrap(tensor, format=format, canvas_size=canvas_size)
+        return cls._wrap(tensor, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
 
     @classmethod
     def _wrap_output(
@@ -114,16 +127,25 @@ class BoundingBoxes(TVTensor):
         # something like some_xyxy_bbox + some_xywh_bbox; we don't guard against those cases.
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
         first_bbox_from_args = next(x for x in flat_params if isinstance(x, BoundingBoxes))
-        format, canvas_size = first_bbox_from_args.format, first_bbox_from_args.canvas_size
+        format, canvas_size, clamping_mode = (
+            first_bbox_from_args.format,
+            first_bbox_from_args.canvas_size,
+            first_bbox_from_args.clamping_mode,
+        )
 
         if isinstance(output, torch.Tensor) and not isinstance(output, BoundingBoxes):
-            output = BoundingBoxes._wrap(output, format=format, canvas_size=canvas_size, check_dims=False)
+            output = BoundingBoxes._wrap(
+                output, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode, check_dims=False
+            )
         elif isinstance(output, (tuple, list)):
             # This branch exists for chunk() and unbind()
             output = type(output)(
-                BoundingBoxes._wrap(part, format=format, canvas_size=canvas_size, check_dims=False) for part in output
+                BoundingBoxes._wrap(
+                    part, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode, check_dims=False
+                )
+                for part in output
             )
         return output
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
-        return self._make_repr(format=self.format, canvas_size=self.canvas_size)
+        return self._make_repr(format=self.format, canvas_size=self.canvas_size, clamping_mode=self.clamping_mode)

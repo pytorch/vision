@@ -410,6 +410,7 @@ def make_bounding_boxes(
     canvas_size=DEFAULT_SIZE,
     *,
     format=tv_tensors.BoundingBoxFormat.XYXY,
+    clamping_mode="hard",  # TODOBB
     num_boxes=1,
     dtype=None,
     device="cpu",
@@ -474,13 +475,16 @@ def make_bounding_boxes(
         # numerical issues during the testing
         buffer = 4
         out_boxes = clamp_bounding_boxes(
-            out_boxes, format=format, canvas_size=(canvas_size[0] - buffer, canvas_size[1] - buffer)
+            out_boxes,
+            format=format,
+            canvas_size=(canvas_size[0] - buffer, canvas_size[1] - buffer),
+            clamping_mode=clamping_mode,
         )
         if format is tv_tensors.BoundingBoxFormat.XYWHR or format is tv_tensors.BoundingBoxFormat.CXCYWHR:
             out_boxes[:, :2] += buffer // 2
         elif format is tv_tensors.BoundingBoxFormat.XYXYXYXY:
             out_boxes[:, :] += buffer // 2
-    return tv_tensors.BoundingBoxes(out_boxes, format=format, canvas_size=canvas_size)
+    return tv_tensors.BoundingBoxes(out_boxes, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
 
 
 def make_detection_masks(size=DEFAULT_SIZE, *, num_masks=1, dtype=None, device="cpu"):
