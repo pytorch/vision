@@ -589,7 +589,7 @@ class RandomCrop(torch.nn.Module):
             int instead of sequence like (h, w), a square crop (size, size) is
             made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
         padding (int or sequence, optional): Optional padding on each border
-            of the image. Default is None. If a single int is provided this
+            of the image, applied before cropping. Default is None. If a single int is provided this
             is used to pad all borders. If sequence of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
