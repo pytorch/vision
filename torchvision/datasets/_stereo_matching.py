@@ -6,7 +6,7 @@ import shutil
 from abc import ABC, abstractmethod
 from glob import glob
 from pathlib import Path
-from typing import Callable, cast, List, Optional, Tuple, Union
+from typing import Callable, cast, Optional, Union
 
 import numpy as np
 from PIL import Image
@@ -14,8 +14,8 @@ from PIL import Image
 from .utils import _read_pfm, download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
 
-T1 = Tuple[Image.Image, Image.Image, Optional[np.ndarray], np.ndarray]
-T2 = Tuple[Image.Image, Image.Image, Optional[np.ndarray]]
+T1 = tuple[Image.Image, Image.Image, Optional[np.ndarray], np.ndarray]
+T2 = tuple[Image.Image, Image.Image, Optional[np.ndarray]]
 
 __all__ = ()
 
@@ -65,11 +65,11 @@ class StereoMatchingDataset(ABC, VisionDataset):
         self,
         paths_left_pattern: str,
         paths_right_pattern: Optional[str] = None,
-    ) -> List[Tuple[str, Optional[str]]]:
+    ) -> list[tuple[str, Optional[str]]]:
 
         left_paths = list(sorted(glob(paths_left_pattern)))
 
-        right_paths: List[Union[None, str]]
+        right_paths: list[Union[None, str]]
         if paths_right_pattern:
             right_paths = list(sorted(glob(paths_right_pattern)))
         else:
@@ -92,7 +92,7 @@ class StereoMatchingDataset(ABC, VisionDataset):
         return paths
 
     @abstractmethod
-    def _read_disparity(self, file_path: str) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
+    def _read_disparity(self, file_path: str) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         # function that returns a disparity map and an occlusion map
         pass
 
@@ -178,7 +178,7 @@ class CarlaStereo(StereoMatchingDataset):
         disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
         self._disparities = disparities
 
-    def _read_disparity(self, file_path: str) -> Tuple[np.ndarray, None]:
+    def _read_disparity(self, file_path: str) -> tuple[np.ndarray, None]:
         disparity_map = _read_pfm_file(file_path)
         disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
         valid_mask = None
@@ -257,7 +257,7 @@ class Kitti2012Stereo(StereoMatchingDataset):
         else:
             self._disparities = list((None, None) for _ in self._images)
 
-    def _read_disparity(self, file_path: str) -> Tuple[Optional[np.ndarray], None]:
+    def _read_disparity(self, file_path: str) -> tuple[Optional[np.ndarray], None]:
         # test split has no disparity maps
         if file_path is None:
             return None, None
@@ -345,7 +345,7 @@ class Kitti2015Stereo(StereoMatchingDataset):
         else:
             self._disparities = list((None, None) for _ in self._images)
 
-    def _read_disparity(self, file_path: str) -> Tuple[Optional[np.ndarray], None]:
+    def _read_disparity(self, file_path: str) -> tuple[Optional[np.ndarray], None]:
         # test split has no disparity maps
         if file_path is None:
             return None, None
@@ -549,7 +549,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
         When ``use_ambient_views`` is True, the dataset will return at random one of ``[im1.png, im1E.png, im1L.png]``
         as the right image.
         """
-        ambient_file_paths: List[Union[str, Path]]  # make mypy happy
+        ambient_file_paths: list[Union[str, Path]]  # make mypy happy
 
         if not isinstance(file_path, Path):
             file_path = Path(file_path)
@@ -565,7 +565,7 @@ class Middlebury2014Stereo(StereoMatchingDataset):
             file_path = random.choice(ambient_file_paths)  # type: ignore
         return super()._read_img(file_path)
 
-    def _read_disparity(self, file_path: str) -> Union[Tuple[None, None], Tuple[np.ndarray, np.ndarray]]:
+    def _read_disparity(self, file_path: str) -> Union[tuple[None, None], tuple[np.ndarray, np.ndarray]]:
         # test split has not disparity maps
         if file_path is None:
             return None, None
@@ -694,7 +694,7 @@ class CREStereo(StereoMatchingDataset):
             disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
             self._disparities += disparities
 
-    def _read_disparity(self, file_path: str) -> Tuple[np.ndarray, None]:
+    def _read_disparity(self, file_path: str) -> tuple[np.ndarray, None]:
         disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
         # unsqueeze the disparity map into (C, H, W) format
         disparity_map = disparity_map[None, :, :] / 32.0
@@ -788,13 +788,13 @@ class FallingThingsStereo(StereoMatchingDataset):
             right_disparity_pattern = str(root / s / split_prefix[s] / "*.right.depth.png")
             self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
 
-    def _read_disparity(self, file_path: str) -> Tuple[np.ndarray, None]:
+    def _read_disparity(self, file_path: str) -> tuple[np.ndarray, None]:
         # (H, W) image
         depth = np.asarray(Image.open(file_path))
         # as per https://research.nvidia.com/sites/default/files/pubs/2018-06_Falling-Things/readme_0.txt
         # in order to extract disparity from depth maps
         camera_settings_path = Path(file_path).parent / "_camera_settings.json"
-        with open(camera_settings_path, "r") as f:
+        with open(camera_settings_path) as f:
             # inverse of depth-from-disparity equation: depth = (baseline * focal) / (disparity * pixel_constant)
             intrinsics = json.load(f)
             focal = intrinsics["camera_settings"][0]["intrinsic_settings"]["fx"]
@@ -911,7 +911,7 @@ class SceneFlowStereo(StereoMatchingDataset):
             right_disparity_pattern = str(root / "disparity" / prefix_directories[variant] / "right" / "*.pfm")
             self._disparities += self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
 
-    def _read_disparity(self, file_path: str) -> Tuple[np.ndarray, None]:
+    def _read_disparity(self, file_path: str) -> tuple[np.ndarray, None]:
         disparity_map = _read_pfm_file(file_path)
         disparity_map = np.abs(disparity_map)  # ensure that the disparity is positive
         valid_mask = None
@@ -999,7 +999,7 @@ class SintelStereo(StereoMatchingDataset):
             disparity_pattern = str(root / "training" / "disparities" / "*" / "*.png")
             self._disparities += self._scan_pairs(disparity_pattern, None)
 
-    def _get_occlussion_mask_paths(self, file_path: str) -> Tuple[str, str]:
+    def _get_occlussion_mask_paths(self, file_path: str) -> tuple[str, str]:
         # helper function to get the occlusion mask paths
         # a path will look like  .../.../.../training/disparities/scene1/img1.png
         # we want to get something like .../.../.../training/occlusions/scene1/img1.png
@@ -1020,7 +1020,7 @@ class SintelStereo(StereoMatchingDataset):
 
         return occlusion_path, outofframe_path
 
-    def _read_disparity(self, file_path: str) -> Union[Tuple[None, None], Tuple[np.ndarray, np.ndarray]]:
+    def _read_disparity(self, file_path: str) -> Union[tuple[None, None], tuple[np.ndarray, np.ndarray]]:
         if file_path is None:
             return None, None
 
@@ -1101,7 +1101,7 @@ class InStereo2k(StereoMatchingDataset):
         right_disparity_pattern = str(root / "*" / "right_disp.png")
         self._disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
 
-    def _read_disparity(self, file_path: str) -> Tuple[np.ndarray, None]:
+    def _read_disparity(self, file_path: str) -> tuple[np.ndarray, None]:
         disparity_map = np.asarray(Image.open(file_path), dtype=np.float32)
         # unsqueeze disparity to (C, H, W)
         disparity_map = disparity_map[None, :, :] / 1024.0
@@ -1195,7 +1195,7 @@ class ETH3DStereo(StereoMatchingDataset):
             disparity_pattern = str(root / anot_dir / "*" / "disp0GT.pfm")
             self._disparities = self._scan_pairs(disparity_pattern, None)
 
-    def _read_disparity(self, file_path: str) -> Union[Tuple[None, None], Tuple[np.ndarray, np.ndarray]]:
+    def _read_disparity(self, file_path: str) -> Union[tuple[None, None], tuple[np.ndarray, np.ndarray]]:
         # test split has no disparity maps
         if file_path is None:
             return None, None

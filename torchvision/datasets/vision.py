@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import torch.utils.data as data
 
@@ -77,7 +77,7 @@ class VisionDataset(data.Dataset):
         lines = [head] + [" " * self._repr_indent + line for line in body]
         return "\n".join(lines)
 
-    def _format_transform_repr(self, transform: Callable, head: str) -> List[str]:
+    def _format_transform_repr(self, transform: Callable, head: str) -> list[str]:
         lines = transform.__repr__().splitlines()
         return [f"{head}{lines[0]}"] + ["{}{}".format(" " * len(head), line) for line in lines[1:]]
 
@@ -90,14 +90,14 @@ class StandardTransform:
         self.transform = transform
         self.target_transform = target_transform
 
-    def __call__(self, input: Any, target: Any) -> Tuple[Any, Any]:
+    def __call__(self, input: Any, target: Any) -> tuple[Any, Any]:
         if self.transform is not None:
             input = self.transform(input)
         if self.target_transform is not None:
             target = self.target_transform(target)
         return input, target
 
-    def _format_transform_repr(self, transform: Callable, head: str) -> List[str]:
+    def _format_transform_repr(self, transform: Callable, head: str) -> list[str]:
         lines = transform.__repr__().splitlines()
         return [f"{head}{lines[0]}"] + ["{}{}".format(" " * len(head), line) for line in lines[1:]]
 

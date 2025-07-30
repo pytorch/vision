@@ -1,8 +1,10 @@
 import enum
 import pathlib
 import re
+from collections.abc import Iterator
+from re import Match
 
-from typing import Any, BinaryIO, cast, Dict, Iterator, List, Match, Optional, Tuple, Union
+from typing import Any, BinaryIO, cast, Optional, Union
 
 from torchdata.datapipes.iter import (
     Demultiplexer,
@@ -33,7 +35,7 @@ NAME = "imagenet"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     categories, wnids = zip(*read_categories_file(NAME))
     return dict(categories=categories, wnids=wnids)
 
@@ -56,10 +58,10 @@ class CategoryAndWordNetIDExtractor(IterDataPipe):
         "n03710721": "tank suit",
     }
 
-    def __init__(self, datapipe: IterDataPipe[Tuple[str, BinaryIO]]) -> None:
+    def __init__(self, datapipe: IterDataPipe[tuple[str, BinaryIO]]) -> None:
         self.datapipe = datapipe
 
-    def __iter__(self) -> Iterator[Tuple[str, str]]:
+    def __iter__(self) -> Iterator[tuple[str, str]]:
         for _, stream in self.datapipe:
             synsets = read_mat(stream, squeeze_me=True)["synsets"]
             for _, wnid, category, _, num_children, *_ in synsets:
@@ -99,13 +101,13 @@ class ImageNet(Dataset):
         "test_v10102019": "9cf7f8249639510f17d3d8a0deb47cd22a435886ba8e29e2b3223e65a4079eb4",
     }
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         name = "test_v10102019" if self._split == "test" else self._split
         images = ImageNetResource(
             file_name=f"ILSVRC2012_img_{name}.tar",
             sha256=self._IMAGES_CHECKSUMS[name],
         )
-        resources: List[OnlineResource] = [images]
+        resources: list[OnlineResource] = [images]
 
         if self._split == "val":
             devkit = ImageNetResource(
@@ -118,16 +120,16 @@ class ImageNet(Dataset):
 
     _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
-    def _prepare_train_data(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[Label, str], Tuple[str, BinaryIO]]:
+    def _prepare_train_data(self, data: tuple[str, BinaryIO]) -> tuple[tuple[Label, str], tuple[str, BinaryIO]]:
         path = pathlib.Path(data[0])
         wnid = cast(Match[str], self._TRAIN_IMAGE_NAME_PATTERN.match(path.name))["wnid"]
         label = Label.from_category(self._wnid_to_category[wnid], categories=self._categories)
         return (label, wnid), data
 
-    def _prepare_test_data(self, data: Tuple[str, BinaryIO]) -> Tuple[None, Tuple[str, BinaryIO]]:
+    def _prepare_test_data(self, data: tuple[str, BinaryIO]) -> tuple[None, tuple[str, BinaryIO]]:
         return None, data
 
-    def _classifiy_devkit(self, data: Tuple[str, BinaryIO]) -> Optional[int]:
+    def _classifiy_devkit(self, data: tuple[str, BinaryIO]) -> Optional[int]:
         return {
             "meta.mat": ImageNetDemux.META,
             "ILSVRC2012_validation_ground_truth.txt": ImageNetDemux.LABEL,
@@ -139,8 +141,8 @@ class ImageNet(Dataset):
         return int(self._VAL_TEST_IMAGE_NAME_PATTERN.match(path.name)["id"])  # type: ignore[index]
 
     def _prepare_val_data(
-        self, data: Tuple[Tuple[int, str], Tuple[str, BinaryIO]]
-    ) -> Tuple[Tuple[Label, str], Tuple[str, BinaryIO]]:
+        self, data: tuple[tuple[int, str], tuple[str, BinaryIO]]
+    ) -> tuple[tuple[Label, str], tuple[str, BinaryIO]]:
         label_data, image_data = data
         _, wnid = label_data
         label = Label.from_category(self._wnid_to_category[wnid], categories=self._categories)
@@ -148,8 +150,8 @@ class ImageNet(Dataset):
 
     def _prepare_sample(
         self,
-        data: Tuple[Optional[Tuple[Label, str]], Tuple[str, BinaryIO]],
-    ) -> Dict[str, Any]:
+        data: tuple[Optional[tuple[Label, str]], tuple[str, BinaryIO]],
+    ) -> dict[str, Any]:
         label_data, (path, buffer) = data
 
         return dict(
@@ -158,7 +160,7 @@ class ImageNet(Dataset):
             image=EncodedImage.from_file(buffer),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         if self._split in {"train", "test"}:
             dp = resource_dps[0]
 
@@ -185,7 +187,7 @@ class ImageNet(Dataset):
             label_dp = LineReader(label_dp, decode=True, return_path=False)
             label_dp = Mapper(label_dp, int)
             label_dp = Mapper(label_dp, wnid_map.__getitem__)
-            label_dp: IterDataPipe[Tuple[int, str]] = Enumerator(label_dp, 1)
+            label_dp: IterDataPipe[tuple[int, str]] = Enumerator(label_dp, 1)
             label_dp = hint_shuffling(label_dp)
             label_dp = hint_sharding(label_dp)
 
@@ -207,10 +209,10 @@ class ImageNet(Dataset):
             "test": 100_000,
         }[self._split]
 
-    def _filter_meta(self, data: Tuple[str, Any]) -> bool:
+    def _filter_meta(self, data: tuple[str, Any]) -> bool:
         return self._classifiy_devkit(data) == ImageNetDemux.META
 
-    def _generate_categories(self) -> List[Tuple[str, ...]]:
+    def _generate_categories(self) -> list[tuple[str, ...]]:
         self._split = "val"
         resources = self._resources()
 
@@ -218,6 +220,6 @@ class ImageNet(Dataset):
         meta_dp = Filter(devkit_dp, self._filter_meta)
         meta_dp = CategoryAndWordNetIDExtractor(meta_dp)
 
-        categories_and_wnids = cast(List[Tuple[str, ...]], list(meta_dp))
+        categories_and_wnids = cast(list[tuple[str, ...]], list(meta_dp))
         categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])
         return categories_and_wnids

@@ -1,6 +1,6 @@
 import os.path
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
@@ -42,10 +42,10 @@ class CocoDetection(VisionDataset):
         path = self.coco.loadImgs(id)[0]["file_name"]
         return Image.open(os.path.join(self.root, path)).convert("RGB")
 
-    def _load_target(self, id: int) -> List[Any]:
+    def _load_target(self, id: int) -> list[Any]:
         return self.coco.loadAnns(self.coco.getAnnIds(id))
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
 
         if not isinstance(index, int):
             raise ValueError(f"Index must be of type integer, got {type(index)} instead.")
@@ -107,5 +107,5 @@ class CocoCaptions(CocoDetection):
 
     """
 
-    def _load_target(self, id: int) -> List[str]:
+    def _load_target(self, id: int) -> list[str]:
         return [ann["caption"] for ann in super()._load_target(id)]

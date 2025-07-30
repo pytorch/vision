@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
@@ -17,7 +17,7 @@ NAME = "country211"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=read_categories_file(NAME))
 
 
@@ -41,7 +41,7 @@ class Country211(Dataset):
 
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         return [
             HttpResource(
                 "https://openaipublic.azureedge.net/clip/data/country211.tgz",
@@ -49,7 +49,7 @@ class Country211(Dataset):
             )
         ]
 
-    def _prepare_sample(self, data: Tuple[str, Any]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[str, Any]) -> dict[str, Any]:
         path, buffer = data
         category = pathlib.Path(path).parent.name
         return dict(
@@ -58,10 +58,10 @@ class Country211(Dataset):
             image=EncodedImage.from_file(buffer),
         )
 
-    def _filter_split(self, data: Tuple[str, Any], *, split: str) -> bool:
+    def _filter_split(self, data: tuple[str, Any], *, split: str) -> bool:
         return pathlib.Path(data[0]).parent.parent.name == split
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, path_comparator("parent.parent.name", self._split_folder_name))
         dp = hint_shuffling(dp)
@@ -75,7 +75,7 @@ class Country211(Dataset):
             "test": 21_100,
         }[self._split]
 
-    def _generate_categories(self) -> List[str]:
+    def _generate_categories(self) -> list[str]:
         resources = self._resources()
         dp = resources[0].load(self._root)
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
