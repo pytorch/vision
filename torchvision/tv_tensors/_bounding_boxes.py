@@ -40,10 +40,17 @@ class BoundingBoxFormat(Enum):
 
 # TODO: Once torchscript supports Enums with staticmethod
 # this can be put into BoundingBoxFormat as staticmethod
-def is_rotated_bounding_format(format: BoundingBoxFormat) -> bool:
-    return (
-        format == BoundingBoxFormat.XYWHR or format == BoundingBoxFormat.CXCYWHR or format == BoundingBoxFormat.XYXYXYXY
-    )
+def is_rotated_bounding_format(format: BoundingBoxFormat | str) -> bool:
+    if isinstance(format, BoundingBoxFormat):
+        return (
+            format == BoundingBoxFormat.XYWHR
+            or format == BoundingBoxFormat.CXCYWHR
+            or format == BoundingBoxFormat.XYXYXYXY
+        )
+    elif isinstance(format, str):
+        return format in ("XYWHR", "CXCYWHR", "XYXYXYXY")
+    else:
+        raise ValueError(f"format should be str or BoundingBoxFormat, got {type(format)}")
 
 
 # TODOBB consider making this a Literal instead. Tried briefly and got
@@ -110,6 +117,8 @@ class BoundingBoxes(TVTensor):
         requires_grad: bool | None = None,
     ) -> BoundingBoxes:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        if not torch.is_floating_point(tensor) and is_rotated_bounding_format(format):
+            raise ValueError(f"Rotated bounding boxes should be floating point tensors, got {tensor.dtype}.")
         return cls._wrap(tensor, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
 
     @classmethod
