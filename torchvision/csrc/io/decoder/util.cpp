@@ -12,11 +12,8 @@ inline size_t getSize(const T& x) {
 }
 
 template <typename T>
-inline bool serializeItem(
-    uint8_t* dest,
-    size_t len,
-    size_t& pos,
-    const T& src) {
+inline bool
+serializeItem(uint8_t* dest, size_t len, size_t& pos, const T& src) {
   VLOG(6) << "Generic serializeItem";
   const auto required = sizeof(src);
   if (len < pos + required) {
@@ -28,11 +25,8 @@ inline bool serializeItem(
 }
 
 template <typename T>
-inline bool deserializeItem(
-    const uint8_t* src,
-    size_t len,
-    size_t& pos,
-    T& dest) {
+inline bool
+deserializeItem(const uint8_t* src, size_t len, size_t& pos, T& dest) {
   const auto required = sizeof(dest);
   if (len < pos + required) {
     return false;
@@ -141,11 +135,8 @@ inline bool serializeItem(
       rectSerialize(dest, len, pos, src);
 }
 
-inline bool serializeItem(
-    uint8_t* dest,
-    size_t len,
-    size_t& pos,
-    const AVSubtitle& src) {
+inline bool
+serializeItem(uint8_t* dest, size_t len, size_t& pos, const AVSubtitle& src) {
   auto rectSerialize =
       [](uint8_t* d, size_t l, size_t& p, const AVSubtitle& x) -> bool {
     bool res = serializeItem(d, l, p, x.num_rects);
@@ -226,11 +217,8 @@ inline bool deserializeItem(
       rectDeserialize(src, len, pos, dest);
 }
 
-inline bool deserializeItem(
-    const uint8_t* src,
-    size_t len,
-    size_t& pos,
-    AVSubtitle& dest) {
+inline bool
+deserializeItem(const uint8_t* src, size_t len, size_t& pos, AVSubtitle& dest) {
   auto rectDeserialize =
       [](const uint8_t* y, size_t l, size_t& p, AVSubtitle& x) -> bool {
     bool res = deserializeItem(y, l, p, x.num_rects);
@@ -265,7 +253,6 @@ std::string generateErrorDesc(int errorCode) {
 
 size_t serialize(const AVSubtitle& sub, ByteStorage* out) {
   const auto len = size(sub);
-  TORCH_CHECK_LE(len, out->tail());
   size_t pos = 0;
   if (!Serializer::serializeItem(out->writableTail(), len, pos, sub)) {
     return 0;
