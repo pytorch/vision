@@ -4,7 +4,6 @@ import warnings
 from pathlib import Path
 from typing import List, Union
 
-import numpy as np
 import numpy.typing as npt
 import torch
 import torch.distributed as dist
