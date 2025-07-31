@@ -245,7 +245,7 @@ void deformable_im2col(
   use_64bits_indexing |=
       ((int64_t)n_in_channels * weight_h * weight_w * parallel_imgs * out_h *
            out_w >
-           std::numeric_limits<int32_t>::max());
+       std::numeric_limits<int32_t>::max());
 
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(

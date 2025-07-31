@@ -40,36 +40,6 @@ jobs:
           exit 1
         fi
 
-  # c-source:
-  #   uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
-  #   permissions:
-  #     id-token: write
-  #     contents: read
-  #   with:
-  #     repository: pytorch/vision
-  #     test-infra-ref: main
-  #     script: |
-  #       set -euo pipefail
-
-  #       echo '::group::Setup environment'
-  #       CONDA_PATH=$(which conda)
-  #       eval "$(${CONDA_PATH} shell.bash hook)"
-  #       conda create --name ci --quiet --yes -c conda-forge python=3.9 clang-format
-  #       conda activate ci
-  #       echo '::endgroup::'
-
-
-  #       echo '::group::Lint C source'
-  #       set +e
-  #       ./.github/scripts/run-clang-format.py -r torchvision/csrc --exclude "torchvision/csrc/io/image/cpu/giflib/*"
-
-  #       if [ $? -ne 0 ]; then
-  #         git --no-pager diff
-  #         exit 1
-  #       fi
-  #       echo '::endgroup::'
-
-
   python-types:
     uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
     permissions:

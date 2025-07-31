@@ -46,8 +46,8 @@ void GPUDecoder::seek(double timestamp, bool keyframes_only) {
   demuxer.seek(timestamp, flag);
 }
 
-c10::Dict<std::string, c10::Dict<std::string, double>>
-GPUDecoder::get_metadata() const {
+c10::Dict<std::string, c10::Dict<std::string, double>> GPUDecoder::
+    get_metadata() const {
   c10::Dict<std::string, c10::Dict<std::string, double>> metadata;
   c10::Dict<std::string, double> video_metadata;
   video_metadata.insert("duration", demuxer.get_duration());
