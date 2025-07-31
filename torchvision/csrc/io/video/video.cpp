@@ -290,8 +290,8 @@ std::tuple<std::string, int64_t> Video::getCurrentStream() const {
   return current_stream;
 }
 
-c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>>
-Video::getStreamMetadata() const {
+c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>> Video::
+    getStreamMetadata() const {
   TORCH_CHECK(initialized, "Video object has to be initialized first");
   return streamsMetadata;
 }

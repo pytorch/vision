@@ -6,8 +6,10 @@
 namespace vision {
 namespace ops {
 
-VISION_API at::Tensor
-nms(const at::Tensor& dets, const at::Tensor& scores, double iou_threshold);
+VISION_API at::Tensor nms(
+    const at::Tensor& dets,
+    const at::Tensor& scores,
+    double iou_threshold);
 
 } // namespace ops
 } // namespace vision
