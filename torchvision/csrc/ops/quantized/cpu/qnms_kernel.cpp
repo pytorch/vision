@@ -17,8 +17,9 @@ at::Tensor qnms_kernel_impl(
       dets.scalar_type() == scores.scalar_type(),
       "dets should have the same type as scores");
 
-  if (dets.numel() == 0)
+  if (dets.numel() == 0) {
     return at::empty({0}, dets.options().dtype(at::kLong));
+  }
 
   const auto ndets = dets.size(0);
 
@@ -56,8 +57,9 @@ at::Tensor qnms_kernel_impl(
 
   for (int64_t _i = 0; _i < ndets; _i++) {
     auto i = order[_i];
-    if (suppressed[i] == 1)
+    if (suppressed[i] == 1) {
       continue;
+    }
     keep[num_to_keep++] = i;
 
     // We explicitly cast coordinates to float so that the code can be
@@ -70,8 +72,9 @@ at::Tensor qnms_kernel_impl(
 
     for (int64_t _j = _i + 1; _j < ndets; _j++) {
       auto j = order[_j];
-      if (suppressed[j] == 1)
+      if (suppressed[j] == 1) {
         continue;
+      }
       float xx1 = std::max(ix1val, (float)x1[j].val_);
       float yy1 = std::max(iy1val, (float)y1[j].val_);
       float xx2 = std::min(ix2val, (float)x2[j].val_);
@@ -81,8 +84,9 @@ at::Tensor qnms_kernel_impl(
       auto h = std::max(0.f, yy2 - yy1); // * scale (gets canceled below)
       auto inter = w * h;
       auto ovr = inter / (iarea + areas[j] - inter);
-      if (ovr > iou_threshold)
+      if (ovr > iou_threshold) {
         suppressed[j] = 1;
+      }
     }
   }
   return keep_t.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep);
