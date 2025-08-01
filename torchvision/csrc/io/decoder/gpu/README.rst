@@ -18,4 +18,4 @@ GPU decoder depends on ffmpeg for demuxing, uses NVDECODE APIs from the nvidia-v
 
 .. code:: bash
 
-    python setup.py install
+    pip install . -v --no-build-isolation
