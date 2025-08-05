@@ -12,16 +12,16 @@ import warnings
 from subprocess import CalledProcessError, check_output, STDOUT
 
 import numpy as np
-import PIL.Image
+import PIL
 import pytest
 import torch
 import torch.testing
-from PIL import Image
 
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import clamp_bounding_boxes, to_image, to_pil_image
+from torchvision.transforms.v2.functional import to_image, to_pil_image
+from torchvision.utils import _Image_fromarray
 
 
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
@@ -147,7 +147,7 @@ def _create_data(height=3, width=3, channels=3, device="cpu"):
     if channels == 1:
         mode = "L"
         data = data[..., 0]
-    pil_img = Image.fromarray(data, mode=mode)
+    pil_img = _Image_fromarray(data, mode=mode)
     return tensor, pil_img
 
 
@@ -410,6 +410,7 @@ def make_bounding_boxes(
     canvas_size=DEFAULT_SIZE,
     *,
     format=tv_tensors.BoundingBoxFormat.XYXY,
+    clamping_mode="soft",
     num_boxes=1,
     dtype=None,
     device="cpu",
@@ -423,13 +424,6 @@ def make_bounding_boxes(
         format = tv_tensors.BoundingBoxFormat[format]
 
     dtype = dtype or torch.float32
-    int_dtype = dtype in (
-        torch.uint8,
-        torch.int8,
-        torch.int16,
-        torch.int32,
-        torch.int64,
-    )
 
     h, w = (torch.randint(1, s, (num_boxes,)) for s in canvas_size)
     y = sample_position(h, canvas_size[0])
@@ -456,31 +450,19 @@ def make_bounding_boxes(
     elif format is tv_tensors.BoundingBoxFormat.XYXYXYXY:
         r_rad = r * torch.pi / 180.0
         cos, sin = torch.cos(r_rad), torch.sin(r_rad)
-        x1 = torch.round(x) if int_dtype else x
-        y1 = torch.round(y) if int_dtype else y
-        x2 = torch.round(x1 + w * cos) if int_dtype else x1 + w * cos
-        y2 = torch.round(y1 - w * sin) if int_dtype else y1 - w * sin
-        x3 = torch.round(x2 + h * sin) if int_dtype else x2 + h * sin
-        y3 = torch.round(y2 + h * cos) if int_dtype else y2 + h * cos
-        x4 = torch.round(x1 + h * sin) if int_dtype else x1 + h * sin
-        y4 = torch.round(y1 + h * cos) if int_dtype else y1 + h * cos
+        x1 = x
+        y1 = y
+        x2 = x1 + w * cos
+        y2 = y1 - w * sin
+        x3 = x2 + h * sin
+        y3 = y2 + h * cos
+        x4 = x1 + h * sin
+        y4 = y1 + h * cos
         parts = (x1, y1, x2, y2, x3, y3, x4, y4)
     else:
         raise ValueError(f"Format {format} is not supported")
     out_boxes = torch.stack(parts, dim=-1).to(dtype=dtype, device=device)
-    if tv_tensors.is_rotated_bounding_format(format):
-        # The rotated bounding boxes are not guaranteed to be within the canvas by design,
-        # so we apply clamping. We also add a 2 buffer to the canvas size to avoid
-        # numerical issues during the testing
-        buffer = 4
-        out_boxes = clamp_bounding_boxes(
-            out_boxes, format=format, canvas_size=(canvas_size[0] - buffer, canvas_size[1] - buffer)
-        )
-        if format is tv_tensors.BoundingBoxFormat.XYWHR or format is tv_tensors.BoundingBoxFormat.CXCYWHR:
-            out_boxes[:, :2] += buffer // 2
-        elif format is tv_tensors.BoundingBoxFormat.XYXYXYXY:
-            out_boxes[:, :] += buffer // 2
-    return tv_tensors.BoundingBoxes(out_boxes, format=format, canvas_size=canvas_size)
+    return tv_tensors.BoundingBoxes(out_boxes, format=format, canvas_size=canvas_size, clamping_mode=clamping_mode)
 
 
 def make_detection_masks(size=DEFAULT_SIZE, *, num_masks=1, dtype=None, device="cpu"):

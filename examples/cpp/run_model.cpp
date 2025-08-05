@@ -21,7 +21,7 @@ int main(int argc, const char* argv[]) {
     // Deserialize the ScriptModule from a file using torch::jit::load().
     model = torch::jit::load(argv[1]);
     std::cout << "Model loaded\n";
-  } catch (const torch::Error& e) {
+  } catch (const torch::Error&) {
     std::cout << "error loading the model.\n";
     return -1;
   } catch (const std::exception& e) {

@@ -8,10 +8,11 @@ from typing import Any, BinaryIO, Optional, Union
 
 import numpy as np
 import torch
-from PIL import Image, ImageColor, ImageDraw, ImageFont
+from PIL import __version__ as PILLOW_VERSION_STRING, Image, ImageColor, ImageDraw, ImageFont
 
 
 __all__ = [
+    "_Image_fromarray",
     "make_grid",
     "save_image",
     "draw_bounding_boxes",
@@ -136,7 +137,7 @@ class _ImageDrawTV(ImageDraw.ImageDraw):
                 width=width,
                 fill=outline,
             )
-        self.rectangle(xy, fill=fill, outline=None, width=0)
+        self.polygon(xy, fill=fill, outline=None, width=0)
 
     def dashed_line(self, xy, fill=None, width=0, joint=None, dash_length=5, space_length=5):
         # Calculate the total length of the line
@@ -172,6 +173,85 @@ class _ImageDrawTV(ImageDraw.ImageDraw):
                 segment_length -= dash_length_to_draw
                 x1, y1 = end_x, end_y
                 current_dash = not current_dash
+
+
+def _Image_fromarray(
+    obj: np.ndarray,
+    mode: str,
+) -> Image.Image:
+    """
+    A wrapper around PIL.Image.fromarray to mitigate the deprecation of the
+    mode paramter. See:
+      https://pillow.readthedocs.io/en/stable/releasenotes/11.3.0.html#image-fromarray-mode-parameter
+    """
+
+    # This may throw if the version string is from an install that comes from a
+    # non-stable or development version. We'll fall back to the old behavior in
+    # such cases.
+    try:
+        PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION_STRING.split("."))
+    except Exception:
+        PILLOW_VERSION = None
+
+    if PILLOW_VERSION is not None and PILLOW_VERSION >= (11, 3):
+        # The actual PR that implements the deprecation has more context for why
+        # it was done, and also points out some problems:
+        #
+        #    https://github.com/python-pillow/Pillow/pull/9018
+        #
+        # Our use case falls into those problems. We actually rely on the old
+        # behavior of Image.fromarray():
+        #
+        #    new behavior: PIL will infer the image mode from the data passed
+        #                  in. That is, the type and shape determines the mode.
+        #
+        #    old behiavor: The mode will change how PIL reads the image,
+        #                  regardless of the data. That is, it will make the
+        #                  data work with the mode.
+        #
+        # Our uses of Image.fromarray() are effectively a "turn into PIL image
+        # AND convert the kind" operation. In particular, in
+        # functional.to_pil_image() and transforms.ToPILImage.
+        #
+        # However, Image.frombuffer() still performs this conversion. The code
+        # below is lifted from the new implementation of Image.fromarray(). We
+        # omit the code that infers the mode, and use the code that figures out
+        # from the data passed in (obj) what the correct parameters are to
+        # Image.frombuffer().
+        #
+        # Note that the alternate solution below does not work:
+        #
+        #    img = Image.fromarray(obj)
+        #    img = img.convert(mode)
+        #
+        # The resulting image has very different actual pixel values than before.
+        #
+        # TODO: Issue #9151. Pillow has an open PR to restore the functionality
+        #       we rely on:
+        #
+        #       https://github.com/python-pillow/Pillow/pull/9063
+        #
+        #       When that is part of a release, we can revisit this hack below.
+        arr = obj.__array_interface__
+        shape = arr["shape"]
+        ndim = len(shape)
+        size = 1 if ndim == 1 else shape[1], shape[0]
+
+        strides = arr.get("strides", None)
+        contiguous_obj: Union[np.ndarray, bytes] = obj
+        if strides is not None:
+            # We require that the data is contiguous; if it is not, we need to
+            # convert it into a contiguous format.
+            if hasattr(obj, "tobytes"):
+                contiguous_obj = obj.tobytes()
+            elif hasattr(obj, "tostring"):
+                contiguous_obj = obj.tostring()
+            else:
+                raise ValueError("Unable to convert obj into contiguous format")
+
+        return Image.frombuffer(mode, size, contiguous_obj, "raw", mode, 0, 1)
+    else:
+        return Image.fromarray(obj, mode)
 
 
 @torch.no_grad()

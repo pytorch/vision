@@ -16,7 +16,7 @@ try:
 except ImportError:
     accimage = None
 
-from ..utils import _log_api_usage_once
+from ..utils import _Image_fromarray, _log_api_usage_once
 from . import _functional_pil as F_pil, _functional_tensor as F_t
 
 
@@ -321,7 +321,7 @@ def to_pil_image(pic, mode=None):
     if mode is None:
         raise TypeError(f"Input type {npimg.dtype} is not supported")
 
-    return Image.fromarray(npimg, mode=mode)
+    return _Image_fromarray(npimg, mode=mode)
 
 
 def normalize(tensor: Tensor, mean: list[float], std: list[float], inplace: bool = False) -> Tensor:
