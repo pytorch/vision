@@ -251,7 +251,7 @@ def _Image_fromarray(
 
         return Image.frombuffer(mode, size, contiguous_obj, "raw", mode, 0, 1)
     else:
-        return Image.fromarray(obj, mode)
+        return Image.fromarray(obj)
 
 
 @torch.no_grad()
