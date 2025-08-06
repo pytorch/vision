@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.transforms.v2.functional
+
+
+adjust_gamma
+============
+
+.. autofunction:: adjust_gamma

@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.transforms.functional
+
+
+hflip
+=====
+
+.. autofunction:: hflip

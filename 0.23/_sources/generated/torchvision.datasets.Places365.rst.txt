@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+Places365
+=========
+
+.. autoclass:: Places365
+    :members:
+        __getitem__,
+        
+    :special-members:
