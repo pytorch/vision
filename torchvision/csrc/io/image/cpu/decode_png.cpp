@@ -104,8 +104,9 @@ torch::Tensor decode_png(
 
   int channels = png_get_channels(png_ptr, info_ptr);
 
-  if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+  if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) {
     png_set_expand_gray_1_2_4_to_8(png_ptr);
+  }
 
   int number_of_passes;
   if (interlace_type == PNG_INTERLACE_ADAM7) {

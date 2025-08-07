@@ -158,8 +158,7 @@ void runDecoder(SyncDecoder& decoder) {
       AVSubtitle sub;
       memset(&sub, 0, sizeof(sub));
       EXPECT_TRUE(Util::deserialize(*out.payload, &sub));
-      LOG(INFO) << "Found subtitles"
-                << ", num rects: " << sub.num_rects;
+      LOG(INFO) << "Found subtitles" << ", num rects: " << sub.num_rects;
       for (int i = 0; i < sub.num_rects; ++i) {
         std::string text = "picture";
         if (sub.rects[i]->type == SUBTITLE_TEXT) {
@@ -210,9 +209,9 @@ TEST(SyncDecoder, TestSyncDecoderPerformance) {
   auto new8x8 = measurePerformanceUs(stats, kRounds, 8, 8);
   auto new16x8 = measurePerformanceUs(stats, kRounds, 16, 8);
   auto new32x4 = measurePerformanceUs(stats, kRounds, 32, 4);
-  LOG(INFO) << "Clip decoding (us)"
-            << ", new(4x2): " << new4x2 << ", new(8x8): " << new8x8
-            << ", new(16x8): " << new16x8 << ", new(32x4): " << new32x4;
+  LOG(INFO) << "Clip decoding (us)" << ", new(4x2): " << new4x2
+            << ", new(8x8): " << new8x8 << ", new(16x8): " << new16x8
+            << ", new(32x4): " << new32x4;
 }
 
 TEST(SyncDecoder, Test) {
@@ -361,7 +360,7 @@ TEST(SyncDecoder, TestMemoryBufferNoSeekableWithFullRead) {
   CHECK(decoder.init(
       params,
       [object](uint8_t* out, int size, int whence, uint64_t timeoutMs) mutable
-          -> int {
+      -> int {
         if (out) { // see defs.h file
           // read mode
           return object.read(out, size);
@@ -401,7 +400,7 @@ TEST(SyncDecoder, TestMemoryBufferNoSeekableWithPartialRead) {
   CHECK(!decoder.init(
       params,
       [object](uint8_t* out, int size, int whence, uint64_t timeoutMs) mutable
-          -> int {
+      -> int {
         if (out) { // see defs.h file
           // read mode
           return object.read(out, size);

@@ -1,3 +1,4 @@
+// @nolint (improperly imported third-party code)
 /*****************************************************************************
 
 gif_hash.c -- module to support the following operations:

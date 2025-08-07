@@ -1,3 +1,4 @@
+// @nolint (improperly imported third-party code)
 /*****************************************************************************
 
  GIF construction tools

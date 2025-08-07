@@ -4,7 +4,7 @@ import warnings
 from pathlib import Path
 from typing import List, Union
 
-import numpy as np
+import numpy.typing as npt
 import torch
 import torch.distributed as dist
 import torchvision.models.optical_flow
@@ -33,7 +33,7 @@ def make_stereo_flow(flow: Union[torch.Tensor, List[torch.Tensor]], model_out_ch
     return flow
 
 
-def make_lr_schedule(args: argparse.Namespace, optimizer: torch.optim.Optimizer) -> np.ndarray:
+def make_lr_schedule(args: argparse.Namespace, optimizer: torch.optim.Optimizer) -> npt.NDArray:
     """Helper function to return a learning rate scheduler for CRE-stereo"""
     if args.decay_after_steps < args.warmup_steps:
         raise ValueError(f"decay_after_steps: {args.function} must be greater than warmup_steps: {args.warmup_steps}")

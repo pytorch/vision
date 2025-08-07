@@ -285,6 +285,8 @@ bool Decoder::init(
       return false;
     }
 
+    avioCtx_->max_packet_size = params.maxEncodedBufferSize;
+
     inputCtx_->pb = avioCtx_;
     inputCtx_->flags |= AVFMT_FLAG_CUSTOM_IO;
   }
@@ -382,7 +384,30 @@ bool Decoder::init(
     av_seek_frame(inputCtx_, -1, offset, AVSEEK_FLAG_BACKWARD);
   }
 
+  for (unsigned int i = 0; i < inputCtx_->nb_streams; i++) {
+    if (
+#if LIBAVUTIL_VERSION_MAJOR < 56 // Before FFMPEG 4.0
+        inputCtx_->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO
+#else // FFMPEG 4.0+
+        inputCtx_->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO
+#endif
+        && inputCtx_->streams[i]->duration > 0) {
+      // There is at least two 1/r_frame_rates from the frame before the last
+      // one until the video duration, let's prefer to set duration after the
+      // frame before the last one, but as early as possible
+      double correction = 2 * inputCtx_->streams[i]->r_frame_rate.den /
+              (double)inputCtx_->streams[i]->r_frame_rate.num -
+          1 / (double)AV_TIME_BASE;
+      videoDurationMs_ = 1000 * inputCtx_->streams[i]->duration *
+              inputCtx_->streams[i]->time_base.num /
+              (double)inputCtx_->streams[i]->time_base.den -
+          1000 * correction;
+      break;
+    }
+  }
+
   VLOG(1) << "Decoder initialized, log level: " << params_.logLevel;
+  VLOG(1) << "Video duration: " << videoDurationMs_;
   return true;
 }
 
@@ -590,13 +615,30 @@ int Decoder::getFrame(size_t workingTimeInMs) {
     result = 0;
 
     av_packet_unref(avPacket);
+
+    if (params_.uniformSampling > 1) {
+      if (doSeek_) {
+        double duration =
+            videoDurationMs_ > 0 ? videoDurationMs_ : params_.expectedDuration;
+        double step =
+            (duration * AV_TIME_BASE) / (1000 * (params_.uniformSampling - 1));
+        avformat_seek_file(
+            inputCtx_,
+            -1,
+            static_cast<int64_t>(step * kFramesDecoded_) + 1,
+            static_cast<int64_t>(step * (kFramesDecoded_ + 1)),
+            static_cast<int64_t>(step * (kFramesDecoded_ + 1)),
+            0);
+        ++kFramesDecoded_;
+        doSeek_ = false;
+      }
+    }
   }
 
   av_packet_free(&avPacket);
-  VLOG(2) << "Interrupted loop"
-          << ", interrupted_ " << interrupted_ << ", inRange_.any() "
-          << inRange_.any() << ", decodedFrame " << decodedFrame << ", result "
-          << result;
+  VLOG(2) << "Interrupted loop" << ", interrupted_ " << interrupted_
+          << ", inRange_.any() " << inRange_.any() << ", decodedFrame "
+          << decodedFrame << ", result " << result;
 
   // loop can be terminated, either by:
   // 1. explicitly interrupted
@@ -660,11 +702,33 @@ int Decoder::processPacket(
       startCondition = msg.header.pts >= params_.startOffset;
     }
     if (endInRange && startCondition) {
-      *hasMsg = true;
-      push(std::move(msg));
+      *hasMsg = pushMsg(std::move(msg));
     }
   }
   return result;
+}
+
+bool Decoder::pushMsg(DecoderOutputMessage&& msg) {
+  pastDecodedPTS_ = currentDecodedPTS_;
+  currentDecodedPTS_ = msg.header.pts;
+
+  if (params_.uniformSampling <= 1) {
+    push(std::move(msg));
+    return true;
+  }
+
+  double duration =
+      videoDurationMs_ > 0 ? videoDurationMs_ : params_.expectedDuration;
+  double step =
+      (duration * AV_TIME_BASE) / (1000 * (params_.uniformSampling - 1));
+  if (pastDecodedPTS_ < step * kFramesDecoded_ &&
+      step * kFramesDecoded_ <= currentDecodedPTS_) {
+    push(std::move(msg));
+    doSeek_ = true;
+    return true;
+  }
+
+  return false;
 }
 
 void Decoder::flushStreams() {
@@ -678,7 +742,7 @@ void Decoder::flushStreams() {
           params_.endOffset <= 0 || msg.header.pts <= params_.endOffset;
       inRange_.set(stream.second->getIndex(), endInRange);
       if (endInRange && msg.header.pts >= params_.startOffset) {
-        push(std::move(msg));
+        pushMsg(std::move(msg));
       } else {
         msg.payload.reset();
       }

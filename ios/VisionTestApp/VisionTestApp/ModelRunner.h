@@ -5,7 +5,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface ModelRunner : NSObject
 
-+ (NSString* )run;
++ (NSString*)run;
 + (BOOL)setUp;
 
 @end

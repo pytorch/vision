@@ -265,7 +265,6 @@ std::string generateErrorDesc(int errorCode) {
 
 size_t serialize(const AVSubtitle& sub, ByteStorage* out) {
   const auto len = size(sub);
-  TORCH_CHECK_LE(len, out->tail());
   size_t pos = 0;
   if (!Serializer::serializeItem(out->writableTail(), len, pos, sub)) {
     return 0;

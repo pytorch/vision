@@ -3,6 +3,8 @@
 #include <torch/autograd.h>
 #include <torch/types.h>
 
+#include <utility>
+
 namespace vision {
 namespace ops {
 
@@ -15,8 +17,8 @@ class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
       const torch::autograd::Variable& input,
       const torch::autograd::Variable& rois,
       double spatial_scale,
-      c10::SymInt pooled_height,
-      c10::SymInt pooled_width) {
+      const c10::SymInt& pooled_height,
+      const c10::SymInt& pooled_width) {
     ctx->saved_data["spatial_scale"] = spatial_scale;
     ctx->saved_data["pooled_height"] = pooled_height;
     ctx->saved_data["pooled_width"] = pooled_width;
@@ -84,12 +86,12 @@ class PSROIPoolBackwardFunction
         rois,
         channel_mapping,
         spatial_scale,
-        pooled_height,
-        pooled_width,
-        batch_size,
-        channels,
-        height,
-        width);
+        std::move(pooled_height),
+        std::move(pooled_width),
+        std::move(batch_size),
+        std::move(channels),
+        std::move(height),
+        std::move(width));
 
     return {grad_in};
   }

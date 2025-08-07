@@ -1,3 +1,4 @@
+// @nolint (improperly imported third-party code)
 /*!
  ******************* BEGIN Caffe Copyright Notice and Disclaimer
  *****************
@@ -240,11 +241,11 @@ void deformable_im2col(
   // https://github.com/pytorch/vision/issues/4269
   bool use_64bits_indexing = false;
   // Checks if num_kernels or columns numel larger than 2 ** 31
-  use_64bits_indexing |= num_kernels > (1 << 31);
+  use_64bits_indexing |= num_kernels > std::numeric_limits<int32_t>::max();
   use_64bits_indexing |=
       ((int64_t)n_in_channels * weight_h * weight_w * parallel_imgs * out_h *
            out_w >
-       (1 << 31));
+       std::numeric_limits<int32_t>::max());
 
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
@@ -431,7 +432,7 @@ void compute_grad_input(
   // https://github.com/pytorch/vision/issues/4269
   bool use_64bits_indexing = false;
   // Checks if num_kernels or columns numel larger than 2 ** 31
-  use_64bits_indexing |= num_kernels > (1 << 31);
+  use_64bits_indexing |= num_kernels > std::numeric_limits<int32_t>::max();
 
   at::globalContext().alertNotDeterministic("compute_grad_input");
 
@@ -672,10 +673,10 @@ void compute_grad_offset_and_mask(
   // https://github.com/pytorch/vision/issues/4269
   bool use_64bits_indexing = false;
   // Checks if columns numel is larger than 2 ** 31
-  use_64bits_indexing |= num_kernels > (1 << 31);
+  use_64bits_indexing |= num_kernels > std::numeric_limits<int32_t>::max();
   use_64bits_indexing |=
       ((int64_t)channels * weight_h * weight_w * parallel_imgs * out_h * out_w >
-       (1 << 31));
+       std::numeric_limits<int32_t>::max());
 
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(

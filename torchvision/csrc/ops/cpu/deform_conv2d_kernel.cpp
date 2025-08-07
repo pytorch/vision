@@ -1,3 +1,4 @@
+// @nolint (improperly imported third-party code)
 /*!
  ******************* BEGIN Caffe Copyright Notice and Disclaimer
  *****************

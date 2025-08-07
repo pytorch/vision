@@ -2,6 +2,7 @@ import os
 from typing import List
 
 import numpy as np
+import numpy.typing as npt
 import torch
 from torch import Tensor
 from torchvision.utils import make_grid
@@ -64,7 +65,7 @@ def make_training_sample_grid(
     disparities: Tensor,
     masks: Tensor,
     predictions: List[Tensor],
-) -> np.ndarray:
+) -> npt.NDArray:
     # detach images and renormalize to [0, 1]
     images_left = left_images.detach().cpu() * 0.5 + 0.5
     images_right = right_images.detach().cpu() * 0.5 + 0.5
@@ -84,7 +85,7 @@ def make_training_sample_grid(
 
 
 @torch.no_grad()
-def make_disparity_sequence_grid(predictions: List[Tensor], disparities: Tensor) -> np.ndarray:
+def make_disparity_sequence_grid(predictions: List[Tensor], disparities: Tensor) -> npt.NDArray:
     # right most we will be adding the ground truth
     seq_len = len(predictions) + 1
     predictions = list(map(lambda x: x[:, :1, :, :].detach().cpu(), predictions + [disparities]))

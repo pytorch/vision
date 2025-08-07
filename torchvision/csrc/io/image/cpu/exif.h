@@ -1,3 +1,4 @@
+// @nolint (improperly imported third-party code)
 /*M///////////////////////////////////////////////////////////////////////////////////////
 //
 //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.

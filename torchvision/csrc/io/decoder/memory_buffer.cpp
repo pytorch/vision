@@ -54,7 +54,7 @@ DecoderInCallback MemoryBuffer::getCallback(
   MemoryBuffer object(buffer, size);
   return
       [object](uint8_t* out, int size, int whence, uint64_t timeoutMs) mutable
-          -> int {
+      -> int {
         if (out) { // see defs.h file
           // read mode
           return object.read(out, size);

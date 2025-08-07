@@ -130,10 +130,12 @@ void bilinear_interpolate_gradient(
     return;
   }
 
-  if (y <= 0)
+  if (y <= 0) {
     y = 0;
-  if (x <= 0)
+  }
+  if (x <= 0) {
     x = 0;
+  }
 
   y_low = (int)y;
   x_low = (int)x;
@@ -304,8 +306,9 @@ at::Tensor roi_align_forward_kernel(
   at::Tensor output = at::zeros(
       {num_rois, channels, pooled_height, pooled_width}, input.options());
 
-  if (output.numel() == 0)
+  if (output.numel() == 0) {
     return output;
+  }
 
   auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
