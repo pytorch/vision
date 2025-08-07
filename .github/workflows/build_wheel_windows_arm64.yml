@@ -1,11 +1,12 @@
-name: Build Aarch64 Linux Wheels
+name: Build Windows ARM64 Wheels
 
 on:
   pull_request:
+    paths:
+      - .github/workflows/build_wheel_windows_arm64.yml
   push:
     branches:
       - nightly
-      - main
       - release/*
     tags:
         # NOTE: Binary build pipelines should only get triggered on release candidate builds
@@ -22,10 +23,11 @@ jobs:
     uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
     with:
       package-type: wheel
-      os: linux-aarch64
+      os: windows-arm64
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
-      with-cuda: enable
+      with-cuda: disable
+
   build:
     needs: generate-matrix
     strategy:
@@ -33,22 +35,20 @@ jobs:
       matrix:
         include:
           - repository: pytorch/vision
-            pre-script: packaging/pre_build_script.sh
-            post-script: packaging/post_build_script.sh
             smoke-test-script: test/smoke_test.py
+            pre-script: packaging/pre_build_script_arm64.sh
             package-name: torchvision
+            architecture: "arm64"
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_wheels_linux.yml@main
+    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
     with:
       repository: ${{ matrix.repository }}
       ref: ""
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
-      build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
-      post-script: ${{ matrix.post-script }}
+      build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
       trigger-event: ${{ github.event_name }}
-      architecture: aarch64
-      setup-miniconda: false
+      architecture: ${{ matrix.architecture }}
