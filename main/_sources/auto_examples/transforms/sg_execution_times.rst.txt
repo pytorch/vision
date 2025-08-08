@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:19.115** total execution time for 8 files **from auto_examples/transforms**:
+**00:19.247** total execution time for 8 files **from auto_examples/transforms**:
 
 .. container::
 
@@ -33,26 +33,26 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_transforms_plot_rotated_box_transforms.py` (``plot_rotated_box_transforms.py``)
-     - 00:06.757
+     - 00:06.825
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py` (``plot_transforms_illustrations.py``)
-     - 00:06.602
+     - 00:06.699
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``plot_transforms_e2e.py``)
-     - 00:04.883
+     - 00:04.858
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` (``plot_transforms_getting_started.py``)
-     - 00:00.666
+     - 00:00.653
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` (``plot_cutmix_mixup.py``)
-     - 00:00.185
+     - 00:00.192
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` (``plot_custom_transforms.py``)
-     - 00:00.010
+     - 00:00.009
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py` (``plot_tv_tensors.py``)
      - 00:00.008
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py` (``plot_custom_tv_tensors.py``)
-     - 00:00.003
+     - 00:00.004
      - 0.0
