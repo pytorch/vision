@@ -87,6 +87,8 @@ class RandomApply(Transform):
 
         if not isinstance(transforms, (Sequence, nn.ModuleList)):
             raise TypeError("Argument transforms should be a sequence of callables or a `nn.ModuleList`")
+        elif not transforms:
+            raise ValueError("Pass at least one transform")
         self.transforms = transforms
 
         if not (0.0 <= p <= 1.0):
@@ -133,7 +135,8 @@ class RandomChoice(Transform):
     ) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
-
+        elif not transforms:
+            raise ValueError("Pass at least one transform")
         if p is None:
             p = [1] * len(transforms)
         elif len(p) != len(transforms):
@@ -163,6 +166,8 @@ class RandomOrder(Transform):
     def __init__(self, transforms: Sequence[Callable]) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
+        elif not transforms:
+            raise ValueError("Pass at least one transform")
         super().__init__()
         self.transforms = transforms
 
