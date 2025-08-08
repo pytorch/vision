@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
 import numpy as np
-from PIL import Image
 
+from ..utils import _Image_fromarray
 from .utils import download_url
 from .vision import VisionDataset
 
@@ -82,7 +82,7 @@ class USPS(VisionDataset):
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        img = Image.fromarray(img, mode="L")
+        img = _Image_fromarray(img, mode="L")
 
         if self.transform is not None:
             img = self.transform(img)
