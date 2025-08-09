@@ -71,7 +71,7 @@ Torchvision currently supports the following video backends:
 
 ```
 conda install -c conda-forge 'ffmpeg<4.3'
-python setup.py install
+pip install . -v --no-build-isolation
 ```
 
 # Using the models on C++
