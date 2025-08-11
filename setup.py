@@ -8,6 +8,7 @@ import subprocess
 import sys
 import warnings
 from pathlib import Path
+from ctypes.util import find_library
 
 import torch
 from pkg_resources import DistributionNotFound, get_distribution, parse_version
@@ -391,35 +392,57 @@ def make_video_decoders_extensions():
     def find_ffmpeg_libraries():
         ffmpeg_libraries = {"libavcodec", "libavformat", "libavutil", "libswresample", "libswscale"}
 
-        ffmpeg_bin = os.path.dirname(ffmpeg_exe)
-        ffmpeg_root = os.path.dirname(ffmpeg_bin)
-        ffmpeg_include_dir = os.path.join(ffmpeg_root, "include")
-        ffmpeg_library_dir = os.path.join(ffmpeg_root, "lib")
-
-        gcc = os.environ.get("CC", shutil.which("gcc"))
-        platform_tag = subprocess.run([gcc, "-print-multiarch"], stdout=subprocess.PIPE)
-        platform_tag = platform_tag.stdout.strip().decode("utf-8")
-
-        if platform_tag:
-            # Most probably a Debian-based distribution
-            ffmpeg_include_dir = [ffmpeg_include_dir, os.path.join(ffmpeg_include_dir, platform_tag)]
-            ffmpeg_library_dir = [ffmpeg_library_dir, os.path.join(ffmpeg_library_dir, platform_tag)]
-        else:
-            ffmpeg_include_dir = [ffmpeg_include_dir]
-            ffmpeg_library_dir = [ffmpeg_library_dir]
-
-        for library in ffmpeg_libraries:
-            library_found = False
-            for search_path in ffmpeg_include_dir + TORCHVISION_INCLUDE:
-                full_path = os.path.join(search_path, library, "*.h")
-                library_found |= len(glob.glob(full_path)) > 0
-
-            if not library_found:
-                print(f"{build_without_extensions_msg}")
-                print(f"{library} header files were not found.")
+        # Verify all libraries are available
+        for lib in ffmpeg_libraries:
+            if find_library(lib.replace('lib', '', 1)) is None:
+                print(f"{build_without_extensions_msg} Could not find {lib}.")
                 return None, None
 
-        return ffmpeg_include_dir, ffmpeg_library_dir
+        # Find library directories
+        lib_dirs = ["/usr/lib64", "/usr/lib", "/usr/local/lib64", "/usr/local/lib"]
+        # Add multiarch paths for Debian/Ubuntu
+        gcc = os.environ.get("CC", shutil.which("gcc"))
+        try:
+            result = subprocess.run([gcc, "-print-multiarch"], stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, timeout=5)
+            platform_tag = result.stdout.strip().decode("utf-8")
+            if platform_tag:
+                lib_dirs.extend([f"/usr/lib/{platform_tag}", f"/usr/local/lib/{platform_tag}"])
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError, OSError):
+            pass
+
+        lib_dirs.extend(TORCHVISION_LIBRARY)
+
+        # Keep directories that contain FFmpeg libraries
+        ffmpeg_library_dir = []
+        for lib_dir in lib_dirs:
+            if os.path.isdir(lib_dir):
+                for lib in ffmpeg_libraries:
+                    if glob.glob(os.path.join(lib_dir, f"{lib}.so*")):
+                        ffmpeg_library_dir.append(lib_dir)
+                        break
+
+        # Find include directories
+        inc_dirs = ["/usr/include/ffmpeg", "/usr/include", "/usr/local/include/ffmpeg", "/usr/local/include"]
+        if ffmpeg_exe:
+            ffmpeg_root = os.path.dirname(os.path.dirname(ffmpeg_exe))
+            inc_dirs.extend([os.path.join(ffmpeg_root, "include"),
+                           os.path.join(ffmpeg_root, "include", "ffmpeg")])
+
+        if 'platform_tag' in locals() and platform_tag:
+            inc_dirs.extend([f"/usr/include/{platform_tag}", f"/usr/include/{platform_tag}/ffmpeg"])
+
+        inc_dirs.extend(TORCHVISION_INCLUDE)
+        ffmpeg_include_dir = [d for d in inc_dirs if os.path.isdir(d)]
+
+        # Verify headers exist
+        for library in ffmpeg_libraries:
+            for search_path in ffmpeg_include_dir:
+                if glob.glob(os.path.join(search_path, library, "*.h")):
+                    return ffmpeg_include_dir, ffmpeg_library_dir
+
+        print(f"{build_without_extensions_msg} Could not find FFmpeg headers.")
+        return None, None
 
     ffmpeg_include_dir, ffmpeg_library_dir = find_ffmpeg_libraries()
     if ffmpeg_include_dir is None or ffmpeg_library_dir is None:
