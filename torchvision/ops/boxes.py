@@ -351,7 +351,7 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> tuple
         rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
     elif fmt == "xywh":
         lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
-        rb = torch.min(boxes1[:, None, :2] + boxes1[:, None, 2:] / 2, boxes2[:, :2] + boxes2[:, 2:] / 2)  # [N,M,2]
+        rb = torch.min(boxes1[:, None, :2] + boxes1[:, None, 2:], boxes2[:, :2] + boxes2[:, 2:])  # [N,M,2]
     else:  # fmt == "cxcywh":
         lt = torch.max(boxes1[:, None, :2] - boxes1[:, None, 2:] / 2, boxes2[:, :2] - boxes2[:, 2:] / 2)  # [N,M,2]
         rb = torch.min(boxes1[:, None, :2] + boxes1[:, None, 2:] / 2, boxes2[:, :2] + boxes2[:, 2:] / 2)  # [N,M,2]
