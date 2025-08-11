@@ -256,8 +256,6 @@ def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     if need_cast:
         # Up-case to avoid overflow for square operations
         xyxyxyxy = xyxyxyxy.to(torch.float32)
-    if need_cast:
-        xyxyxyxy = xyxyxyxy.float()
 
     r_rad = torch.atan2(xyxyxyxy[..., 1].sub(xyxyxyxy[..., 3]), xyxyxyxy[..., 2].sub(xyxyxyxy[..., 0]))
     # x1, y1, (x2 - x1), (y2 - y1), (x3 - x2), (y3 - y2) x4, y4
