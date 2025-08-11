@@ -294,11 +294,11 @@ def box_area(boxes: Tensor, fmt: str = "xyxy") -> Tensor:
         raise ValueError(f"Unsupported Bounding Box area for given fmt {fmt}")
     boxes = _upcast(boxes)
     if fmt == "xyxy":
-        area = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+        area = (boxes[..., 2] - boxes[..., 0]) * (boxes[..., 3] - boxes[..., 1])
     else:
         # For formats with width and height, area = width * height
         # Supported: cxcywh, xywh
-        area = boxes[:, 2] * boxes[:, 3]
+        area = boxes[..., 2] * boxes[..., 3]
 
     return area
 
@@ -323,14 +323,14 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> tuple
     elif fmt == "xywh":
         lt = torch.max(boxes1[..., None, :2], boxes2[..., None, :, :2])  # [...,N,M,2]
         rb = torch.min(
-            boxes1[..., None, :2] + boxes1[..., None, 2:], boxes2[..., None, :2] + boxes2[..., None, 2:]
+            boxes1[..., None, :2] + boxes1[..., None, 2:], boxes2[..., None, :, :2] + boxes2[..., None, :, 2:]
         )  # [N,M,2]
     else:  # fmt == "cxcywh":
         lt = torch.max(
-            boxes1[..., None, :2] - boxes1[..., None, 2:] / 2, boxes2[..., None, :2] - boxes2[..., None, 2:] / 2
+            boxes1[..., None, :2] - boxes1[..., None, 2:] / 2, boxes2[..., None, :, :2] - boxes2[..., None, :, 2:] / 2
         )  # [N,M,2]
         rb = torch.min(
-            boxes1[..., None, :2] + boxes1[..., None, 2:] / 2, boxes2[..., None, :2] + boxes2[..., None, 2:] / 2
+            boxes1[..., None, :2] + boxes1[..., None, 2:] / 2, boxes2[..., None, :, :2] + boxes2[..., None, :, 2:] / 2
         )  # [N,M,2]
 
     wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]	    wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]
