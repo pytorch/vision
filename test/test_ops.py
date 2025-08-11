@@ -1485,8 +1485,9 @@ class TestBoxAreaCXCYWH:
 
     @pytest.mark.parametrize("dtype", [torch.int8, torch.int16, torch.int32, torch.int64])
     def test_int_boxes(self, dtype):
-        box_tensor = ops.box_convert(torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype),
-                                     in_fmt="xyxy", out_fmt="cxcywh")
+        box_tensor = ops.box_convert(
+            torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype), in_fmt="xyxy", out_fmt="cxcywh"
+        )
         expected = torch.tensor([10000, 0], dtype=torch.int32)
         self.area_check(box_tensor, expected)
 
@@ -1497,16 +1498,22 @@ class TestBoxAreaCXCYWH:
         self.area_check(box_tensor, expected)
 
     def test_float16_box(self):
-        box_tensor = ops.box_convert(torch.tensor(
-            [[2.825, 1.8625, 3.90, 4.85], [2.825, 4.875, 19.20, 5.10], [2.925, 1.80, 8.90, 4.90]], dtype=torch.float16
-        ), in_fmt="xyxy", out_fmt="cxcywh")
+        box_tensor = ops.box_convert(
+            torch.tensor(
+                [[2.825, 1.8625, 3.90, 4.85], [2.825, 4.875, 19.20, 5.10], [2.925, 1.80, 8.90, 4.90]],
+                dtype=torch.float16,
+            ),
+            in_fmt="xyxy",
+            out_fmt="cxcywh",
+        )
 
         expected = torch.tensor([3.2170, 3.7108, 18.5071], dtype=torch.float16)
         self.area_check(box_tensor, expected, atol=0.01)
 
     def test_box_area_jit(self):
-        box_tensor = ops.box_convert(torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float),
-                                     in_fmt="xyxy", out_fmt="cxcywh")
+        box_tensor = ops.box_convert(
+            torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float), in_fmt="xyxy", out_fmt="cxcywh"
+        )
         expected = ops.box_area(box_tensor, fmt="cxcywh")
         scripted_fn = torch.jit.script(ops.box_area)
         scripted_area = scripted_fn(box_tensor, fmt="cxcywh")
@@ -1526,7 +1533,7 @@ INT_BOXES2_CXCYWH = [[50, 50, 100, 100], [25, 25, 50, 50], [250, 250, 100, 100]]
 FLOAT_BOXES_CXCYWH = [
     [739.4324, 518.5154, 908.1572, 665.8793],
     [738.8228, 519.9021, 907.3512, 662.3295],
-    [734.3593, 523.5916, 910.2306, 651.2207]
+    [734.3593, 523.5916, 910.2306, 651.2207],
 ]
 
 
@@ -1650,7 +1657,9 @@ class TestBoxIouCXCYWH(TestIouCXCYWHBase):
     @pytest.mark.parametrize(
         "actual_box1, actual_box2, dtypes, atol, expected",
         [
-            pytest.param(INT_BOXES_CXCYWH, INT_BOXES2_CXCYWH, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(
+                INT_BOXES_CXCYWH, INT_BOXES2_CXCYWH, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected
+            ),
             pytest.param(FLOAT_BOXES_CXCYWH, FLOAT_BOXES_CXCYWH, [torch.float16], 0.002, float_expected),
             pytest.param(FLOAT_BOXES_CXCYWH, FLOAT_BOXES_CXCYWH, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
@@ -1663,6 +1672,7 @@ class TestBoxIouCXCYWH(TestIouCXCYWHBase):
 
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.box_iou)
+
 
 class TestIouBase:
     @staticmethod
