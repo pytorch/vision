@@ -1073,7 +1073,7 @@ class TestDeformConv:
         expected = self.expected_fn(x, weight, offset, mask, bias, stride=stride, padding=padding, dilation=dilation)
 
         torch.testing.assert_close(
-            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres:\n{res}\nexpected:\n{expected}"
+            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres: \n{res}\nexpected: \n{expected}"
         )
 
         # no modulation test
@@ -1081,7 +1081,7 @@ class TestDeformConv:
         expected = self.expected_fn(x, weight, offset, None, bias, stride=stride, padding=padding, dilation=dilation)
 
         torch.testing.assert_close(
-            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres:\n{res}\nexpected:\n{expected}"
+            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres: \n{res}\nexpected: \n{expected}"
         )
 
     def test_wrong_sizes(self):
@@ -1530,7 +1530,7 @@ FLOAT_BOXES_CXCYWH = [
 ]
 
 
-def gen_box(size, dtype=torch.float):
+def gen_box(size, dtype=torch.float) -> Tensor:
     xy1 = torch.rand((size, 2), dtype=dtype)
     xy2 = xy1 + torch.rand((size, 2), dtype=dtype)
     return torch.cat([xy1, xy2], axis=-1)
@@ -1572,6 +1572,14 @@ class TestIouXYXYBase:
         b = target_fn(boxes1, boxes2, fmt="xyxy")
         torch.testing.assert_close(a, b)
 
+    @staticmethod
+    def _run_batch_test(target_fn: Callable):
+        boxes1 = torch.stack([gen_box(5) for _ in range(3)], dim=0)
+        boxes2 = torch.stack([gen_box(5) for _ in range(3)], dim=0)
+        native: Tensor = target_fn(boxes1, boxes2)
+        iterative: Tensor = torch.stack([target_fn(*pairs) for pairs in zip(boxes1, boxes2)], dim=0)
+        torch.testing.assert_close(native, iterative)
+
 
 class TestBoxIouXYXY(TestIouXYXYBase):
     int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
@@ -1593,6 +1601,9 @@ class TestBoxIouXYXY(TestIouXYXYBase):
 
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.box_iou)
+
+    def test_iou_batch(self):
+        self._run_batch_test(ops.box_iou)
 
 
 class TestIouCXCYWHBase:
@@ -1711,6 +1722,9 @@ class TestGeneralizedBoxIou(TestIouBase):
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.generalized_box_iou)
 
+    def test_iou_batch(self):
+        self._run_batch_test(ops.generalized_box_iou)
+
 
 class TestDistanceBoxIoU(TestIouBase):
     int_expected = [
@@ -1738,6 +1752,9 @@ class TestDistanceBoxIoU(TestIouBase):
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.distance_box_iou)
 
+    def test_iou_batch(self):
+        self._run_batch_test(ops.distance_box_iou)
+
 
 class TestCompleteBoxIou(TestIouBase):
     int_expected = [
@@ -1764,6 +1781,9 @@ class TestCompleteBoxIou(TestIouBase):
 
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.complete_box_iou)
+
+    def test_iou_batch(self):
+        self._run_batch_test(ops.complete_box_iou)
 
 
 def get_boxes(dtype, device):
