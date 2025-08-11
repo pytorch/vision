@@ -242,7 +242,7 @@ class RoIOpTester(ABC):
             boxes = torch.tensor([[0, 0, 3, 3]], dtype=a.dtype)
             func(a, boxes, output_size=(2, 2))
 
-        # test boxes as List[Tensor[N, 4]]
+        # test boxes as list[Tensor[N, 4]]
         with pytest.raises(AssertionError):
             a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
@@ -1547,7 +1547,7 @@ class TestIouXYXYBase:
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
-    def _run_jit_test(target_fn: Callable, actual_box: List):
+    def _run_jit_test(target_fn: Callable, actual_box: list):
         box_tensor = torch.tensor(actual_box, dtype=torch.float)
         expected = target_fn(box_tensor, box_tensor, fmt="xyxy")
         scripted_fn = torch.jit.script(target_fn)
@@ -1617,7 +1617,7 @@ class TestIouCXCYWHBase:
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
-    def _run_jit_test(target_fn: Callable, actual_box: List):
+    def _run_jit_test(target_fn: Callable, actual_box: list):
         box_tensor = torch.tensor(actual_box, dtype=torch.float)
         expected = target_fn(box_tensor, box_tensor, fmt="cxcywh")
         scripted_fn = torch.jit.script(target_fn)
