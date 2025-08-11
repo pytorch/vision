@@ -303,35 +303,6 @@ def box_area(boxes: Tensor, fmt: str = "xyxy") -> Tensor:
     return area
 
 
-def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
-    """
-    Return intersection-over-union (Jaccard index) between two sets of boxes from a given format.
-
-    Args:
-        boxes1 (Tensor[..., N, 4]): first set of boxes
-        boxes2 (Tensor[..., M, 4]): second set of boxes
-        format (str): Format of the input boxes.
-            Default is "xyxy" to preserve backward compatibility.
-            Supported formats are "xyxy", "xywh", and "cxcywh".
-
-    Returns:
-        Tensor[..., N, M]: the NxM matrix containing the pairwise IoU values for every element
-        in boxes1 and boxes2
-    """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(box_iou)
-    allowed_fmts = (
-        "xyxy",
-        "xywh",
-        "cxcywh",
-    )
-    if fmt not in allowed_fmts:
-        raise ValueError(f"Unsupported Box IoU Calculation for given fmt {format}.")
-    inter, union = _box_inter_union(boxes1, boxes2, fmt=fmt)
-    iou = inter / union
-    return iou
-
-
 # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
 # with slight modifications
 def _box_inter_union(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> tuple[Tensor, Tensor]:
@@ -362,6 +333,35 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> tuple
     union = area1[:, None] + area2 - inter
 
     return inter, union
+
+
+def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
+    """
+    Return intersection-over-union (Jaccard index) between two sets of boxes from a given format.
+
+    Args:
+        boxes1 (Tensor[..., N, 4]): first set of boxes
+        boxes2 (Tensor[..., M, 4]): second set of boxes
+        format (str): Format of the input boxes.
+            Default is "xyxy" to preserve backward compatibility.
+            Supported formats are "xyxy", "xywh", and "cxcywh".
+
+    Returns:
+        Tensor[..., N, M]: the NxM matrix containing the pairwise IoU values for every element
+        in boxes1 and boxes2
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(box_iou)
+    allowed_fmts = (
+        "xyxy",
+        "xywh",
+        "cxcywh",
+    )
+    if fmt not in allowed_fmts:
+        raise ValueError(f"Unsupported Box IoU Calculation for given fmt {format}.")
+    inter, union = _box_inter_union(boxes1, boxes2, fmt=fmt)
+    iou = inter / union
+    return iou
 
 
 # Implementation adapted from https://github.com/facebookresearch/detr/blob/master/util/box_ops.py
