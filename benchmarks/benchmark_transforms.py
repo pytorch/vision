@@ -28,12 +28,14 @@ warnings.filterwarnings(
 
 try:
     import cv2
+
     HAS_OPENCV = True
 except ImportError:
     HAS_OPENCV = False
 
 try:
     import albumentations as A
+
     HAS_ALBUMENTATIONS = True
 except ImportError:
     HAS_ALBUMENTATIONS = False
@@ -41,6 +43,7 @@ except ImportError:
 try:
     import kornia as K
     import kornia.augmentation as KA
+
     HAS_KORNIA = True
 except ImportError:
     HAS_KORNIA = False
@@ -50,8 +53,6 @@ from PIL import Image
 # ImageNet normalization constants
 NORM_MEAN = [0.485, 0.456, 0.406]
 NORM_STD = [0.229, 0.224, 0.225]
-
-
 
 
 def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
@@ -110,13 +111,15 @@ compiled_torchvision_pipeline = torch.compile(torchvision_pipeline, mode="defaul
 
 def run_benchmark(args) -> Dict[str, Any]:
     backend = args.backend.lower()
-    
+
     device = args.device.lower()
     # Check device compatibility
-    if device == 'cuda' and backend not in ['tv', 'tv-compiled']:
-        raise RuntimeError(f"CUDA device not supported for {backend} backend. Only 'tv' and 'tv-compiled' support CUDA.")
-    
-    if device == 'cuda' and not torch.cuda.is_available():
+    if device == "cuda" and backend not in ["tv", "tv-compiled"]:
+        raise RuntimeError(
+            f"CUDA device not supported for {backend} backend. Only 'tv' and 'tv-compiled' support CUDA."
+        )
+
+    if device == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA not available. Install cuda-enabled torch and torchvision, or use 'cpu' device.")
 
     if backend == "opencv" and not HAS_OPENCV:
@@ -161,9 +164,9 @@ def run_benchmark(args) -> Dict[str, Any]:
         memory_format = torch.channels_last if args.contiguity == "CL" else torch.contiguous_format
         if memory_format == torch.channels_last:
             images = images.to(memory_format=torch.channels_last)
-        
+
         # Move to device for torchvision backends
-        if backend in ['tv', 'tv-compiled']:
+        if backend in ["tv", "tv-compiled"]:
             images = images.to(device)
 
         if args.batch_size == 1:
@@ -203,8 +206,6 @@ def run_benchmark(args) -> Dict[str, Any]:
     return {"backend": args.backend, "stats": stats}
 
 
-
-
 def main():
     parser = argparse.ArgumentParser(description="Benchmark torchvision transforms")
     parser.add_argument("--num-exp", type=int, default=100, help="Number of experiments we average over")
@@ -233,7 +234,7 @@ def main():
         "--backend", type=str.lower, choices=all_backends + ["all"], default="all", help="Backend to benchmark"
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
-    parser.add_argument("--device", type=str, default="cpu", help="Device to use: cpu, cuda, or gpu (default: cpu)")
+    parser.add_argument("--device", type=str, default="cpu", help="Device to use: cpu or cuda (default: cpu)")
 
     args = parser.parse_args()
 

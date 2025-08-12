@@ -10,18 +10,21 @@ from tabulate import tabulate
 
 try:
     import cv2
+
     HAS_OPENCV = True
 except ImportError:
     HAS_OPENCV = False
 
 try:
     import albumentations as A
+
     HAS_ALBUMENTATIONS = True
 except ImportError:
     HAS_ALBUMENTATIONS = False
 
 try:
     import kornia as K
+
     HAS_KORNIA = True
 except ImportError:
     HAS_KORNIA = False
@@ -108,17 +111,9 @@ def print_comparison_table(results: List[Dict[str, Any]]) -> None:
 def print_benchmark_info(args):
     """Print benchmark configuration and library versions."""
     device = args.device.lower()
-    if device in ['gpu', 'cuda']:
-        device = 'cuda'
-    else:
-        device = 'cpu'
-        
-    memory_format = 'channels_last' if args.contiguity == 'CL' else 'channels_first'
-    
-    print("=" * 80)
-    print("BENCHMARK CONFIGURATION")
-    print("=" * 80)
-    
+
+    memory_format = "channels_last" if args.contiguity == "CL" else "channels_first"
+
     # Collect configuration info
     config = [
         ["Device", device],
@@ -128,41 +123,18 @@ def print_benchmark_info(args):
         ["Experiments", f"{args.num_exp} (+ {args.warmup} warmup)"],
         ["Input → output size", f"{args.min_size}-{args.max_size} → {args.target_size}×{args.target_size}"],
     ]
-    
+
     print(tabulate(config, headers=["Parameter", "Value"], tablefmt="simple"))
     print()
-    
-    print("=" * 80)
-    print("LIBRARY VERSIONS")
-    print("=" * 80)
-    
+
     # Collect library versions
     versions = [
         ["PyTorch", torch.__version__],
         ["TorchVision", torchvision.__version__],
+        ["OpenCV", cv2.__version__ if HAS_OPENCV else "Not available"],
+        ["PIL/Pillow", getattr(Image, '__version__', "Version unavailable")],
+        ["Albumentations", A.__version__ if HAS_ALBUMENTATIONS else "Not available"],
+        ["Kornia", K.__version__ if HAS_KORNIA else "Not available"],
     ]
-    
-    if HAS_OPENCV:
-        versions.append(["OpenCV", cv2.__version__])
-    else:
-        versions.append(["OpenCV", "Not available"])
-        
-    # PIL version
-    try:
-        versions.append(["PIL/Pillow", Image.__version__])
-    except AttributeError:
-        versions.append(["PIL/Pillow", "Version unavailable"])
-    
-    if HAS_ALBUMENTATIONS:
-        versions.append(["Albumentations", A.__version__])
-    else:
-        versions.append(["Albumentations", "Not available"])
-        
-    if HAS_KORNIA:
-        versions.append(["Kornia", K.__version__])
-    else:
-        versions.append(["Kornia", "Not available"])
-    
+
     print(tabulate(versions, headers=["Library", "Version"], tablefmt="simple"))
-    print("=" * 80)
-    print()
