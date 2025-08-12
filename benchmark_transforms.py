@@ -12,10 +12,19 @@ The pipeline tested: uint8 image -> resize -> normalize (to [0,1] float)
 import argparse
 import torch
 import random
+import warnings
 from time import perf_counter_ns
 from typing import Callable, List, Tuple, Dict, Any
 import torchvision.transforms.v2.functional as F
 import numpy as np
+
+# Filter out the specific TF32 warning
+warnings.filterwarnings(
+    "ignore",
+    message="Please use the new API settings to control TF32 behavior.*",
+    category=UserWarning,
+    module="torch.backends.cuda",
+)
 
 try:
     import cv2
