@@ -23,6 +23,12 @@ try:
 except ImportError:
     HAS_OPENCV = False
 
+try:
+    import albumentations as A
+    HAS_ALBUMENTATIONS = True
+except ImportError:
+    HAS_ALBUMENTATIONS = False
+
 from PIL import Image
 from tabulate import tabulate
 
@@ -107,6 +113,16 @@ def pil_pipeline(image: Image.Image, target_size: int) -> torch.Tensor:
     return img
 
 
+def albumentations_pipeline(image: np.ndarray, target_size: int) -> torch.Tensor:
+    transform = A.Compose([
+        A.Resize(target_size, target_size, interpolation=cv2.INTER_LINEAR),
+        A.Normalize(mean=NORM_MEAN, std=NORM_STD, max_pixel_value=255.0)
+    ])
+    img = transform(image=image)["image"]
+    img = torch.from_numpy(img).permute(2, 0, 1)
+    return img
+
+
 # TODO double check that this works as expected: no graph break, and no issues with dynamic shapes
 compiled_torchvision_pipeline = torch.compile(torchvision_pipeline, mode="default", fullgraph=True, dynamic=True)
 
@@ -116,6 +132,8 @@ def run_benchmark(args) -> Dict[str, Any]:
     
     if backend == "opencv" and not HAS_OPENCV:
         raise RuntimeError("OpenCV not available. Install with: pip install opencv-python")
+    if backend == "albumentations" and not HAS_ALBUMENTATIONS:
+        raise RuntimeError("Albumentations not available. Install with: pip install albumentations")
     
     if args.verbose:
         backend_display = args.backend.upper()
@@ -137,6 +155,9 @@ def run_benchmark(args) -> Dict[str, Any]:
     elif backend == "pil":
         torch.set_num_threads(args.num_threads)
         pipeline = pil_pipeline
+    elif backend == "albumentations":
+        cv2.setNumThreads(args.num_threads)
+        pipeline = albumentations_pipeline
     
     def generate_test_images():
         height = random.randint(args.min_size, args.max_size)
@@ -161,6 +182,11 @@ def run_benchmark(args) -> Dict[str, Any]:
             # Convert to PIL Image (CHW -> HWC)
             images = images.numpy().transpose(1, 2, 0)
             images = Image.fromarray(images)
+        elif backend == "albumentations":
+            if args.batch_size > 1:
+                # TODO is that true????
+                raise ValueError("Batches not supported in Albumentations pipeline")
+            images = images.numpy().transpose(1, 2, 0)
 
         return images
     
@@ -206,7 +232,7 @@ def main():
     parser.add_argument("--num-threads", type=int, default=1, help="Number of intra-op threads as set with torch.set_num_threads()")
     parser.add_argument("--batch-size", type=int, default=1, help="Batch size. 1 means single image processing without a batch dimension")
     parser.add_argument("--contiguity", choices=["CL", "CF"], default="CF", help="Memory format: CL (channels_last) or CF (channels_first, i.e. contiguous)")
-    all_backends = ["tv", "tv-compiled", "opencv", "pil"]
+    all_backends = ["tv", "tv-compiled", "opencv", "pil", "albumentations"]
     parser.add_argument("--backend", type=str.lower, choices=all_backends + ["all"], default="all", help="Backend to use for transforms")
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
 
