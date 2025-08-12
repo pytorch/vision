@@ -23,7 +23,12 @@ try:
 except ImportError:
     HAS_OPENCV = False
 
+from PIL import Image
 from tabulate import tabulate
+
+# ImageNet normalization constants
+NORM_MEAN = [0.485, 0.456, 0.406]
+NORM_STD = [0.229, 0.224, 0.225]
 
 
 def bench(f: Callable, data_generator: Callable, num_exp: int, warmup: int) -> torch.Tensor:
@@ -82,16 +87,24 @@ def report_stats(times: torch.Tensor, unit: str) -> Dict[str, float]:
 def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
     images = F.resize(images, size=(target_size, target_size), interpolation=F.InterpolationMode.BILINEAR, antialias=True)
     images = F.to_dtype(images, dtype=torch.float32, scale=True)
-    images = F.normalize(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    images = F.normalize(images, mean=NORM_MEAN, std=NORM_STD)
     return images
 
 
 def opencv_pipeline(images: np.ndarray, target_size: int) -> torch.Tensor:
     img = cv2.resize(images, (target_size, target_size), interpolation=cv2.INTER_LINEAR)
     img = img.astype(np.float32) / 255.0
-    img = (img - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
+    img = (img - np.array(NORM_MEAN)) / np.array(NORM_STD)
     img = img.transpose(2, 0, 1)  # HWC -> CHW
     return torch.from_numpy(img)
+
+
+def pil_pipeline(images: Image.Image, target_size: int) -> torch.Tensor:
+    img = images.resize((target_size, target_size), Image.BILINEAR)
+    img = F.pil_to_tensor(img)
+    img = F.to_dtype(img, dtype=torch.float32, scale=True)
+    img = F.normalize(img, mean=NORM_MEAN, std=NORM_STD)
+    return img
 
 
 def run_benchmark(args) -> Dict[str, Any]:
@@ -111,6 +124,9 @@ def run_benchmark(args) -> Dict[str, Any]:
     elif args.backend == "opencv":
         cv2.setNumThreads(args.num_threads)
         pipeline = opencv_pipeline
+    elif args.backend == "pil":
+        torch.set_num_threads(args.num_threads)
+        pipeline = pil_pipeline
 
     
     def generate_test_images():
@@ -127,9 +143,15 @@ def run_benchmark(args) -> Dict[str, Any]:
         
         if args.backend == "opencv":
             if args.batch_size > 1:
-                raise ValueError("Batches not supported in OpenCV pipeline (yet??)")
+                raise ValueError("Batches not supported in OpenCV pipeline")
             # TODO double check that contiguity requirement is respected for numpy array
-            images = images.transpose(2, 0).numpy()
+            images = images.numpy().transpose(1, 2, 0)
+        elif args.backend == "pil":
+            if args.batch_size > 1:
+                raise ValueError("Batches not supported in PIL pipeline")
+            # Convert to PIL Image (CHW -> HWC)
+            images = images.numpy().transpose(1, 2, 0)
+            images = Image.fromarray(images)
 
         return images
     
@@ -175,7 +197,7 @@ def main():
     parser.add_argument("--num-threads", type=int, default=1, help="Number of intra-op threads as set with torch.set_num_threads()")
     parser.add_argument("--batch-size", type=int, default=1, help="Batch size. 1 means single image processing without a batch dimension")
     parser.add_argument("--contiguity", choices=["CL", "CF"], default="CF", help="Memory format: CL (channels_last) or CF (channels_first, i.e. contiguous)")
-    all_backends = ["torchvision", "opencv"]
+    all_backends = ["torchvision", "opencv", "pil"]
     parser.add_argument("--backend", choices=all_backends + ["all"], default="all", help="Backend to use for transforms")
 
     args = parser.parse_args()
