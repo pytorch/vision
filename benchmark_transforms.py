@@ -23,6 +23,8 @@ try:
 except ImportError:
     HAS_OPENCV = False
 
+from tabulate import tabulate
+
 
 def bench(f: Callable, data_generator: Callable, num_exp: int, warmup: int) -> torch.Tensor:
     """
@@ -53,7 +55,7 @@ def bench(f: Callable, data_generator: Callable, num_exp: int, warmup: int) -> t
     return torch.tensor(times, dtype=torch.float32)
 
 
-def report_stats(times: torch.Tensor, unit: str) -> float:
+def compute_stats(times: torch.Tensor, unit: str) -> Dict[str, float]:
     mul = {
         "ns": 1,
         "µs": 1e-3,
@@ -62,16 +64,19 @@ def report_stats(times: torch.Tensor, unit: str) -> float:
     }[unit]
 
     times = times * mul
-    std = times.std().item()
-    med = times.median().item()
-    mean = times.mean().item()
-    min_time = times.min().item()
-    max_time = times.max().item()
+    return {
+        "std": times.std().item(),
+        "median": times.median().item(),
+        "mean": times.mean().item(),
+        "min": times.min().item(),
+        "max": times.max().item(),
+    }
 
-    print(f"  Median: {med:.2f}{unit} ± {std:.2f}{unit}")
-    print(f"  Mean: {mean:.2f}{unit}, Min: {min_time:.2f}{unit}, Max: {max_time:.2f}{unit}")
-
-    return med
+def report_stats(times: torch.Tensor, unit: str) -> Dict[str, float]:
+    stats = compute_stats(times, unit)
+    print(f"  Median: {stats['median']:.2f}{unit} ± {stats['std']:.2f}{unit}")
+    print(f"  Mean: {stats['mean']:.2f}{unit}, Min: {stats['min']:.2f}{unit}, Max: {stats['max']:.2f}{unit}")
+    return stats
 
 
 def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
@@ -88,7 +93,7 @@ def opencv_pipeline(images: np.ndarray, target_size: int) -> np.ndarray:
     return img
 
 
-def run_benchmark(args) -> Dict[str, float]:
+def run_benchmark(args) -> Dict[str, Any]:
     if args.backend == "opencv" and not HAS_OPENCV:
         raise RuntimeError("OpenCV not available. Install with: pip install opencv-python")
     
@@ -134,11 +139,32 @@ def run_benchmark(args) -> Dict[str, float]:
         warmup=args.warmup,
     )
     
-    report_stats(times, "ms")
+    stats = report_stats(times, "ms")
+    return {"backend": args.backend, "stats": stats}
+
+
+def print_comparison_table(results: List[Dict[str, Any]]) -> None:
+    torchvision_median = next((r["stats"]["median"] for r in results if r["backend"] == "torchvision"), None)
+    
+    table_data = []
+    for result in results:
+        stats = result["stats"]
+        relative = f"{stats['median'] / torchvision_median:.2f}x" if torchvision_median else "N/A"
+        
+        table_data.append({
+            "Backend": result["backend"],
+            "Median (ms)": f"{stats['median']:.2f}",
+            "Std (ms)": f"{stats['std']:.2f}",
+            "Mean (ms)": f"{stats['mean']:.2f}",
+            "Min (ms)": f"{stats['min']:.2f}",
+            "Max (ms)": f"{stats['max']:.2f}",
+            "Relative": relative
+        })
+    
+    print(tabulate(table_data, headers="keys", tablefmt="grid"))
 
 
 def main():
-    """Main benchmark runner."""
     parser = argparse.ArgumentParser(description="Benchmark torchvision transforms")
     parser.add_argument("--num-exp", type=int, default=100, help="Number of experiments we average over")
     parser.add_argument("--warmup", type=int, default=10, help="Number of warmup runs before running the num-exp experiments")
@@ -155,13 +181,19 @@ def main():
     
     print(f"Averaging over {args.num_exp} runs, {args.warmup} warmup runs")
 
-    backends_to_run = all_backends if args.backend == "all" else args.backend
+    backends_to_run = all_backends if args.backend == "all" else [args.backend]
+    results = []
+    
     for backend in backends_to_run:
         args.backend = backend
         try:
             result = run_benchmark(args)
+            results.append(result)
         except Exception as e:
             print(f"ERROR with {backend}: {e}")
+    
+    if len(results) > 1:
+        print_comparison_table(results)
 
 
 if __name__ == "__main__":
