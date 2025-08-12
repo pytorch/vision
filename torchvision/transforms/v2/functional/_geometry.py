@@ -462,21 +462,34 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
     dy12 = parallelogram[..., 1] - parallelogram[..., 3]
     diag13 = torch.sqrt(dx13**2 + dy13**2)
     diag24 = torch.sqrt(dx42**2 + dy42**2)
-    mask = diag13 > diag24
 
     # Calculate rotation angle in radians
     r_rad = torch.atan2(dy12, dx12)
     cos, sin = torch.cos(r_rad), torch.sin(r_rad)
 
     # Calculate width using the angle between diagonal and rotation
-    w = torch.where(
-        mask,
-        diag13 * torch.abs(torch.sin(torch.atan2(dx13, dy13) - r_rad)),
-        diag24 * torch.abs(torch.sin(torch.atan2(dx42, dy42) - r_rad)),
-    )
+    w13 = diag13 * torch.abs(torch.sin(torch.atan2(dx13, dy13) - r_rad))
+    delta_x13 = w13 * cos
+    delta_y13 = w13 * sin
+    w24 = diag24 * torch.abs(torch.sin(torch.atan2(dx42, dy42) - r_rad))
+    delta_x24 = w24 * cos
+    delta_y24 = w24 * sin
 
-    delta_x = w * cos
-    delta_y = w * sin
+    # Calculate the area of the triangle formed by the three points
+    # Area = 1/2 * |det([x1, y1, 1], [x2, y2, 1], [x3, y3, 1])|
+    # For points (x1, y1), (x1 - delta_x, y1 + delta_y), (x3, y3)
+    # This simplifies to 1/2 * |delta_x * (y3 - y1) - delta_y * (x3 - x1)|
+    area13 = 0.5 * torch.abs(delta_x13 * dy13 - delta_y13 * dx13)
+    # For points (x4, y4), (x4 - delta_x, y4 + delta_y), (x2, y2)
+    # This simplifies to 1/2 * |delta_x * (y2 - y4) - delta_y * (x2 - x4)|
+    area24 = 0.5 * torch.abs(delta_x24 * dy42 - delta_y24 * dx42)
+
+    # We keep the rectangle with the smallest area
+    mask = area13 < area24
+    delta_x = torch.where(mask, delta_x13, delta_x24)
+    delta_y = torch.where(mask, delta_y13, delta_y24)
+
+
     # Update coordinates to form a rectangle
     # Keeping the points (x1, y1) and (x3, y3) unchanged.
     out_boxes[..., 2] = torch.where(mask, parallelogram[..., 0] + delta_x, parallelogram[..., 2])
