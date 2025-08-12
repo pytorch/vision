@@ -86,11 +86,12 @@ def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor
     return images
 
 
-def opencv_pipeline(images: np.ndarray, target_size: int) -> np.ndarray:
+def opencv_pipeline(images: np.ndarray, target_size: int) -> torch.Tensor:
     img = cv2.resize(images, (target_size, target_size), interpolation=cv2.INTER_LINEAR)
     img = img.astype(np.float32) / 255.0
     img = (img - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
-    return img
+    img = img.transpose(2, 0, 1)  # HWC -> CHW
+    return torch.from_numpy(img)
 
 
 def run_benchmark(args) -> Dict[str, Any]:
