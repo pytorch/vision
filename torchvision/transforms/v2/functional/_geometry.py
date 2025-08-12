@@ -489,7 +489,6 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
     delta_x = torch.where(mask, delta_x13, delta_x24)
     delta_y = torch.where(mask, delta_y13, delta_y24)
 
-
     # Update coordinates to form a rectangle
     # Keeping the points (x1, y1) and (x3, y3) unchanged.
     out_boxes[..., 2] = torch.where(mask, parallelogram[..., 0] + delta_x, parallelogram[..., 2])
