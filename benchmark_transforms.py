@@ -50,6 +50,7 @@ except ImportError:
 
 from PIL import Image
 from tabulate import tabulate
+import torchvision
 
 # ImageNet normalization constants
 NORM_MEAN = [0.485, 0.456, 0.406]
@@ -165,6 +166,14 @@ compiled_torchvision_pipeline = torch.compile(torchvision_pipeline, mode="defaul
 
 def run_benchmark(args) -> Dict[str, Any]:
     backend = args.backend.lower()
+    
+    device = args.device.lower()
+    # Check device compatibility
+    if device == 'cuda' and backend not in ['tv', 'tv-compiled']:
+        raise RuntimeError(f"CUDA device not supported for {backend} backend. Only 'tv' and 'tv-compiled' support CUDA.")
+    
+    if device == 'cuda' and not torch.cuda.is_available():
+        raise RuntimeError("CUDA not available. Install cuda-enabled torch and torchvision, or use 'cpu' device.")
 
     if backend == "opencv" and not HAS_OPENCV:
         raise RuntimeError("OpenCV not available. Install with: pip install opencv-python")
@@ -176,7 +185,7 @@ def run_benchmark(args) -> Dict[str, Any]:
     if args.verbose:
         backend_display = args.backend.upper()
         print(f"\n=== {backend_display} ===")
-        print(f"Threads: {args.num_threads}, Batch size: {args.batch_size}")
+        print(f"Device: {device}, Threads: {args.num_threads}, Batch size: {args.batch_size}")
 
         memory_format = torch.channels_last if args.contiguity == "CL" else torch.contiguous_format
         print(f"Memory format: {'channels_last' if memory_format == torch.channels_last else 'channels_first'}")
@@ -208,6 +217,10 @@ def run_benchmark(args) -> Dict[str, Any]:
         memory_format = torch.channels_last if args.contiguity == "CL" else torch.contiguous_format
         if memory_format == torch.channels_last:
             images = images.to(memory_format=torch.channels_last)
+        
+        # Move to device for torchvision backends
+        if backend in ['tv', 'tv-compiled']:
+            images = images.to(device)
 
         if args.batch_size == 1:
             images = images[0]
@@ -269,6 +282,59 @@ def print_comparison_table(results: List[Dict[str, Any]]) -> None:
     print(tabulate(table_data, headers="keys", tablefmt="grid"))
 
 
+def print_benchmark_info(args):
+    """Print benchmark configuration and library versions."""
+    device = args.device.lower()
+    if device in ['gpu', 'cuda']:
+        device = 'cuda'
+    else:
+        device = 'cpu'
+        
+    memory_format = 'channels_last' if args.contiguity == 'CL' else 'channels_first'
+    
+    config = [
+        ["Device", device],
+        ["Threads", args.num_threads],
+        ["Batch size", args.batch_size],
+        ["Memory format", memory_format],
+        ["Experiments", f"{args.num_exp} (+ {args.warmup} warmup)"],
+        ["Input → output size", f"{args.min_size}-{args.max_size} → {args.target_size}×{args.target_size}"],
+    ]
+    
+    print(tabulate(config, headers=["Parameter", "Value"], tablefmt="simple"))
+    print()
+    
+    versions = [
+        ["PyTorch", torch.__version__],
+        ["TorchVision", torchvision.__version__],
+    ]
+    
+    if HAS_OPENCV:
+        versions.append(["OpenCV", cv2.__version__])
+    else:
+        versions.append(["OpenCV", "Not available"])
+
+    try:
+        versions.append(["PIL/Pillow", Image.__version__])
+    except AttributeError:
+        versions.append(["PIL/Pillow", "Version unavailable"])
+    
+    if HAS_ALBUMENTATIONS:
+        versions.append(["Albumentations", A.__version__])
+    else:
+        versions.append(["Albumentations", "Not available"])
+        
+    if HAS_KORNIA:
+        versions.append(["Kornia", K.__version__])
+    else:
+        versions.append(["Kornia", "Not available"])
+    
+    print(tabulate(versions, headers=["Library", "Version"], tablefmt="simple"))
+    
+    print("=" * 80)
+    print()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Benchmark torchvision transforms")
     parser.add_argument("--num-exp", type=int, default=100, help="Number of experiments we average over")
@@ -297,10 +363,11 @@ def main():
         "--backend", type=str.lower, choices=all_backends + ["all"], default="all", help="Backend to benchmark"
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument("--device", type=str, default="cpu", help="Device to use: cpu, cuda, or gpu (default: cpu)")
 
     args = parser.parse_args()
 
-    print(f"Averaging over {args.num_exp} runs, {args.warmup} warmup runs")
+    print_benchmark_info(args)
 
     backends_to_run = all_backends if args.backend.lower() == "all" else [args.backend]
     results = []
