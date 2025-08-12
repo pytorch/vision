@@ -60,7 +60,7 @@ def bench(f: Callable, data_generator: Callable, num_exp: int, warmup: int) -> t
     return torch.tensor(times, dtype=torch.float32)
 
 
-def compute_stats(times: torch.Tensor, unit: str) -> Dict[str, float]:
+def report_stats(times: torch.Tensor, unit: str, verbose: bool = True) -> Dict[str, float]:
     mul = {
         "ns": 1,
         "µs": 1e-3,
@@ -69,18 +69,18 @@ def compute_stats(times: torch.Tensor, unit: str) -> Dict[str, float]:
     }[unit]
 
     times = times * mul
-    return {
+    stats = {
         "std": times.std().item(),
         "median": times.median().item(),
         "mean": times.mean().item(),
         "min": times.min().item(),
         "max": times.max().item(),
     }
-
-def report_stats(times: torch.Tensor, unit: str) -> Dict[str, float]:
-    stats = compute_stats(times, unit)
-    print(f"  Median: {stats['median']:.2f}{unit} ± {stats['std']:.2f}{unit}")
-    print(f"  Mean: {stats['mean']:.2f}{unit}, Min: {stats['min']:.2f}{unit}, Max: {stats['max']:.2f}{unit}")
+    
+    if verbose:
+        print(f"  Median: {stats['median']:.2f}{unit} ± {stats['std']:.2f}{unit}")
+        print(f"  Mean: {stats['mean']:.2f}{unit}, Min: {stats['min']:.2f}{unit}, Max: {stats['max']:.2f}{unit}")
+    
     return stats
 
 
@@ -91,43 +91,52 @@ def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor
     return images
 
 
-def opencv_pipeline(images: np.ndarray, target_size: int) -> torch.Tensor:
-    img = cv2.resize(images, (target_size, target_size), interpolation=cv2.INTER_LINEAR)
+def opencv_pipeline(image: np.ndarray, target_size: int) -> torch.Tensor:
+    img = cv2.resize(image, (target_size, target_size), interpolation=cv2.INTER_LINEAR)  # no antialias in OpenCV
     img = img.astype(np.float32) / 255.0
     img = (img - np.array(NORM_MEAN)) / np.array(NORM_STD)
     img = img.transpose(2, 0, 1)  # HWC -> CHW
     return torch.from_numpy(img)
 
 
-def pil_pipeline(images: Image.Image, target_size: int) -> torch.Tensor:
-    img = images.resize((target_size, target_size), Image.BILINEAR)
+def pil_pipeline(image: Image.Image, target_size: int) -> torch.Tensor:
+    img = image.resize((target_size, target_size), Image.BILINEAR)  # PIL forces antialias
     img = F.pil_to_tensor(img)
     img = F.to_dtype(img, dtype=torch.float32, scale=True)
     img = F.normalize(img, mean=NORM_MEAN, std=NORM_STD)
     return img
 
 
+# TODO double check that this works as expected: no graph break, and no issues with dynamic shapes
+compiled_torchvision_pipeline = torch.compile(torchvision_pipeline, mode="default", fullgraph=True, dynamic=True)
+
+
 def run_benchmark(args) -> Dict[str, Any]:
-    if args.backend == "opencv" and not HAS_OPENCV:
+    backend = args.backend.lower()
+    
+    if backend == "opencv" and not HAS_OPENCV:
         raise RuntimeError("OpenCV not available. Install with: pip install opencv-python")
     
-    backend_name = args.backend.upper()
-    print(f"\n=== {backend_name} ===")
-    print(f"Threads: {args.num_threads}, Batch size: {args.batch_size}")
+    if args.verbose:
+        backend_display = args.backend.upper()
+        print(f"\n=== {backend_display} ===")
+        print(f"Threads: {args.num_threads}, Batch size: {args.batch_size}")
 
-    memory_format = torch.channels_last if args.contiguity == "CL" else torch.contiguous_format
-    print(f"Memory format: {'channels_last' if memory_format == torch.channels_last else 'channels_first'}")
+        memory_format = torch.channels_last if args.contiguity == "CL" else torch.contiguous_format
+        print(f"Memory format: {'channels_last' if memory_format == torch.channels_last else 'channels_first'}")
     
-    if args.backend == "torchvision":
+    if backend == "tv":
         torch.set_num_threads(args.num_threads)
         pipeline = torchvision_pipeline
-    elif args.backend == "opencv":
+    elif backend == "tv-compiled":
+        torch.set_num_threads(args.num_threads)
+        pipeline = compiled_torchvision_pipeline
+    elif backend == "opencv":
         cv2.setNumThreads(args.num_threads)
         pipeline = opencv_pipeline
-    elif args.backend == "pil":
+    elif backend == "pil":
         torch.set_num_threads(args.num_threads)
         pipeline = pil_pipeline
-
     
     def generate_test_images():
         height = random.randint(args.min_size, args.max_size)
@@ -141,12 +150,12 @@ def run_benchmark(args) -> Dict[str, Any]:
         if args.batch_size == 1:
             images = images[0]
         
-        if args.backend == "opencv":
+        if backend == "opencv":
             if args.batch_size > 1:
                 raise ValueError("Batches not supported in OpenCV pipeline")
             # TODO double check that contiguity requirement is respected for numpy array
             images = images.numpy().transpose(1, 2, 0)
-        elif args.backend == "pil":
+        elif backend == "pil":
             if args.batch_size > 1:
                 raise ValueError("Batches not supported in PIL pipeline")
             # Convert to PIL Image (CHW -> HWC)
@@ -162,12 +171,12 @@ def run_benchmark(args) -> Dict[str, Any]:
         warmup=args.warmup,
     )
     
-    stats = report_stats(times, "ms")
+    stats = report_stats(times, "ms", args.verbose)
     return {"backend": args.backend, "stats": stats}
 
 
 def print_comparison_table(results: List[Dict[str, Any]]) -> None:
-    torchvision_median = next((r["stats"]["median"] for r in results if r["backend"] == "torchvision"), None)
+    torchvision_median = next((r["stats"]["median"] for r in results if r["backend"].lower() == "tv"), None)
     
     table_data = []
     for result in results:
@@ -197,14 +206,15 @@ def main():
     parser.add_argument("--num-threads", type=int, default=1, help="Number of intra-op threads as set with torch.set_num_threads()")
     parser.add_argument("--batch-size", type=int, default=1, help="Batch size. 1 means single image processing without a batch dimension")
     parser.add_argument("--contiguity", choices=["CL", "CF"], default="CF", help="Memory format: CL (channels_last) or CF (channels_first, i.e. contiguous)")
-    all_backends = ["torchvision", "opencv", "pil"]
-    parser.add_argument("--backend", choices=all_backends + ["all"], default="all", help="Backend to use for transforms")
+    all_backends = ["tv", "tv-compiled", "opencv", "pil"]
+    parser.add_argument("--backend", type=str.lower, choices=all_backends + ["all"], default="all", help="Backend to use for transforms")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
 
     args = parser.parse_args()
     
     print(f"Averaging over {args.num_exp} runs, {args.warmup} warmup runs")
 
-    backends_to_run = all_backends if args.backend == "all" else [args.backend]
+    backends_to_run = all_backends if args.backend.lower() == "all" else [args.backend]
     results = []
     
     for backend in backends_to_run:
