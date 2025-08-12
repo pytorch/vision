@@ -15,6 +15,13 @@ import random
 from time import perf_counter_ns
 from typing import Callable, List, Tuple, Dict, Any
 import torchvision.transforms.v2.functional as F
+import numpy as np
+
+try:
+    import cv2
+    HAS_OPENCV = True
+except ImportError:
+    HAS_OPENCV = False
 
 
 def bench(f: Callable, data_generator: Callable, num_exp: int, warmup: int) -> torch.Tensor:
@@ -67,39 +74,66 @@ def report_stats(times: torch.Tensor, unit: str) -> float:
     return med
 
 
-def inference_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
-    images = F.resize(images, size=target_size, antialias=True)
+def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
+    images = F.resize(images, size=(target_size, target_size), interpolation=F.InterpolationMode.BILINEAR, antialias=True)
     images = F.to_dtype(images, dtype=torch.float32, scale=True)
     images = F.normalize(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     return images
 
 
+def opencv_pipeline(images: np.ndarray, target_size: int) -> np.ndarray:
+    img = cv2.resize(images, (target_size, target_size), interpolation=cv2.INTER_LINEAR)
+    img = img.astype(np.float32) / 255.0
+    img = (img - np.array([0.485, 0.456, 0.406])) / np.array([0.229, 0.224, 0.225])
+    return img
+
+
 def run_benchmark(args) -> Dict[str, float]:
-    memory_format = torch.channels_last if args.contiguity == "CL" else torch.contiguous_format
-    print(f"\n=== TorchVision Transform Benchmark ===")
+    if args.backend == "opencv" and not HAS_OPENCV:
+        raise RuntimeError("OpenCV not available. Install with: pip install opencv-python")
+    
+    backend_name = args.backend.upper()
+    print(f"\n=== {backend_name} ===")
     print(f"Threads: {args.num_threads}, Batch size: {args.batch_size}")
+
+    memory_format = torch.channels_last if args.contiguity == "CL" else torch.contiguous_format
     print(f"Memory format: {'channels_last' if memory_format == torch.channels_last else 'channels_first'}")
+    
+    if args.backend == "torchvision":
+        torch.set_num_threads(args.num_threads)
+        pipeline = torchvision_pipeline
+    elif args.backend == "opencv":
+        cv2.setNumThreads(args.num_threads)
+        pipeline = opencv_pipeline
 
-    torch.set_num_threads(args.num_threads)
-
+    
     def generate_test_images():
         height = random.randint(args.min_size, args.max_size)
         width = random.randint(args.min_size, args.max_size)
-
         images = torch.randint(0, 256, (args.batch_size, 3, height, width), dtype=torch.uint8)
-
+        
+        memory_format = torch.channels_last if args.contiguity == "CL" else torch.contiguous_format
         if memory_format == torch.channels_last:
             images = images.to(memory_format=torch.channels_last)
+        
+        if args.batch_size == 1:
+            images = images[0]
+        
+        if args.backend == "opencv":
+            if args.batch_size > 1:
+                raise ValueError("Batches not supported in OpenCV pipeline (yet??)")
+            # TODO double check that contiguity requirement is respected for numpy array
+            images = images.transpose(2, 0).numpy()
 
         return images
-
+    
     times = bench(
-        lambda images: inference_pipeline(images, args.target_size),
+        lambda images: pipeline(images, args.target_size),
         data_generator=generate_test_images,
         num_exp=args.num_exp,
         warmup=args.warmup,
     )
-
+    
     report_stats(times, "ms")
 
 
@@ -114,15 +148,20 @@ def main():
     parser.add_argument("--num-threads", type=int, default=1, help="Number of intra-op threads as set with torch.set_num_threads()")
     parser.add_argument("--batch-size", type=int, default=1, help="Batch size. 1 means single image processing without a batch dimension")
     parser.add_argument("--contiguity", choices=["CL", "CF"], default="CF", help="Memory format: CL (channels_last) or CF (channels_first, i.e. contiguous)")
+    all_backends = ["torchvision", "opencv"]
+    parser.add_argument("--backend", choices=all_backends + ["all"], default="all", help="Backend to use for transforms")
 
     args = parser.parse_args()
     
     print(f"Averaging over {args.num_exp} runs, {args.warmup} warmup runs")
 
-    try:
-        result = run_benchmark(args)
-    except Exception as e:
-        print(f"ERROR: {e}")
+    backends_to_run = all_backends if args.backend == "all" else args.backend
+    for backend in backends_to_run:
+        args.backend = backend
+        try:
+            result = run_benchmark(args)
+        except Exception as e:
+            print(f"ERROR with {backend}: {e}")
 
 
 if __name__ == "__main__":
