@@ -67,7 +67,7 @@ def report_stats(times: torch.Tensor, unit: str) -> float:
     return med
 
 
-def transform_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
+def inference_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
     images = F.resize(images, size=target_size, antialias=True)
     images = F.to_dtype(images, dtype=torch.float32, scale=True)
     images = F.normalize(images, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -94,15 +94,13 @@ def run_benchmark(args) -> Dict[str, float]:
         return images
 
     times = bench(
-        lambda images: transform_pipeline(images, args.target_size),
-        generate_test_images,
-        args.num_exp,
-        args.warmup,
+        lambda images: inference_pipeline(images, args.target_size),
+        data_generator=generate_test_images,
+        num_exp=args.num_exp,
+        warmup=args.warmup,
     )
 
-    median_time = report_stats(times, "ms")
-
-    return {"median_time_ms": median_time}
+    report_stats(times, "ms")
 
 
 def main():
@@ -118,6 +116,8 @@ def main():
     parser.add_argument("--contiguity", choices=["CL", "CF"], default="CF", help="Memory format: CL (channels_last) or CF (channels_first, i.e. contiguous)")
 
     args = parser.parse_args()
+    
+    print(f"Averaging over {args.num_exp} runs, {args.warmup} warmup runs")
 
     try:
         result = run_benchmark(args)
