@@ -19,15 +19,25 @@ import numpy as np
 
 try:
     import cv2
+
     HAS_OPENCV = True
 except ImportError:
     HAS_OPENCV = False
 
 try:
     import albumentations as A
+
     HAS_ALBUMENTATIONS = True
 except ImportError:
     HAS_ALBUMENTATIONS = False
+
+try:
+    import kornia as K
+    import kornia.augmentation as KA
+
+    HAS_KORNIA = True
+except ImportError:
+    HAS_KORNIA = False
 
 from PIL import Image
 from tabulate import tabulate
@@ -82,16 +92,18 @@ def report_stats(times: torch.Tensor, unit: str, verbose: bool = True) -> Dict[s
         "min": times.min().item(),
         "max": times.max().item(),
     }
-    
+
     if verbose:
         print(f"  Median: {stats['median']:.2f}{unit} ± {stats['std']:.2f}{unit}")
         print(f"  Mean: {stats['mean']:.2f}{unit}, Min: {stats['min']:.2f}{unit}, Max: {stats['max']:.2f}{unit}")
-    
+
     return stats
 
 
 def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
-    images = F.resize(images, size=(target_size, target_size), interpolation=F.InterpolationMode.BILINEAR, antialias=True)
+    images = F.resize(
+        images, size=(target_size, target_size), interpolation=F.InterpolationMode.BILINEAR, antialias=True
+    )
     images = F.to_dtype(images, dtype=torch.float32, scale=True)
     images = F.normalize(images, mean=NORM_MEAN, std=NORM_STD)
     return images
@@ -114,13 +126,28 @@ def pil_pipeline(image: Image.Image, target_size: int) -> torch.Tensor:
 
 
 def albumentations_pipeline(image: np.ndarray, target_size: int) -> torch.Tensor:
-    transform = A.Compose([
-        A.Resize(target_size, target_size, interpolation=cv2.INTER_LINEAR),
-        A.Normalize(mean=NORM_MEAN, std=NORM_STD, max_pixel_value=255.0)
-    ])
+    transform = A.Compose(
+        [
+            A.Resize(target_size, target_size, interpolation=cv2.INTER_LINEAR),
+            A.Normalize(mean=NORM_MEAN, std=NORM_STD, max_pixel_value=255.0),
+        ]
+    )
     img = transform(image=image)["image"]
     img = torch.from_numpy(img).permute(2, 0, 1)
     return img
+
+
+def kornia_pipeline(image: torch.Tensor, target_size: int) -> torch.Tensor:
+    # Kornia expects float tensors in [0, 1] range
+    # TODO check that this is needed?
+    img = image.float() / 255.0
+    img = img.unsqueeze(0)  # Add batch dimension for kornia
+
+    img = K.geometry.transform.resize(img, (target_size, target_size), interpolation="bilinear")
+
+    img = K.enhance.normalize(img, mean=torch.tensor(NORM_MEAN), std=torch.tensor(NORM_STD))
+
+    return img.squeeze(0)  # Remove batch dimension
 
 
 # TODO double check that this works as expected: no graph break, and no issues with dynamic shapes
@@ -129,12 +156,14 @@ compiled_torchvision_pipeline = torch.compile(torchvision_pipeline, mode="defaul
 
 def run_benchmark(args) -> Dict[str, Any]:
     backend = args.backend.lower()
-    
+
     if backend == "opencv" and not HAS_OPENCV:
         raise RuntimeError("OpenCV not available. Install with: pip install opencv-python")
     if backend == "albumentations" and not HAS_ALBUMENTATIONS:
         raise RuntimeError("Albumentations not available. Install with: pip install albumentations")
-    
+    if backend == "kornia" and not HAS_KORNIA:
+        raise RuntimeError("Kornia not available. Install with: pip install kornia")
+
     if args.verbose:
         backend_display = args.backend.upper()
         print(f"\n=== {backend_display} ===")
@@ -142,7 +171,7 @@ def run_benchmark(args) -> Dict[str, Any]:
 
         memory_format = torch.channels_last if args.contiguity == "CL" else torch.contiguous_format
         print(f"Memory format: {'channels_last' if memory_format == torch.channels_last else 'channels_first'}")
-    
+
     if backend == "tv":
         torch.set_num_threads(args.num_threads)
         pipeline = torchvision_pipeline
@@ -158,19 +187,22 @@ def run_benchmark(args) -> Dict[str, Any]:
     elif backend == "albumentations":
         cv2.setNumThreads(args.num_threads)
         pipeline = albumentations_pipeline
-    
+    elif backend == "kornia":
+        torch.set_num_threads(args.num_threads)
+        pipeline = kornia_pipeline
+
     def generate_test_images():
         height = random.randint(args.min_size, args.max_size)
         width = random.randint(args.min_size, args.max_size)
         images = torch.randint(0, 256, (args.batch_size, 3, height, width), dtype=torch.uint8)
-        
+
         memory_format = torch.channels_last if args.contiguity == "CL" else torch.contiguous_format
         if memory_format == torch.channels_last:
             images = images.to(memory_format=torch.channels_last)
-        
+
         if args.batch_size == 1:
             images = images[0]
-        
+
         if backend == "opencv":
             if args.batch_size > 1:
                 raise ValueError("Batches not supported in OpenCV pipeline")
@@ -187,62 +219,83 @@ def run_benchmark(args) -> Dict[str, Any]:
                 # TODO is that true????
                 raise ValueError("Batches not supported in Albumentations pipeline")
             images = images.numpy().transpose(1, 2, 0)
+        elif backend == "kornia":
+            if args.batch_size > 1:
+                # TODO is that true????
+                raise ValueError("Batches not supported in Kornia pipeline")
 
         return images
-    
+
     times = bench(
         lambda images: pipeline(images, args.target_size),
         data_generator=generate_test_images,
         num_exp=args.num_exp,
         warmup=args.warmup,
     )
-    
+
     stats = report_stats(times, "ms", args.verbose)
     return {"backend": args.backend, "stats": stats}
 
 
 def print_comparison_table(results: List[Dict[str, Any]]) -> None:
     torchvision_median = next((r["stats"]["median"] for r in results if r["backend"].lower() == "tv"), None)
-    
+
     table_data = []
     for result in results:
         stats = result["stats"]
         relative = f"{stats['median'] / torchvision_median:.2f}x" if torchvision_median else "N/A"
-        
-        table_data.append({
-            "Backend": result["backend"],
-            "Median (ms)": f"{stats['median']:.2f}",
-            "Std (ms)": f"{stats['std']:.2f}",
-            "Mean (ms)": f"{stats['mean']:.2f}",
-            "Min (ms)": f"{stats['min']:.2f}",
-            "Max (ms)": f"{stats['max']:.2f}",
-            "Relative": relative
-        })
-    
+
+        table_data.append(
+            {
+                "Backend": result["backend"],
+                "Median (ms)": f"{stats['median']:.2f}",
+                "Std (ms)": f"{stats['std']:.2f}",
+                "Mean (ms)": f"{stats['mean']:.2f}",
+                "Min (ms)": f"{stats['min']:.2f}",
+                "Max (ms)": f"{stats['max']:.2f}",
+                "Relative": relative,
+            }
+        )
+
     print(tabulate(table_data, headers="keys", tablefmt="grid"))
 
 
 def main():
     parser = argparse.ArgumentParser(description="Benchmark torchvision transforms")
     parser.add_argument("--num-exp", type=int, default=100, help="Number of experiments we average over")
-    parser.add_argument("--warmup", type=int, default=10, help="Number of warmup runs before running the num-exp experiments")
-    parser.add_argument("--target-size", type=int, default=224, help="Resize target size")
+    parser.add_argument(
+        "--warmup", type=int, default=10, help="Number of warmup runs before running the num-exp experiments"
+    )
+    parser.add_argument(
+        "--target-size", type=int, default=224, help="size parameter of the Resize step, for both H and W."
+    )
     parser.add_argument("--min-size", type=int, default=128, help="Minimum input image size for random generation")
     parser.add_argument("--max-size", type=int, default=512, help="Maximum input image size for random generation")
-    parser.add_argument("--num-threads", type=int, default=1, help="Number of intra-op threads as set with torch.set_num_threads()")
-    parser.add_argument("--batch-size", type=int, default=1, help="Batch size. 1 means single image processing without a batch dimension")
-    parser.add_argument("--contiguity", choices=["CL", "CF"], default="CF", help="Memory format: CL (channels_last) or CF (channels_first, i.e. contiguous)")
-    all_backends = ["tv", "tv-compiled", "opencv", "pil", "albumentations"]
-    parser.add_argument("--backend", type=str.lower, choices=all_backends + ["all"], default="all", help="Backend to use for transforms")
+    parser.add_argument(
+        "--num-threads", type=int, default=1, help="Number of intra-op threads as set with torch.set_num_threads() & Co"
+    )
+    parser.add_argument(
+        "--batch-size", type=int, default=1, help="Batch size. 1 means single 3D image without a batch dimension"
+    )
+    parser.add_argument(
+        "--contiguity",
+        choices=["CL", "CF"],
+        default="CF",
+        help="Memory format: CL (channels_last) or CF (channels_first, i.e. contiguous)",
+    )
+    all_backends = ["tv", "tv-compiled", "opencv", "pil", "albumentations", "kornia"]
+    parser.add_argument(
+        "--backend", type=str.lower, choices=all_backends + ["all"], default="all", help="Backend to benchmark"
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
 
     args = parser.parse_args()
-    
+
     print(f"Averaging over {args.num_exp} runs, {args.warmup} warmup runs")
 
     backends_to_run = all_backends if args.backend.lower() == "all" else [args.backend]
     results = []
-    
+
     for backend in backends_to_run:
         args.backend = backend
         try:
@@ -250,7 +303,7 @@ def main():
             results.append(result)
         except Exception as e:
             print(f"ERROR with {backend}: {e}")
-    
+
     if len(results) > 1:
         print_comparison_table(results)
 
