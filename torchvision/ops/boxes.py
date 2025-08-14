@@ -276,7 +276,7 @@ def box_area(boxes: Tensor, fmt: str = "xyxy") -> Tensor:
 
     Args:
         boxes (Tensor[..., 4]): boxes for which the area will be computed.
-        format (str): Format of the input boxes.
+        fmt (str): Format of the input boxes.
             Default is "xyxy" to preserve backward compatibility.
             Supported formats are "xyxy", "xywh", and "cxcywh".
 
@@ -291,7 +291,7 @@ def box_area(boxes: Tensor, fmt: str = "xyxy") -> Tensor:
         "cxcywh",
     )
     if fmt not in allowed_fmts:
-        raise ValueError(f"Unsupported Bounding Box area for given fmt {fmt}")
+        raise ValueError(f"Unsupported Bounding Box area for given format {fmt}")
     boxes = _upcast(boxes)
     if fmt == "xyxy":
         area = (boxes[..., 2] - boxes[..., 0]) * (boxes[..., 3] - boxes[..., 1])
@@ -348,7 +348,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
     Args:
         boxes1 (Tensor[..., N, 4]): first set of boxes
         boxes2 (Tensor[..., M, 4]): second set of boxes
-        format (str): Format of the input boxes.
+        fmt (str): Format of the input boxes.
             Default is "xyxy" to preserve backward compatibility.
             Supported formats are "xyxy", "xywh", and "cxcywh".
 
@@ -364,7 +364,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
         "cxcywh",
     )
     if fmt not in allowed_fmts:
-        raise ValueError(f"Unsupported Box IoU Calculation for given fmt {fmt}.")
+        raise ValueError(f"Unsupported Box IoU Calculation for given format {fmt}.")
     inter, union = _box_inter_union(boxes1, boxes2, fmt=fmt)
     iou = inter / union
     return iou
