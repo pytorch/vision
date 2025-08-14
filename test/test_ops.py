@@ -242,7 +242,7 @@ class RoIOpTester(ABC):
             boxes = torch.tensor([[0, 0, 3, 3]], dtype=a.dtype)
             func(a, boxes, output_size=(2, 2))
 
-        # test boxes as List[Tensor[N, 4]]
+        # test boxes as list[Tensor[N, 4]]
         with pytest.raises(AssertionError):
             a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
@@ -1445,9 +1445,9 @@ class TestBoxConvert:
         torch.testing.assert_close(scripted_cxcywh, box_cxcywh)
 
 
-class TestBoxArea:
+class TestBoxAreaXYXY:
     def area_check(self, box, expected, atol=1e-4):
-        out = ops.box_area(box)
+        out = ops.box_area(box, fmt="xyxy")
         torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=atol)
 
     @pytest.mark.parametrize("dtype", [torch.int8, torch.int16, torch.int32, torch.int64])
@@ -1472,9 +1472,51 @@ class TestBoxArea:
 
     def test_box_area_jit(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
-        expected = ops.box_area(box_tensor)
+        expected = ops.box_area(box_tensor, fmt="xyxy")
         scripted_fn = torch.jit.script(ops.box_area)
         scripted_area = scripted_fn(box_tensor)
+        torch.testing.assert_close(scripted_area, expected)
+
+
+class TestBoxAreaCXCYWH:
+    def area_check(self, box, expected, atol=1e-4):
+        out = ops.box_area(box, fmt="cxcywh")
+        torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=atol)
+
+    @pytest.mark.parametrize("dtype", [torch.int8, torch.int16, torch.int32, torch.int64])
+    def test_int_boxes(self, dtype):
+        box_tensor = ops.box_convert(
+            torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype), in_fmt="xyxy", out_fmt="cxcywh"
+        )
+        expected = torch.tensor([10000, 0], dtype=torch.int32)
+        self.area_check(box_tensor, expected)
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_float_boxes(self, dtype):
+        box_tensor = ops.box_convert(torch.tensor(FLOAT_BOXES, dtype=dtype), in_fmt="xyxy", out_fmt="cxcywh")
+        expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=dtype)
+        self.area_check(box_tensor, expected)
+
+    def test_float16_box(self):
+        box_tensor = ops.box_convert(
+            torch.tensor(
+                [[2.825, 1.8625, 3.90, 4.85], [2.825, 4.875, 19.20, 5.10], [2.925, 1.80, 8.90, 4.90]],
+                dtype=torch.float16,
+            ),
+            in_fmt="xyxy",
+            out_fmt="cxcywh",
+        )
+
+        expected = torch.tensor([3.2170, 3.7108, 18.5071], dtype=torch.float16)
+        self.area_check(box_tensor, expected, atol=0.01)
+
+    def test_box_area_jit(self):
+        box_tensor = ops.box_convert(
+            torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float), in_fmt="xyxy", out_fmt="cxcywh"
+        )
+        expected = ops.box_area(box_tensor, fmt="cxcywh")
+        scripted_fn = torch.jit.script(ops.box_area)
+        scripted_area = scripted_fn(box_tensor, fmt="cxcywh")
         torch.testing.assert_close(scripted_area, expected)
 
 
@@ -1486,11 +1528,150 @@ FLOAT_BOXES = [
     [279.2440, 197.9812, 1189.4746, 849.2019],
 ]
 
+INT_BOXES_CXCYWH = [[50, 50, 100, 100], [25, 25, 50, 50], [250, 250, 100, 100], [10, 10, 20, 20]]
+INT_BOXES2_CXCYWH = [[50, 50, 100, 100], [25, 25, 50, 50], [250, 250, 100, 100]]
+FLOAT_BOXES_CXCYWH = [
+    [739.4324, 518.5154, 908.1572, 665.8793],
+    [738.8228, 519.9021, 907.3512, 662.3295],
+    [734.3593, 523.5916, 910.2306, 651.2207],
+]
+
 
 def gen_box(size, dtype=torch.float) -> Tensor:
     xy1 = torch.rand((size, 2), dtype=dtype)
     xy2 = xy1 + torch.rand((size, 2), dtype=dtype)
     return torch.cat([xy1, xy2], axis=-1)
+
+
+class TestIouXYXYBase:
+    @staticmethod
+    def _run_test(target_fn: Callable, actual_box1, actual_box2, dtypes, atol, expected):
+        for dtype in dtypes:
+            actual_box1 = torch.tensor(actual_box1, dtype=dtype)
+            actual_box2 = torch.tensor(actual_box2, dtype=dtype)
+            expected_box = torch.tensor(expected)
+            out = target_fn(actual_box1, actual_box2, fmt="xyxy")
+            torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
+
+    @staticmethod
+    def _run_jit_test(target_fn: Callable, actual_box: list):
+        box_tensor = torch.tensor(actual_box, dtype=torch.float)
+        expected = target_fn(box_tensor, box_tensor, fmt="xyxy")
+        scripted_fn = torch.jit.script(target_fn)
+        scripted_out = scripted_fn(box_tensor, box_tensor, fmt="xyxy")
+        torch.testing.assert_close(scripted_out, expected)
+
+    @staticmethod
+    def _cartesian_product(boxes1, boxes2, target_fn: Callable):
+        N = boxes1.size(0)
+        M = boxes2.size(0)
+        result = torch.zeros((N, M))
+        for i in range(N):
+            for j in range(M):
+                result[i, j] = target_fn(boxes1[i].unsqueeze(0), boxes2[j].unsqueeze(0), fmt="xyxy")
+        return result
+
+    @staticmethod
+    def _run_cartesian_test(target_fn: Callable):
+        boxes1 = gen_box(5)
+        boxes2 = gen_box(7)
+        a = TestIouXYXYBase._cartesian_product(boxes1, boxes2, target_fn)
+        b = target_fn(boxes1, boxes2, fmt="xyxy")
+        torch.testing.assert_close(a, b)
+
+    @staticmethod
+    def _run_batch_test(target_fn: Callable):
+        boxes1 = torch.stack([gen_box(5) for _ in range(3)], dim=0)
+        boxes2 = torch.stack([gen_box(5) for _ in range(3)], dim=0)
+        native: Tensor = target_fn(boxes1, boxes2)
+        iterative: Tensor = torch.stack([target_fn(*pairs) for pairs in zip(boxes1, boxes2)], dim=0)
+        torch.testing.assert_close(native, iterative)
+
+
+class TestBoxIouXYXY(TestIouXYXYBase):
+    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
+    float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
+
+    @pytest.mark.parametrize(
+        "actual_box1, actual_box2, dtypes, atol, expected",
+        [
+            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
+        ],
+    )
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.box_iou, actual_box1, actual_box2, dtypes, atol, expected)
+
+    def test_iou_jit(self):
+        self._run_jit_test(ops.box_iou, INT_BOXES)
+
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.box_iou)
+
+    def test_iou_batch(self):
+        self._run_batch_test(ops.box_iou)
+
+
+class TestIouCXCYWHBase:
+    @staticmethod
+    def _run_test(target_fn: Callable, actual_box1, actual_box2, dtypes, atol, expected):
+        for dtype in dtypes:
+            actual_box1 = torch.tensor(actual_box1, dtype=dtype)
+            actual_box2 = torch.tensor(actual_box2, dtype=dtype)
+            expected_box = torch.tensor(expected)
+            out = target_fn(actual_box1, actual_box2, fmt="cxcywh")
+            torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
+
+    @staticmethod
+    def _run_jit_test(target_fn: Callable, actual_box: list):
+        box_tensor = torch.tensor(actual_box, dtype=torch.float)
+        expected = target_fn(box_tensor, box_tensor, fmt="cxcywh")
+        scripted_fn = torch.jit.script(target_fn)
+        scripted_out = scripted_fn(box_tensor, box_tensor, fmt="cxcywh")
+        torch.testing.assert_close(scripted_out, expected)
+
+    @staticmethod
+    def _cartesian_product(boxes1, boxes2, target_fn: Callable):
+        N = boxes1.size(0)
+        M = boxes2.size(0)
+        result = torch.zeros((N, M))
+        for i in range(N):
+            for j in range(M):
+                result[i, j] = target_fn(boxes1[i].unsqueeze(0), boxes2[j].unsqueeze(0), fmt="cxcywh")
+        return result
+
+    @staticmethod
+    def _run_cartesian_test(target_fn: Callable):
+        boxes1 = ops.box_convert(gen_box(5), in_fmt="xyxy", out_fmt="cxcywh")
+        boxes2 = ops.box_convert(gen_box(7), in_fmt="xyxy", out_fmt="cxcywh")
+        a = TestIouCXCYWHBase._cartesian_product(boxes1, boxes2, target_fn)
+        b = target_fn(boxes1, boxes2, fmt="cxcywh")
+        torch.testing.assert_close(a, b)
+
+
+class TestBoxIouCXCYWH(TestIouCXCYWHBase):
+    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.04, 0.16, 0.0]]
+    float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
+
+    @pytest.mark.parametrize(
+        "actual_box1, actual_box2, dtypes, atol, expected",
+        [
+            pytest.param(
+                INT_BOXES_CXCYWH, INT_BOXES2_CXCYWH, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected
+            ),
+            pytest.param(FLOAT_BOXES_CXCYWH, FLOAT_BOXES_CXCYWH, [torch.float16], 0.002, float_expected),
+            pytest.param(FLOAT_BOXES_CXCYWH, FLOAT_BOXES_CXCYWH, [torch.float32, torch.float64], 1e-3, float_expected),
+        ],
+    )
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
+        self._run_test(ops.box_iou, actual_box1, actual_box2, dtypes, atol, expected)
+
+    def test_iou_jit(self):
+        self._run_jit_test(ops.box_iou, INT_BOXES_CXCYWH)
+
+    def test_iou_cartesian(self):
+        self._run_cartesian_test(ops.box_iou)
 
 
 class TestIouBase:
@@ -1528,39 +1709,6 @@ class TestIouBase:
         a = TestIouBase._cartesian_product(boxes1, boxes2, target_fn)
         b = target_fn(boxes1, boxes2)
         torch.testing.assert_close(a, b)
-
-    @staticmethod
-    def _run_batch_test(target_fn: Callable):
-        boxes1 = torch.stack([gen_box(5) for _ in range(3)], dim=0)
-        boxes2 = torch.stack([gen_box(5) for _ in range(3)], dim=0)
-        native: Tensor = target_fn(boxes1, boxes2)
-        iterative: Tensor = torch.stack([target_fn(*pairs) for pairs in zip(boxes1, boxes2)], dim=0)
-        torch.testing.assert_close(native, iterative)
-
-
-class TestBoxIou(TestIouBase):
-    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0625, 0.25, 0.0]]
-    float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
-
-    @pytest.mark.parametrize(
-        "actual_box1, actual_box2, dtypes, atol, expected",
-        [
-            pytest.param(INT_BOXES, INT_BOXES2, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
-            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float16], 0.002, float_expected),
-            pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
-        ],
-    )
-    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
-        self._run_test(ops.box_iou, actual_box1, actual_box2, dtypes, atol, expected)
-
-    def test_iou_jit(self):
-        self._run_jit_test(ops.box_iou, INT_BOXES)
-
-    def test_iou_cartesian(self):
-        self._run_cartesian_test(ops.box_iou)
-
-    def test_iou_batch(self):
-        self._run_batch_test(ops.box_iou)
 
 
 class TestGeneralizedBoxIou(TestIouBase):
