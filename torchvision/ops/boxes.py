@@ -315,7 +315,7 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> tuple
         "cxcywh",
     )
     if fmt not in allowed_fmts:
-        raise ValueError(f"Unsupported Box IoU Calculation for given fmt {format}.")
+        raise ValueError(f"Unsupported Box IoU Calculation for given fmt {fmt}.")
 
     if fmt == "xyxy":
         lt = torch.max(boxes1[..., None, :2], boxes2[..., None, :, :2])  # [...,N,M,2]
@@ -364,7 +364,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
         "cxcywh",
     )
     if fmt not in allowed_fmts:
-        raise ValueError(f"Unsupported Box IoU Calculation for given fmt {format}.")
+        raise ValueError(f"Unsupported Box IoU Calculation for given fmt {fmt}.")
     inter, union = _box_inter_union(boxes1, boxes2, fmt=fmt)
     iou = inter / union
     return iou
