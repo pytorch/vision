@@ -448,7 +448,7 @@ def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
         us know of any issue:
         https://github.com/pytorch/vision/issues/new/choose. Note that
         `torchvision-extra-decoders
-        <https://github.com/pytorch-labs/torchvision-extra-decoders/>`_ is
+        <https://github.com/meta-pytorch/torchvision-extra-decoders/>`_ is
         released under the LGPL license.
 
     The values of the output tensor are in uint8 in [0, 255] for most images. If
@@ -485,7 +485,7 @@ def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
         us know of any issue:
         https://github.com/pytorch/vision/issues/new/choose. Note that
         `torchvision-extra-decoders
-        <https://github.com/pytorch-labs/torchvision-extra-decoders/>`_ is
+        <https://github.com/meta-pytorch/torchvision-extra-decoders/>`_ is
         released under the LGPL license.
 
     The values of the output tensor are in uint8 in [0, 255] for most images. If
