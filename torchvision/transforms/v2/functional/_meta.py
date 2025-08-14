@@ -251,7 +251,7 @@ def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
         xyxyxyxy = xyxyxyxy.clone()
 
     dtype = xyxyxyxy.dtype
-    acceptable_dtypes = [torch.float32]  # Ensure consistency between CPU and GPU.
+    acceptable_dtypes = [torch.float32, torch.float64]  # Ensure consistency between CPU and GPU.
     need_cast = dtype not in acceptable_dtypes
     if need_cast:
         # Up-case to avoid overflow for square operations

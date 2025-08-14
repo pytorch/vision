@@ -452,7 +452,7 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
                      The output maintains the same dtype as the input.
     """
     dtype = parallelogram.dtype
-    acceptable_dtypes = [torch.float32]
+    acceptable_dtypes = [torch.float32, torch.float64]
     need_cast = dtype not in acceptable_dtypes
     if need_cast:
         # Up-case to avoid overflow for square operations
