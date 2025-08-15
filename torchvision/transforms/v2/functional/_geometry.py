@@ -451,6 +451,12 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
         torch.Tensor: Tensor of same shape as input containing the rectangle coordinates.
                      The output maintains the same dtype as the input.
     """
+    dtype = parallelogram.dtype
+    acceptable_dtypes = [torch.float32, torch.float64]
+    need_cast = dtype not in acceptable_dtypes
+    if need_cast:
+        # Up-case to avoid overflow for square operations
+        parallelogram = parallelogram.to(torch.float32)
     out_boxes = parallelogram.clone()
 
     # Calculate parallelogram diagonal vectors
@@ -489,6 +495,10 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
     out_boxes[..., 1] = torch.where(~mask, parallelogram[..., 3] + delta_y, parallelogram[..., 1])
     out_boxes[..., 4] = torch.where(~mask, parallelogram[..., 6] + delta_x, parallelogram[..., 4])
     out_boxes[..., 5] = torch.where(~mask, parallelogram[..., 7] - delta_y, parallelogram[..., 5])
+
+    if need_cast:
+        out_boxes = out_boxes.to(dtype)
+
     return out_boxes
 
 
