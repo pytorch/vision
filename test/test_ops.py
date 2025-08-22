@@ -1510,10 +1510,13 @@ class TestIouBase:
     @staticmethod
     def _run_test(target_fn: Callable, actual_box1, actual_box2, dtypes, atol, expected, fmt="xyxy"):
         for dtype in dtypes:
-            actual_box1 = ops.box_convert(torch.tensor(actual_box1, dtype=dtype), in_fmt="xyxy", out_fmt=fmt)
-            actual_box2 = ops.box_convert(torch.tensor(actual_box2, dtype=dtype), in_fmt="xyxy", out_fmt=fmt)
+            _actual_box1 = ops.box_convert(torch.tensor(actual_box1, dtype=dtype), in_fmt="xyxy", out_fmt=fmt)
+            _actual_box2 = ops.box_convert(torch.tensor(actual_box2, dtype=dtype), in_fmt="xyxy", out_fmt=fmt)
             expected_box = torch.tensor(expected)
-            out = target_fn(actual_box1, actual_box2)
+            out = target_fn(
+                _actual_box1,
+                _actual_box2,
+            )
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
@@ -1569,7 +1572,16 @@ class TestBoxIou(TestIouBase):
 
     @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
     def test_iou_jit(self, fmt):
-        self._run_jit_test(partial(ops.box_iou, fmt=fmt), INT_BOXES, fmt)
+        class IoUJit(torch.nn.Module):
+            def __init__(self, fmt):
+                super().__init__()
+                self.iou = ops.box_iou
+                self.fmt = fmt
+
+            def forward(self, boxes1, boxes2):
+                return self.iou(boxes1, boxes2)
+
+        self._run_jit_test(IoUJit(fmt=fmt), INT_BOXES, fmt)
 
     @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
     def test_iou_cartesian(self, fmt):

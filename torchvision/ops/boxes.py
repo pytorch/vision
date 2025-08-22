@@ -324,7 +324,7 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> tuple
         lt = torch.max(boxes1[..., None, :2], boxes2[..., None, :, :2])  # [...,N,M,2]
         rb = torch.min(
             boxes1[..., None, :2] + boxes1[..., None, 2:], boxes2[..., None, :, :2] + boxes2[..., None, :, 2:]
-        )  # [N,M,2]
+        )  # [...,N,M,2]
     else:  # fmt == "cxcywh":
         lt = torch.max(
             boxes1[..., None, :2] - boxes1[..., None, 2:] / 2, boxes2[..., None, :, :2] - boxes2[..., None, :, 2:] / 2
@@ -333,8 +333,8 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> tuple
             boxes1[..., None, :2] + boxes1[..., None, 2:] / 2, boxes2[..., None, :, :2] + boxes2[..., None, :, 2:] / 2
         )  # [N,M,2]
 
-    wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]	    wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]
-    inter = wh[..., 0] * wh[..., 1]  # [N,M]	    inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
+    wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]
+    inter = wh[..., 0] * wh[..., 1]  # [N,M]
 
     union = area1[..., None] + area2[..., None, :] - inter
 
