@@ -1573,6 +1573,9 @@ class TestBoxIou(TestIouBase):
     @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
     def test_iou_jit(self, fmt):
         class IoUJit(torch.nn.Module):
+            # We are using this intermediate class
+            # since torchscript does not support
+            # neither partial nor lambda functions for this test.
             def __init__(self, fmt):
                 super().__init__()
                 self.iou = ops.box_iou
