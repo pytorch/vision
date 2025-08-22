@@ -1486,9 +1486,21 @@ class TestBoxArea:
             torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float), in_fmt="xyxy", out_fmt=fmt
         )
         expected = ops.box_area(box_tensor, fmt)
-        scripted_fn = torch.jit.script(ops.box_area)
+        class BoxArea(torch.nn.Module):
+            # We are using this intermediate class
+            # since torchscript does not support
+            # neither partial nor lambda functions for this test.
+            def __init__(self, fmt):
+                super().__init__()
+                self.area = ops.box_area
+                self.fmt = fmt
+
+            def forward(self, boxes):
+                return self.area(boxes, self.fmt)
+
+        scripted_fn = torch.jit.script(BoxArea(fmt))
         scripted_area = scripted_fn(box_tensor)
-        torch.testing.assert_close(scripted_area, expected, fmt)
+        torch.testing.assert_close(scripted_area, expected)
 
 
 INT_BOXES = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300], [0, 0, 25, 25]]
@@ -1582,7 +1594,7 @@ class TestBoxIou(TestIouBase):
                 self.fmt = fmt
 
             def forward(self, boxes1, boxes2):
-                return self.iou(boxes1, boxes2)
+                return self.iou(boxes1, boxes2, fmt=self.fmt)
 
         self._run_jit_test(IoUJit(fmt=fmt), INT_BOXES, fmt)
 
