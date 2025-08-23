@@ -1486,6 +1486,7 @@ class TestBoxArea:
             torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float), in_fmt="xyxy", out_fmt=fmt
         )
         expected = ops.box_area(box_tensor, fmt)
+
         class BoxArea(torch.nn.Module):
             # We are using this intermediate class
             # since torchscript does not support
