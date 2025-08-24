@@ -219,6 +219,17 @@ struct DecoderParameters {
   // it is dispersed into the stream, but will increase latency. Must be an
   // integer not lesser than 32. It is 5000000 by default.
   int64_t probeSize{5000000};
+
+  // Expected duration of the video to be decoded, mainly used with uniform
+  // sampling
+  float expectedDuration{0.0f};
+
+  // Sample N key-frames from the video roughly uniformly across the timeline
+  int uniformSampling{0};
+
+  // with 0, ffmpeg allocates buffers of size 32768 bytes for encoded frames.
+  // Override this with bigger buffer size if needed.
+  int64_t maxEncodedBufferSize{0};
 };
 
 struct DecoderHeader {

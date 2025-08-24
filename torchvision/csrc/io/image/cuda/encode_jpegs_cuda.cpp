@@ -12,11 +12,8 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
 } // namespace vision
 #else
 
-#include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <ATen/cuda/CUDAEvent.h>
-#include <cuda_runtime.h>
-#include <torch/nn/functional.h>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -49,8 +46,9 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
   // so we reuse it across calls. NB: the cached structures are device specific
   // and cannot be reused across devices
   if (cudaJpegEncoder == nullptr || device != cudaJpegEncoder->target_device) {
-    if (cudaJpegEncoder != nullptr)
+    if (cudaJpegEncoder != nullptr) {
       delete cudaJpegEncoder.release();
+    }
 
     cudaJpegEncoder = std::make_unique<CUDAJpegEncoder>(device);
 
