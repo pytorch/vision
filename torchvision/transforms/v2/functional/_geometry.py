@@ -478,12 +478,15 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
     r_rad = torch.where(hp > wp, r14 + torch.pi / 2, r12)
     cos, sin = r_rad.cos(), r_rad.sin()
 
-    out_boxes = convert_bounding_box_format(
-        torch.stack((cx, cy, w, h, r_rad * 180 / torch.pi), dim=-1),
-        old_format=tv_tensors.BoundingBoxFormat.CXCYWHR,
-        new_format=tv_tensors.BoundingBoxFormat.XYXYXYXY,
-        inplace=False,
-    ).reshape(original_shape)
+    x1 = cx - w / 2 * cos - h / 2 * sin
+    y1 = cy - h / 2 * cos + w / 2 * sin
+    x2 = cx + w / 2 * cos - h / 2 * sin
+    y2 = cy - h / 2 * cos - w / 2 * sin
+    x3 = cx + w / 2 * cos + h / 2 * sin
+    y3 = cy + h / 2 * cos - w / 2 * sin
+    x4 = cx - w / 2 * cos + h / 2 * sin
+    y4 = cy + h / 2 * cos + w / 2 * sin
+    out_boxes = torch.stack((x1, y1, x2, y2, x3, y3, x4, y4), dim=-1).reshape(original_shape)
 
     if need_cast:
         out_boxes = out_boxes.to(dtype)
