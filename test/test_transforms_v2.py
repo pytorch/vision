@@ -7033,9 +7033,11 @@ def test_parallelogram_to_bounding_boxes(input_size, device):
         dtype=torch.float32,
     )
     expected = torch.tensor(
-        [[0, 4, 4, 0, 5, 1, 1, 5], [0, 1, 1, 0, 5, 4, 3, 4]],
+        [[0, 4, 4, 0, 5, 1, 1, 5], [0, 1, 1, 0, 5, 4, 4, 5]],
         dtype=torch.float32,
     )
+    actual = _parallelogram_to_bounding_boxes(parallelogram)
+    torch.testing.assert_close(actual, expected)
 
 
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, tv_tensors.Image))
