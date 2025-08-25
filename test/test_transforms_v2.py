@@ -7022,12 +7022,18 @@ def test_parallelogram_to_bounding_boxes(input_size, device):
     #   / /  ->  /   /
     # 4-3       4   /
     #              3
+    #
+    #          1
+    # 1-2       \ 2
+    #   \ \  ->  \  \
+    #    4-3       4 \
+    #                 3
     parallelogram = torch.tensor(
-        [[0, 4, 3, 1, 5, 1, 2, 4]],
+        [[0, 4, 3, 1, 5, 1, 2, 4], [0, 1, 2, 1, 5, 4, 3, 4]],
         dtype=torch.float32,
     )
     expected = torch.tensor(
-        [[0, 4, 4, 0, 5, 1, 1, 5]],
+        [[0, 4, 4, 0, 5, 1, 1, 5], [0, 1, 1, 0, 5, 4, 3, 4]],
         dtype=torch.float32,
     )
 
