@@ -15,11 +15,12 @@ from .image import (
     write_jpeg,
     write_png,
 )
-from .video import write_video
+from .video import write_video, read_video
 
 
 __all__ = [
     "write_video",
+    "read_video",
     "ImageReadMode",
     "decode_image",
     "decode_jpeg",
