@@ -44,8 +44,10 @@ def _check_av_available() -> None:
     if isinstance(av, Exception):
         raise av
 
+
 def _av_available() -> bool:
     return not isinstance(av, Exception)
+
 
 # PyAV has some reference cycles
 _CALLED_TIMES = 0
@@ -172,6 +174,7 @@ def write_video(
         for packet in stream.encode():
             container.mux(packet)
 
+
 def _read_from_stream(
     container: "av.container.Container",
     start_offset: float,
@@ -291,7 +294,6 @@ def read_video(
     output_format = output_format.upper()
     if output_format not in ("THWC", "TCHW"):
         raise ValueError(f"output_format should be either 'THWC' or 'TCHW', got {output_format}.")
-
 
     if True:  # ignore, this is to avoid a bigger diff in https://github.com/pytorch/vision/pull/9189
         _check_av_available()

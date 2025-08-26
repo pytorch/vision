@@ -5,7 +5,7 @@ from fractions import Fraction
 from typing import Any, Callable, cast, Optional, TypeVar, Union
 
 import torch
-from torchvision.io import  read_video, read_video_timestamps
+from torchvision.io import read_video, read_video_timestamps
 
 from .utils import tqdm
 
