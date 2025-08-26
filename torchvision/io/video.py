@@ -1,6 +1,5 @@
 import gc
 import math
-import os
 import re
 import warnings
 from fractions import Fraction

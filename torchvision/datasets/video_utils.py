@@ -2,7 +2,7 @@ import bisect
 import math
 import warnings
 from fractions import Fraction
-from typing import Any, Callable, cast, Optional, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 import torch
 from torchvision.io import read_video, read_video_timestamps
