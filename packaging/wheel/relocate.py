@@ -316,8 +316,7 @@ def patch_linux():
     output_dir = osp.join(PACKAGE_ROOT, "dist", ".wheel-process")
 
     image_binary = "image.so"
-    video_binary = "video_reader.so"
-    torchvision_binaries = [image_binary, video_binary]
+    torchvision_binaries = [image_binary, ]
     for wheel in wheels:
         if osp.exists(output_dir):
             shutil.rmtree(output_dir)
@@ -352,8 +351,7 @@ def patch_win():
     output_dir = osp.join(PACKAGE_ROOT, "dist", ".wheel-process")
 
     image_binary = "image.pyd"
-    video_binary = "video_reader.pyd"
-    torchvision_binaries = [image_binary, video_binary]
+    torchvision_binaries = [image_binary, ]
     for wheel in wheels:
         if osp.exists(output_dir):
             shutil.rmtree(output_dir)
