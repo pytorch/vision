@@ -223,7 +223,7 @@ def read_video(
         info = {}
         video_frames = []
         audio_frames = []
-        audio_timebase = _video_opt.default_timebase
+        audio_timebase = Fraction(0, 1)
 
         try:
             with av.open(filename, metadata_errors="ignore") as container:
