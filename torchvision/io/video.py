@@ -208,7 +208,6 @@ def read_video(
     if output_format not in ("THWC", "TCHW"):
         raise ValueError(f"output_format should be either 'THWC' or 'TCHW', got {output_format}.")
 
-    from torchvision import get_video_backend
 
     if True:  # ignore, this is to avoid a bigger diff in https://github.com/pytorch/vision/pull/9189
         _check_av_available()
@@ -329,7 +328,6 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> tuple[list[in
     _raise_video_deprecation_warning()
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_video_timestamps)
-    from torchvision import get_video_backend
 
     _check_av_available()
 
