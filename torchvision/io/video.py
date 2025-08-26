@@ -1,6 +1,5 @@
 import gc
 import math
-import os
 import re
 import warnings
 from fractions import Fraction
@@ -10,7 +9,6 @@ import numpy as np
 import torch
 
 from ..utils import _log_api_usage_once
-from . import _video_opt
 from ._video_deprecation_warning import _raise_video_deprecation_warning
 
 try:
@@ -72,7 +70,7 @@ def write_video(
     .. warning::
 
         DEPRECATED: All the video decoding and encoding capabilities of torchvision
-        are deprecated from version 0.22 and will be removed in version 0.24.  We
+        are deprecated from version 0.22 and will be removed in version 0.25.  We
         recommend that you migrate to
         `TorchCodec <https://github.com/pytorch/torchcodec>`__, where we'll
         consolidate the future decoding/encoding capabilities of PyTorch
@@ -256,21 +254,6 @@ def _read_from_stream(
     return result
 
 
-def _align_audio_frames(
-    aframes: torch.Tensor, audio_frames: list["av.frame.Frame"], ref_start: int, ref_end: float
-) -> torch.Tensor:
-    start, end = audio_frames[0].pts, audio_frames[-1].pts
-    total_aframes = aframes.shape[1]
-    step_per_aframe = (end - start + 1) / total_aframes
-    s_idx = 0
-    e_idx = total_aframes
-    if start < ref_start:
-        s_idx = int((ref_start - start) / step_per_aframe)
-    if end > ref_end:
-        e_idx = int((ref_end - end) / step_per_aframe)
-    return aframes[:, s_idx:e_idx]
-
-
 def read_video(
     filename: str,
     start_pts: Union[float, Fraction] = 0,
@@ -311,13 +294,7 @@ def read_video(
     if output_format not in ("THWC", "TCHW"):
         raise ValueError(f"output_format should be either 'THWC' or 'TCHW', got {output_format}.")
 
-    from torchvision import get_video_backend
-
-    if get_video_backend() != "pyav":
-        if not os.path.exists(filename):
-            raise RuntimeError(f"File not found: {filename}")
-        vframes, aframes, info = _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
-    else:
+    if True:  # ignore, this is to avoid a bigger diff in https://github.com/pytorch/vision/pull/9189
         _check_av_available()
 
         if end_pts is None:
@@ -331,7 +308,7 @@ def read_video(
         info = {}
         video_frames = []
         audio_frames = []
-        audio_timebase = _video_opt.default_timebase
+        audio_timebase = Fraction(0, 1)
 
         try:
             with av.open(filename, metadata_errors="ignore") as container:
@@ -415,7 +392,7 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> tuple[list[in
     .. warning::
 
         DEPRECATED: All the video decoding and encoding capabilities of torchvision
-        are deprecated from version 0.22 and will be removed in version 0.24.  We
+        are deprecated from version 0.22 and will be removed in version 0.25.  We
         recommend that you migrate to
         `TorchCodec <https://github.com/pytorch/torchcodec>`__, where we'll
         consolidate the future decoding/encoding capabilities of PyTorch
@@ -436,10 +413,6 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> tuple[list[in
     _raise_video_deprecation_warning()
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_video_timestamps)
-    from torchvision import get_video_backend
-
-    if get_video_backend() != "pyav":
-        return _video_opt._read_video_timestamps(filename, pts_unit)
 
     _check_av_available()
 

@@ -23,15 +23,13 @@ case $(uname) in
 esac
 
 echo '::group::Create build environment'
-# See https://github.com/pytorch/vision/issues/7296 for ffmpeg
 conda create \
   --name ci \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
   libpng \
-  libwebp \
-  'ffmpeg<4.3'
+  libwebp
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools==72.1.0
