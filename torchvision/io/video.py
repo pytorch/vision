@@ -44,6 +44,8 @@ def _check_av_available() -> None:
     if isinstance(av, Exception):
         raise av
 
+def _av_available() -> bool:
+    return not isinstance(av, Exception)
 
 def write_video(
     filename: str,
