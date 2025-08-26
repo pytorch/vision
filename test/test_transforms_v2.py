@@ -2520,14 +2520,29 @@ class TestContainerTransforms:
             with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
                 cls(lambda x: x)
 
-        with pytest.raises(ValueError, match="at least one transform"):
-            transforms.Compose([])
+        for cls in (
+            transforms.Compose,
+            transforms.RandomApply,
+            transforms.RandomChoice,
+            transforms.RandomOrder,
+        ):
+
+            with pytest.raises(ValueError, match="at least one transform"):
+                cls([])
 
         for p in [-1, 2]:
             with pytest.raises(ValueError, match=re.escape("value in the interval [0.0, 1.0]")):
                 transforms.RandomApply([lambda x: x], p=p)
 
-        for transforms_, p in [([lambda x: x], []), ([], [1.0])]:
+        for transforms_, p in [
+            ([lambda x: x], []),
+            (
+                [lambda x: x, lambda x: x],
+                [
+                    1.0,
+                ],
+            ),
+        ]:
             with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
                 transforms.RandomChoice(transforms_, p=p)
 
@@ -6996,6 +7011,29 @@ def test_parallelogram_to_bounding_boxes(input_size, device):
             [0, 0, 4, 0, 4, 2, 0, 2],
             [0, 0, 4, 0, 4, 2, 0, 2],
         ],
+        dtype=torch.float32,
+    )
+    actual = _parallelogram_to_bounding_boxes(parallelogram)
+    torch.testing.assert_close(actual, expected)
+
+    # Test the transformation of a simple parallelogram.
+    #              1
+    #    1-2      /   2
+    #   / /  ->  /   /
+    # 4-3       4   /
+    #              3
+    #
+    #          1
+    # 1-2       \ 2
+    #   \ \  ->  \  \
+    #    4-3       4 \
+    #                 3
+    parallelogram = torch.tensor(
+        [[0, 4, 3, 1, 5, 1, 2, 4], [0, 1, 2, 1, 5, 4, 3, 4]],
+        dtype=torch.float32,
+    )
+    expected = torch.tensor(
+        [[0, 4, 4, 0, 5, 1, 1, 5], [0, 1, 1, 0, 5, 4, 4, 5]],
         dtype=torch.float32,
     )
     actual = _parallelogram_to_bounding_boxes(parallelogram)
