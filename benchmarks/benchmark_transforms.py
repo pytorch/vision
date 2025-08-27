@@ -231,7 +231,7 @@ def main():
     )
     all_backends = ["tv", "tv-compiled", "opencv", "pil", "albumentations", "kornia"]
     parser.add_argument(
-        "--backend", type=str.lower, choices=all_backends + ["all"], default="all", help="Backend to benchmark"
+        "--backends", type=str, default="all", help="Backends to benchmark (comma-separated list or 'all'). First backend is used as reference for comparison."
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--device", type=str, default="cpu", help="Device to use: cpu or cuda (default: cpu)")
@@ -240,7 +240,18 @@ def main():
 
     print_benchmark_info(args)
 
-    backends_to_run = all_backends if args.backend.lower() == "all" else [args.backend]
+    # Parse backends parameter
+    if args.backends.lower() == "all":
+        backends_to_run = all_backends
+    else:
+        backends_to_run = [backend.strip().lower() for backend in args.backends.split(",")]
+        # Validate backends
+        invalid_backends = [b for b in backends_to_run if b not in all_backends]
+        if invalid_backends:
+            print(f"ERROR: Invalid backends: {', '.join(invalid_backends)}")
+            print(f"Available backends: {', '.join(all_backends)}")
+            return
+
     results = []
 
     for backend in backends_to_run:

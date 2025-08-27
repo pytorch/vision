@@ -86,12 +86,13 @@ def report_stats(times: torch.Tensor, unit: str, verbose: bool = True) -> Dict[s
 
 
 def print_comparison_table(results: List[Dict[str, Any]]) -> None:
-    torchvision_median = next((r["stats"]["median"] for r in results if r["backend"].lower() == "tv"), None)
+    # Use first backend as reference for relative comparison
+    reference_median = results[0]["stats"]["median"] if results else None
 
     table_data = []
     for result in results:
         stats = result["stats"]
-        relative = f"{stats['median'] / torchvision_median:.2f}x" if torchvision_median else "N/A"
+        speed_up = f"{reference_median / stats['median']:.2f}x" if reference_median else "N/A"
 
         table_data.append(
             {
@@ -101,7 +102,7 @@ def print_comparison_table(results: List[Dict[str, Any]]) -> None:
                 "Mean (ms)": f"{stats['mean']:.2f}",
                 "Min (ms)": f"{stats['min']:.2f}",
                 "Max (ms)": f"{stats['max']:.2f}",
-                "Relative": relative,
+                "Speed-up": speed_up,
             }
         )
 
