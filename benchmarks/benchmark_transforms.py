@@ -15,6 +15,7 @@ import random
 import warnings
 from typing import Dict, Any
 import torchvision.transforms.v2.functional as F
+import torchvision.transforms.functional as Fv1
 import numpy as np
 from utils import bench, report_stats, print_comparison_table, print_benchmark_info
 
@@ -61,6 +62,14 @@ def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor
     )
     images = F.to_dtype(images, dtype=torch.float32, scale=True)
     images = F.normalize(images, mean=NORM_MEAN, std=NORM_STD)
+    return images
+
+def torchvision_v1_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
+    images = images.float() / 255.  # rough equivalent of to_tensor()
+    images = Fv1.resize(
+        images, size=(target_size, target_size), interpolation=Fv1.InterpolationMode.BILINEAR, antialias=True
+    )
+    images = Fv1.normalize(images, mean=NORM_MEAN, std=NORM_STD)
     return images
 
 
@@ -140,6 +149,9 @@ def run_benchmark(args) -> Dict[str, Any]:
     if backend == "tv":
         torch.set_num_threads(args.num_threads)
         pipeline = torchvision_pipeline
+    if backend == "tv-v1":
+        torch.set_num_threads(args.num_threads)
+        pipeline = torchvision_v1_pipeline
     elif backend == "tv-compiled":
         torch.set_num_threads(args.num_threads)
         pipeline = compiled_torchvision_pipeline
@@ -229,7 +241,7 @@ def main():
         default="CF",
         help="Memory format: CL (channels_last) or CF (channels_first, i.e. contiguous)",
     )
-    all_backends = ["tv", "tv-compiled", "opencv", "pil", "albumentations", "kornia"]
+    all_backends = ["tv", "tv-v1", "tv-compiled", "opencv", "pil", "albumentations", "kornia"]
     parser.add_argument(
         "--backends", type=str, default="all", help="Backends to benchmark (comma-separated list or 'all'). First backend is used as reference for comparison."
     )
