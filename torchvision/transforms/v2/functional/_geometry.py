@@ -261,7 +261,7 @@ def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
         if torch.compiler.is_compiling():
             return True
         else:
-            return "AVX2" in torch.backends.cpu.get_cpu_capability()
+            return torch.backends.cpu.get_cpu_capability() in ("AVX2", "AVX512")
 
     return interpolation == InterpolationMode.BICUBIC
 
