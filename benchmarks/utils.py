@@ -103,7 +103,7 @@ def print_comparison_table(results: List[Dict[str, Any]]) -> None:
                 "Mean (ms)": f"{stats['mean']:.2f}",
                 "Min (ms)": f"{stats['min']:.2f}",
                 "Max (ms)": f"{stats['max']:.2f}",
-                "Speed-up": speed_up,
+                "Speed-up\nagainst 1st row": speed_up,
             }
         )
 
@@ -115,6 +115,19 @@ def print_benchmark_info(args):
     device = args.device.lower()
 
     memory_format = "channels_last" if args.contiguity == "CL" else "channels_first"
+
+    # Collect library versions
+    versions = [
+        ["PyTorch", torch.__version__],
+        ["TorchVision", torchvision.__version__],
+        ["OpenCV", cv2.__version__ if HAS_OPENCV else "Not available"],
+        ["PIL/Pillow", getattr(Image, "__version__", "Version unavailable")],
+        ["Albumentations", A.__version__ if HAS_ALBUMENTATIONS else "Not available"],
+        ["Kornia", K.__version__ if HAS_KORNIA else "Not available"],
+    ]
+
+    print(tabulate(versions, headers=["Library", "Version"], tablefmt="simple"))
+    print()
 
     # Collect configuration info
     config = [
@@ -128,15 +141,3 @@ def print_benchmark_info(args):
 
     print(tabulate(config, headers=["Parameter", "Value"], tablefmt="simple"))
     print()
-
-    # Collect library versions
-    versions = [
-        ["PyTorch", torch.__version__],
-        ["TorchVision", torchvision.__version__],
-        ["OpenCV", cv2.__version__ if HAS_OPENCV else "Not available"],
-        ["PIL/Pillow", getattr(Image, "__version__", "Version unavailable")],
-        ["Albumentations", A.__version__ if HAS_ALBUMENTATIONS else "Not available"],
-        ["Kornia", K.__version__ if HAS_KORNIA else "Not available"],
-    ]
-
-    print(tabulate(versions, headers=["Library", "Version"], tablefmt="simple"))
