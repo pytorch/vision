@@ -10,14 +10,15 @@ The pipeline tested: uint8 image -> resize -> normalize (to [0,1] float)
 """
 
 import argparse
-import torch
 import random
 import warnings
-from typing import Dict, Any
-import torchvision.transforms.v2.functional as F
-import torchvision.transforms.functional as Fv1
+from typing import Any, Dict
+
 import numpy as np
-from utils import bench, report_stats, print_comparison_table, print_benchmark_info
+import torch
+import torchvision.transforms.functional as Fv1
+import torchvision.transforms.v2.functional as F
+from utils import bench, print_benchmark_info, print_comparison_table, report_stats
 
 # Filter out the specific TF32 warning
 warnings.filterwarnings(
@@ -64,8 +65,9 @@ def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor
     images = F.normalize(images, mean=NORM_MEAN, std=NORM_STD)
     return images
 
+
 def torchvision_v1_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
-    images = images.float() / 255.  # rough equivalent of to_tensor()
+    images = images.float() / 255.0  # rough equivalent of to_tensor()
     images = Fv1.resize(
         images, size=(target_size, target_size), interpolation=Fv1.InterpolationMode.BILINEAR, antialias=True
     )
@@ -243,7 +245,10 @@ def main():
     )
     all_backends = ["tv", "tv-v1", "tv-compiled", "opencv", "pil", "albumentations", "kornia"]
     parser.add_argument(
-        "--backends", type=str, default="all", help="Backends to benchmark (comma-separated list or 'all'). First backend is used as reference for comparison."
+        "--backends",
+        type=str,
+        default="all",
+        help="Backends to benchmark (comma-separated list or 'all'). First backend is used as reference for comparison.",
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
     parser.add_argument("--device", type=str, default="cpu", help="Device to use: cpu or cuda (default: cpu)")

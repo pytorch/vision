@@ -2,10 +2,11 @@
 Utility functions for benchmarking transforms.
 """
 
+from time import perf_counter_ns
+from typing import Any, Callable, Dict, List
+
 import torch
 import torchvision
-from time import perf_counter_ns
-from typing import Callable, List, Dict, Any
 from tabulate import tabulate
 
 try:
@@ -133,7 +134,7 @@ def print_benchmark_info(args):
         ["PyTorch", torch.__version__],
         ["TorchVision", torchvision.__version__],
         ["OpenCV", cv2.__version__ if HAS_OPENCV else "Not available"],
-        ["PIL/Pillow", getattr(Image, '__version__', "Version unavailable")],
+        ["PIL/Pillow", getattr(Image, "__version__", "Version unavailable")],
         ["Albumentations", A.__version__ if HAS_ALBUMENTATIONS else "Not available"],
         ["Kornia", K.__version__ if HAS_KORNIA else "Not available"],
     ]
