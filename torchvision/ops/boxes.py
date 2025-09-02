@@ -270,33 +270,68 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     return boxes
 
 
-def box_area(boxes: Tensor) -> Tensor:
+def box_area(boxes: Tensor, fmt: str = "xyxy") -> Tensor:
     """
-    Computes the area of a set of bounding boxes, which are specified by their
-    (x1, y1, x2, y2) coordinates.
+    Computes the area of a set of bounding boxes from a given format.
 
     Args:
-        boxes (Tensor[..., 4]): boxes for which the area will be computed. They
-            are expected to be in (x1, y1, x2, y2) format with
-            ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+        boxes (Tensor[..., 4]): boxes for which the area will be computed.
+        fmt (str): Format of the input boxes.
+            Default is "xyxy" to preserve backward compatibility.
+            Supported formats are "xyxy", "xywh", and "cxcywh".
 
     Returns:
-        Tensor[N]: the area for each box
+        Tensor[N]: Tensor containing the area for each box.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(box_area)
+    allowed_fmts = (
+        "xyxy",
+        "xywh",
+        "cxcywh",
+    )
+    if fmt not in allowed_fmts:
+        raise ValueError(f"Unsupported Bounding Box area for given format {fmt}")
     boxes = _upcast(boxes)
-    return (boxes[..., 2] - boxes[..., 0]) * (boxes[..., 3] - boxes[..., 1])
+    if fmt == "xyxy":
+        area = (boxes[..., 2] - boxes[..., 0]) * (boxes[..., 3] - boxes[..., 1])
+    else:
+        # For formats with width and height, area = width * height
+        # Supported: cxcywh, xywh
+        area = boxes[..., 2] * boxes[..., 3]
+
+    return area
 
 
 # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
 # with slight modifications
-def _box_inter_union(boxes1: Tensor, boxes2: Tensor) -> tuple[Tensor, Tensor]:
-    area1 = box_area(boxes1)
-    area2 = box_area(boxes2)
+def _box_inter_union(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> tuple[Tensor, Tensor]:
+    area1 = box_area(boxes1, fmt=fmt)
+    area2 = box_area(boxes2, fmt=fmt)
 
-    lt = torch.max(boxes1[..., None, :2], boxes2[..., None, :, :2])  # [...,N,M,2]
-    rb = torch.min(boxes1[..., None, 2:], boxes2[..., None, :, 2:])  # [...,N,M,2]
+    allowed_fmts = (
+        "xyxy",
+        "xywh",
+        "cxcywh",
+    )
+    if fmt not in allowed_fmts:
+        raise ValueError(f"Unsupported Box IoU Calculation for given fmt {fmt}.")
+
+    if fmt == "xyxy":
+        lt = torch.max(boxes1[..., None, :2], boxes2[..., None, :, :2])  # [...,N,M,2]
+        rb = torch.min(boxes1[..., None, 2:], boxes2[..., None, :, 2:])  # [...,N,M,2]
+    elif fmt == "xywh":
+        lt = torch.max(boxes1[..., None, :2], boxes2[..., None, :, :2])  # [...,N,M,2]
+        rb = torch.min(
+            boxes1[..., None, :2] + boxes1[..., None, 2:], boxes2[..., None, :, :2] + boxes2[..., None, :, 2:]
+        )  # [...,N,M,2]
+    else:  # fmt == "cxcywh":
+        lt = torch.max(
+            boxes1[..., None, :2] - boxes1[..., None, 2:] / 2, boxes2[..., None, :, :2] - boxes2[..., None, :, 2:] / 2
+        )  # [N,M,2]
+        rb = torch.min(
+            boxes1[..., None, :2] + boxes1[..., None, 2:] / 2, boxes2[..., None, :, :2] + boxes2[..., None, :, 2:] / 2
+        )  # [N,M,2]
 
     wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]
     inter = wh[..., 0] * wh[..., 1]  # [N,M]
@@ -306,16 +341,16 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor) -> tuple[Tensor, Tensor]:
     return inter, union
 
 
-def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
+def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
     """
-    Return intersection-over-union (Jaccard index) between two sets of boxes.
-
-    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
-    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+    Return intersection-over-union (Jaccard index) between two sets of boxes from a given format.
 
     Args:
         boxes1 (Tensor[..., N, 4]): first set of boxes
         boxes2 (Tensor[..., M, 4]): second set of boxes
+        fmt (str): Format of the input boxes.
+            Default is "xyxy" to preserve backward compatibility.
+            Supported formats are "xyxy", "xywh", and "cxcywh".
 
     Returns:
         Tensor[..., N, M]: the NxM matrix containing the pairwise IoU values for every element
@@ -323,7 +358,14 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(box_iou)
-    inter, union = _box_inter_union(boxes1, boxes2)
+    allowed_fmts = (
+        "xyxy",
+        "xywh",
+        "cxcywh",
+    )
+    if fmt not in allowed_fmts:
+        raise ValueError(f"Unsupported Box IoU Calculation for given format {fmt}.")
+    inter, union = _box_inter_union(boxes1, boxes2, fmt=fmt)
     iou = inter / union
     return iou
 
