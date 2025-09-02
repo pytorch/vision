@@ -207,6 +207,7 @@ def gaussian_noise_image(image: torch.Tensor, mean: float = 0.0, sigma: float = 
 
     elif image.dtype == torch.uint8:
         # Convert to intermediate dtype int16 to add to input more efficiently
+        # See https://github.com/pytorch/vision/pull/9169 for alternative implementations and benchmark
         noise = ((mean * 255) + torch.randn_like(image, dtype=torch.float32) * (sigma * 255)).to(torch.int16)
         out = image + noise
 
