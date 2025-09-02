@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+ce5b26a) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+b208f7f) &#x25BC</a>
     </div>
     
 
@@ -608,16 +608,28 @@
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">gaussian_noise</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">gaussian_noise</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">gaussian_noise_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">clip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">image</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor is expected to be in float dtype, got dtype=</span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">sigma</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sigma shouldn&#39;t be negative. Got </span><span class="si">{</span><span class="n">sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="n">noise</span> <span class="o">=</span> <span class="n">mean</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="n">image</span> <span class="o">+</span> <span class="n">noise</span>
-    <span class="k">if</span> <span class="n">clip</span><span class="p">:</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">out</span>
+    <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">():</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">mean</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">image</span> <span class="o">+</span> <span class="n">noise</span>
+        <span class="k">if</span> <span class="n">clip</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span>
+        <span class="c1"># Convert to intermediate dtype int16 to add to input more efficiently</span>
+        <span class="c1"># See https://github.com/pytorch/vision/pull/9169 for alternative implementations and benchmark</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="p">((</span><span class="n">mean</span> <span class="o">*</span> <span class="mi">255</span><span class="p">)</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">*</span> <span class="mi">255</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">image</span> <span class="o">+</span> <span class="n">noise</span>
+
+        <span class="k">if</span> <span class="n">clip</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor is expected to be in uint8 or float dtype, got dtype=</span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">gaussian_noise</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
