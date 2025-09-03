@@ -195,16 +195,28 @@ def gaussian_noise(inpt: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, cl
 @_register_kernel_internal(gaussian_noise, torch.Tensor)
 @_register_kernel_internal(gaussian_noise, tv_tensors.Image)
 def gaussian_noise_image(image: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
-    if not image.is_floating_point():
-        raise ValueError(f"Input tensor is expected to be in float dtype, got dtype={image.dtype}")
     if sigma < 0:
         raise ValueError(f"sigma shouldn't be negative. Got {sigma}")
 
-    noise = mean + torch.randn_like(image) * sigma
-    out = image + noise
-    if clip:
-        out = torch.clamp(out, 0, 1)
-    return out
+    if image.is_floating_point():
+        noise = mean + torch.randn_like(image) * sigma
+        out = image + noise
+        if clip:
+            out = torch.clamp(out, 0, 1)
+        return out
+
+    elif image.dtype == torch.uint8:
+        # Convert to intermediate dtype int16 to add to input more efficiently
+        # See https://github.com/pytorch/vision/pull/9169 for alternative implementations and benchmark
+        noise = ((mean * 255) + torch.randn_like(image, dtype=torch.float32) * (sigma * 255)).to(torch.int16)
+        out = image + noise
+
+        if clip:
+            out = torch.clamp(out, 0, 255)
+        return out.to(torch.uint8)
+
+    else:
+        raise ValueError(f"Input tensor is expected to be in uint8 or float dtype, got dtype={image.dtype}")
 
 
 @_register_kernel_internal(gaussian_noise, tv_tensors.Video)
