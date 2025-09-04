@@ -552,7 +552,7 @@ def draw_keypoints(
     if visibility.shape != keypoints.shape[:-1]:
         raise ValueError(
             "keypoints and visibility must have the same dimensionality for num_instances and K. "
-            f"Got {visibility.shape = } and {keypoints.shape = }"
+            f"Got {visibility.shape=} and {keypoints.shape=}"
         )
 
     original_dtype = image.dtype
@@ -753,7 +753,7 @@ def _parse_colors(
                 f"Number of colors must be equal or larger than the number of objects, but got {len(colors)} < {num_objects}."
             )
     elif not isinstance(colors, (tuple, str)):
-        raise ValueError(f"`colors` must be a tuple or a string, or a list thereof, but got {colors}.")
+        raise ValueError(f"colors must be a tuple or a string, or a list thereof, but got {colors}.")
     elif isinstance(colors, tuple) and len(colors) != 3:
         raise ValueError(f"If passed as tuple, colors should be an RGB triplet, but got {colors}.")
     else:  # colors specifies a single color for all objects
