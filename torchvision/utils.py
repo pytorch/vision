@@ -8,8 +8,7 @@ from typing import Any, BinaryIO, Optional, Union
 
 import numpy as np
 import torch
-from PIL import Image, ImageColor, ImageDraw, ImageFont
-from PIL import __version__ as PILLOW_VERSION_STRING
+from PIL import __version__ as PILLOW_VERSION_STRING, Image, ImageColor, ImageDraw, ImageFont
 
 __all__ = [
     "_Image_fromarray",
@@ -366,7 +365,7 @@ def draw_bounding_boxes(
         label_colors = colors.copy()  # type: ignore[assignment]
 
     if fill_labels:
-        label_background_colors = _parse_colors(label_background_colors, num_objects=num_boxes) if label_background_colors else colors.copy() # type: ignore[assignment]
+        label_background_colors = _parse_colors(label_background_colors, num_objects=num_boxes) if label_background_colors else colors.copy()  # type: ignore[assignment]
     else:
         label_background_colors = colors.copy()  # type: ignore[assignment]
 

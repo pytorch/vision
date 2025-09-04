@@ -164,7 +164,7 @@ def test_draw_boxes_with_coloured_label_backgrounds():
     )
     expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
     assert_equal(result, expected)
-    
+
 
 @pytest.mark.skipif(PILLOW_VERSION < (10, 1), reason="The reference image is only valid for PIL >= 10.1")
 def test_draw_boxes_with_coloured_label_text_boxes():
@@ -172,19 +172,22 @@ def test_draw_boxes_with_coloured_label_text_boxes():
     labels = ["a", "b", "c", "d"]
     colors = ["green", "#FF00FF", (0, 255, 0), "red"]
     label_colors = ["green", "red", (0, 255, 0), "#FF00FF"]
-    label_background_colors = ["white", "black", "yellow", "blue"] 
+    label_background_colors = ["white", "black", "yellow", "blue"]
     result = utils.draw_bounding_boxes(
-        img, 
-        boxes, 
-        labels=labels, 
-        colors=colors, 
-        fill=True, 
+        img,
+        boxes,
+        labels=labels,
+        colors=colors,
+        fill=True,
         label_colors=label_colors,
         label_background_colors=label_background_colors,
-        fill_labels=True
+        fill_labels=True,
     )
     path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_different_label_background_colors.png"
+        os.path.dirname(os.path.abspath(__file__)),
+        "assets",
+        "fakedata",
+        "draw_boxes_different_label_background_colors.png",
     )
     expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
     assert_equal(result, expected)
