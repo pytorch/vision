@@ -365,8 +365,8 @@ def draw_bounding_boxes(
     else:
         label_colors = colors.copy()  # type: ignore[assignment]
 
-    if fill_labels:
-        label_background_colors = _parse_colors(label_background_colors, num_objects=num_boxes) if label_background_colors else colors.copy()  # type: ignore[assignment]
+    if fill_labels and label_background_colors:
+        label_background_colors = _parse_colors(label_background_colors, num_objects=num_boxes)
     else:
         label_background_colors = colors.copy()  # type: ignore[assignment]
 
