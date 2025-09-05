@@ -6,6 +6,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import sysconfig
 import warnings
 from pathlib import Path
 
