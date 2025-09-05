@@ -322,7 +322,8 @@ def draw_bounding_boxes(
             `colors` argument for details.  Defaults to the same colors used for the boxes, or to black if ``fill_labels`` is True.
         label_background_colors (color or list of colors, optional): Colors for the label text box fill. Defaults to the
             same colors used for the boxes. Ignored when ``fill_labels`` is False.
-        fill_labels (bool): If `True` fills the label background with specified box color (from the ``colors`` parameter). Default: False.
+        fill_labels (bool): If `True` fills the label background with specified color (from the ``label_background_colors`` parameter,
+            or from the ``colors`` parameter if not specified). Default: False.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
