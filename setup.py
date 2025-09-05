@@ -136,6 +136,8 @@ def get_macros_and_flags():
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
         extra_compile_args["cxx"].append("/MP")
+        if sysconfig.get_config_var("Py_GIL_DISABLED"):
+            extra_compile_args["cxx"].append("-DPy_GIL_DISABLED")
 
     if DEBUG:
         extra_compile_args["cxx"].append("-g")
