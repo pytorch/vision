@@ -2520,14 +2520,29 @@ class TestContainerTransforms:
             with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
                 cls(lambda x: x)
 
-        with pytest.raises(ValueError, match="at least one transform"):
-            transforms.Compose([])
+        for cls in (
+            transforms.Compose,
+            transforms.RandomApply,
+            transforms.RandomChoice,
+            transforms.RandomOrder,
+        ):
+
+            with pytest.raises(ValueError, match="at least one transform"):
+                cls([])
 
         for p in [-1, 2]:
             with pytest.raises(ValueError, match=re.escape("value in the interval [0.0, 1.0]")):
                 transforms.RandomApply([lambda x: x], p=p)
 
-        for transforms_, p in [([lambda x: x], []), ([], [1.0])]:
+        for transforms_, p in [
+            ([lambda x: x], []),
+            (
+                [lambda x: x, lambda x: x],
+                [
+                    1.0,
+                ],
+            ),
+        ]:
             with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
                 transforms.RandomChoice(transforms_, p=p)
 
@@ -3978,7 +3993,7 @@ class TestGaussianNoise:
         "make_input",
         [make_image_tensor, make_image, make_video],
     )
-    def test_kernel(self, make_input):
+    def test_kernel_float(self, make_input):
         check_kernel(
             F.gaussian_noise,
             make_input(dtype=torch.float32),
@@ -3990,8 +4005,27 @@ class TestGaussianNoise:
         "make_input",
         [make_image_tensor, make_image, make_video],
     )
-    def test_functional(self, make_input):
+    def test_kernel_uint8(self, make_input):
+        check_kernel(
+            F.gaussian_noise,
+            make_input(dtype=torch.uint8),
+            # This cannot pass because the noise on a batch in not per-image
+            check_batched_vs_unbatched=False,
+        )
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_functional_float(self, make_input):
         check_functional(F.gaussian_noise, make_input(dtype=torch.float32))
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_functional_uint8(self, make_input):
+        check_functional(F.gaussian_noise, make_input(dtype=torch.uint8))
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -4008,10 +4042,11 @@ class TestGaussianNoise:
         "make_input",
         [make_image_tensor, make_image, make_video],
     )
-    def test_transform(self, make_input):
+    def test_transform_float(self, make_input):
         def adapter(_, input, __):
-            # This transform doesn't support uint8 so we have to convert the auto-generated uint8 tensors to float32
-            # Same for PIL images
+            # We have two different implementations for floats and uint8
+            # To test this implementation we'll convert the auto-generated uint8 tensors to float32
+            # We don't support other int dtypes nor pil images
             for key, value in input.items():
                 if isinstance(value, torch.Tensor) and not value.is_floating_point():
                     input[key] = value.to(torch.float32)
@@ -4021,11 +4056,29 @@ class TestGaussianNoise:
 
         check_transform(transforms.GaussianNoise(), make_input(dtype=torch.float32), check_sample_input=adapter)
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_transform_uint8(self, make_input):
+        def adapter(_, input, __):
+            # We have two different implementations for floats and uint8
+            # To test this implementation we'll convert every tensor to uint8
+            # We don't support other int dtypes nor pil images
+            for key, value in input.items():
+                if isinstance(value, torch.Tensor) and not value.dtype != torch.uint8:
+                    input[key] = value.to(torch.uint8)
+                if isinstance(value, PIL.Image.Image):
+                    input[key] = F.pil_to_tensor(value).to(torch.uint8)
+            return input
+
+        check_transform(transforms.GaussianNoise(), make_input(dtype=torch.uint8), check_sample_input=adapter)
+
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Gaussian Noise is not implemented for PIL images."):
             F.gaussian_noise(make_image_pil())
-        with pytest.raises(ValueError, match="Input tensor is expected to be in float dtype"):
-            F.gaussian_noise(make_image(dtype=torch.uint8))
+        with pytest.raises(ValueError, match="Input tensor is expected to be in uint8 or float dtype"):
+            F.gaussian_noise(make_image(dtype=torch.int32))
         with pytest.raises(ValueError, match="sigma shouldn't be negative"):
             F.gaussian_noise(make_image(dtype=torch.float32), sigma=-1)
 
@@ -6996,6 +7049,29 @@ def test_parallelogram_to_bounding_boxes(input_size, device):
             [0, 0, 4, 0, 4, 2, 0, 2],
             [0, 0, 4, 0, 4, 2, 0, 2],
         ],
+        dtype=torch.float32,
+    )
+    actual = _parallelogram_to_bounding_boxes(parallelogram)
+    torch.testing.assert_close(actual, expected)
+
+    # Test the transformation of a simple parallelogram.
+    #              1
+    #    1-2      /   2
+    #   / /  ->  /   /
+    # 4-3       4   /
+    #              3
+    #
+    #          1
+    # 1-2       \ 2
+    #   \ \  ->  \  \
+    #    4-3       4 \
+    #                 3
+    parallelogram = torch.tensor(
+        [[0, 4, 3, 1, 5, 1, 2, 4], [0, 1, 2, 1, 5, 4, 3, 4]],
+        dtype=torch.float32,
+    )
+    expected = torch.tensor(
+        [[0, 4, 4, 0, 5, 1, 1, 5], [0, 1, 1, 0, 5, 4, 4, 5]],
         dtype=torch.float32,
     )
     actual = _parallelogram_to_bounding_boxes(parallelogram)

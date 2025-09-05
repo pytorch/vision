@@ -214,13 +214,22 @@ class GaussianNoise(Transform):
     Each image or frame in a batch will be transformed independently i.e. the
     noise added to each image will be different.
 
-    The input tensor is also expected to be of float dtype in ``[0, 1]``.
-    This transform does not support PIL images.
+    The input tensor is also expected to be of float dtype in ``[0, 1]``,
+    or of ``uint8`` dtype in ``[0, 255]``. This transform does not support PIL
+    images.
+
+    Regardless of the dtype used, the parameters of the function use the same
+    scale, so a ``mean`` parameter of 0.5 will result in an average value
+    increase of 0.5 units for float images, and an average increase of 127.5
+    units for ``uint8`` images.
 
     Args:
         mean (float): Mean of the sampled normal distribution. Default is 0.
         sigma (float): Standard deviation of the sampled normal distribution. Default is 0.1.
-        clip (bool, optional): Whether to clip the values in ``[0, 1]`` after adding noise. Default is True.
+        clip (bool, optional): Whether to clip the values after adding noise, be it to
+            ``[0, 1]`` for floats or to ``[0, 255]`` for ``uint8``. Setting this parameter to
+            ``False`` may cause unsigned integer overflows with uint8 inputs.
+            Default is True.
     """
 
     def __init__(self, mean: float = 0.0, sigma: float = 0.1, clip=True) -> None:

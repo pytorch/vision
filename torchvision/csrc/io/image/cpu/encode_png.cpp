@@ -47,13 +47,15 @@ void torch_png_write_data(
   size_t nsize = p->size + length;
 
   /* allocate or grow buffer */
-  if (p->buffer)
+  if (p->buffer) {
     p->buffer = (char*)realloc(p->buffer, nsize);
-  else
+  } else {
     p->buffer = (char*)malloc(nsize);
+  }
 
-  if (!p->buffer)
+  if (!p->buffer) {
     png_error(png_ptr, "Write Error");
+  }
 
   /* copy new bytes to end of buffer */
   memcpy(p->buffer + p->size, data, length);

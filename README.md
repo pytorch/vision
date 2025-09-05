@@ -20,19 +20,22 @@ versions.
 
 | `torch`            | `torchvision`      | Python              |
 | ------------------ | ------------------ | ------------------- |
-| `main` / `nightly` | `main` / `nightly` | `>=3.9`, `<=3.12`   |
-| `2.5`              | `0.20`             | `>=3.9`, `<=3.12`   |
-| `2.4`              | `0.19`             | `>=3.8`, `<=3.12`   |
-| `2.3`              | `0.18`             | `>=3.8`, `<=3.12`   |
-| `2.2`              | `0.17`             | `>=3.8`, `<=3.11`   |
-| `2.1`              | `0.16`             | `>=3.8`, `<=3.11`   |
-| `2.0`              | `0.15`             | `>=3.8`, `<=3.11`   |
+| `main` / `nightly` | `main` / `nightly` | `>=3.10`, `<=3.13`   |
+| `2.8`              | `0.23`             | `>=3.9`, `<=3.13`   |
+| `2.7`              | `0.22`             | `>=3.9`, `<=3.13`   |
+| `2.6`              | `0.21`             | `>=3.9`, `<=3.12`   |
 
 <details>
     <summary>older versions</summary>
 
 | `torch` | `torchvision`     | Python                    |
 |---------|-------------------|---------------------------|
+| `2.5`              | `0.20`             | `>=3.9`, `<=3.12`   |
+| `2.4`              | `0.19`             | `>=3.8`, `<=3.12`   |
+| `2.3`              | `0.18`             | `>=3.8`, `<=3.12`   |
+| `2.2`              | `0.17`             | `>=3.8`, `<=3.11`   |
+| `2.1`              | `0.16`             | `>=3.8`, `<=3.11`   |
+| `2.0`              | `0.15`             | `>=3.8`, `<=3.11`   |
 | `1.13`  | `0.14`            | `>=3.7.2`, `<=3.10`       |
 | `1.12`  | `0.13`            | `>=3.7`, `<=3.10`         |
 | `1.11`  | `0.12`            | `>=3.7`, `<=3.10`         |
@@ -60,19 +63,6 @@ Torchvision currently supports the following image backends:
     - [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - a **much faster** drop-in replacement for Pillow with SIMD.
 
 Read more in in our [docs](https://pytorch.org/vision/stable/transforms.html).
-
-## [UNSTABLE] Video Backend
-
-Torchvision currently supports the following video backends:
-
-- [pyav](https://github.com/PyAV-Org/PyAV) (default) - Pythonic binding for ffmpeg libraries.
-- video_reader - This needs ffmpeg to be installed and torchvision to be built from source. There shouldn't be any
-  conflicting version of ffmpeg installed. Currently, this is only supported on Linux.
-
-```
-conda install -c conda-forge 'ffmpeg<4.3'
-python setup.py install
-```
 
 # Using the models on C++
 

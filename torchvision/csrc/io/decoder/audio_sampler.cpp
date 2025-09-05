@@ -54,7 +54,7 @@ bool AudioSampler::init(const SamplerParameters& params) {
   AVChannelLayout channel_in;
   av_channel_layout_default(&channel_out, params.out.audio.channels);
   av_channel_layout_default(&channel_in, params.in.audio.channels);
-  int ret = swr_alloc_set_opts2(
+  swr_alloc_set_opts2(
       &swrContext_,
       &channel_out,
       (AVSampleFormat)params.out.audio.format,
