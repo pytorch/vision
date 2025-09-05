@@ -138,10 +138,11 @@ class Caltech101(VisionDataset):
             filename="caltech-101.zip",
             md5="3138e1922a9193bfa496528edbbc45d0",
         )
-        extracted_dir = os.path.join(self.root, "caltech-101")
-        extract_archive(os.path.join(extracted_dir, "101_ObjectCategories.tar.gz"), self.root)
-        extract_archive(os.path.join(extracted_dir, "Annotations.tar.gz"), self.root) # Note: Annotations is now also .tar.gz in the new archive
-        shutil.rmtree(extracted_dir)
+        gzip_folder = os.path.join(self.root, "caltech-101")
+        for gzip_file in os.listdir(gzip_folder):
+            if gzip_file.endswith(".gz"):
+                extract_archive(os.path.join(gzip_folder, gzip_file), self.root)
+        shutil.rmtree(gzip_folder)
         os.remove(os.path.join(self.root, "caltech-101.zip"))
        
 
