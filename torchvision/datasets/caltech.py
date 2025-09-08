@@ -1,11 +1,12 @@
 import os
 import os.path
+import shutil
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
-import shutil
+
 from PIL import Image
 
-from .utils import download_and_extract_archive, verify_str_arg,extract_archive
+from .utils import download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -144,8 +145,6 @@ class Caltech101(VisionDataset):
                 extract_archive(os.path.join(gzip_folder, gzip_file), self.root)
         shutil.rmtree(gzip_folder)
         os.remove(os.path.join(self.root, "caltech-101.zip"))
-       
-
 
     def extra_repr(self) -> str:
         return "Target type: {target_type}".format(**self.__dict__)
