@@ -28,9 +28,9 @@ NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 # video decoding backends in torchvision. I'm renaming this to "gpu video
 # decoder" where possible, keeping user facing names (like the env var below) to
 # the old scheme for BC.
-USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "1") == "1"
+USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "0") == "1"
 # Same here: "use ffmpeg" was used to denote "use cpu video decoder".
-USE_CPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
+USE_CPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_FFMPEG", "0") == "1"
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
 TORCHVISION_LIBRARY = os.environ.get("TORCHVISION_LIBRARY", "")
