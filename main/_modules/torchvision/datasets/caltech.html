@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+7bd8066) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.24.0a0+cdc1fee) &#x25BC</a>
     </div>
     
 
@@ -413,12 +413,13 @@
   <h1>Source code for torchvision.datasets.caltech</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os.path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_and_extract_archive</span><span class="p">,</span> <span class="n">verify_str_arg</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_and_extract_archive</span><span class="p">,</span> <span class="n">extract_archive</span><span class="p">,</span> <span class="n">verify_str_arg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.vision</span><span class="w"> </span><span class="kn">import</span> <span class="n">VisionDataset</span>
 
 
@@ -546,17 +547,17 @@
             <span class="k">return</span>
 
         <span class="n">download_and_extract_archive</span><span class="p">(</span>
-            <span class="s2">&quot;https://drive.google.com/file/d/137RyRjvTBkBiIfeYBNZBtViDHQ6_Ewsp&quot;</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
-            <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;101_ObjectCategories.tar.gz&quot;</span><span class="p">,</span>
-            <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;b224c7392d521a49829488ab0f1120d9&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;https://data.caltech.edu/records/mzrjq-6wc02/files/caltech-101.zip&quot;</span><span class="p">,</span>
+            <span class="n">download_root</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
+            <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;caltech-101.zip&quot;</span><span class="p">,</span>
+            <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;3138e1922a9193bfa496528edbbc45d0&quot;</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">download_and_extract_archive</span><span class="p">(</span>
-            <span class="s2">&quot;https://drive.google.com/file/d/175kQy3UsZ0wUEHZjqkUDdNVssr7bgh_m&quot;</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
-            <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;Annotations.tar&quot;</span><span class="p">,</span>
-            <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;6f83eeb1f24d99cab4eb377263132c91&quot;</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="n">gzip_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;caltech-101&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">gzip_file</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">gzip_folder</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">gzip_file</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">):</span>
+                <span class="n">extract_archive</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gzip_folder</span><span class="p">,</span> <span class="n">gzip_file</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">gzip_folder</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;caltech-101.zip&quot;</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="s2">&quot;Target type: </span><span class="si">{target_type}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span></div>
@@ -646,7 +647,7 @@
             <span class="k">return</span>
 
         <span class="n">download_and_extract_archive</span><span class="p">(</span>
-            <span class="s2">&quot;https://drive.google.com/file/d/1r6o0pSROcV1_VwT4oSjA2FBUSCWGuxLK&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;https://data.caltech.edu/records/nyy15-4j048/files/256_ObjectCategories.tar&quot;</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span>
             <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;256_ObjectCategories.tar&quot;</span><span class="p">,</span>
             <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;67b4f42ca05d46448c6bb8ecd2220f6d&quot;</span><span class="p">,</span>
