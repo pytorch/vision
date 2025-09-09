@@ -36,6 +36,9 @@ def drop_block2d(
 
     N, C, H, W = input.size()
     block_size = min(block_size, W, H)
+    if block_size % 2 == 0:
+        raise ValueError(f"block size should be odd. Got {block_size} which is even.")
+
     # compute the gamma of Bernoulli distribution
     gamma = (p * H * W) / ((block_size**2) * ((H - block_size + 1) * (W - block_size + 1)))
     noise = torch.empty((N, C, H - block_size + 1, W - block_size + 1), dtype=input.dtype, device=input.device)
@@ -82,6 +85,9 @@ def drop_block3d(
 
     N, C, D, H, W = input.size()
     block_size = min(block_size, D, H, W)
+    if block_size % 2 == 0:
+        raise ValueError(f"block size should be odd. Got {block_size} which is even.")
+
     # compute the gamma of Bernoulli distribution
     gamma = (p * D * H * W) / ((block_size**3) * ((D - block_size + 1) * (H - block_size + 1) * (W - block_size + 1)))
     noise = torch.empty(
