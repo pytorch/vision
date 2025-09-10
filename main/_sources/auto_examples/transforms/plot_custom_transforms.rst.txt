@@ -127,8 +127,8 @@ where our samples are just images, bounding boxes and labels:
  .. code-block:: none
 
     Output image shape: torch.Size([3, 224, 224])
-    out_bboxes = BoundingBoxes([[221,   0, 224,   0],
-                   [114,  27, 150,  61]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224), clamping_mode=soft)
+    out_bboxes = BoundingBoxes([[218,   7, 224,  16],
+                   [148,  43, 171,  61]], format=BoundingBoxFormat.XYXY, canvas_size=(224, 224), clamping_mode=soft)
     out_label = 3
 
 

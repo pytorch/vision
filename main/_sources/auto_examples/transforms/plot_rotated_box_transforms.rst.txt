@@ -288,10 +288,10 @@ the exact same clamped boxes. The non-clamped boxes will show dimensions that ar
  .. code-block:: none
 
     boxes with soft clamping:
-    [(<PIL.Image.Image image mode=RGB size=800x800 at 0x7F31662E0C40>, BoundingBoxes([[478.8188, 400.9185, 570.0000, 874.1443,  -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(800, 800), clamping_mode=soft)), (<PIL.Image.Image image mode=RGB size=1200x1200 at 0x7F31662E0790>, BoundingBoxes([[ 678.9319,  600.0001,  569.9992, 1278.9989,   -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1200, 1200), clamping_mode=soft)), (<PIL.Image.Image image mode=RGB size=2000x2000 at 0x7F31662E1DB0>, BoundingBoxes([[1089.0000,  918.0000,  570.0001, 1840.0000,   -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(2000, 2000), clamping_mode=soft)), (<PIL.Image.Image image mode=RGB size=2364x1542 at 0x7F31662E1E70>, BoundingBoxes([[1260.9314,  771.0001,  570.0002, 1623.5675,   -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1542, 2364), clamping_mode=soft))]
+    [(<PIL.Image.Image image mode=RGB size=800x800 at 0x7FA793420D00>, BoundingBoxes([[478.8188, 400.9185, 570.0000, 874.1443,  -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(800, 800), clamping_mode=soft)), (<PIL.Image.Image image mode=RGB size=1200x1200 at 0x7FA793420850>, BoundingBoxes([[ 678.9319,  600.0001,  569.9992, 1278.9989,   -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1200, 1200), clamping_mode=soft)), (<PIL.Image.Image image mode=RGB size=2000x2000 at 0x7FA793421E70>, BoundingBoxes([[1089.0000,  918.0000,  570.0001, 1840.0000,   -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(2000, 2000), clamping_mode=soft)), (<PIL.Image.Image image mode=RGB size=2364x1542 at 0x7FA793421F30>, BoundingBoxes([[1260.9314,  771.0001,  570.0002, 1623.5675,   -7.0000]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1542, 2364), clamping_mode=soft))]
 
     boxes with no clamping:
-    [(<PIL.Image.Image image mode=RGB size=800x800 at 0x7F31662E2200>, BoundingBoxes([[ 489.,  318.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(800, 800), clamping_mode=None)), (<PIL.Image.Image image mode=RGB size=1200x1200 at 0x7F31662E3AC0>, BoundingBoxes([[ 689.,  518.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1200, 1200), clamping_mode=None)), (<PIL.Image.Image image mode=RGB size=2000x2000 at 0x7F31662E3BB0>, BoundingBoxes([[1089.,  918.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(2000, 2000), clamping_mode=None)), (<PIL.Image.Image image mode=RGB size=2364x1542 at 0x7F31662E2BF0>, BoundingBoxes([[1271.,  689.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1542, 2364), clamping_mode=None))]
+    [(<PIL.Image.Image image mode=RGB size=800x800 at 0x7FA7934222C0>, BoundingBoxes([[ 489.,  318.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(800, 800), clamping_mode=None)), (<PIL.Image.Image image mode=RGB size=1200x1200 at 0x7FA793423B80>, BoundingBoxes([[ 689.,  518.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1200, 1200), clamping_mode=None)), (<PIL.Image.Image image mode=RGB size=2000x2000 at 0x7FA793423C70>, BoundingBoxes([[1089.,  918.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(2000, 2000), clamping_mode=None)), (<PIL.Image.Image image mode=RGB size=2364x1542 at 0x7FA793422CB0>, BoundingBoxes([[1271.,  689.,  570., 1840.,   -7.]], format=BoundingBoxFormat.CXCYWHR, canvas_size=(1542, 2364), clamping_mode=None))]
 
 
 
@@ -345,7 +345,7 @@ Here's an example illustrating all of these option:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 6.735 seconds)
+   **Total running time of the script:** (0 minutes 7.182 seconds)
 
 
 .. _sphx_glr_download_auto_examples_transforms_plot_rotated_box_transforms.py:

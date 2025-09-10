@@ -102,6 +102,23 @@ Transforms
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This example illustrates how to define and use keypoints. For this tutorial, we use this picture of a ceramic figure from the pre-columbian period. The image is specified &quot;public domain&quot; (https://www.metmuseum.org/art/collection/search/502727).">
+
+.. only:: html
+
+  .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_keypoints_transforms_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_auto_examples_transforms_plot_keypoints_transforms.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Transforms on KeyPoints</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="This guide explains how to write transforms that are compatible with the torchvision transforms V2 API.">
 
 .. only:: html
@@ -166,6 +183,7 @@ Transforms
    /auto_examples/transforms/plot_transforms_e2e
    /auto_examples/transforms/plot_cutmix_mixup
    /auto_examples/transforms/plot_rotated_box_transforms
+   /auto_examples/transforms/plot_keypoints_transforms
    /auto_examples/transforms/plot_custom_transforms
    /auto_examples/transforms/plot_tv_tensors
    /auto_examples/transforms/plot_custom_tv_tensors
