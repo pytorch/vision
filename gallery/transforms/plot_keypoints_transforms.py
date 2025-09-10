@@ -1,12 +1,12 @@
 """
 ===============================================================
-Transforms on Rotated Bounding Boxes
+Transforms on KeyPoints
 ===============================================================
 
 This example illustrates how to define and use rotated bounding boxes.
 
 .. note::
-    Support for rotated bounding boxes was released in TorchVision 0.23 and is
+    Support for keypoints was released in TorchVision 0.23 and is
     currently a BETA feature. We don't expect the API to change, but there may
     be some rare edge-cases. If you find any issues, please report them on
     our bug tracker: https://github.com/pytorch/vision/issues?q=is:open+is:issue
