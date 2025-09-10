@@ -28,8 +28,8 @@ from helpers import plot
 plt.rcParams["figure.figsize"] = [10, 5]
 plt.rcParams["savefig.bbox"] = "tight"
 
-# if you change the seed, make sure that the randomly-applied transforms
-# properly show that the image can be both transformed and *not* transformed!
+# if you change the seed, make sure that the transformed output
+# still make sense
 torch.manual_seed(0)
 
 # If you're trying to run that on Colab, you can download the assets and the
