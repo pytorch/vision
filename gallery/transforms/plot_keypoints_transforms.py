@@ -3,7 +3,9 @@
 Transforms on KeyPoints
 ===============================================================
 
-This example illustrates how to define and use keypoints.
+This example illustrates how to define and use keypoints. 
+For this tutorial, we use this picture of a ceramic figure from the pre-columbian period. 
+The image is specified "public domain" (https://www.metmuseum.org/art/collection/search/502727).
 
 .. note::
     Support for keypoints was released in TorchVision 0.23 and is
