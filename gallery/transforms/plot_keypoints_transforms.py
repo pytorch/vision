@@ -3,7 +3,7 @@
 Transforms on KeyPoints
 ===============================================================
 
-This example illustrates how to define and use rotated bounding boxes.
+This example illustrates how to define and use keypoints.
 
 .. note::
     Support for keypoints was released in TorchVision 0.23 and is
@@ -75,7 +75,7 @@ plot([(orig_img, orig_pts)])
 # Using :class:`~torchvision.transforms.RandomRotation`:
 rotater = v2.RandomRotation(degrees=(0, 180), expand=True)
 rotated_imgs = [rotater((orig_img, orig_pts)) for _ in range(4)]
-plot([(orig_img, orig_pts)] + rotated_imgs, bbox_width=10)
+plot([(orig_img, orig_pts)] + rotated_imgs)
 
 # %%
 # Using :class:`~torchvision.transforms.Pad`:
@@ -83,7 +83,7 @@ padded_imgs_and_points = [
     v2.Pad(padding=padding)(orig_img, orig_pts)
     for padding in (30, 50, 100, 200)
 ]
-plot([(orig_img, orig_pts)] + padded_imgs_and_points, bbox_width=10)
+plot([(orig_img, orig_pts)] + padded_imgs_and_points)
 
 # %%
 # Using :class:`~torchvision.transforms.Resize`:
@@ -91,13 +91,13 @@ resized_imgs = [
     v2.Resize(size=size)(orig_img, orig_pts)
     for size in (300, 500, 1000, orig_img.size)
 ]
-plot([(orig_img, orig_pts)] + resized_imgs, bbox_width=5)
+plot([(orig_img, orig_pts)] + resized_imgs)
 
 # %%
 # Using :class:`~torchvision.transforms.RandomPerspective`:
 perspective_transformer = v2.RandomPerspective(distortion_scale=0.6, p=1.0)
 perspective_imgs = [perspective_transformer(orig_img, orig_pts) for _ in range(4)]
-plot([(orig_img, orig_pts)] + perspective_imgs, bbox_width=10)
+plot([(orig_img, orig_pts)] + perspective_imgs)
 
 # %%
 # Using :class:`~torchvision.transforms.CenterCrop`:
