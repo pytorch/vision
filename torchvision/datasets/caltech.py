@@ -1,11 +1,12 @@
 import os
 import os.path
+import shutil
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
-from .utils import download_and_extract_archive, verify_str_arg
+from .utils import download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -133,17 +134,17 @@ class Caltech101(VisionDataset):
             return
 
         download_and_extract_archive(
-            "https://drive.google.com/file/d/137RyRjvTBkBiIfeYBNZBtViDHQ6_Ewsp",
-            self.root,
-            filename="101_ObjectCategories.tar.gz",
-            md5="b224c7392d521a49829488ab0f1120d9",
+            "https://data.caltech.edu/records/mzrjq-6wc02/files/caltech-101.zip",
+            download_root=self.root,
+            filename="caltech-101.zip",
+            md5="3138e1922a9193bfa496528edbbc45d0",
         )
-        download_and_extract_archive(
-            "https://drive.google.com/file/d/175kQy3UsZ0wUEHZjqkUDdNVssr7bgh_m",
-            self.root,
-            filename="Annotations.tar",
-            md5="6f83eeb1f24d99cab4eb377263132c91",
-        )
+        gzip_folder = os.path.join(self.root, "caltech-101")
+        for gzip_file in os.listdir(gzip_folder):
+            if gzip_file.endswith(".gz"):
+                extract_archive(os.path.join(gzip_folder, gzip_file), self.root)
+        shutil.rmtree(gzip_folder)
+        os.remove(os.path.join(self.root, "caltech-101.zip"))
 
     def extra_repr(self) -> str:
         return "Target type: {target_type}".format(**self.__dict__)
@@ -233,7 +234,7 @@ class Caltech256(VisionDataset):
             return
 
         download_and_extract_archive(
-            "https://drive.google.com/file/d/1r6o0pSROcV1_VwT4oSjA2FBUSCWGuxLK",
+            "https://data.caltech.edu/records/nyy15-4j048/files/256_ObjectCategories.tar",
             self.root,
             filename="256_ObjectCategories.tar",
             md5="67b4f42ca05d46448c6bb8ecd2220f6d",
