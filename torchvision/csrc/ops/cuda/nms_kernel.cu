@@ -34,8 +34,8 @@ __global__ void nms_kernel_impl(
     double iou_threshold,
     const T* dev_boxes,
     unsigned long long* dev_mask) {
-  const int row_start = blockIdx.y;
-  const int col_start = blockIdx.x;
+  const auto row_start = blockIdx.y;
+  const auto col_start = blockIdx.x;
 
   if (row_start > col_start)
     return;
@@ -59,7 +59,7 @@ __global__ void nms_kernel_impl(
   __syncthreads();
 
   if (threadIdx.x < row_size) {
-    const int cur_box_idx = threadsPerBlock * row_start + threadIdx.x;
+    const auto cur_box_idx = threadsPerBlock * row_start + threadIdx.x;
     const T* cur_box = dev_boxes + cur_box_idx * 4;
     int i = 0;
     unsigned long long t = 0;
@@ -84,7 +84,7 @@ __global__ static void gather_keep_from_mask(
   // Taken and adapted from mmcv
   // https://github.com/open-mmlab/mmcv/blob/03ce9208d18c0a63d7ffa087ea1c2f5661f2441a/mmcv/ops/csrc/common/cuda/nms_cuda_kernel.cuh#L76
   const int col_blocks = ceil_div(n_boxes, threadsPerBlock);
-  const int thread_id = threadIdx.x;
+  const auto thread_id = threadIdx.x;
 
   // Mark the bboxes which have been removed.
   extern __shared__ unsigned long long removed[];
