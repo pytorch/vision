@@ -29,7 +29,7 @@ jobs:
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euo pipefail
 
@@ -48,7 +48,7 @@ jobs:
     with:
       repository: pytorch/vision
       runner: ${{ matrix.runner }}
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euo pipefail
 
@@ -74,7 +74,7 @@ jobs:
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euo pipefail
 

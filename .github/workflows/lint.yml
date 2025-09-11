@@ -17,7 +17,7 @@ jobs:
       contents: read
     with:
       repository: pytorch/vision
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euo pipefail
 
@@ -47,7 +47,7 @@ jobs:
       contents: read
     with:
       repository: pytorch/vision
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euo pipefail
 

@@ -36,7 +36,7 @@ jobs:
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euo pipefail
 
@@ -62,7 +62,7 @@ jobs:
       repository: pytorch/vision
       timeout: 240
       runner: ${{ matrix.runner }}
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euo pipefail
 
@@ -99,7 +99,7 @@ jobs:
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euxo pipefail
 
@@ -118,7 +118,7 @@ jobs:
   #     contents: read
   #   with:
   #     repository: pytorch/vision
-  #     test-infra-ref: main
+  #     test-infra-ref: release/2.9
   #     script: |
   #       set -euo pipefail
 
@@ -153,7 +153,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'run-extended')
     with:
       repository: pytorch/vision
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euo pipefail
 
