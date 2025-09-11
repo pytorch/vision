@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   generate-matrix:
-    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
+    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@release/2.9
     with:
       package-type: wheel
       os: windows-arm64
@@ -40,7 +40,7 @@ jobs:
             package-name: torchvision
             architecture: "arm64"
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
+    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@release/2.9
     with:
       repository: ${{ matrix.repository }}
       ref: ""
