@@ -14,14 +14,14 @@ on:
 
 jobs:
   build:
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.9
     permissions:
       id-token: write
       contents: read
     with:
       repository: pytorch/vision
       upload-artifact: docs
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euo pipefail
 
@@ -82,7 +82,7 @@ jobs:
     needs: build
     if: github.repository == 'pytorch/vision' && github.event_name == 'push' &&
         ((github.ref_type == 'branch' && github.ref_name == 'main') || github.ref_type == 'tag')
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.9
     permissions:
       id-token: write
       contents: write
@@ -90,7 +90,7 @@ jobs:
       repository: pytorch/vision
       download-artifact: docs
       ref: gh-pages
-      test-infra-ref: main
+      test-infra-ref: release/2.9
       script: |
         set -euo pipefail
 
