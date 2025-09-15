@@ -404,7 +404,7 @@ def draw_bounding_boxes(
             if fill_labels:
                 left, top, right, bottom = draw.textbbox((bbox[0] + margin, bbox[1] + margin), label, font=txt_font)
                 draw.rectangle(
-                    (left - box_margin, top - box_margin, right + box_margin, bottom + box_margin), fill=label_bg_color
+                    (left - box_margin, top - box_margin, right + box_margin, bottom + box_margin), fill=label_bg_color  # type: ignore[arg-type]
                 )
             draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)  # type: ignore[arg-type]
 
