@@ -359,14 +359,14 @@ def draw_bounding_boxes(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
         )
 
-    colors = _parse_colors(colors, num_objects=num_boxes)
+    colors = _parse_colors(colors, num_objects=num_boxes)  # type: ignore[assignment]
     if label_colors or fill_labels:
         label_colors = _parse_colors(label_colors if label_colors else "black", num_objects=num_boxes)  # type: ignore[assignment]
     else:
         label_colors = colors.copy()  # type: ignore[assignment]
 
     if fill_labels and label_background_colors:
-        label_background_colors = _parse_colors(label_background_colors, num_objects=num_boxes)
+        label_background_colors = _parse_colors(label_background_colors, num_objects=num_boxes)  # type: ignore[assignment]
     else:
         label_background_colors = colors.copy()  # type: ignore[assignment]
 
@@ -404,7 +404,7 @@ def draw_bounding_boxes(
             if fill_labels:
                 left, top, right, bottom = draw.textbbox((bbox[0] + margin, bbox[1] + margin), label, font=txt_font)
                 draw.rectangle(
-                    (left - box_margin, top - box_margin, right + box_margin, bottom + box_margin), fill=label_bg_color
+                    (left - box_margin, top - box_margin, right + box_margin, bottom + box_margin), fill=label_bg_color  # type: ignore[arg-type]
                 )
             draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)  # type: ignore[arg-type]
 

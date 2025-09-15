@@ -409,7 +409,7 @@ def test_draw_segmentation_masks_errors(device):
         utils.draw_segmentation_masks(image=img, masks=masks_bad_shape)
     with pytest.raises(ValueError, match="Number of colors must be equal or larger than the number of objects"):
         utils.draw_segmentation_masks(image=img, masks=masks, colors=[])
-    with pytest.raises(ValueError, match="`colors` must be a tuple or a string, or a list thereof"):
+    with pytest.raises(ValueError, match="colors must be a tuple or a string, or a list thereof"):
         bad_colors = np.array(["red", "blue"])  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
     with pytest.raises(ValueError, match="If passed as tuple, colors should be an RGB triplet"):
