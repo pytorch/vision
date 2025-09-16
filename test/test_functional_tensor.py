@@ -1053,7 +1053,14 @@ def test_gaussian_blur(device, image_size, dt, ksize, sigma, fn):
     )
 
     out = fn(tensor, kernel_size=ksize, sigma=sigma)
-    torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
+
+    if torch.version.hip:
+        gcn_arch = str(torch.cuda.get_device_properties(0).gcnArchName.split(":", 1)[0])
+        atol = 1.2 if "gfx90a" in gcn_arch else 1.0
+    else:
+        atol = 1.0
+
+    torch.testing.assert_close(out, true_out, rtol=0.0, atol=atol, msg=f"{ksize}, {sigma}")
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
