@@ -10,7 +10,6 @@ import numpy as np
 import torch
 from PIL import __version__ as PILLOW_VERSION_STRING, Image, ImageColor, ImageDraw, ImageFont
 
-
 __all__ = [
     "_Image_fromarray",
     "make_grid",
@@ -293,6 +292,7 @@ def draw_bounding_boxes(
     font: Optional[str] = None,
     font_size: Optional[int] = None,
     label_colors: Optional[Union[list[Union[str, tuple[int, int, int]]], str, tuple[int, int, int]]] = None,
+    label_background_colors: Optional[Union[list[Union[str, tuple[int, int, int]]], str, tuple[int, int, int]]] = None,
     fill_labels: bool = False,
 ) -> torch.Tensor:
     """
@@ -320,7 +320,10 @@ def draw_bounding_boxes(
         font_size (int): The requested font size in points.
         label_colors (color or list of colors, optional): Colors for the label text.  See the description of the
             `colors` argument for details.  Defaults to the same colors used for the boxes, or to black if ``fill_labels`` is True.
-        fill_labels (bool): If `True` fills the label background with specified box color (from the ``colors`` parameter). Default: False.
+        label_background_colors (color or list of colors, optional): Colors for the label text box fill. Defaults to the
+            same colors used for the boxes. Ignored when ``fill_labels`` is False.
+        fill_labels (bool): If `True` fills the label background with specified color (from the ``label_background_colors`` parameter,
+            or from the ``colors`` parameter if not specified). Default: False.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
@@ -356,11 +359,16 @@ def draw_bounding_boxes(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
         )
 
-    colors = _parse_colors(colors, num_objects=num_boxes)
+    colors = _parse_colors(colors, num_objects=num_boxes)  # type: ignore[assignment]
     if label_colors or fill_labels:
         label_colors = _parse_colors(label_colors if label_colors else "black", num_objects=num_boxes)  # type: ignore[assignment]
     else:
         label_colors = colors.copy()  # type: ignore[assignment]
+
+    if fill_labels and label_background_colors:
+        label_background_colors = _parse_colors(label_background_colors, num_objects=num_boxes)  # type: ignore[assignment]
+    else:
+        label_background_colors = colors.copy()  # type: ignore[assignment]
 
     if font is None:
         if font_size is not None:
@@ -385,7 +393,7 @@ def draw_bounding_boxes(
     else:
         draw = _ImageDrawTV(img_to_draw)
 
-    for bbox, color, label, label_color in zip(img_boxes, colors, labels, label_colors):  # type: ignore[arg-type]
+    for bbox, color, label, label_color, label_bg_color in zip(img_boxes, colors, labels, label_colors, label_background_colors):  # type: ignore[arg-type]
         draw_method = draw.oriented_rectangle if len(bbox) > 4 else draw.rectangle
         fill_color = color + (100,) if fill else None
         draw_method(bbox, width=width, outline=color, fill=fill_color)
@@ -396,7 +404,7 @@ def draw_bounding_boxes(
             if fill_labels:
                 left, top, right, bottom = draw.textbbox((bbox[0] + margin, bbox[1] + margin), label, font=txt_font)
                 draw.rectangle(
-                    (left - box_margin, top - box_margin, right + box_margin, bottom + box_margin), fill=color
+                    (left - box_margin, top - box_margin, right + box_margin, bottom + box_margin), fill=label_bg_color  # type: ignore[arg-type]
                 )
             draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)  # type: ignore[arg-type]
 
@@ -545,7 +553,7 @@ def draw_keypoints(
     if visibility.shape != keypoints.shape[:-1]:
         raise ValueError(
             "keypoints and visibility must have the same dimensionality for num_instances and K. "
-            f"Got {visibility.shape = } and {keypoints.shape = }"
+            f"Got {visibility.shape=} and {keypoints.shape=}"
         )
 
     original_dtype = image.dtype
@@ -746,7 +754,7 @@ def _parse_colors(
                 f"Number of colors must be equal or larger than the number of objects, but got {len(colors)} < {num_objects}."
             )
     elif not isinstance(colors, (tuple, str)):
-        raise ValueError(f"`colors` must be a tuple or a string, or a list thereof, but got {colors}.")
+        raise ValueError(f"colors must be a tuple or a string, or a list thereof, but got {colors}.")
     elif isinstance(colors, tuple) and len(colors) != 3:
         raise ValueError(f"If passed as tuple, colors should be an RGB triplet, but got {colors}.")
     else:  # colors specifies a single color for all objects

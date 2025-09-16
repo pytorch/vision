@@ -23,15 +23,13 @@ case $(uname) in
 esac
 
 echo '::group::Create build environment'
-# See https://github.com/pytorch/vision/issues/7296 for ffmpeg
 conda create \
   --name ci \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
   libpng \
-  libwebp \
-  'ffmpeg<4.3'
+  libwebp
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools==72.1.0
@@ -80,22 +78,8 @@ if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
 fi
 echo '::endgroup::'
 
-echo '::group::Install third party dependencies prior to TorchVision install'
-# Installing with `easy_install`, e.g. `python setup.py install` or `python setup.py develop`, has some quirks when
-# when pulling in third-party dependencies. For example:
-# - On Windows, we often hit an SSL error although `pip` can install just fine.
-# - It happily pulls in pre-releases, which can lead to more problems down the line.
-#   `pip` does not unless explicitly told to do so.
-# Thus, we use `easy_install` to extract the third-party dependencies here and install them upfront with `pip`.
-python setup.py egg_info
-# The requires.txt cannot be used with `pip install -r` directly. The requirements are listed at the top and the
-# optional dependencies come in non-standard syntax after a blank line. Thus, we just extract the header.
-sed -e '/^$/,$d' *.egg-info/requires.txt | tee requirements.txt
-pip install --progress-bar=off -r requirements.txt
-echo '::endgroup::'
-
 echo '::group::Install TorchVision'
-python setup.py develop
+pip install -e . -v --no-build-isolation
 echo '::endgroup::'
 
 echo '::group::Install torchvision-extra-decoders'

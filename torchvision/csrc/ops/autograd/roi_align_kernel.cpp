@@ -3,6 +3,8 @@
 #include <torch/autograd.h>
 #include <torch/types.h>
 
+#include <utility>
+
 namespace vision {
 namespace ops {
 
@@ -15,8 +17,8 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
       const torch::autograd::Variable& input,
       const torch::autograd::Variable& rois,
       double spatial_scale,
-      c10::SymInt pooled_height,
-      c10::SymInt pooled_width,
+      const c10::SymInt& pooled_height,
+      const c10::SymInt& pooled_width,
       int64_t sampling_ratio,
       bool aligned) {
     ctx->saved_data["spatial_scale"] = spatial_scale;
@@ -90,12 +92,12 @@ class ROIAlignBackwardFunction
         grad,
         rois,
         spatial_scale,
-        pooled_height,
-        pooled_width,
-        batch_size,
-        channels,
-        height,
-        width,
+        std::move(pooled_height),
+        std::move(pooled_width),
+        std::move(batch_size),
+        std::move(channels),
+        std::move(height),
+        std::move(width),
         sampling_ratio,
         aligned);
     return {result};

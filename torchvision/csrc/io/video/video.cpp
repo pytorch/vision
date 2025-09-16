@@ -244,7 +244,6 @@ void Video::_init(std::string stream, int64_t numThreads) {
   streamsMetadata.insert("cc", ccMetadata);
 
   succeeded = setCurrentStream(stream);
-  LOG(INFO) << "\nDecoder inited with: " << succeeded << "\n";
   if (std::get<1>(current_stream) != -1) {
     LOG(INFO)
         << "Stream index set to " << std::get<1>(current_stream)
@@ -314,8 +313,6 @@ void Video::Seek(double ts, bool fastSeek = false) {
   // callback and metadata defined in Video.h
   DecoderInCallback tmp_callback = callback;
   succeeded = decoder.init(params, std::move(tmp_callback), &metadata);
-
-  LOG(INFO) << "Decoder init at seek " << succeeded << "\n";
 }
 
 std::tuple<torch::Tensor, double> Video::Next() {
