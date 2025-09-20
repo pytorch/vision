@@ -19,6 +19,47 @@ static int chroma_plane_count(cudaVideoSurfaceFormat surface_format) {
       : 1;
 }
 
+NppStreamContext createNppStreamContext(CUcontext cu_context, CUstream cu_stream) {
+  // From 12.9, NPP recommends using a user-created NppStreamContext and using
+  // the `_Ctx()` calls:
+  // https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#npp-release-12-9-update-1
+  // And the nppGetStreamContext() helper is deprecated. We are explicitly
+  // supposed to create the NppStreamContext manually from the CUDA device
+  // properties:
+  // https://github.com/NVIDIA/CUDALibrarySamples/blob/d97803a40fab83c058bb3d68b6c38bd6eebfff43/NPP/README.md?plain=1#L54-L72
+
+  NppStreamContext nppCtx{};
+
+  // Get device ID
+  int device;
+  check_for_cuda_errors(cuCtxGetDevice(&device), __LINE__, __FILE__);
+  nppCtx.nCudaDeviceId = device;
+
+  // Get device properties using driver API
+  int multiProcessorCount, maxThreadsPerMultiProcessor, maxThreadsPerBlock, sharedMemPerBlock, major, minor;
+
+  check_for_cuda_errors(cuDeviceGetAttribute(&multiProcessorCount, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, device), __LINE__, __FILE__);
+  check_for_cuda_errors(cuDeviceGetAttribute(&maxThreadsPerMultiProcessor, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, device), __LINE__, __FILE__);
+  check_for_cuda_errors(cuDeviceGetAttribute(&maxThreadsPerBlock, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, device), __LINE__, __FILE__);
+  check_for_cuda_errors(cuDeviceGetAttribute(&sharedMemPerBlock, CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK, device), __LINE__, __FILE__);
+  check_for_cuda_errors(cuDeviceGetAttribute(&major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, device), __LINE__, __FILE__);
+  check_for_cuda_errors(cuDeviceGetAttribute(&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, device), __LINE__, __FILE__);
+
+  nppCtx.nCudaDeviceId = device;
+  nppCtx.nMultiProcessorCount = multiProcessorCount;
+  nppCtx.nMaxThreadsPerMultiProcessor = maxThreadsPerMultiProcessor;
+  nppCtx.nMaxThreadsPerBlock = maxThreadsPerBlock;
+  nppCtx.nSharedMemPerBlock = sharedMemPerBlock;
+  nppCtx.nCudaDevAttrComputeCapabilityMajor = major;
+  nppCtx.nCudaDevAttrComputeCapabilityMinor = minor;
+
+  // Set the CUDA stream
+  nppCtx.hStream = cu_stream;
+  check_for_cuda_errors(cuStreamGetFlags(cu_stream, &nppCtx.nStreamFlags), __LINE__, __FILE__);
+
+  return nppCtx;
+}
+
 /* Initialise cu_context and video_codec, create context lock and create parser
  * object.
  */
@@ -146,12 +187,16 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* disp_info) {
       (const uint8_t* const)(source_frame +
                              source_pitch * ((surface_height + 1) & ~1))};
 
-  auto err = nppiNV12ToRGB_709CSC_8u_P2C3R(
+  // TODO cache the NppStreamContext! It currently gets re-recated for every single frame.
+  NppStreamContext nppCtx = createNppStreamContext(cu_context, cuvidStream);
+
+  auto err = nppiNV12ToRGB_709CSC_8u_P2C3R_Ctx(
       source_arr,
       source_pitch,
       frame_ptr,
       width * 3,
-      {(int)decoded_frame.size(1), (int)decoded_frame.size(0)});
+      {(int)decoded_frame.size(1), (int)decoded_frame.size(0)},
+      nppCtx);
 
   TORCH_CHECK(
       err == NPP_NO_ERROR,
