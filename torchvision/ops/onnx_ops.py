@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+__all__ = ["onnx_translation_table"]
+
 from collections.abc import Callable
 import sys
 import warnings
@@ -8,7 +12,7 @@ import torch
 _INT64_MAX = sys.maxsize
 
 
-def nms(boxes, scores, iou_threshold: float):
+def _nms(boxes, scores, iou_threshold: float):
     import onnxscript
 
     op = onnxscript.opset18
@@ -50,7 +54,7 @@ def _process_sampling_ratio_for_roi_align(sampling_ratio: int):
     return sampling_ratio
 
 
-def roi_align(
+def _roi_align(
     input,
     rois,
     spatial_scale: float,
@@ -79,7 +83,7 @@ def roi_align(
     )
 
 
-def roi_pool(input, rois, spatial_scale: float, pooled_height: int, pooled_width: int):
+def _roi_pool(input, rois, spatial_scale: float, pooled_height: int, pooled_width: int):
     import onnxscript
 
     op = onnxscript.opset18
@@ -94,7 +98,7 @@ def roi_pool(input, rois, spatial_scale: float, pooled_height: int, pooled_width
 
 def onnx_translation_table() -> dict[torch._ops.OpOverload, Callable]:
     return {
-        torch.ops.torchvision.nms.default: nms,
-        torch.ops.torchvision.roi_align.default: roi_align,
-        torch.ops.torchvision.roi_pool.default: roi_pool,
+        torch.ops.torchvision.nms.default: _nms,
+        torch.ops.torchvision.roi_align.default: _roi_align,
+        torch.ops.torchvision.roi_pool.default: _roi_pool,
     }
