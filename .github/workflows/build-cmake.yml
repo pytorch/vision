@@ -66,7 +66,7 @@ jobs:
             gpu-arch-type: cpu
           - runner: windows.g5.4xlarge.nvidia.gpu
             gpu-arch-type: cuda
-            gpu-arch-version: "12.6"
+            gpu-arch-version: "13.0"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/windows_job.yml@main
     with:
@@ -78,7 +78,7 @@ jobs:
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.9
+        export PYTHON_VERSION=3.11
         export VC_YEAR=2022
         export VSDEVCMD_ARGS=""
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
