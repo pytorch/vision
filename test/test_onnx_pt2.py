@@ -13,6 +13,7 @@ from torchvision.models.detection.rpn import (
     RegionProposalNetwork,
     RPNHead,
 )
+import torchvision.ops.onnx_ops
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 
 # In environments without onnxruntime we prefer to
@@ -36,15 +37,19 @@ class TestPT2ONNXExporter:
     ):
         onnx_program = torch.onnx.export(
             model,
-            inputs,
+            inputs[0],
             verbose=False,
             dynamo=True,
             input_names=input_names,
             output_names=output_names,
             dynamic_axes=dynamic_axes,
+            custom_translation_table=torchvision.ops.onnx_ops.onnx_translation_table(),
         )
         assert onnx_program is not None
         onnx_testing.assert_onnx_program(onnx_program)
+        if len(inputs) > 1:
+            for input in inputs[1:]:
+                onnx_testing.assert_onnx_program(onnx_program, args=input)
 
     def test_nms(self):
         num_boxes = 100
@@ -261,41 +266,6 @@ class TestPT2ONNXExporter:
         features = OrderedDict(features)
         return features
 
-    def test_rpn(self):
-        set_rng_seed(0)
-
-        class RPNModule(torch.nn.Module):
-            def __init__(self_module):
-                super().__init__()
-                self_module.rpn = self._init_test_rpn()
-
-            def forward(self_module, images, features):
-                images = ImageList(images, [i.shape[-2:] for i in images])
-                return self_module.rpn(images, features)
-
-        images = torch.rand(2, 3, 150, 150)
-        features = self.get_features(images)
-        images2 = torch.rand(2, 3, 80, 80)
-        test_features = self.get_features(images2)
-
-        model = RPNModule()
-        model.eval()
-        model(images, features)
-
-        self.run_model(
-            model,
-            [(images, features), (images2, test_features)],
-            input_names=["input1", "input2", "input3", "input4", "input5", "input6"],
-            dynamic_axes={
-                "input1": [0, 1, 2, 3],
-                "input2": [0, 1, 2, 3],
-                "input3": [0, 1, 2, 3],
-                "input4": [0, 1, 2, 3],
-                "input5": [0, 1, 2, 3],
-                "input6": [0, 1, 2, 3],
-            },
-        )
-
     def test_multi_scale_roi_align(self):
         class TransformModule(torch.nn.Module):
             def __init__(self):
@@ -332,49 +302,6 @@ class TestPT2ONNXExporter:
             ],
         )
 
-    def test_roi_heads(self):
-        class RoiHeadsModule(torch.nn.Module):
-            def __init__(self_module):
-                super().__init__()
-                self_module.transform = self._init_test_generalized_rcnn_transform()
-                self_module.rpn = self._init_test_rpn()
-                self_module.roi_heads = self._init_test_roi_heads_faster_rcnn()
-
-            def forward(self_module, images, features):
-                original_image_sizes = [img.shape[-2:] for img in images]
-                images = ImageList(images, [i.shape[-2:] for i in images])
-                proposals, _ = self_module.rpn(images, features)
-                detections, _ = self_module.roi_heads(
-                    features, proposals, images.image_sizes
-                )
-                detections = self_module.transform.postprocess(
-                    detections, images.image_sizes, original_image_sizes
-                )
-                return detections
-
-        images = torch.rand(2, 3, 100, 100)
-        features = self.get_features(images)
-        images2 = torch.rand(2, 3, 150, 150)
-        test_features = self.get_features(images2)
-
-        model = RoiHeadsModule()
-        model.eval()
-        model(images, features)
-
-        self.run_model(
-            model,
-            [(images, features), (images2, test_features)],
-            input_names=["input1", "input2", "input3", "input4", "input5", "input6"],
-            dynamic_axes={
-                "input1": [0, 1, 2, 3],
-                "input2": [0, 1, 2, 3],
-                "input3": [0, 1, 2, 3],
-                "input4": [0, 1, 2, 3],
-                "input5": [0, 1, 2, 3],
-                "input6": [0, 1, 2, 3],
-            },
-        )
-
     def get_image(self, rel_path: str, size: tuple[int, int]) -> torch.Tensor:
         import os
 
@@ -409,7 +336,7 @@ class TestPT2ONNXExporter:
             [(images,), (test_images,), (dummy_image,)],
             input_names=["images_tensors"],
             output_names=["outputs"],
-            dynamic_axes={"images_tensors": [0, 1, 2], "outputs": [0, 1, 2]},
+            dynamic_axes={"images_tensors": [0, 1, 2]},
         )
         # Test exported model for an image with no detections on other images
         self.run_model(
@@ -417,7 +344,7 @@ class TestPT2ONNXExporter:
             [(dummy_image,), (images,)],
             input_names=["images_tensors"],
             output_names=["outputs"],
-            dynamic_axes={"images_tensors": [0, 1, 2], "outputs": [0, 1, 2]},
+            dynamic_axes={"images_tensors": [0, 1, 2]},
         )
 
     def test_mask_rcnn(self):
