@@ -88,6 +88,7 @@ class CustomGalleryExampleSortKey:
         "plot_transforms_e2e.py",
         "plot_cutmix_mixup.py",
         "plot_rotated_box_transforms.py",
+        "plot_keypoints_transforms.py",
         "plot_custom_transforms.py",
         "plot_tv_tensors.py",
         "plot_custom_tv_tensors.py",
