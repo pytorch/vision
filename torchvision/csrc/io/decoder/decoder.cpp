@@ -154,7 +154,8 @@ int Decoder::readFunction(void* opaque, uint8_t* buf, int size) {
   if (decoder == nullptr) {
     return 0;
   }
-  return decoder->readCallback(buf, size);
+  int bytesRead = decoder->readCallback(buf, size);
+  return bytesRead == 0 ? AVERROR_EOF : bytesRead;
 }
 
 /* static */
