@@ -34,6 +34,10 @@ def wrap(wrappee, *, like, **kwargs):
             clamping_mode=kwargs.get("clamping_mode", like.clamping_mode),
         )
     elif isinstance(like, KeyPoints):
-        return KeyPoints._wrap(wrappee, canvas_size=kwargs.get("canvas_size", like.canvas_size), clamping_mode=kwargs.get("clamping_mode", like.clamping_mode))
+        return KeyPoints._wrap(
+            wrappee,
+            canvas_size=kwargs.get("canvas_size", like.canvas_size),
+            clamping_mode=kwargs.get("clamping_mode", like.clamping_mode),
+        )
     else:
         return wrappee.as_subclass(type(like))
