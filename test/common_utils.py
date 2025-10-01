@@ -400,10 +400,10 @@ def make_image_pil(*args, **kwargs):
     return to_pil_image(make_image(*args, **kwargs))
 
 
-def make_keypoints(canvas_size=DEFAULT_SIZE, *, num_points=4, dtype=None, device="cpu"):
+def make_keypoints(canvas_size=DEFAULT_SIZE, *, clamping_mode="soft", num_points=4, dtype=None, device="cpu"):
     y = torch.randint(0, canvas_size[0], size=(num_points, 1), dtype=dtype, device=device)
     x = torch.randint(0, canvas_size[1], size=(num_points, 1), dtype=dtype, device=device)
-    return tv_tensors.KeyPoints(torch.cat((x, y), dim=-1), canvas_size=canvas_size)
+    return tv_tensors.KeyPoints(torch.cat((x, y), dim=-1), canvas_size=canvas_size, clamping_mode=clamping_mode)
 
 
 def make_bounding_boxes(

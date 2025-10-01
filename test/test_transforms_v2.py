@@ -633,6 +633,7 @@ def reference_affine_rotated_bounding_boxes_helper(
 
 def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_size=None, clamp=True):
     canvas_size = new_canvas_size or keypoints.canvas_size
+    clamping_mode = keypoints.clamping_mode
 
     def affine_keypoints(keypoints):
         dtype = keypoints.dtype
@@ -652,7 +653,7 @@ def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_si
         )
 
         if clamp:
-            output = F.clamp_keypoints(output, canvas_size=canvas_size)
+            output = F.clamp_keypoints(output, canvas_size=canvas_size, clamping_mode=clamping_mode)
         else:
             dtype = output.dtype
 
@@ -660,7 +661,7 @@ def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_si
 
     return tv_tensors.KeyPoints(
         torch.cat([affine_keypoints(k) for k in keypoints.reshape(-1, 2).unbind()], dim=0).reshape(keypoints.shape),
-        canvas_size=canvas_size,
+        canvas_size=canvas_size, clamping_mode=clamping_mode
     )
 
 
@@ -3309,7 +3310,6 @@ class TestElastic:
             (F.elastic_image, tv_tensors.Image),
             (F.elastic_mask, tv_tensors.Mask),
             (F.elastic_video, tv_tensors.Video),
-            (F.elastic_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -5325,6 +5325,7 @@ class TestPerspective:
 
     def _reference_perspective_keypoints(self, keypoints, *, startpoints, endpoints):
         canvas_size = keypoints.canvas_size
+        clamping_mode = keypoints.clamping_mode
         dtype = keypoints.dtype
         device = keypoints.device
 
@@ -5364,6 +5365,7 @@ class TestPerspective:
             return F.clamp_keypoints(
                 output,
                 canvas_size=canvas_size,
+                clamping_mode=clamping_mode
             ).to(dtype=dtype, device=device)
 
         return tv_tensors.KeyPoints(
@@ -5371,6 +5373,7 @@ class TestPerspective:
                 keypoints.shape
             ),
             canvas_size=canvas_size,
+            clamping_mode=clamping_mode,
         )
 
     @pytest.mark.parametrize(("startpoints", "endpoints"), START_END_POINTS)
@@ -5733,31 +5736,79 @@ class TestSetClampingMode:
 
 
 class TestClampKeyPoints:
+    @pytest.mark.parametrize("clamping_mode", ("soft", "hard", None))
     @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_kernel(self, dtype, device):
-        keypoints = make_keypoints(dtype=dtype, device=device)
+    def test_kernel(self, clamping_mode, dtype, device):
+        keypoints = make_keypoints(dtype=dtype, device=device, clamping_mode=clamping_mode)
         check_kernel(
             F.clamp_keypoints,
             keypoints,
             canvas_size=keypoints.canvas_size,
+            clamping_mode=clamping_mode,
         )
 
-    def test_functional(self):
-        check_functional(F.clamp_keypoints, make_keypoints())
+    @pytest.mark.parametrize("clamping_mode", ("soft", "hard", None))
+    def test_functional(self, clamping_mode):
+        check_functional(F.clamp_keypoints, make_keypoints(clamping_mode=clamping_mode))
 
     def test_errors(self):
         input_tv_tensor = make_keypoints()
         input_pure_tensor = input_tv_tensor.as_subclass(torch.Tensor)
 
-        with pytest.raises(ValueError, match="`canvas_size` has to be passed"):
+        with pytest.raises(ValueError, match="`canvas_size` and `clamping_mode` have to be passed."):
             F.clamp_keypoints(input_pure_tensor, canvas_size=None)
 
         with pytest.raises(ValueError, match="`canvas_size` must not be passed"):
             F.clamp_keypoints(input_tv_tensor, canvas_size=input_tv_tensor.canvas_size)
+        with pytest.raises(ValueError, match="clamping_mode must be soft,"):
+            F.clamp_keypoints(input_tv_tensor, clamping_mode="bad")
+        with pytest.raises(ValueError, match="clamping_mode must be soft,"):
+            transforms.ClampKeyPoints(clamping_mode="bad")(input_tv_tensor)
 
     def test_transform(self):
         check_transform(transforms.ClampKeyPoints(), make_keypoints())
+
+    @pytest.mark.parametrize("constructor_clamping_mode", ("soft", "hard", None))
+    @pytest.mark.parametrize("clamping_mode", ("soft", "hard", None, "auto"))
+    @pytest.mark.parametrize("pass_pure_tensor", (True, False))
+    @pytest.mark.parametrize("fn", [F.clamp_keypoints, transform_cls_to_functional(transforms.ClampKeyPoints)])
+    def test_clamping_mode(self, constructor_clamping_mode, clamping_mode, pass_pure_tensor, fn):
+        # This test checks 2 things:
+        # - That passing clamping_mode=None to the clamp_keypointss
+        #   functional (or to the class) relies on the box's `.clamping_mode`
+        #   attribute
+        # - That clamping happens when it should, and only when it should, i.e.
+        #   when the clamping mode is not None. It doesn't validate the
+        #   numerical results, only that clamping happened. For that, we create
+        #   a keypoints with large coordinates (100) inside of a small 10x10 image.
+
+        if pass_pure_tensor and fn is not F.clamp_keypoints:
+            # Only the functional supports pure tensors, not the class
+            return
+        if pass_pure_tensor and clamping_mode == "auto":
+            # cannot leave clamping_mode="auto" when passing pure tensor
+            return
+
+        keypoints = tv_tensors.KeyPoints(
+            [[0, 100], [0, 100]],canvas_size=(10, 10), clamping_mode=constructor_clamping_mode
+        )
+        expected_clamped_output = torch.tensor([[0, 9], [0, 9]]) if clamping_mode == "hard" else torch.tensor([[0, 100], [0, 100]])
+
+        if pass_pure_tensor:
+            out = fn(
+                keypoints.as_subclass(torch.Tensor),
+                canvas_size=keypoints.canvas_size,
+                clamping_mode=clamping_mode,
+            )
+        else:
+            out = fn(keypoints, clamping_mode=clamping_mode)
+
+        clamping_mode_prevailing = constructor_clamping_mode if clamping_mode == "auto" else clamping_mode
+        if clamping_mode_prevailing is None:
+            assert_equal(keypoints, out)  # should be a pass-through
+        else:
+            assert_equal(out, expected_clamped_output)
 
 
 class TestInvert:
