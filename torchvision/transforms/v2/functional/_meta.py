@@ -5,7 +5,7 @@ import torch
 from torchvision import tv_tensors
 from torchvision.transforms import _functional_pil as _FP
 from torchvision.tv_tensors import BoundingBoxFormat
-from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE
+from torchvision.tv_tensors import CLAMPING_MODE_TYPE
 
 from torchvision.utils import _log_api_usage_once
 
@@ -653,7 +653,9 @@ def clamp_bounding_boxes(
         )
 
 
-def _clamp_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int]) -> torch.Tensor:
+def _clamp_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE) -> torch.Tensor:
+    if clamping_mode is None or clamping_mode != "hard":
+        return keypoints.clone()
     dtype = keypoints.dtype
     keypoints = keypoints.clone() if keypoints.is_floating_point() else keypoints.float()
     # Note that max is canvas_size[i] - 1 and not can canvas_size[i] like for
@@ -666,20 +668,26 @@ def _clamp_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int]) -> t
 def clamp_keypoints(
     inpt: torch.Tensor,
     canvas_size: Optional[tuple[int, int]] = None,
+    clamping_mode: Union[CLAMPING_MODE_TYPE, str] = "auto",
 ) -> torch.Tensor:
     """See :func:`~torchvision.transforms.v2.ClampKeyPoints` for details."""
     if not torch.jit.is_scripting():
         _log_api_usage_once(clamp_keypoints)
 
+    if clamping_mode is not None and clamping_mode not in ("soft", "hard", "auto"):
+        raise ValueError(f"clamping_mode must be soft, hard, auto or None, got {clamping_mode}")
+
     if torch.jit.is_scripting() or is_pure_tensor(inpt):
 
-        if canvas_size is None:
-            raise ValueError("For pure tensor inputs, `canvas_size` has to be passed.")
-        return _clamp_keypoints(inpt, canvas_size=canvas_size)
+        if canvas_size is None or (clamping_mode is not None and clamping_mode == "auto"):
+            raise ValueError("For pure tensor inputs, `canvas_size` and `clamping_mode` have to be passed.")
+        return _clamp_keypoints(inpt, canvas_size=canvas_size, clamping_mode=clamping_mode)
     elif isinstance(inpt, tv_tensors.KeyPoints):
         if canvas_size is not None:
             raise ValueError("For keypoints tv_tensor inputs, `canvas_size` must not be passed.")
-        output = _clamp_keypoints(inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size)
+        if clamping_mode is None and clamping_mode == "auto":
+            clamping_mode = inpt.clamping_mode
+        output = _clamp_keypoints(inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size, clamping_mode=clamping_mode)
         return tv_tensors.wrap(output, like=inpt)
     else:
         raise TypeError(f"Input can either be a plain tensor or a keypoints tv_tensor, but got {type(inpt)} instead.")

@@ -2,7 +2,7 @@ from typing import Any, Union
 
 from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE
+from torchvision.tv_tensors import CLAMPING_MODE_TYPE
 
 
 class ConvertBoundingBoxFormat(Transform):
@@ -46,17 +46,26 @@ class ClampBoundingBoxes(Transform):
 class ClampKeyPoints(Transform):
     """Clamp keypoints to their corresponding image dimensions.
 
-    The clamping is done according to the keypoints' ``canvas_size`` meta-data.
+     Args:
+        clamping_mode: Default is "auto" which relies on the input keypoint'
+            ``clamping_mode`` attribute.
+            The clamping is done according to the keypoints' ``canvas_size`` meta-data.
+            Read more in :ref:`clamping_mode_tuto`
+            for more details on how to use this transform.
+            
     """
+    def __init__(self, clamping_mode: Union[CLAMPING_MODE_TYPE, str] = "auto") -> None:
+        super().__init__()
+        self.clamping_mode = clamping_mode
 
     _transformed_types = (tv_tensors.KeyPoints,)
 
     def transform(self, inpt: tv_tensors.KeyPoints, params: dict[str, Any]) -> tv_tensors.KeyPoints:
-        return F.clamp_keypoints(inpt)  # type: ignore[return-value]
+        return F.clamp_keypoints(inpt, clamping_mode=self.clamping_mode)  # type: ignore[return-value]
 
 
 class SetClampingMode(Transform):
-    """Sets the ``clamping_mode`` attribute of the bounding boxes for future transforms.
+    """Sets the ``clamping_mode`` attribute of the bounding boxes and keypoints for future transforms.
 
 
 
@@ -73,9 +82,9 @@ class SetClampingMode(Transform):
         if self.clamping_mode not in (None, "soft", "hard"):
             raise ValueError(f"clamping_mode must be soft, hard or None, got {clamping_mode}")
 
-    _transformed_types = (tv_tensors.BoundingBoxes,)
+    _transformed_types = (tv_tensors.BoundingBoxes, tv_tensors.KeyPoints)
 
-    def transform(self, inpt: tv_tensors.BoundingBoxes, params: dict[str, Any]) -> tv_tensors.BoundingBoxes:
-        out: tv_tensors.BoundingBoxes = inpt.clone()  # type: ignore[assignment]
+    def transform(self, inpt: tv_tensors.TVTensor, params: dict[str, Any]) -> tv_tensors.TVTensor:
+        out: tv_tensors.TVTensor = inpt.clone()  # type: ignore[assignment]
         out.clamping_mode = self.clamping_mode
         return out
