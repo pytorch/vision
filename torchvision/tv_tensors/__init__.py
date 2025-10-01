@@ -1,6 +1,6 @@
 import torch
 
-from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat, is_rotated_bounding_format
+from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat, is_rotated_bounding_format, CLAMPING_MODE_TYPE
 from ._image import Image
 from ._keypoints import KeyPoints
 from ._mask import Mask
@@ -34,6 +34,6 @@ def wrap(wrappee, *, like, **kwargs):
             clamping_mode=kwargs.get("clamping_mode", like.clamping_mode),
         )
     elif isinstance(like, KeyPoints):
-        return KeyPoints._wrap(wrappee, canvas_size=kwargs.get("canvas_size", like.canvas_size))
+        return KeyPoints._wrap(wrappee, canvas_size=kwargs.get("canvas_size", like.canvas_size), clamping_mode=kwargs.get("clamping_mode", like.clamping_mode))
     else:
         return wrappee.as_subclass(type(like))

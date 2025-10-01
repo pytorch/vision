@@ -6,6 +6,7 @@ import torch
 from torch.utils._pytree import tree_flatten
 
 from ._tv_tensor import TVTensor
+from ._bounding_boxes import CLAMPING_MODE_TYPE
 
 
 class KeyPoints(TVTensor):
@@ -43,6 +44,8 @@ class KeyPoints(TVTensor):
             :func:`torch.as_tensor`.
         canvas_size (two-tuple of ints): Height and width of the corresponding
             image or video.
+        clamping_mode: The clamping mode to use when applying transforms that may result in key points
+            outside of the image. Possible values are: "soft", "hard", or ``None``. Read more in :ref:`clamping_mode_tuto`.
         dtype (torch.dtype, optional): Desired data type of the bounding box. If
             omitted, will be inferred from ``data``.
         device (torch.device, optional): Desired device of the bounding box. If
@@ -55,16 +58,20 @@ class KeyPoints(TVTensor):
     """
 
     canvas_size: tuple[int, int]
+    clamping_mode: CLAMPING_MODE_TYPE
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, canvas_size: tuple[int, int], check_dims: bool = True) -> KeyPoints:  # type: ignore[override]
+    def _wrap(cls, tensor: torch.Tensor, *, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE = "soft", check_dims: bool = True) -> KeyPoints:  # type: ignore[override]
         if check_dims:
             if tensor.ndim == 1:
                 tensor = tensor.unsqueeze(0)
             elif tensor.shape[-1] != 2:
                 raise ValueError(f"Expected a tensor of shape (..., 2), not {tensor.shape}")
+        if clamping_mode is not None and clamping_mode not in ("hard", "soft"):
+            raise ValueError(f"clamping_mode must be None, hard or soft, got {clamping_mode}.")
         points = tensor.as_subclass(cls)
         points.canvas_size = canvas_size
+        points.clamping_mode = clamping_mode
         return points
 
     def __new__(
@@ -72,12 +79,13 @@ class KeyPoints(TVTensor):
         data: Any,
         *,
         canvas_size: tuple[int, int],
+        clamping_mode: CLAMPING_MODE_TYPE = "soft",
         dtype: torch.dtype | None = None,
         device: torch.device | str | int | None = None,
         requires_grad: bool | None = None,
     ) -> KeyPoints:
         tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
-        return cls._wrap(tensor, canvas_size=canvas_size)
+        return cls._wrap(tensor, canvas_size=canvas_size, clamping_mode=clamping_mode)
 
     @classmethod
     def _wrap_output(
@@ -89,14 +97,14 @@ class KeyPoints(TVTensor):
         # Similar to BoundingBoxes._wrap_output(), see comment there.
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
         first_keypoints_from_args = next(x for x in flat_params if isinstance(x, KeyPoints))
-        canvas_size = first_keypoints_from_args.canvas_size
+        canvas_size, clamping_mode = first_keypoints_from_args.canvas_size, first_keypoints_from_args.clamping_mode
 
         if isinstance(output, torch.Tensor) and not isinstance(output, KeyPoints):
-            output = KeyPoints._wrap(output, canvas_size=canvas_size, check_dims=False)
+            output = KeyPoints._wrap(output, canvas_size=canvas_size, clamping_mode=clamping_mode, check_dims=False)
         elif isinstance(output, (tuple, list)):
             # This branch exists for chunk() and unbind()
-            output = type(output)(KeyPoints._wrap(part, canvas_size=canvas_size, check_dims=False) for part in output)
+            output = type(output)(KeyPoints._wrap(part, canvas_size=canvas_size, clamping_mode=clamping_mode, check_dims=False) for part in output)
         return output
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]
-        return self._make_repr(canvas_size=self.canvas_size)
+        return self._make_repr(canvas_size=self.canvas_size, clamping_mode=self.clamping_mode)
