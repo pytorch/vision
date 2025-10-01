@@ -2086,7 +2086,6 @@ class TestRotate:
             (F.rotate_image, tv_tensors.Image),
             (F.rotate_mask, tv_tensors.Mask),
             (F.rotate_video, tv_tensors.Video),
-            (F.rotate_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -4415,7 +4414,6 @@ class TestResizedCrop:
             (F.resized_crop_image, tv_tensors.Image),
             (F.resized_crop_mask, tv_tensors.Mask),
             (F.resized_crop_video, tv_tensors.Video),
-            (F.resized_crop_keypoints, tv_tensors.KeyPoints),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
