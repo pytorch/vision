@@ -1,6 +1,6 @@
 import torch
 
-from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat, is_rotated_bounding_format, CLAMPING_MODE_TYPE
+from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat, CLAMPING_MODE_TYPE, is_rotated_bounding_format
 from ._image import Image
 from ._keypoints import KeyPoints
 from ._mask import Mask

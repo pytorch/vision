@@ -4,8 +4,7 @@ import PIL.Image
 import torch
 from torchvision import tv_tensors
 from torchvision.transforms import _functional_pil as _FP
-from torchvision.tv_tensors import BoundingBoxFormat
-from torchvision.tv_tensors import CLAMPING_MODE_TYPE
+from torchvision.tv_tensors import BoundingBoxFormat, CLAMPING_MODE_TYPE
 
 from torchvision.utils import _log_api_usage_once
 
@@ -653,7 +652,9 @@ def clamp_bounding_boxes(
         )
 
 
-def _clamp_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE) -> torch.Tensor:
+def _clamp_keypoints(
+    keypoints: torch.Tensor, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE
+) -> torch.Tensor:
     if clamping_mode is None or clamping_mode != "hard":
         return keypoints.clone()
     dtype = keypoints.dtype
@@ -687,7 +688,9 @@ def clamp_keypoints(
             raise ValueError("For keypoints tv_tensor inputs, `canvas_size` must not be passed.")
         if clamping_mode is None and clamping_mode == "auto":
             clamping_mode = inpt.clamping_mode
-        output = _clamp_keypoints(inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size, clamping_mode=clamping_mode)
+        output = _clamp_keypoints(
+            inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size, clamping_mode=clamping_mode
+        )
         return tv_tensors.wrap(output, like=inpt)
     else:
         raise TypeError(f"Input can either be a plain tensor or a keypoints tv_tensor, but got {type(inpt)} instead.")

@@ -5,8 +5,9 @@ from typing import Any, Mapping, Sequence
 import torch
 from torch.utils._pytree import tree_flatten
 
-from ._tv_tensor import TVTensor
 from ._bounding_boxes import CLAMPING_MODE_TYPE
+
+from ._tv_tensor import TVTensor
 
 
 class KeyPoints(TVTensor):
@@ -103,7 +104,10 @@ class KeyPoints(TVTensor):
             output = KeyPoints._wrap(output, canvas_size=canvas_size, clamping_mode=clamping_mode, check_dims=False)
         elif isinstance(output, (tuple, list)):
             # This branch exists for chunk() and unbind()
-            output = type(output)(KeyPoints._wrap(part, canvas_size=canvas_size, clamping_mode=clamping_mode, check_dims=False) for part in output)
+            output = type(output)(
+                KeyPoints._wrap(part, canvas_size=canvas_size, clamping_mode=clamping_mode, check_dims=False)
+                for part in output
+            )
         return output
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]

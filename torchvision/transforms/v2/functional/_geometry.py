@@ -67,7 +67,9 @@ def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return horizontal_flip_image(mask)
 
 
-def horizontal_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE = "soft"):
+def horizontal_flip_keypoints(
+    keypoints: torch.Tensor, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE = "soft"
+):
     shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
     keypoints[..., 0] = keypoints[..., 0].sub_(canvas_size[1] - 1).neg_()
@@ -76,7 +78,9 @@ def horizontal_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, i
 
 @_register_kernel_internal(horizontal_flip, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 def _horizontal_flip_keypoints_dispatch(keypoints: tv_tensors.KeyPoints):
-    out = horizontal_flip_keypoints(keypoints.as_subclass(torch.Tensor), canvas_size=keypoints.canvas_size, clamping_mode=keypoints.clamping_mode)
+    out = horizontal_flip_keypoints(
+        keypoints.as_subclass(torch.Tensor), canvas_size=keypoints.canvas_size, clamping_mode=keypoints.clamping_mode
+    )
     return tv_tensors.wrap(out, like=keypoints)
 
 
@@ -155,7 +159,11 @@ def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return vertical_flip_image(mask)
 
 
-def vertical_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE = "soft",) -> torch.Tensor:
+def vertical_flip_keypoints(
+    keypoints: torch.Tensor,
+    canvas_size: tuple[int, int],
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
+) -> torch.Tensor:
     shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
     keypoints[..., 1] = keypoints[..., 1].sub_(canvas_size[0] - 1).neg_()
@@ -199,7 +207,9 @@ def vertical_flip_bounding_boxes(
 
 @_register_kernel_internal(vertical_flip, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 def _vertical_flip_keypoints_dispatch(inpt: tv_tensors.KeyPoints) -> tv_tensors.KeyPoints:
-    output = vertical_flip_keypoints(inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size, clamping_mode=inpt.clamping_mode)
+    output = vertical_flip_keypoints(
+        inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size, clamping_mode=inpt.clamping_mode
+    )
     return tv_tensors.wrap(output, like=inpt)
 
 
@@ -1027,7 +1037,9 @@ def _affine_keypoints_with_expand(
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         canvas_size = (new_height, new_width)
 
-    out_keypoints = clamp_keypoints(transformed_points, canvas_size=canvas_size, clamping_mode=clamping_mode).reshape(original_shape)
+    out_keypoints = clamp_keypoints(transformed_points, canvas_size=canvas_size, clamping_mode=clamping_mode).reshape(
+        original_shape
+    )
     out_keypoints = out_keypoints.to(original_dtype)
 
     return out_keypoints, canvas_size
@@ -1417,7 +1429,12 @@ def _rotate_keypoints_dispatch(
     inpt: tv_tensors.KeyPoints, angle: float, expand: bool = False, center: Optional[list[float]] = None, **kwargs
 ) -> tv_tensors.KeyPoints:
     output, canvas_size = rotate_keypoints(
-        inpt, canvas_size=inpt.canvas_size, angle=angle, center=center, expand=expand, clamping_mode=inpt.clamping_mode,
+        inpt,
+        canvas_size=inpt.canvas_size,
+        angle=angle,
+        center=center,
+        expand=expand,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
@@ -1689,7 +1706,11 @@ def pad_mask(
 
 
 def pad_keypoints(
-    keypoints: torch.Tensor, canvas_size: tuple[int, int], padding: list[int], padding_mode: str = "constant", clamping_mode: CLAMPING_MODE_TYPE = "soft"
+    keypoints: torch.Tensor,
+    canvas_size: tuple[int, int],
+    padding: list[int],
+    padding_mode: str = "constant",
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ):
     SUPPORTED_MODES = ["constant"]
     if padding_mode not in SUPPORTED_MODES:
@@ -1832,7 +1853,9 @@ def crop_keypoints(
 def _crop_keypoints_dispatch(
     inpt: tv_tensors.KeyPoints, top: int, left: int, height: int, width: int
 ) -> tv_tensors.KeyPoints:
-    output, canvas_size = crop_keypoints(inpt.as_subclass(torch.Tensor), top=top, left=left, height=height, width=width, clamping_mode=inpt.clamping_mode)
+    output, canvas_size = crop_keypoints(
+        inpt.as_subclass(torch.Tensor), top=top, left=left, height=height, width=width, clamping_mode=inpt.clamping_mode
+    )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
 
@@ -2056,7 +2079,9 @@ def perspective_keypoints(
     numer_points = torch.matmul(points, theta1.T)
     denom_points = torch.matmul(points, theta2.T)
     transformed_points = numer_points.div_(denom_points)
-    return clamp_keypoints(transformed_points.to(keypoints.dtype), canvas_size=canvas_size, clamping_mode=clamping_mode).reshape(original_shape)
+    return clamp_keypoints(
+        transformed_points.to(keypoints.dtype), canvas_size=canvas_size, clamping_mode=clamping_mode
+    ).reshape(original_shape)
 
 
 @_register_kernel_internal(perspective, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -2354,7 +2379,10 @@ def _create_identity_grid(size: tuple[int, int], device: torch.device, dtype: to
 
 
 def elastic_keypoints(
-    keypoints: torch.Tensor, canvas_size: tuple[int, int], displacement: torch.Tensor, clamping_mode: CLAMPING_MODE_TYPE = "soft",
+    keypoints: torch.Tensor,
+    canvas_size: tuple[int, int],
+    displacement: torch.Tensor,
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> torch.Tensor:
     expected_shape = (1, canvas_size[0], canvas_size[1], 2)
     if not isinstance(displacement, torch.Tensor):
@@ -2386,12 +2414,19 @@ def elastic_keypoints(
     t_size = torch.tensor(canvas_size[::-1], device=displacement.device, dtype=displacement.dtype)
     transformed_points = inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
 
-    return clamp_keypoints(transformed_points.to(keypoints.dtype), canvas_size=canvas_size, clamping_mode=clamping_mode).reshape(original_shape)
+    return clamp_keypoints(
+        transformed_points.to(keypoints.dtype), canvas_size=canvas_size, clamping_mode=clamping_mode
+    ).reshape(original_shape)
 
 
 @_register_kernel_internal(elastic, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 def _elastic_keypoints_dispatch(inpt: tv_tensors.KeyPoints, displacement: torch.Tensor, **kwargs):
-    output = elastic_keypoints(inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size, displacement=displacement, clamping_mode=inpt.clamping_mode)
+    output = elastic_keypoints(
+        inpt.as_subclass(torch.Tensor),
+        canvas_size=inpt.canvas_size,
+        displacement=displacement,
+        clamping_mode=inpt.clamping_mode,
+    )
     return tv_tensors.wrap(output, like=inpt)
 
 
@@ -2588,16 +2623,26 @@ def _center_crop_image_pil(image: PIL.Image.Image, output_size: list[int]) -> PI
     return _crop_image_pil(image, crop_top, crop_left, crop_height, crop_width)
 
 
-def center_crop_keypoints(inpt: torch.Tensor, canvas_size: tuple[int, int], output_size: list[int], clamping_mode: CLAMPING_MODE_TYPE = "soft",):
+def center_crop_keypoints(
+    inpt: torch.Tensor,
+    canvas_size: tuple[int, int],
+    output_size: list[int],
+    clamping_mode: CLAMPING_MODE_TYPE = "soft",
+):
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *canvas_size)
-    return crop_keypoints(inpt, top=crop_top, left=crop_left, height=crop_height, width=crop_width, clamping_mode=clamping_mode)
+    return crop_keypoints(
+        inpt, top=crop_top, left=crop_left, height=crop_height, width=crop_width, clamping_mode=clamping_mode
+    )
 
 
 @_register_kernel_internal(center_crop, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 def _center_crop_keypoints_dispatch(inpt: tv_tensors.KeyPoints, output_size: list[int]) -> tv_tensors.KeyPoints:
     output, canvas_size = center_crop_keypoints(
-        inpt.as_subclass(torch.Tensor), canvas_size=inpt.canvas_size, output_size=output_size, clamping_mode=inpt.clamping_mode,
+        inpt.as_subclass(torch.Tensor),
+        canvas_size=inpt.canvas_size,
+        output_size=output_size,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 
@@ -2766,7 +2811,13 @@ def _resized_crop_keypoints_dispatch(
     inpt: tv_tensors.BoundingBoxes, top: int, left: int, height: int, width: int, size: list[int], **kwargs
 ):
     output, canvas_size = resized_crop_keypoints(
-        inpt.as_subclass(torch.Tensor), top=top, left=left, height=height, width=width, size=size, clamping_mode=inpt.clamping_mode,
+        inpt.as_subclass(torch.Tensor),
+        top=top,
+        left=left,
+        height=height,
+        width=width,
+        size=size,
+        clamping_mode=inpt.clamping_mode,
     )
     return tv_tensors.wrap(output, like=inpt, canvas_size=canvas_size)
 

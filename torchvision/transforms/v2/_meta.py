@@ -46,14 +46,15 @@ class ClampBoundingBoxes(Transform):
 class ClampKeyPoints(Transform):
     """Clamp keypoints to their corresponding image dimensions.
 
-     Args:
-        clamping_mode: Default is "auto" which relies on the input keypoint'
-            ``clamping_mode`` attribute.
-            The clamping is done according to the keypoints' ``canvas_size`` meta-data.
-            Read more in :ref:`clamping_mode_tuto`
-            for more details on how to use this transform.
-            
+    Args:
+       clamping_mode: Default is "auto" which relies on the input keypoint'
+           ``clamping_mode`` attribute.
+           The clamping is done according to the keypoints' ``canvas_size`` meta-data.
+           Read more in :ref:`clamping_mode_tuto`
+           for more details on how to use this transform.
+
     """
+
     def __init__(self, clamping_mode: Union[CLAMPING_MODE_TYPE, str] = "auto") -> None:
         super().__init__()
         self.clamping_mode = clamping_mode

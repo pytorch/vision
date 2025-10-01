@@ -661,7 +661,8 @@ def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_si
 
     return tv_tensors.KeyPoints(
         torch.cat([affine_keypoints(k) for k in keypoints.reshape(-1, 2).unbind()], dim=0).reshape(keypoints.shape),
-        canvas_size=canvas_size, clamping_mode=clamping_mode
+        canvas_size=canvas_size,
+        clamping_mode=clamping_mode,
     )
 
 
@@ -5362,11 +5363,9 @@ class TestPerspective:
             )
 
             # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-            return F.clamp_keypoints(
-                output,
-                canvas_size=canvas_size,
-                clamping_mode=clamping_mode
-            ).to(dtype=dtype, device=device)
+            return F.clamp_keypoints(output, canvas_size=canvas_size, clamping_mode=clamping_mode).to(
+                dtype=dtype, device=device
+            )
 
         return tv_tensors.KeyPoints(
             torch.cat([perspective_keypoints(k) for k in keypoints.reshape(-1, 2).unbind()], dim=0).reshape(
@@ -5791,9 +5790,14 @@ class TestClampKeyPoints:
             return
 
         keypoints = tv_tensors.KeyPoints(
-            [[0, 100], [0, 100]],canvas_size=(10, 10), clamping_mode=constructor_clamping_mode
+            [[0, 100], [0, 100]], canvas_size=(10, 10), clamping_mode=constructor_clamping_mode
         )
-        expected_clamped_output = torch.tensor([[0, 9], [0, 9]]) if clamping_mode == "hard" else torch.tensor([[0, 100], [0, 100]])
+        expected_clamped_output = (
+            torch.tensor([[0, 10], [0, 10]]) if clamping_mode == "hard" else torch.tensor([[0, 100], [0, 100]])
+        )
+        expected_clamped_output = (
+            torch.tensor([[0, 9], [0, 9]]) if clamping_mode == "hard" else torch.tensor([[0, 100], [0, 100]])
+        )
 
         if pass_pure_tensor:
             out = fn(
