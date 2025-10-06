@@ -503,7 +503,7 @@ class SanitizeKeyPoints(Transform):
             Default is 1.
         labels_getter (callable or str or None, optional): indicates how to identify the labels in the input
             (or anything else that needs to be sanitized along with the keypoints).
-            By default, this will try to find a "labels" key in the input (case-insensitive), if
+            If set to the string ``"default"``, this will try to find a "labels" key in the input (case-insensitive), if
             the input is a dict or it is a tuple whose second element is a dict.
 
             It can also be a callable that takes the same input as the transform, and returns either:
@@ -511,14 +511,14 @@ class SanitizeKeyPoints(Transform):
             - A single tensor (the labels)
             - A tuple/list of tensors, each of which will be subject to the same sanitization as the keypoints.
 
-            If ``labels_getter`` is None then only keypoints are sanitized.
+            If ``labels_getter`` is None (the default), then only keypoints are sanitized.
     """
 
     def __init__(
         self,
         min_valid_edge_distance: int = 0,
         min_invalid_points: int | float = 1,
-        labels_getter: Union[Callable[[Any], Any], str, None] = "default",
+        labels_getter: Union[Callable[[Any], Any], str, None] = None,
     ) -> None:
         super().__init__()
         self.min_valid_edge_distance = min_valid_edge_distance

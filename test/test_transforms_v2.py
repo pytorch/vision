@@ -7740,22 +7740,21 @@ class TestSanitizeKeyPoints:
         # Test missing labels key
         with pytest.raises(ValueError, match="Could not infer where the labels are"):
             bad_sample = {"keypoints": good_keypoints, "BAD_KEY": torch.tensor([0])}
-            transforms.SanitizeKeyPoints()(bad_sample)
+            transforms.SanitizeKeyPoints(labels_getter="default")(bad_sample)
 
         # Test labels not a tensor
         with pytest.raises(ValueError, match="must be a tensor"):
             bad_sample = {"keypoints": good_keypoints, "labels": [0]}
-            transforms.SanitizeKeyPoints()(bad_sample)
+            transforms.SanitizeKeyPoints(labels_getter="default")(bad_sample)
 
         # Test mismatched sizes
         with pytest.raises(ValueError, match="Number of"):
             bad_sample = {"keypoints": good_keypoints, "labels": torch.tensor([0, 1, 2])}
-            transforms.SanitizeKeyPoints()(bad_sample)
+            transforms.SanitizeKeyPoints(labels_getter="default")(bad_sample)
 
         # Test min_invalid_points > 1 for 2D keypoints
         with pytest.raises(ValueError, match="so min_invalid_points must be 1"):
-            sample = {"keypoints": good_keypoints, "labels": torch.tensor([0])}
-            transforms.SanitizeKeyPoints(min_invalid_points=2)(sample)
+            transforms.SanitizeKeyPoints(min_invalid_points=2)(good_keypoints)
 
     def test_no_label(self):
         """Test transform without labels."""
@@ -7764,7 +7763,7 @@ class TestSanitizeKeyPoints:
 
         # Should raise error without labels_getter=None
         with pytest.raises(ValueError, match="or a two-tuple whose second item is a dict"):
-            transforms.SanitizeKeyPoints()(img, keypoints)
+            transforms.SanitizeKeyPoints(labels_getter="default")(img, keypoints)
 
         # Should work with labels_getter=None
         out_img, out_keypoints = transforms.SanitizeKeyPoints(labels_getter=None)(img, keypoints)
