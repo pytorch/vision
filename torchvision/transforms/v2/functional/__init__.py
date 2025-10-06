@@ -156,6 +156,7 @@ from ._misc import (
     normalize_image,
     normalize_video,
     sanitize_bounding_boxes,
+    sanitize_keypoints,
     to_dtype,
     to_dtype_image,
     to_dtype_video,
