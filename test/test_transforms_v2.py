@@ -631,7 +631,7 @@ def reference_affine_rotated_bounding_boxes_helper(
     )
 
 
-def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_size=None, clamp=True):
+def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_size=None, cast=True):
     canvas_size = new_canvas_size or keypoints.canvas_size
 
     def affine_keypoints(keypoints):
@@ -650,10 +650,7 @@ def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_si
                 float(transformed_points[0, 1]),
             ]
         )
-
-        if clamp:
-            output = F.clamp_keypoints(output, canvas_size=canvas_size)
-        else:
+        if not cast:
             dtype = output.dtype
 
         return output.to(dtype=dtype, device=device)
@@ -2293,10 +2290,10 @@ class TestRotate:
             keypoints,
             affine_matrix=affine_matrix,
             new_canvas_size=new_canvas_size,
-            clamp=False,
+            cast=False,
         )
 
-        return F.clamp_keypoints(self._recenter_keypoints_after_expand(output, recenter_xy=recenter_xy)).to(keypoints)
+        return self._recenter_keypoints_after_expand(output, recenter_xy=recenter_xy).to(keypoints)
 
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("expand", [False, True])
@@ -5361,10 +5358,7 @@ class TestPerspective:
             )
 
             # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-            return F.clamp_keypoints(
-                output,
-                canvas_size=canvas_size,
-            ).to(dtype=dtype, device=device)
+            return output.to(dtype=dtype, device=device)
 
         return tv_tensors.KeyPoints(
             torch.cat([perspective_keypoints(k) for k in keypoints.reshape(-1, 2).unbind()], dim=0).reshape(
