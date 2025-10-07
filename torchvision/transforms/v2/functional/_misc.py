@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, Union
 
 import PIL.Image
 import torch
@@ -448,7 +448,7 @@ def sanitize_keypoints(
     key_points: torch.Tensor,
     canvas_size: Optional[tuple[int, int]] = None,
     min_valid_edge_distance: int = 0,
-    min_invalid_points: int | float = 1,
+    min_invalid_points: Union[int, float] = 1,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Remove keypoints outside of the image area and their corresponding labels (if any).
 
@@ -527,7 +527,7 @@ def _get_sanitize_keypoints_mask(
     key_points: torch.Tensor,
     canvas_size: tuple[int, int],
     min_valid_edge_distance: int = 0,
-    min_invalid_points: int | float = 1,
+    min_invalid_points: Union[int, float] = 1,
 ) -> torch.Tensor:
 
     image_h, image_w = canvas_size
