@@ -517,7 +517,7 @@ class SanitizeKeyPoints(Transform):
     def __init__(
         self,
         min_valid_edge_distance: int = 0,
-        min_invalid_points: int | float = 1,
+        min_invalid_points: Union[int, float] = 1,
         labels_getter: Union[Callable[[Any], Any], str, None] = None,
     ) -> None:
         super().__init__()
