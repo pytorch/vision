@@ -480,7 +480,7 @@ def sanitize_keypoints(
         min_invalid_points (int or float, optional): Minimum number or fraction of invalid keypoints required
             for a group of keypoints to be removed. For example, setting this to 1 will remove a group of keypoints
             if any of its keypoints is invalid, while setting it to 2 will only remove groups with at least 2 invalid keypoints.
-            If a float in (0.0, 1.0) is passed, it represents a fraction of the total number of keypoints in
+            If a float in ``(0.0, 1.0]`` is passed, it represents a fraction of the total number of keypoints in
             the group. For example, setting this to 0.3 will remove groups of keypoints with at least 30% invalid keypoints.
             Note that a value of `1` (integer) is very different from `1.0` (float). The former will remove groups
             with any invalid keypoint, while the latter will only remove groups where all keypoints are invalid.
