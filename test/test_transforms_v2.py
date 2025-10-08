@@ -7401,8 +7401,6 @@ class TestSanitizeKeyPoints:
     def _make_keypoints_with_validity(
         self,
         canvas_size=(100, 100),
-        min_valid_edge_distance=0,
-        min_invalid_points=1,
         shape="2d",  # "2d", "3d", "4d" for different keypoint shapes
     ):
         """Create keypoints with known validity for testing."""
@@ -7410,15 +7408,15 @@ class TestSanitizeKeyPoints:
 
         if shape == "2d":  # [N_points, 2]
             keypoints_data = [
-                ([5, 5], min_valid_edge_distance <= 5),  # Valid point inside image
-                ([canvas_w - 6, canvas_h - 6], min_valid_edge_distance <= 5),  # Valid point near corner
+                ([5, 5], True),  # Valid point inside image
+                ([canvas_w - 6, canvas_h - 6], True),  # Valid point near corner
                 ([canvas_w // 2, canvas_h // 2], True),  # Valid point in center
                 ([-1, canvas_h // 2], False),  # Invalid: x < 0
                 ([canvas_w // 2, -1], False),  # Invalid: y < 0
                 ([canvas_w, canvas_h // 2], False),  # Invalid: x >= canvas_w
                 ([canvas_w // 2, canvas_h], False),  # Invalid: y >= canvas_h
-                ([0, 0], min_valid_edge_distance <= 0),  # Edge case: exactly on edge
-                ([canvas_w - 1, canvas_h - 1], min_valid_edge_distance <= 0),  # Edge case: exactly on edge
+                ([0, 0], True),  # Edge case: exactly on edge
+                ([canvas_w - 1, canvas_h - 1], True),  # Edge case: exactly on edge
             ]
             points, validity = zip(*keypoints_data)
             keypoints = torch.tensor(points, dtype=torch.float32)
@@ -7429,11 +7427,11 @@ class TestSanitizeKeyPoints:
                 # Group 1: All points valid
                 ([[10, 10], [20, 20], [30, 30]], True),
                 # Group 2: One invalid point (should be removed if min_invalid_points=1)
-                ([[10, 10], [20, 20], [-5, 30]], min_invalid_points > 1),
+                ([[10, 10], [20, 20], [-5, 30]], False),
                 # Group 3: All points invalid
                 ([[-1, -1], [-2, -2], [-3, -3]], False),
                 # Group 4: Mix of valid and invalid (depends on min_invalid_points)
-                ([[10, 10], [-1, 20], [-2, 30]], min_invalid_points > 2),
+                ([[10, 10], [-1, 20], [-2, 30]], False),
             ]
             groups, validity = zip(*keypoints_data)
             keypoints = torch.tensor(groups, dtype=torch.float32)
@@ -7444,7 +7442,7 @@ class TestSanitizeKeyPoints:
                 # Object 1: All bones valid
                 ([[[10, 10], [15, 15]], [[20, 20], [25, 25]]], True),
                 # Object 2: One bone with invalid point
-                ([[[10, 10], [15, 15]], [[-1, 20], [25, 25]]], min_invalid_points > 1),
+                ([[[10, 10], [15, 15]], [[-1, 20], [25, 25]]], False),
                 # Object 3: All bones invalid
                 ([[[-1, -1], [-2, -2]], [[-3, -3], [-4, -4]]], False),
             ]
@@ -7457,26 +7455,14 @@ class TestSanitizeKeyPoints:
         return keypoints, validity
 
     @pytest.mark.parametrize("shape", ["2d", "3d", "4d"])
-    @pytest.mark.parametrize("min_valid_edge_distance", [0, 1, 5, 6])
-    @pytest.mark.parametrize("min_invalid_points", [1, 2, 0.5])
     @pytest.mark.parametrize("input_type", [torch.Tensor, tv_tensors.KeyPoints])
-    def test_functional(self, shape, min_valid_edge_distance, min_invalid_points, input_type):
+    def test_functional(self, shape, input_type):
         """Test the sanitize_keypoints functional interface."""
-        # Check for invalid configuration
-        if shape == "2d" and min_invalid_points > 1:
-            pytest.xfail("min_invalid_points > 1 does not make sense for 2D keypoints")
 
         # Create inputs
         canvas_size = (50, 50)
-        if isinstance(min_invalid_points, float):
-            num_groups = 4 if shape == "4d" else 3
-            min_invalid_points_int = math.ceil(min_invalid_points * num_groups)
-        else:
-            min_invalid_points_int = min_invalid_points
         keypoints, expected_validity = self._make_keypoints_with_validity(
             canvas_size=canvas_size,
-            min_valid_edge_distance=min_valid_edge_distance,
-            min_invalid_points=min_invalid_points_int,
             shape=shape,
         )
 
@@ -7490,8 +7476,6 @@ class TestSanitizeKeyPoints:
         result_keypoints, valid_mask = F.sanitize_keypoints(
             keypoints,
             canvas_size=canvas_size_arg,
-            min_valid_edge_distance=min_valid_edge_distance,
-            min_invalid_points=min_invalid_points,
         )
 
         # Check return types
@@ -7522,8 +7506,6 @@ class TestSanitizeKeyPoints:
         )
 
     @pytest.mark.parametrize("shape", ["2d", "3d", "4d"])
-    @pytest.mark.parametrize("min_valid_edge_distance", [0, 2])
-    @pytest.mark.parametrize("min_invalid_points", [1, 0.3])
     @pytest.mark.parametrize(
         "labels_getter",
         (
@@ -7536,26 +7518,15 @@ class TestSanitizeKeyPoints:
         ),
     )
     @pytest.mark.parametrize("sample_type", (tuple, dict))
-    def test_transform(self, shape, min_valid_edge_distance, min_invalid_points, labels_getter, sample_type):
+    def test_transform(self, shape, labels_getter, sample_type):
         """Test the SanitizeKeyPoints transform class."""
         if sample_type is tuple and not isinstance(labels_getter, str):
             # Lambda-based labels_getter doesn't work with tuple input
             return
 
-        # Check for invalid configuration
-        if shape == "2d" and min_invalid_points > 1:
-            pytest.xfail("min_invalid_points > 1 does not make sense for 2D keypoints")
-
         canvas_size = (40, 40)
-        if isinstance(min_invalid_points, float):
-            num_groups = 4 if shape == "4d" else 3
-            min_invalid_points_int = math.ceil(min_invalid_points * num_groups)
-        else:
-            min_invalid_points_int = min_invalid_points
         keypoints, expected_validity = self._make_keypoints_with_validity(
             canvas_size=canvas_size,
-            min_valid_edge_distance=min_valid_edge_distance,
-            min_invalid_points=min_invalid_points_int,
             shape=shape,
         )
 
@@ -7585,8 +7556,6 @@ class TestSanitizeKeyPoints:
 
         # Apply transform
         transform = transforms.SanitizeKeyPoints(
-            min_valid_edge_distance=min_valid_edge_distance,
-            min_invalid_points=min_invalid_points,
             labels_getter=labels_getter,
         )
         out = transform(sample)
@@ -7644,6 +7613,7 @@ class TestSanitizeKeyPoints:
         # Test empty keypoints
         empty_keypoints = tv_tensors.KeyPoints(torch.empty(0, 2), canvas_size=canvas_size)
         result, valid_mask = F.sanitize_keypoints(empty_keypoints)
+        print(empty_keypoints, result, valid_mask)
         assert tuple(result.shape) == (0, 2)
         assert valid_mask.shape[0] == 0
 
@@ -7659,43 +7629,6 @@ class TestSanitizeKeyPoints:
         assert tuple(result.shape) == (0, 2)
         assert not valid_mask.any()
 
-    def test_min_invalid_points_fraction(self):
-        """Test min_invalid_points as a fraction."""
-        canvas_size = (20, 20)
-
-        # Create 3D keypoints with 4 points per object
-        keypoints = torch.tensor(
-            [
-                # Object 1: 1 invalid point out of 4 (25% invalid)
-                [[5, 5], [10, 10], [15, 15], [-1, -1]],
-                # Object 2: 2 invalid points out of 4 (50% invalid)
-                [[5, 5], [10, 10], [-1, -1], [-2, -2]],
-                # Object 3: 3 invalid points out of 4 (75% invalid)
-                [[5, 5], [-1, -1], [-2, -2], [-3, -3]],
-            ],
-            dtype=torch.float32,
-        )
-
-        keypoints = tv_tensors.KeyPoints(keypoints, canvas_size=canvas_size)
-
-        # Test with 30% threshold - should keep object 1
-        result, valid_mask = F.sanitize_keypoints(keypoints, min_invalid_points=0.3)
-        expected_valid = torch.tensor([True, False, False])
-        assert_equal(valid_mask, expected_valid)
-        assert result.shape[0] == 1
-
-        # Test with 60% threshold - should keep objects 1 and 2
-        result, valid_mask = F.sanitize_keypoints(keypoints, min_invalid_points=0.6)
-        expected_valid = torch.tensor([True, True, False])
-        assert_equal(valid_mask, expected_valid)
-        assert result.shape[0] == 2
-
-        # Test with 100% threshold - should keep all objects
-        result, valid_mask = F.sanitize_keypoints(keypoints, min_invalid_points=1.0)
-        expected_valid = torch.tensor([True, True, True])
-        assert_equal(valid_mask, expected_valid)
-        assert result.shape[0] == 3
-
     def test_errors_functional(self):
         """Test error conditions for the functional interface."""
         good_keypoints = tv_tensors.KeyPoints([[5, 5]], canvas_size=(10, 10))
@@ -7708,16 +7641,6 @@ class TestSanitizeKeyPoints:
         with pytest.raises(ValueError, match="canvas_size must be None"):
             F.sanitize_keypoints(good_keypoints, canvas_size=(10, 10))
 
-        # Test invalid min_invalid_points
-        with pytest.raises(ValueError, match="min_invalid_points must be > 0"):
-            F.sanitize_keypoints(good_keypoints, min_invalid_points=0)
-
-        with pytest.raises(ValueError, match="min_invalid_points must be > 0"):
-            F.sanitize_keypoints(good_keypoints, min_invalid_points=-1)
-
-        with pytest.raises(ValueError, match="so min_invalid_points must be 1"):
-            F.sanitize_keypoints(good_keypoints, min_invalid_points=2)
-
     def test_errors_transform(self):
         """Test error conditions for the transform class."""
         good_keypoints = tv_tensors.KeyPoints([[5, 5]], canvas_size=(10, 10))
@@ -7725,10 +7648,6 @@ class TestSanitizeKeyPoints:
         # Test invalid labels_getter
         with pytest.raises(ValueError, match="labels_getter should either be"):
             transforms.SanitizeKeyPoints(labels_getter="invalid_type")  # type: ignore
-
-        # Test invalid min_invalid_points
-        with pytest.raises(ValueError, match="min_invalid_points must be > 0"):
-            transforms.SanitizeKeyPoints(min_invalid_points=0)
 
         # Test missing labels key
         with pytest.raises(ValueError, match="Could not infer where the labels are"):
@@ -7744,10 +7663,6 @@ class TestSanitizeKeyPoints:
         with pytest.raises(ValueError, match="Number of"):
             bad_sample = {"keypoints": good_keypoints, "labels": torch.tensor([0, 1, 2])}
             transforms.SanitizeKeyPoints(labels_getter="default")(bad_sample)
-
-        # Test min_invalid_points > 1 for 2D keypoints
-        with pytest.raises(ValueError, match="so min_invalid_points must be 1"):
-            transforms.SanitizeKeyPoints(min_invalid_points=2)(good_keypoints)
 
     def test_no_label(self):
         """Test transform without labels."""

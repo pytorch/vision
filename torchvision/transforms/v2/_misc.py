@@ -473,34 +473,19 @@ class SanitizeKeyPoints(Transform):
     """Remove keypoints outside of the image area and their corresponding labels (if any).
 
     This transform removes keypoints or groups of keypoints and their associated labels that
-    have coordinates outside of their corresponding image or within ``min_valid_edge_distance`` pixels
-    from the image edges.
+    have coordinates outside of their corresponding image.
     If you would instead like to clamp such keypoints to the image edges, use
     :class:`~torchvision.transforms.v2.ClampKeyPoints`.
 
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models.
 
-    Keypoints can be passed as a set of individual keypoints of shape ``[N_points, 2]`` or as a
-    set of objects (e.g., polygons or polygonal chains) consisting of a fixed number of keypoints
-    of shape ``[N_objects, ..., 2]``.
+    Keypoints can be passed as a set of individual keypoints or as a set of objects
+    (e.g., polygons or polygonal chains) consisting of a fixed number of keypoints of shape ``[..., 2]``.
     When groups of keypoints are passed (i.e., an at least 3-dimensional tensor), this transform
     will only remove entire groups, not individual keypoints within a group.
 
     Args:
-        min_valid_edge_distance (int, optional): The minimum distance that keypoints need to be away from the closest image
-            edge along any axis in order to be considered valid. For example, setting this to 0 will only
-            invalidate/remove keypoints outside of the image area, while a value of 1 will also remove keypoints
-            lying exactly on the edge.
-            Default is 0.
-        min_invalid_points (int or float, optional): Minimum number or fraction of invalid keypoints required
-            for a group of keypoints to be removed. For example, setting this to 1 will remove a group of keypoints
-            if any of its keypoints is invalid, while setting it to 2 will only remove groups with at least 2 invalid keypoints.
-            If a float in ``(0.0, 1.0]`` is passed, it represents a fraction of the total number of keypoints in
-            the group. For example, setting this to 0.3 will remove groups of keypoints with at least 30% invalid keypoints.
-            Note that a value of `1` (integer) is very different from `1.0` (float). The former will remove groups
-            with any invalid keypoint, while the latter will only remove groups where all keypoints are invalid.
-            Default is 1.
         labels_getter (callable or str or None, optional): indicates how to identify the labels in the input
             (or anything else that needs to be sanitized along with the keypoints).
             If set to the string ``"default"``, this will try to find a "labels" key in the input (case-insensitive), if
@@ -516,18 +501,11 @@ class SanitizeKeyPoints(Transform):
 
     def __init__(
         self,
-        min_valid_edge_distance: int = 0,
-        min_invalid_points: Union[int, float] = 1,
         labels_getter: Union[Callable[[Any], Any], str, None] = None,
     ) -> None:
         super().__init__()
-        self.min_valid_edge_distance = min_valid_edge_distance
-        self.min_invalid_points = min_invalid_points
         self.labels_getter = labels_getter
         self._labels_getter = _parse_labels_getter(labels_getter)
-
-        if min_invalid_points <= 0:
-            raise ValueError(f"min_invalid_points must be > 0. Got {min_invalid_points}.")
 
     def forward(self, *inputs: Any) -> Any:
         inputs = inputs if len(inputs) > 1 else inputs[0]
@@ -559,8 +537,6 @@ class SanitizeKeyPoints(Transform):
         valid = F._misc._get_sanitize_keypoints_mask(
             points,
             canvas_size=points.canvas_size,
-            min_valid_edge_distance=self.min_valid_edge_distance,
-            min_invalid_points=self.min_invalid_points,
         )
 
         params = dict(valid=valid, labels=labels)

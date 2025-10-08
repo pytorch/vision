@@ -447,44 +447,28 @@ def _get_sanitize_bounding_boxes_mask(
 def sanitize_keypoints(
     key_points: torch.Tensor,
     canvas_size: Optional[tuple[int, int]] = None,
-    min_valid_edge_distance: int = 0,
-    min_invalid_points: Union[int, float] = 1,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Remove keypoints outside of the image area and their corresponding labels (if any).
 
     This transform removes keypoints or groups of keypoints and their associated labels that
-    have coordinates outside of their corresponding image or within ``min_valid_edge_distance`` pixels
-    from the image edges.
+    have coordinates outside of their corresponding image.
     If you would instead like to clamp such keypoints to the image edges, use
     :class:`~torchvision.transforms.v2.ClampKeyPoints`.
 
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models.
 
-    Keypoints can be passed as a set of individual keypoints of shape ``[N_points, 2]`` or as a
-    set of objects (e.g., polygons or polygonal chains) consisting of a fixed number of keypoints
-    of shape ``[N_objects, ..., 2]``.
-    When groups of keypoints are passed (i.e., an at least 3-dimensional tensor), this transform
-    will only remove entire groups, not individual keypoints within a group.
+    Keypoints can be passed as a set of individual keypoints or as a set of objects
+    (e.g., polygons or polygonal chains) consisting of a fixed number of keypoints of shape ``[..., 2]``.
+    When multiple groups of keypoints are passed
+    (i.e., an at least 3-dimensional tensor with first dimension greater than 1),
+    this transform will only remove entire groups, not individual keypoints within a group.
 
     Args:
         key_points (Tensor or :class:`~torchvision.tv_tensors.KeyPoints`): The keypoints to be sanitized.
         canvas_size (tuple of int, optional): The canvas_size of the keypoints
             (size of the corresponding image/video).
             Must be left to none if ``key_points`` is a :class:`~torchvision.tv_tensors.KeyPoints` object.
-        min_valid_edge_distance (int, optional): The minimum distance that keypoints need to be away from the closest image
-            edge along any axis in order to be considered valid. For example, setting this to 0 will only
-            invalidate/remove keypoints outside of the image area, while a value of 1 will also remove keypoints
-            lying exactly on the edge.
-            Default is 0.
-        min_invalid_points (int or float, optional): Minimum number or fraction of invalid keypoints required
-            for a group of keypoints to be removed. For example, setting this to 1 will remove a group of keypoints
-            if any of its keypoints is invalid, while setting it to 2 will only remove groups with at least 2 invalid keypoints.
-            If a float in ``(0.0, 1.0]`` is passed, it represents a fraction of the total number of keypoints in
-            the group. For example, setting this to 0.3 will remove groups of keypoints with at least 30% invalid keypoints.
-            Note that a value of `1` (integer) is very different from `1.0` (float). The former will remove groups
-            with any invalid keypoint, while the latter will only remove groups where all keypoints are invalid.
-            Default is 1.
 
     Returns:
         out (tuple of Tensors): The subset of valid keypoints, and the corresponding indexing mask.
@@ -499,8 +483,6 @@ def sanitize_keypoints(
         valid = _get_sanitize_keypoints_mask(
             key_points,
             canvas_size=canvas_size,
-            min_valid_edge_distance=min_valid_edge_distance,
-            min_invalid_points=min_invalid_points,
         )
         key_points = key_points[valid]
     else:
@@ -515,8 +497,6 @@ def sanitize_keypoints(
         valid = _get_sanitize_keypoints_mask(
             key_points,
             canvas_size=key_points.canvas_size,
-            min_valid_edge_distance=min_valid_edge_distance,
-            min_invalid_points=min_invalid_points,
         )
         key_points = tv_tensors.wrap(key_points[valid], like=key_points)
 
@@ -526,44 +506,18 @@ def sanitize_keypoints(
 def _get_sanitize_keypoints_mask(
     key_points: torch.Tensor,
     canvas_size: tuple[int, int],
-    min_valid_edge_distance: int = 0,
-    min_invalid_points: Union[int, float] = 1,
 ) -> torch.Tensor:
 
-    image_h, image_w = canvas_size
+    h, w = canvas_size
 
-    # Bring keypoints tensor into canonical shape [N_instances, N_points, 2]
-    if key_points.ndim == 2:
-        key_points = key_points.unsqueeze(dim=1)
-    elif key_points.ndim > 3:
-        key_points = key_points.flatten(start_dim=1, end_dim=-2)
-
-    # Convert min_invalid_points from relative to absolute number of points
-    if min_invalid_points <= 0:
-        raise ValueError(f"min_invalid_points must be > 0. Got {min_invalid_points}.")
-    if isinstance(min_invalid_points, float):
-        min_invalid_points = math.ceil(min_invalid_points * key_points.shape[1])
-    if min_invalid_points > 1 and key_points.shape[1] == 1:
-        raise ValueError(
-            f"min_invalid_points was set to {min_invalid_points}, but key_points only contains a single point per "
-            "instance, so min_invalid_points must be 1."
-        )
-
-    # Compute distance of each point to the closest image edge
-    dists = torch.stack(
-        [
-            key_points[..., 0],  # x
-            image_w - 1 - key_points[..., 0],  # image_w - x
-            key_points[..., 1],  # y
-            image_h - 1 - key_points[..., 1],  # image_h - y
-        ],
-        dim=-1,
+    original_shape = key_points.shape[:-1]
+    x, y = key_points[..., 0].squeeze(dim=0), key_points[..., 1].squeeze(dim=0)
+    valid = (x >= 0) & (x < w) & (y >= 0) & (y < h)
+    
+    valid = (
+        valid.flatten(start_dim=1).all(dim=1)
+        if valid.ndim > 1
+        else valid.reshape(original_shape)
     )
-    dists = dists.min(dim=-1).values  # [N_instances, N_points]
 
-    # Determine invalid points
-    invalid_points = dists < min_valid_edge_distance  # [N_instances, N_points]
-
-    # Determine valid instances
-    valid = invalid_points.sum(dim=-1) < min_invalid_points  # [N_instances]
     return valid
