@@ -5357,7 +5357,6 @@ class TestPerspective:
                 ]
             )
 
-            # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
             return output.to(dtype=dtype, device=device)
 
         return tv_tensors.KeyPoints(
