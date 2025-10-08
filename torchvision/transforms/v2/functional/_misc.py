@@ -1,5 +1,5 @@
 import math
-from typing import Optional, Union
+from typing import Optional
 
 import PIL.Image
 import torch
