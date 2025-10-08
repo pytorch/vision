@@ -460,8 +460,7 @@ def sanitize_keypoints(
 
     Keypoints can be passed as a set of individual keypoints or as a set of objects
     (e.g., polygons or polygonal chains) consisting of a fixed number of keypoints of shape ``[..., 2]``.
-    When multiple groups of keypoints are passed
-    (i.e., an at least 3-dimensional tensor with first dimension greater than 1),
+    When groups of keypoints are passed (i.e., an at least 3-dimensional tensor),
     this transform will only remove entire groups, not individual keypoints within a group.
 
     Args:
@@ -510,10 +509,9 @@ def _get_sanitize_keypoints_mask(
 
     h, w = canvas_size
 
-    original_shape = key_points.shape[:-1]
-    x, y = key_points[..., 0].squeeze(dim=0), key_points[..., 1].squeeze(dim=0)
+    x, y = key_points[..., 0], key_points[..., 1]
     valid = (x >= 0) & (x < w) & (y >= 0) & (y < h)
 
-    valid = valid.flatten(start_dim=1).all(dim=1) if valid.ndim > 1 else valid.reshape(original_shape)
+    valid = valid.flatten(start_dim=1).all(dim=1) if valid.ndim > 1 else valid
 
     return valid
