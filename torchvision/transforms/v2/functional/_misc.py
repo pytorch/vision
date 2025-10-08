@@ -513,11 +513,7 @@ def _get_sanitize_keypoints_mask(
     original_shape = key_points.shape[:-1]
     x, y = key_points[..., 0].squeeze(dim=0), key_points[..., 1].squeeze(dim=0)
     valid = (x >= 0) & (x < w) & (y >= 0) & (y < h)
-    
-    valid = (
-        valid.flatten(start_dim=1).all(dim=1)
-        if valid.ndim > 1
-        else valid.reshape(original_shape)
-    )
+
+    valid = valid.flatten(start_dim=1).all(dim=1) if valid.ndim > 1 else valid.reshape(original_shape)
 
     return valid
