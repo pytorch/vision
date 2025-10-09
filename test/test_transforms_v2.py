@@ -5791,9 +5791,6 @@ class TestClampKeyPoints:
             [[0, 100], [0, 100]], canvas_size=(10, 10), clamping_mode=constructor_clamping_mode
         )
         expected_clamped_output = (
-            torch.tensor([[0, 10], [0, 10]]) if clamping_mode == "hard" else torch.tensor([[0, 100], [0, 100]])
-        )
-        expected_clamped_output = (
             torch.tensor([[0, 9], [0, 9]]) if clamping_mode == "hard" else torch.tensor([[0, 100], [0, 100]])
         )
 
