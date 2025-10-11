@@ -122,11 +122,15 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
     // - the current image is smaller than the canvas, hence exposing its pixels
     // The "background" disposal method means that the current canvas should be
     // set to the background color.
-    // We only support these 2 modes and default to "background" when the
-    // disposal method is unspecified, or when it's set to "DISPOSE_PREVIOUS"
+    // We only support these 2 modes and default to DISPOSE_DO_NOT when the
+    // disposal method is unspecified, or when it's set to DISPOSE_PREVIOUS
     // which according to GIFLIB is not widely supported.
     // (https://giflib.sourceforge.net/whatsinagif/animation_and_transparency.html).
-    if (i > 0 && gcb.DisposalMode == DISPOSE_DO_NOT) {
+    // This is consistent with default behaviour in the majority of web browsers
+    // and image libraries like Pillow.
+    if (i > 0 && (gcb.DisposalMode == DISPOSAL_UNSPECIFIED || 
+                  gcb.DisposalMode == DISPOSE_DO_NOT       ||
+                  gcb.DisposalMode == DISPOSE_PREVIOUS)) {
       out[i] = out[i - 1];
     } else {
       // Background. If bg wasn't defined, it will be (0, 0, 0)
