@@ -128,9 +128,10 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
     // (https://giflib.sourceforge.net/whatsinagif/animation_and_transparency.html).
     // This is consistent with default behaviour in the majority of web browsers
     // and image libraries like Pillow.
-    if (i > 0 && (gcb.DisposalMode == DISPOSAL_UNSPECIFIED || 
-                  gcb.DisposalMode == DISPOSE_DO_NOT       ||
-                  gcb.DisposalMode == DISPOSE_PREVIOUS)) {
+    if (i > 0 &&
+        (gcb.DisposalMode == DISPOSAL_UNSPECIFIED ||
+         gcb.DisposalMode == DISPOSE_DO_NOT ||
+         gcb.DisposalMode == DISPOSE_PREVIOUS)) {
       out[i] = out[i - 1];
     } else {
       // Background. If bg wasn't defined, it will be (0, 0, 0)
