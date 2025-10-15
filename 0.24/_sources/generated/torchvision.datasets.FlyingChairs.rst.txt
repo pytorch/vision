@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+FlyingChairs
+============
+
+.. autoclass:: FlyingChairs
+    :members:
+        __getitem__,
+        
+    :special-members:

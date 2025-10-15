@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.transforms.functional
+
+
+to_pil_image
+============
+
+.. autofunction:: to_pil_image
