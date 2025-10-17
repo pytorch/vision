@@ -122,7 +122,11 @@ int VideoStream::copyFrameBytes(ByteStorage* out, bool flush) {
 void VideoStream::setHeader(DecoderHeader* header, bool flush) {
   Stream::setHeader(header, flush);
   if (!flush) { // no frames for video flush
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(58,7,100)
+    header->keyFrame = (frame_)->flags & AV_FRAME_FLAG_KEY;
+#else
     header->keyFrame = frame_->key_frame;
+#endif
     header->fps = av_q2d(av_guess_frame_rate(
         inputCtx_, inputCtx_->streams[format_.stream], nullptr));
   }
