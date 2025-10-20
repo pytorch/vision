@@ -65,17 +65,6 @@ Torchvision currently supports the following image backends:
 
 Read more in in our [docs](https://pytorch.org/vision/stable/transforms.html).
 
-# Using the models on C++
-
-Refer to [example/cpp](https://github.com/pytorch/vision/tree/main/examples/cpp).
-
-**DISCLAIMER**: the `libtorchvision` library includes the torchvision
-custom ops as well as most of the C++ torchvision APIs. Those APIs do not come
-with any backward-compatibility guarantees and may change from one version to
-the next. Only the Python APIs are stable and with backward-compatibility
-guarantees. So, if you need stability within a C++ environment, your best bet is
-to export the Python APIs via torchscript.
-
 ## Documentation
 
 You can find the API documentation on the pytorch website: <https://pytorch.org/vision/stable/index.html>
