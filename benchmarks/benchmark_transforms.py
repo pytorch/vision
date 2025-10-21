@@ -102,8 +102,11 @@ def pil_pipeline(image: Image.Image, target_size: int) -> torch.Tensor:
 
 
 def cudacv_pipeline(image: torch.Tensor, target_size: int) -> torch.Tensor:
-    # Permute from NCHW to NHWC and ensure contiguity
-    image = image.permute(0, 2, 3, 1).contiguous()
+    channel_first = image.shape[-1] != 3
+    if channel_first:
+        image = image.permute(0, 2, 3, 1).contiguous()
+        # image = cvcuda.as_tensor(image, nvcv.TensorLayout.NCHW)
+        # image = cvcuda.reformat(image, nvcv.TensorLayout.NHWC)
     image = cvcuda.as_tensor(image, nvcv.TensorLayout.NHWC)
     img: cvcuda.Tensor = cvcuda.resize(
         image,
@@ -119,7 +122,10 @@ def cudacv_pipeline(image: torch.Tensor, target_size: int) -> torch.Tensor:
     img: cvcuda.Tensor = cvcuda.normalize(
         img, NORM_MEAN_CUDA_CV, NORM_STD_CUDA_CV
     )
-    return torch.as_tensor(img.cuda())
+    out = torch.as_tensor(img.cuda())
+    if channel_first:
+        out = out.permute(0, 3, 1, 2)
+    return out
 
 
 def albumentations_pipeline(image: np.ndarray, target_size: int) -> torch.Tensor:
