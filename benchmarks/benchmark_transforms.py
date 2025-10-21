@@ -101,11 +101,13 @@ def pil_pipeline(image: Image.Image, target_size: int) -> torch.Tensor:
     return img
 
 
-def cudacv_pipeline(image: cvcuda.Tensor, target_size: int) -> torch.Tensor:
-    
+def cudacv_pipeline(image: torch.Tensor, target_size: int) -> torch.Tensor:
+    # Permute from NCHW to NHWC and ensure contiguity
+    image = image.permute(0, 2, 3, 1).contiguous()
+    image = cvcuda.as_tensor(image, nvcv.TensorLayout.NHWC)
     img: cvcuda.Tensor = cvcuda.resize(
         image,
-        (image.shape[0], target_size, target_size, image.shape[-1]),  # N, H, W, C
+        (image.shape[0], target_size, target_size, image.shape[-1]),
         interp=cvcuda.Interp.LINEAR,
     )
     img: cvcuda.Tensor = cvcuda.convertto(
@@ -234,9 +236,6 @@ def run_benchmark(args) -> Dict[str, Any]:
         elif backend == "cudacv":
             if images.ndim == 3:  # no batch dimension
                 images = images.unsqueeze(0)
-            # Permute from NCHW to NHWC and ensure contiguity
-            images = images.permute(0, 2, 3, 1).contiguous()
-            images = cvcuda.as_tensor(images, nvcv.TensorLayout.NHWC)
         elif backend == "albumentations":
             if args.batch_size > 1:
                 # TODO is that true????
