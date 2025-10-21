@@ -67,6 +67,7 @@ NORM_STD = [0.229, 0.224, 0.225]
 NORM_MEAN_CUDA_CV = cvcuda.as_tensor(torch.Tensor(NORM_MEAN).reshape(1, 1, 1, 3).cuda(), "NHWC")
 NORM_STD_CUDA_CV = cvcuda.as_tensor(torch.Tensor(NORM_STD).reshape(1, 1, 1, 3).cuda(), "NHWC")
 
+
 def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
     images = F.resize(
         images, size=(target_size, target_size), interpolation=F.InterpolationMode.BILINEAR, antialias=True
@@ -114,12 +115,10 @@ def cudacv_pipeline(image: torch.Tensor, target_size: int) -> torch.Tensor:
     img: cvcuda.Tensor = cvcuda.convertto(
         src=img,
         dtype=np.float32,
-        scale=1.0/255.0,
+        scale=1.0 / 255.0,
     )
-    
-    img: cvcuda.Tensor = cvcuda.normalize(
-        img, NORM_MEAN_CUDA_CV, NORM_STD_CUDA_CV
-    )
+
+    img: cvcuda.Tensor = cvcuda.normalize(img, NORM_MEAN_CUDA_CV, NORM_STD_CUDA_CV)
     out = torch.as_tensor(img.cuda())
     if channel_first:
         out = out.permute(0, 3, 1, 2)
