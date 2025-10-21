@@ -105,8 +105,6 @@ def cudacv_pipeline(image: torch.Tensor, target_size: int) -> torch.Tensor:
     channel_first = image.shape[-1] != 3
     if channel_first:
         image = image.permute(0, 2, 3, 1).contiguous()
-        # image = cvcuda.as_tensor(image, nvcv.TensorLayout.NCHW)
-        # image = cvcuda.reformat(image, nvcv.TensorLayout.NHWC)
     image = cvcuda.as_tensor(image, nvcv.TensorLayout.NHWC)
     img: cvcuda.Tensor = cvcuda.resize(
         image,
