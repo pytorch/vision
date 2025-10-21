@@ -30,6 +30,14 @@ try:
 except ImportError:
     HAS_KORNIA = False
 
+try:
+    import cvcuda
+    import nvcv
+
+    HAS_CUDA_CV = True
+except ImportError:
+    HAS_CUDA_CV = False
+
 from PIL import Image
 
 
@@ -122,6 +130,7 @@ def print_benchmark_info(args):
         ["TorchVision", torchvision.__version__],
         ["OpenCV", cv2.__version__ if HAS_OPENCV else "Not available"],
         ["PIL/Pillow", getattr(Image, "__version__", "Version unavailable")],
+        ["CUDA-CV", cvcuda.__version__ if HAS_CUDA_CV else "Not available"],
         ["Albumentations", A.__version__ if HAS_ALBUMENTATIONS else "Not available"],
         ["Kornia", K.__version__ if HAS_KORNIA else "Not available"],
     ]

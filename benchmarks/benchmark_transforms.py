@@ -50,12 +50,22 @@ try:
 except ImportError:
     HAS_KORNIA = False
 
+
+try:
+    import cvcuda
+    import nvcv
+
+    HAS_CUDA_CV = True
+except ImportError:
+    HAS_CUDA_CV = False
+
 from PIL import Image
 
 # ImageNet normalization constants
 NORM_MEAN = [0.485, 0.456, 0.406]
 NORM_STD = [0.229, 0.224, 0.225]
-
+NORM_MEAN_CUDA_CV = cvcuda.as_tensor(torch.Tensor(NORM_MEAN).reshape(1, 1, 1, 3).cuda(), "NHWC")
+NORM_STD_CUDA_CV = cvcuda.as_tensor(torch.Tensor(NORM_STD).reshape(1, 1, 1, 3).cuda(), "NHWC")
 
 def torchvision_pipeline(images: torch.Tensor, target_size: int) -> torch.Tensor:
     images = F.resize(
@@ -89,6 +99,25 @@ def pil_pipeline(image: Image.Image, target_size: int) -> torch.Tensor:
     img = F.to_dtype(img, dtype=torch.float32, scale=True)
     img = F.normalize(img, mean=NORM_MEAN, std=NORM_STD)
     return img
+
+
+def cudacv_pipeline(image: cvcuda.Tensor, target_size: int) -> torch.Tensor:
+    
+    img: cvcuda.Tensor = cvcuda.resize(
+        image,
+        (image.shape[0], target_size, target_size, image.shape[-1]),  # N, H, W, C
+        interp=cvcuda.Interp.LINEAR,
+    )
+    img: cvcuda.Tensor = cvcuda.convertto(
+        src=img,
+        dtype=np.float32,
+        scale=1.0/255.0,
+    )
+    
+    img: cvcuda.Tensor = cvcuda.normalize(
+        img, NORM_MEAN_CUDA_CV, NORM_STD_CUDA_CV
+    )
+    return torch.as_tensor(img.cuda())
 
 
 def albumentations_pipeline(image: np.ndarray, target_size: int) -> torch.Tensor:
@@ -125,7 +154,7 @@ def run_benchmark(args) -> Dict[str, Any]:
 
     device = args.device.lower()
     # Check device compatibility
-    if device == "cuda" and backend not in ["tv", "tv-compiled"]:
+    if device == "cuda" and backend not in ["tv", "tv-compiled", "cudacv"]:
         raise RuntimeError(
             f"CUDA device not supported for {backend} backend. Only 'tv' and 'tv-compiled' support CUDA."
         )
@@ -135,6 +164,8 @@ def run_benchmark(args) -> Dict[str, Any]:
 
     if backend == "opencv" and not HAS_OPENCV:
         raise RuntimeError("OpenCV not available. Install with: pip install opencv-python")
+    if backend == "cudacv" and not HAS_CUDA_CV:
+        raise RuntimeError("CudaCV not available. Install with: pip install cudacv")
     if backend == "albumentations" and not HAS_ALBUMENTATIONS:
         raise RuntimeError("Albumentations not available. Install with: pip install albumentations")
     if backend == "kornia" and not HAS_KORNIA:
@@ -163,6 +194,9 @@ def run_benchmark(args) -> Dict[str, Any]:
     elif backend == "pil":
         torch.set_num_threads(args.num_threads)
         pipeline = pil_pipeline
+    elif backend == "cudacv":
+        torch.set_num_threads(args.num_threads)
+        pipeline = cudacv_pipeline
     elif backend == "albumentations":
         cv2.setNumThreads(args.num_threads)
         pipeline = albumentations_pipeline
@@ -180,7 +214,7 @@ def run_benchmark(args) -> Dict[str, Any]:
             images = images.to(memory_format=torch.channels_last)
 
         # Move to device for torchvision backends
-        if backend in ["tv", "tv-compiled"]:
+        if backend in ["tv", "tv-compiled", "cudacv"]:
             images = images.to(device)
 
         if args.batch_size == 1:
@@ -197,6 +231,12 @@ def run_benchmark(args) -> Dict[str, Any]:
             # Convert to PIL Image (CHW -> HWC)
             images = images.numpy().transpose(1, 2, 0)
             images = Image.fromarray(images)
+        elif backend == "cudacv":
+            if images.ndim == 3:  # no batch dimension
+                images = images.unsqueeze(0)
+            # Permute from NCHW to NHWC and ensure contiguity
+            images = images.permute(0, 2, 3, 1).contiguous()
+            images = cvcuda.as_tensor(images, nvcv.TensorLayout.NHWC)
         elif backend == "albumentations":
             if args.batch_size > 1:
                 # TODO is that true????
@@ -243,7 +283,16 @@ def main():
         default="CF",
         help="Memory format: CL (channels_last) or CF (channels_first, i.e. contiguous)",
     )
-    all_backends = ["tv", "tv-v1", "tv-compiled", "opencv", "pil", "albumentations", "kornia"]
+    all_backends = [
+        "tv",
+        "tv-v1",
+        "tv-compiled",
+        "opencv",
+        "pil",
+        "cudacv",
+        "albumentations",
+        "kornia",
+    ]
     parser.add_argument(
         "--backends",
         type=str,
@@ -279,7 +328,7 @@ def main():
         except Exception as e:
             print(f"ERROR with {backend}: {e}")
 
-    if len(results) > 1:
+    if len(results) >= 1:
         print_comparison_table(results)
 
 
