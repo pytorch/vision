@@ -10,7 +10,15 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import _parse_labels_getter, _setup_number_or_seq, _setup_size, get_bounding_boxes, has_any, is_pure_tensor
+from ._utils import (
+    _parse_labels_getter,
+    _setup_number_or_seq,
+    _setup_size,
+    get_bounding_boxes,
+    get_keypoints,
+    has_any,
+    is_pure_tensor,
+)
 
 
 # TODO: do we want/need to expose this?
@@ -451,6 +459,96 @@ class SanitizeBoundingBoxes(Transform):
         is_bounding_boxes_or_mask = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask))
 
         if not (is_label or is_bounding_boxes_or_mask):
+            return inpt
+
+        output = inpt[params["valid"]]
+
+        if is_label:
+            return output
+        else:
+            return tv_tensors.wrap(output, like=inpt)
+
+
+class SanitizeKeyPoints(Transform):
+    """Remove keypoints outside of the image area and their corresponding labels (if any).
+
+    This transform removes keypoints or groups of keypoints and their associated labels that
+    have coordinates outside of their corresponding image.
+    If you would instead like to clamp such keypoints to the image edges, use
+    :class:`~torchvision.transforms.v2.ClampKeyPoints`.
+
+    It is recommended to call it at the end of a pipeline, before passing the
+    input to the models.
+
+    Keypoints can be passed as a set of individual keypoints or as a set of objects
+    (e.g., polygons or polygonal chains) consisting of a fixed number of keypoints of shape ``[..., 2]``.
+    When groups of keypoints are passed (i.e., an at least 3-dimensional tensor), this transform
+    will only remove entire groups, not individual keypoints within a group.
+
+    Args:
+        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input
+            (or anything else that needs to be sanitized along with the keypoints).
+            If set to the string ``"default"``, this will try to find a "labels" key in the input (case-insensitive), if
+            the input is a dict or it is a tuple whose second element is a dict.
+
+            It can also be a callable that takes the same input as the transform, and returns either:
+
+            - A single tensor (the labels)
+            - A tuple/list of tensors, each of which will be subject to the same sanitization as the keypoints.
+
+            If ``labels_getter`` is None (the default), then only keypoints are sanitized.
+    """
+
+    def __init__(
+        self,
+        labels_getter: Union[Callable[[Any], Any], str, None] = None,
+    ) -> None:
+        super().__init__()
+        self.labels_getter = labels_getter
+        self._labels_getter = _parse_labels_getter(labels_getter)
+
+    def forward(self, *inputs: Any) -> Any:
+        inputs = inputs if len(inputs) > 1 else inputs[0]
+
+        labels = self._labels_getter(inputs)
+        if labels is not None:
+            msg = "The labels in the input to forward() must be a tensor or None, got {type} instead."
+            if isinstance(labels, torch.Tensor):
+                labels = (labels,)
+            elif isinstance(labels, (tuple, list)):
+                for entry in labels:
+                    if not isinstance(entry, torch.Tensor):
+                        # TODO: we don't need to enforce tensors, just that entries are indexable as t[bool_mask]
+                        raise ValueError(msg.format(type=type(entry)))
+            else:
+                raise ValueError(msg.format(type=type(labels)))
+
+        flat_inputs, spec = tree_flatten(inputs)
+        points = get_keypoints(flat_inputs)
+
+        if labels is not None:
+            for label in labels:
+                if points.shape[0] != label.shape[0]:
+                    raise ValueError(
+                        f"Number of kepyoints (shape={points.shape}) must match the number of labels."
+                        f"Found labels with shape={label.shape})."
+                    )
+
+        valid = F._misc._get_sanitize_keypoints_mask(
+            points,
+            canvas_size=points.canvas_size,
+        )
+
+        params = dict(valid=valid, labels=labels)
+        flat_outputs = [self.transform(inpt, params) for inpt in flat_inputs]
+
+        return tree_unflatten(flat_outputs, spec)
+
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+        is_label = params["labels"] is not None and any(inpt is label for label in params["labels"])
+        is_keypoints = isinstance(inpt, tv_tensors.KeyPoints)
+
+        if not (is_label or is_keypoints):
             return inpt
 
         output = inpt[params["valid"]]

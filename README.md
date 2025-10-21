@@ -20,7 +20,8 @@ versions.
 
 | `torch`            | `torchvision`      | Python              |
 | ------------------ | ------------------ | ------------------- |
-| `main` / `nightly` | `main` / `nightly` | `>=3.10`, `<=3.13`   |
+| `main` / `nightly` | `main` / `nightly` | `>=3.10`, `<=3.14`  |
+| `2.9`              | `0.24`             | `>=3.10`, `<=3.14`  |
 | `2.8`              | `0.23`             | `>=3.9`, `<=3.13`   |
 | `2.7`              | `0.22`             | `>=3.9`, `<=3.13`   |
 | `2.6`              | `0.21`             | `>=3.9`, `<=3.12`   |
@@ -63,17 +64,6 @@ Torchvision currently supports the following image backends:
     - [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - a **much faster** drop-in replacement for Pillow with SIMD.
 
 Read more in in our [docs](https://pytorch.org/vision/stable/transforms.html).
-
-# Using the models on C++
-
-Refer to [example/cpp](https://github.com/pytorch/vision/tree/main/examples/cpp).
-
-**DISCLAIMER**: the `libtorchvision` library includes the torchvision
-custom ops as well as most of the C++ torchvision APIs. Those APIs do not come
-with any backward-compatibility guarantees and may change from one version to
-the next. Only the Python APIs are stable and with backward-compatibility
-guarantees. So, if you need stability within a C++ environment, your best bet is
-to export the Python APIs via torchscript.
 
 ## Documentation
 
