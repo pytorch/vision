@@ -32,7 +32,6 @@ except ImportError:
 
 try:
     import cvcuda
-    import nvcv
 
     HAS_CUDA_CV = True
 except ImportError:

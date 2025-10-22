@@ -44,7 +44,6 @@ except ImportError:
 
 try:
     import kornia as K
-    import kornia.augmentation as KA
 
     HAS_KORNIA = True
 except ImportError:
