@@ -244,13 +244,13 @@ void deformable_im2col(
 }
 
 int get_greatest_divisor_below_bound(int n, int bound) {
-    int limit = std::min(n/2, bound);
-    for (int k = limit; k > 1; --k) {
-        if (n % k == 0) {
-          return k;
-        }
+  int limit = std::min(n / 2, bound);
+  for (int k = limit; k > 1; --k) {
+    if (n % k == 0) {
+      return k;
     }
-    return 1;
+  }
+  return 1;
 }
 
 template <typename scalar_t>
