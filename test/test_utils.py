@@ -167,6 +167,33 @@ def test_draw_boxes_with_coloured_label_backgrounds():
 
 
 @pytest.mark.skipif(PILLOW_VERSION < (10, 1), reason="The reference image is only valid for PIL >= 10.1")
+def test_draw_boxes_with_coloured_label_text_boxes():
+    img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
+    labels = ["a", "b", "c", "d"]
+    colors = ["green", "#FF00FF", (0, 255, 0), "red"]
+    label_colors = ["green", "red", (0, 255, 0), "#FF00FF"]
+    label_background_colors = ["white", "black", "yellow", "blue"]
+    result = utils.draw_bounding_boxes(
+        img,
+        boxes,
+        labels=labels,
+        colors=colors,
+        fill=True,
+        label_colors=label_colors,
+        label_background_colors=label_background_colors,
+        fill_labels=True,
+    )
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "assets",
+        "fakedata",
+        "draw_boxes_different_label_background_colors.png",
+    )
+    expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+    assert_equal(result, expected)
+
+
+@pytest.mark.skipif(PILLOW_VERSION < (10, 1), reason="The reference image is only valid for PIL >= 10.1")
 def test_draw_rotated_boxes():
     img = torch.full((3, 500, 500), 255, dtype=torch.uint8)
     colors = ["blue", "yellow", (0, 255, 0), "black"]
@@ -382,7 +409,7 @@ def test_draw_segmentation_masks_errors(device):
         utils.draw_segmentation_masks(image=img, masks=masks_bad_shape)
     with pytest.raises(ValueError, match="Number of colors must be equal or larger than the number of objects"):
         utils.draw_segmentation_masks(image=img, masks=masks, colors=[])
-    with pytest.raises(ValueError, match="`colors` must be a tuple or a string, or a list thereof"):
+    with pytest.raises(ValueError, match="colors must be a tuple or a string, or a list thereof"):
         bad_colors = np.array(["red", "blue"])  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
     with pytest.raises(ValueError, match="If passed as tuple, colors should be an RGB triplet"):

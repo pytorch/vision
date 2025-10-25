@@ -24,7 +24,7 @@ from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE
 
 from torchvision.utils import _log_api_usage_once
 
-from ._meta import _get_size_image_pil, clamp_bounding_boxes, clamp_keypoints, convert_bounding_box_format
+from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_box_format
 
 from ._utils import _FillTypeJIT, _get_kernel, _register_five_ten_crop_kernel_internal, _register_kernel_internal
 
@@ -71,7 +71,7 @@ def horizontal_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, i
     shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
     keypoints[..., 0] = keypoints[..., 0].sub_(canvas_size[1] - 1).neg_()
-    return clamp_keypoints(keypoints.reshape(shape), canvas_size=canvas_size)
+    return keypoints.reshape(shape)
 
 
 @_register_kernel_internal(horizontal_flip, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -159,7 +159,7 @@ def vertical_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int
     shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
     keypoints[..., 1] = keypoints[..., 1].sub_(canvas_size[0] - 1).neg_()
-    return clamp_keypoints(keypoints.reshape(shape), canvas_size=canvas_size)
+    return keypoints.reshape(shape)
 
 
 def vertical_flip_bounding_boxes(
@@ -261,7 +261,7 @@ def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
         if torch.compiler.is_compiling():
             return True
         else:
-            return "AVX2" in torch.backends.cpu.get_cpu_capability()
+            return torch.backends.cpu.get_cpu_capability() in ("AVX2", "AVX512")
 
     return interpolation == InterpolationMode.BICUBIC
 
@@ -451,44 +451,45 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
         torch.Tensor: Tensor of same shape as input containing the rectangle coordinates.
                      The output maintains the same dtype as the input.
     """
-    out_boxes = parallelogram.clone()
+    original_shape = parallelogram.shape
+    dtype = parallelogram.dtype
+    acceptable_dtypes = [torch.float32, torch.float64]
+    need_cast = dtype not in acceptable_dtypes
+    if need_cast:
+        # Up-case to avoid overflow for square operations
+        parallelogram = parallelogram.to(torch.float32)
 
-    # Calculate parallelogram diagonal vectors
-    dx13 = parallelogram[..., 4] - parallelogram[..., 0]
-    dy13 = parallelogram[..., 5] - parallelogram[..., 1]
-    dx42 = parallelogram[..., 2] - parallelogram[..., 6]
-    dy42 = parallelogram[..., 3] - parallelogram[..., 7]
-    dx12 = parallelogram[..., 2] - parallelogram[..., 0]
-    dy12 = parallelogram[..., 1] - parallelogram[..., 3]
-    diag13 = torch.sqrt(dx13**2 + dy13**2)
-    diag24 = torch.sqrt(dx42**2 + dy42**2)
-    mask = diag13 > diag24
+    x1, y1, x2, y2, x3, y3, x4, y4 = parallelogram.unbind(-1)
+    cx = (x1 + x3) / 2
+    cy = (y1 + y3) / 2
 
-    # Calculate rotation angle in radians
-    r_rad = torch.atan2(dy12, dx12)
-    cos, sin = torch.cos(r_rad), torch.sin(r_rad)
+    # Calculate width, height, and rotation angle of the parallelogram
+    wp = torch.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    hp = torch.sqrt((x4 - x1) ** 2 + (y4 - y1) ** 2)
+    r12 = torch.atan2(y1 - y2, x2 - x1)
+    r14 = torch.atan2(y1 - y4, x4 - x1)
+    r_rad = r12 - r14
+    sign = torch.where(r_rad > torch.pi / 2, -1, 1)
+    cos, sin = r_rad.cos(), r_rad.sin()
 
-    # Calculate width using the angle between diagonal and rotation
-    w = torch.where(
-        mask,
-        diag13 * torch.abs(torch.sin(torch.atan2(dx13, dy13) - r_rad)),
-        diag24 * torch.abs(torch.sin(torch.atan2(dx42, dy42) - r_rad)),
-    )
+    # Calculate width, height, and rotation angle of the rectangle
+    w = torch.where(wp < hp, wp * sin, wp + hp * cos * sign)
+    h = torch.where(wp > hp, hp * sin, hp + wp * cos * sign)
+    r_rad = torch.where(hp > wp, r14 + torch.pi / 2, r12)
+    cos, sin = r_rad.cos(), r_rad.sin()
 
-    delta_x = w * cos
-    delta_y = w * sin
-    # Update coordinates to form a rectangle
-    # Keeping the points (x1, y1) and (x3, y3) unchanged.
-    out_boxes[..., 2] = torch.where(mask, parallelogram[..., 0] + delta_x, parallelogram[..., 2])
-    out_boxes[..., 3] = torch.where(mask, parallelogram[..., 1] - delta_y, parallelogram[..., 3])
-    out_boxes[..., 6] = torch.where(mask, parallelogram[..., 4] - delta_x, parallelogram[..., 6])
-    out_boxes[..., 7] = torch.where(mask, parallelogram[..., 5] + delta_y, parallelogram[..., 7])
+    x1 = cx - w / 2 * cos - h / 2 * sin
+    y1 = cy - h / 2 * cos + w / 2 * sin
+    x2 = cx + w / 2 * cos - h / 2 * sin
+    y2 = cy - h / 2 * cos - w / 2 * sin
+    x3 = cx + w / 2 * cos + h / 2 * sin
+    y3 = cy + h / 2 * cos - w / 2 * sin
+    x4 = cx - w / 2 * cos + h / 2 * sin
+    y4 = cy + h / 2 * cos + w / 2 * sin
+    out_boxes = torch.stack((x1, y1, x2, y2, x3, y3, x4, y4), dim=-1).reshape(original_shape)
 
-    # Keeping the points (x2, y2) and (x4, y4) unchanged.
-    out_boxes[..., 0] = torch.where(~mask, parallelogram[..., 2] - delta_x, parallelogram[..., 0])
-    out_boxes[..., 1] = torch.where(~mask, parallelogram[..., 3] + delta_y, parallelogram[..., 1])
-    out_boxes[..., 4] = torch.where(~mask, parallelogram[..., 6] + delta_x, parallelogram[..., 4])
-    out_boxes[..., 5] = torch.where(~mask, parallelogram[..., 7] - delta_y, parallelogram[..., 5])
+    if need_cast:
+        out_boxes = out_boxes.to(dtype)
     return out_boxes
 
 
@@ -1025,7 +1026,7 @@ def _affine_keypoints_with_expand(
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         canvas_size = (new_height, new_width)
 
-    out_keypoints = clamp_keypoints(transformed_points, canvas_size=canvas_size).reshape(original_shape)
+    out_keypoints = transformed_points.reshape(original_shape)
     out_keypoints = out_keypoints.to(original_dtype)
 
     return out_keypoints, canvas_size
@@ -1694,7 +1695,7 @@ def pad_keypoints(
     left, right, top, bottom = _parse_pad_padding(padding)
     pad = torch.tensor([left, top], dtype=keypoints.dtype, device=keypoints.device)
     canvas_size = (canvas_size[0] + top + bottom, canvas_size[1] + left + right)
-    return clamp_keypoints(keypoints + pad, canvas_size), canvas_size
+    return keypoints + pad, canvas_size
 
 
 @_register_kernel_internal(pad, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -1816,7 +1817,7 @@ def crop_keypoints(
     keypoints = keypoints - torch.tensor([left, top], dtype=keypoints.dtype, device=keypoints.device)
     canvas_size = (height, width)
 
-    return clamp_keypoints(keypoints, canvas_size=canvas_size), canvas_size
+    return keypoints, canvas_size
 
 
 @_register_kernel_internal(crop, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -2046,7 +2047,7 @@ def perspective_keypoints(
     numer_points = torch.matmul(points, theta1.T)
     denom_points = torch.matmul(points, theta2.T)
     transformed_points = numer_points.div_(denom_points)
-    return clamp_keypoints(transformed_points.to(keypoints.dtype), canvas_size).reshape(original_shape)
+    return transformed_points.to(keypoints.dtype).reshape(original_shape)
 
 
 @_register_kernel_internal(perspective, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -2375,7 +2376,7 @@ def elastic_keypoints(
     t_size = torch.tensor(canvas_size[::-1], device=displacement.device, dtype=displacement.dtype)
     transformed_points = inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
 
-    return clamp_keypoints(transformed_points.to(keypoints.dtype), canvas_size=canvas_size).reshape(original_shape)
+    return transformed_points.to(keypoints.dtype).reshape(original_shape)
 
 
 @_register_kernel_internal(elastic, tv_tensors.KeyPoints, tv_tensor_wrapper=False)

@@ -3,6 +3,10 @@
 
 #include "../../cpu/roi_align_common.h"
 
+#ifdef USE_FBGEMM
+#include <fbgemm/QuantUtils.h>
+#endif
+
 namespace vision {
 namespace ops {
 
@@ -257,8 +261,9 @@ at::Tensor qroi_align_forward_kernel(
       input.q_scale(),
       input.q_zero_point());
 
-  if (output.numel() == 0)
+  if (output.numel() == 0) {
     return output;
+  }
 
   AT_DISPATCH_QINT_TYPES(input.scalar_type(), "qroi_align_forward_kernel", [&] {
     qroi_align_forward_kernel_impl<scalar_t>(

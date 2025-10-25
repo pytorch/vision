@@ -6,6 +6,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import sysconfig
 import warnings
 from pathlib import Path
 
@@ -27,9 +28,9 @@ NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 # video decoding backends in torchvision. I'm renaming this to "gpu video
 # decoder" where possible, keeping user facing names (like the env var below) to
 # the old scheme for BC.
-USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "1") == "1"
+USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "0") == "1"
 # Same here: "use ffmpeg" was used to denote "use cpu video decoder".
-USE_CPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_FFMPEG", "1") == "1"
+USE_CPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_FFMPEG", "0") == "1"
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
 TORCHVISION_LIBRARY = os.environ.get("TORCHVISION_LIBRARY", "")
@@ -111,8 +112,7 @@ def get_requirements():
     ]
 
     # Excluding 8.3.* because of https://github.com/pytorch/vision/issues/4934
-    # TODO remove <11.3 bound and address corresponding deprecation warnings
-    pillow_ver = " >= 5.3.0, !=8.3.*, <11.3"
+    pillow_ver = " >= 5.3.0, !=8.3.*"
     pillow_req = "pillow-simd" if get_dist("pillow-simd") is not None else "pillow"
     requirements.append(pillow_req + pillow_ver)
 
@@ -137,6 +137,8 @@ def get_macros_and_flags():
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
         extra_compile_args["cxx"].append("/MP")
+        if sysconfig.get_config_var("Py_GIL_DISABLED"):
+            extra_compile_args["cxx"].append("-DPy_GIL_DISABLED")
 
     if DEBUG:
         extra_compile_args["cxx"].append("-g")
@@ -573,7 +575,7 @@ if __name__ == "__main__":
             "scipy": ["scipy"],
         },
         ext_modules=extensions,
-        python_requires=">=3.9",
+        python_requires=">=3.10",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
             "clean": clean,

@@ -631,7 +631,7 @@ def reference_affine_rotated_bounding_boxes_helper(
     )
 
 
-def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_size=None, clamp=True):
+def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_size=None, cast=True):
     canvas_size = new_canvas_size or keypoints.canvas_size
 
     def affine_keypoints(keypoints):
@@ -650,10 +650,7 @@ def reference_affine_keypoints_helper(keypoints, *, affine_matrix, new_canvas_si
                 float(transformed_points[0, 1]),
             ]
         )
-
-        if clamp:
-            output = F.clamp_keypoints(output, canvas_size=canvas_size)
-        else:
+        if not cast:
             dtype = output.dtype
 
         return output.to(dtype=dtype, device=device)
@@ -2293,10 +2290,10 @@ class TestRotate:
             keypoints,
             affine_matrix=affine_matrix,
             new_canvas_size=new_canvas_size,
-            clamp=False,
+            cast=False,
         )
 
-        return F.clamp_keypoints(self._recenter_keypoints_after_expand(output, recenter_xy=recenter_xy)).to(keypoints)
+        return self._recenter_keypoints_after_expand(output, recenter_xy=recenter_xy).to(keypoints)
 
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("expand", [False, True])
@@ -2520,14 +2517,29 @@ class TestContainerTransforms:
             with pytest.raises(TypeError, match="Argument transforms should be a sequence of callables"):
                 cls(lambda x: x)
 
-        with pytest.raises(ValueError, match="at least one transform"):
-            transforms.Compose([])
+        for cls in (
+            transforms.Compose,
+            transforms.RandomApply,
+            transforms.RandomChoice,
+            transforms.RandomOrder,
+        ):
+
+            with pytest.raises(ValueError, match="at least one transform"):
+                cls([])
 
         for p in [-1, 2]:
             with pytest.raises(ValueError, match=re.escape("value in the interval [0.0, 1.0]")):
                 transforms.RandomApply([lambda x: x], p=p)
 
-        for transforms_, p in [([lambda x: x], []), ([], [1.0])]:
+        for transforms_, p in [
+            ([lambda x: x], []),
+            (
+                [lambda x: x, lambda x: x],
+                [
+                    1.0,
+                ],
+            ),
+        ]:
             with pytest.raises(ValueError, match="Length of p doesn't match the number of transforms"):
                 transforms.RandomChoice(transforms_, p=p)
 
@@ -3978,7 +3990,7 @@ class TestGaussianNoise:
         "make_input",
         [make_image_tensor, make_image, make_video],
     )
-    def test_kernel(self, make_input):
+    def test_kernel_float(self, make_input):
         check_kernel(
             F.gaussian_noise,
             make_input(dtype=torch.float32),
@@ -3990,8 +4002,27 @@ class TestGaussianNoise:
         "make_input",
         [make_image_tensor, make_image, make_video],
     )
-    def test_functional(self, make_input):
+    def test_kernel_uint8(self, make_input):
+        check_kernel(
+            F.gaussian_noise,
+            make_input(dtype=torch.uint8),
+            # This cannot pass because the noise on a batch in not per-image
+            check_batched_vs_unbatched=False,
+        )
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_functional_float(self, make_input):
         check_functional(F.gaussian_noise, make_input(dtype=torch.float32))
+
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_functional_uint8(self, make_input):
+        check_functional(F.gaussian_noise, make_input(dtype=torch.uint8))
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
@@ -4008,10 +4039,11 @@ class TestGaussianNoise:
         "make_input",
         [make_image_tensor, make_image, make_video],
     )
-    def test_transform(self, make_input):
+    def test_transform_float(self, make_input):
         def adapter(_, input, __):
-            # This transform doesn't support uint8 so we have to convert the auto-generated uint8 tensors to float32
-            # Same for PIL images
+            # We have two different implementations for floats and uint8
+            # To test this implementation we'll convert the auto-generated uint8 tensors to float32
+            # We don't support other int dtypes nor pil images
             for key, value in input.items():
                 if isinstance(value, torch.Tensor) and not value.is_floating_point():
                     input[key] = value.to(torch.float32)
@@ -4021,11 +4053,29 @@ class TestGaussianNoise:
 
         check_transform(transforms.GaussianNoise(), make_input(dtype=torch.float32), check_sample_input=adapter)
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_image_tensor, make_image, make_video],
+    )
+    def test_transform_uint8(self, make_input):
+        def adapter(_, input, __):
+            # We have two different implementations for floats and uint8
+            # To test this implementation we'll convert every tensor to uint8
+            # We don't support other int dtypes nor pil images
+            for key, value in input.items():
+                if isinstance(value, torch.Tensor) and not value.dtype != torch.uint8:
+                    input[key] = value.to(torch.uint8)
+                if isinstance(value, PIL.Image.Image):
+                    input[key] = F.pil_to_tensor(value).to(torch.uint8)
+            return input
+
+        check_transform(transforms.GaussianNoise(), make_input(dtype=torch.uint8), check_sample_input=adapter)
+
     def test_bad_input(self):
         with pytest.raises(ValueError, match="Gaussian Noise is not implemented for PIL images."):
             F.gaussian_noise(make_image_pil())
-        with pytest.raises(ValueError, match="Input tensor is expected to be in float dtype"):
-            F.gaussian_noise(make_image(dtype=torch.uint8))
+        with pytest.raises(ValueError, match="Input tensor is expected to be in uint8 or float dtype"):
+            F.gaussian_noise(make_image(dtype=torch.int32))
         with pytest.raises(ValueError, match="sigma shouldn't be negative"):
             F.gaussian_noise(make_image(dtype=torch.float32), sigma=-1)
 
@@ -5307,11 +5357,7 @@ class TestPerspective:
                 ]
             )
 
-            # It is important to clamp before casting, especially for CXCYWH format, dtype=int64
-            return F.clamp_keypoints(
-                output,
-                canvas_size=canvas_size,
-            ).to(dtype=dtype, device=device)
+            return output.to(dtype=dtype, device=device)
 
         return tv_tensors.KeyPoints(
             torch.cat([perspective_keypoints(k) for k in keypoints.reshape(-1, 2).unbind()], dim=0).reshape(
@@ -7001,6 +7047,29 @@ def test_parallelogram_to_bounding_boxes(input_size, device):
     actual = _parallelogram_to_bounding_boxes(parallelogram)
     torch.testing.assert_close(actual, expected)
 
+    # Test the transformation of a simple parallelogram.
+    #              1
+    #    1-2      /   2
+    #   / /  ->  /   /
+    # 4-3       4   /
+    #              3
+    #
+    #          1
+    # 1-2       \ 2
+    #   \ \  ->  \  \
+    #    4-3       4 \
+    #                 3
+    parallelogram = torch.tensor(
+        [[0, 4, 3, 1, 5, 1, 2, 4], [0, 1, 2, 1, 5, 4, 3, 4]],
+        dtype=torch.float32,
+    )
+    expected = torch.tensor(
+        [[0, 4, 4, 0, 5, 1, 1, 5], [0, 1, 1, 0, 5, 4, 4, 5]],
+        dtype=torch.float32,
+    )
+    actual = _parallelogram_to_bounding_boxes(parallelogram)
+    torch.testing.assert_close(actual, expected)
+
 
 @pytest.mark.parametrize("image_type", (PIL.Image, torch.Tensor, tv_tensors.Image))
 @pytest.mark.parametrize("data_augmentation", ("hflip", "lsj", "multiscale", "ssd", "ssdlite"))
@@ -7326,6 +7395,326 @@ class TestSanitizeBoundingBoxes:
 
         with pytest.raises(ValueError, match="bounding_boxes must be a tv_tensors.BoundingBoxes instance or a"):
             F.sanitize_bounding_boxes(good_bbox.tolist())
+
+
+class TestSanitizeKeyPoints:
+    def _make_keypoints_with_validity(
+        self,
+        canvas_size=(100, 100),
+        shape="2d",  # "2d", "3d", "4d" for different keypoint shapes
+    ):
+        """Create keypoints with known validity for testing."""
+        canvas_h, canvas_w = canvas_size
+
+        if shape == "2d":  # [N_points, 2]
+            keypoints_data = [
+                ([5, 5], True),  # Valid point inside image
+                ([canvas_w - 6, canvas_h - 6], True),  # Valid point near corner
+                ([canvas_w // 2, canvas_h // 2], True),  # Valid point in center
+                ([-1, canvas_h // 2], False),  # Invalid: x < 0
+                ([canvas_w // 2, -1], False),  # Invalid: y < 0
+                ([canvas_w, canvas_h // 2], False),  # Invalid: x >= canvas_w
+                ([canvas_w // 2, canvas_h], False),  # Invalid: y >= canvas_h
+                ([0, 0], True),  # Edge case: exactly on edge
+                ([canvas_w - 1, canvas_h - 1], True),  # Edge case: exactly on edge
+            ]
+            points, validity = zip(*keypoints_data)
+            keypoints = torch.tensor(points, dtype=torch.float32)
+
+        elif shape == "3d":  # [N_objects, N_points, 2]
+            # Create groups of keypoints with different validity patterns
+            keypoints_data = [
+                # Group 1: All points valid
+                ([[10, 10], [20, 20], [30, 30]], True),
+                # Group 2: One invalid point (should be removed if min_invalid_points=1)
+                ([[10, 10], [20, 20], [-5, 30]], False),
+                # Group 3: All points invalid
+                ([[-1, -1], [-2, -2], [-3, -3]], False),
+                # Group 4: Mix of valid and invalid (depends on min_invalid_points)
+                ([[10, 10], [-1, 20], [-2, 30]], False),
+            ]
+            groups, validity = zip(*keypoints_data)
+            keypoints = torch.tensor(groups, dtype=torch.float32)
+
+        elif shape == "4d":  # [N_objects, N_bones, 2, 2]
+            # Create bone-like structures (pairs of points)
+            keypoints_data = [
+                # Object 1: All bones valid
+                ([[[10, 10], [15, 15]], [[20, 20], [25, 25]]], True),
+                # Object 2: One bone with invalid point
+                ([[[10, 10], [15, 15]], [[-1, 20], [25, 25]]], False),
+                # Object 3: All bones invalid
+                ([[[-1, -1], [-2, -2]], [[-3, -3], [-4, -4]]], False),
+            ]
+            objects, validity = zip(*keypoints_data)
+            keypoints = torch.tensor(objects, dtype=torch.float32)
+
+        else:
+            raise ValueError(f"Unsupported shape: {shape}")
+
+        return keypoints, validity
+
+    @pytest.mark.parametrize("shape", ["2d", "3d", "4d"])
+    @pytest.mark.parametrize("input_type", [torch.Tensor, tv_tensors.KeyPoints])
+    def test_functional(self, shape, input_type):
+        """Test the sanitize_keypoints functional interface."""
+
+        # Create inputs
+        canvas_size = (50, 50)
+        keypoints, expected_validity = self._make_keypoints_with_validity(
+            canvas_size=canvas_size,
+            shape=shape,
+        )
+
+        if input_type is tv_tensors.KeyPoints:
+            keypoints = tv_tensors.KeyPoints(keypoints, canvas_size=canvas_size)
+            canvas_size_arg = None
+        else:
+            canvas_size_arg = canvas_size
+
+        # Apply function to be tested
+        result_keypoints, valid_mask = F.sanitize_keypoints(
+            keypoints,
+            canvas_size=canvas_size_arg,
+        )
+
+        # Check return types
+        assert isinstance(result_keypoints, input_type)
+        assert isinstance(valid_mask, torch.Tensor)
+        assert valid_mask.dtype == torch.bool
+
+        # Check that valid mask matches expected validity
+        assert_equal(valid_mask, torch.tensor(expected_validity))
+
+        # Check that result has correct number of valid keypoints
+        assert result_keypoints.shape[0] == valid_mask.sum().item()
+
+        # Check that remaining keypoints shape is preserved
+        assert result_keypoints.shape[1:] == keypoints.shape[1:]
+
+    @pytest.mark.parametrize("shape", ["2d", "3d", "4d"])
+    def test_kernel(self, shape):
+        """Test kernel functionality."""
+        canvas_size = (30, 30)
+        keypoints, _ = self._make_keypoints_with_validity(canvas_size=canvas_size, shape=shape)
+
+        check_kernel(
+            F.sanitize_keypoints,
+            input=keypoints,
+            canvas_size=canvas_size,
+            check_batched_vs_unbatched=False,  # This function doesn't support batching
+        )
+
+    @pytest.mark.parametrize("shape", ["2d", "3d", "4d"])
+    @pytest.mark.parametrize(
+        "labels_getter",
+        (
+            "default",
+            lambda inputs: inputs["labels"],
+            lambda inputs: (inputs["labels"], inputs["other_labels"]),
+            lambda inputs: [inputs["labels"], inputs["other_labels"]],
+            None,
+            lambda inputs: None,
+        ),
+    )
+    @pytest.mark.parametrize("sample_type", (tuple, dict))
+    def test_transform(self, shape, labels_getter, sample_type):
+        """Test the SanitizeKeyPoints transform class."""
+        if sample_type is tuple and not isinstance(labels_getter, str):
+            # Lambda-based labels_getter doesn't work with tuple input
+            return
+
+        canvas_size = (40, 40)
+        keypoints, expected_validity = self._make_keypoints_with_validity(
+            canvas_size=canvas_size,
+            shape=shape,
+        )
+
+        keypoints = tv_tensors.KeyPoints(keypoints, canvas_size=canvas_size)
+        num_keypoints = keypoints.shape[0]
+
+        # Create associated labels and other data
+        labels = torch.arange(num_keypoints)
+        other_labels = torch.arange(num_keypoints) * 2
+        masks = tv_tensors.Mask(torch.randint(0, 2, size=(num_keypoints, *canvas_size)))
+        whatever = torch.rand(10)
+        input_img = torch.randint(0, 256, size=(1, 3, *canvas_size), dtype=torch.uint8)
+
+        sample = {
+            "image": input_img,
+            "labels": labels,
+            "keypoints": keypoints,
+            "other_labels": other_labels,
+            "whatever": whatever,
+            "None": None,
+            "masks": masks,
+        }
+
+        if sample_type is tuple:
+            img = sample.pop("image")
+            sample = (img, sample)
+
+        # Apply transform
+        transform = transforms.SanitizeKeyPoints(
+            labels_getter=labels_getter,
+        )
+        out = transform(sample)
+
+        # Extract outputs
+        if sample_type is tuple:
+            out_image = out[0]
+            out_labels = out[1]["labels"]
+            out_other_labels = out[1]["other_labels"]
+            out_keypoints = out[1]["keypoints"]
+            out_masks = out[1]["masks"]
+            out_whatever = out[1]["whatever"]
+        else:
+            out_image = out["image"]
+            out_labels = out["labels"]
+            out_other_labels = out["other_labels"]
+            out_keypoints = out["keypoints"]
+            out_masks = out["masks"]
+            out_whatever = out["whatever"]
+
+        # Verify unchanged elements
+        assert_equal(out_image, input_img)
+        assert_equal(out_whatever, whatever)
+        assert_equal(out_masks, masks)
+
+        # Verify types
+        assert isinstance(out_keypoints, tv_tensors.KeyPoints)
+        assert isinstance(out_masks, tv_tensors.Mask)
+
+        # Calculate expected valid indices
+        valid_indices = [i for i, is_valid in enumerate(expected_validity) if is_valid]
+
+        # Test label handling
+        if labels_getter is None or (callable(labels_getter) and labels_getter(sample) is None):
+            # Labels should be unchanged
+            assert out_labels is labels
+            assert out_other_labels is other_labels
+        else:
+            # Labels should be filtered
+            assert isinstance(out_labels, torch.Tensor)
+            assert out_keypoints.shape[0] == out_labels.shape[0]
+            assert out_labels.tolist() == valid_indices
+
+            if callable(labels_getter) and isinstance(labels_getter(sample), (tuple, list)):
+                # other_labels should also be filtered
+                assert_equal(out_other_labels, out_labels * 2)  # Since other_labels = labels * 2
+            else:
+                # other_labels and masks should be unchanged
+                assert_equal(out_other_labels, other_labels)
+
+    def test_edge_cases(self):
+        """Test edge cases and boundary conditions."""
+        canvas_size = (10, 10)
+
+        # Test empty keypoints
+        empty_keypoints = tv_tensors.KeyPoints(torch.empty(0, 2), canvas_size=canvas_size)
+        result, valid_mask = F.sanitize_keypoints(empty_keypoints)
+        print(empty_keypoints, result, valid_mask)
+        assert tuple(result.shape) == (0, 2)
+        assert valid_mask.shape[0] == 0
+
+        # Test single valid keypoint
+        single_valid = tv_tensors.KeyPoints([[5, 5]], canvas_size=canvas_size)
+        result, valid_mask = F.sanitize_keypoints(single_valid)
+        assert tuple(result.shape) == (1, 2)
+        assert valid_mask.all()
+
+        # Test single invalid keypoint
+        single_invalid = tv_tensors.KeyPoints([[-1, -1]], canvas_size=canvas_size)
+        result, valid_mask = F.sanitize_keypoints(single_invalid)
+        assert tuple(result.shape) == (0, 2)
+        assert not valid_mask.any()
+
+    def test_errors_functional(self):
+        """Test error conditions for the functional interface."""
+        good_keypoints = tv_tensors.KeyPoints([[5, 5]], canvas_size=(10, 10))
+
+        # Test missing canvas_size for pure tensor
+        with pytest.raises(ValueError, match="canvas_size cannot be None"):
+            F.sanitize_keypoints(good_keypoints.as_subclass(torch.Tensor), canvas_size=None)
+
+        # Test canvas_size provided for tv_tensor
+        with pytest.raises(ValueError, match="canvas_size must be None"):
+            F.sanitize_keypoints(good_keypoints, canvas_size=(10, 10))
+
+    def test_errors_transform(self):
+        """Test error conditions for the transform class."""
+        good_keypoints = tv_tensors.KeyPoints([[5, 5]], canvas_size=(10, 10))
+
+        # Test invalid labels_getter
+        with pytest.raises(ValueError, match="labels_getter should either be"):
+            transforms.SanitizeKeyPoints(labels_getter="invalid_type")  # type: ignore
+
+        # Test missing labels key
+        with pytest.raises(ValueError, match="Could not infer where the labels are"):
+            bad_sample = {"keypoints": good_keypoints, "BAD_KEY": torch.tensor([0])}
+            transforms.SanitizeKeyPoints(labels_getter="default")(bad_sample)
+
+        # Test labels not a tensor
+        with pytest.raises(ValueError, match="must be a tensor"):
+            bad_sample = {"keypoints": good_keypoints, "labels": [0]}
+            transforms.SanitizeKeyPoints(labels_getter="default")(bad_sample)
+
+        # Test mismatched sizes
+        with pytest.raises(ValueError, match="Number of"):
+            bad_sample = {"keypoints": good_keypoints, "labels": torch.tensor([0, 1, 2])}
+            transforms.SanitizeKeyPoints(labels_getter="default")(bad_sample)
+
+    def test_no_label(self):
+        """Test transform without labels."""
+        img = make_image()
+        keypoints = make_keypoints()
+
+        # Should raise error without labels_getter=None
+        with pytest.raises(ValueError, match="or a two-tuple whose second item is a dict"):
+            transforms.SanitizeKeyPoints(labels_getter="default")(img, keypoints)
+
+        # Should work with labels_getter=None
+        out_img, out_keypoints = transforms.SanitizeKeyPoints(labels_getter=None)(img, keypoints)
+        assert isinstance(out_img, tv_tensors.Image)
+        assert isinstance(out_keypoints, tv_tensors.KeyPoints)
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_device_and_dtype_consistency(self, device):
+        """Test that device and dtype are preserved."""
+        canvas_size = (20, 20)
+        keypoints = torch.tensor([[5, 5], [15, 15], [-1, -1]], dtype=torch.float32, device=device)
+        keypoints = tv_tensors.KeyPoints(keypoints, canvas_size=canvas_size)
+
+        result, valid_mask = F.sanitize_keypoints(keypoints)
+
+        assert result.device == keypoints.device
+        assert result.dtype == keypoints.dtype
+        assert valid_mask.device == keypoints.device
+
+    def test_keypoint_shapes_consistency(self):
+        """Test that different keypoint shapes are handled correctly."""
+        canvas_size = (50, 50)
+
+        # Test 2D shape [N_points, 2]
+        kp_2d = torch.tensor([[10, 10], [20, 20], [-1, -1]], dtype=torch.float32)
+        kp_2d = tv_tensors.KeyPoints(kp_2d, canvas_size=canvas_size)
+        result_2d, valid_2d = F.sanitize_keypoints(kp_2d)
+        assert result_2d.ndim == 2
+        assert result_2d.shape[1:] == kp_2d.shape[1:]
+
+        # Test 3D shape [N_objects, N_points, 2]
+        kp_3d = torch.tensor([[[10, 10], [20, 20]], [[-1, -1], [30, 30]]], dtype=torch.float32)
+        kp_3d = tv_tensors.KeyPoints(kp_3d, canvas_size=canvas_size)
+        result_3d, valid_3d = F.sanitize_keypoints(kp_3d)
+        assert result_3d.ndim == 3
+        assert result_3d.shape[1:] == kp_3d.shape[1:]
+
+        # Test 4D shape [N_objects, N_bones, 2, 2]
+        kp_4d = torch.tensor([[[[10, 10], [20, 20]]], [[[-1, -1], [30, 30]]]], dtype=torch.float32)
+        kp_4d = tv_tensors.KeyPoints(kp_4d, canvas_size=canvas_size)
+        result_4d, valid_4d = F.sanitize_keypoints(kp_4d)
+        assert result_4d.ndim == 4
+        assert result_4d.shape[1:] == kp_4d.shape[1:]
 
 
 class TestJPEG:
