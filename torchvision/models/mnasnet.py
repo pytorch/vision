@@ -173,7 +173,7 @@ class MNASNet(torch.nn.Module):
     ) -> None:
         version = local_metadata.get("version", None)
         if version not in [1, 2]:
-            raise ValueError(f"version shluld be set to 1 or 2 instead of {version}")
+            raise ValueError(f"version should be set to 1 or 2 instead of {version}")
 
         if version == 1 and not self.alpha == 1.0:
             # In the initial version of the model (v1), stem was fixed-size.
