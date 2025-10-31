@@ -1439,6 +1439,7 @@ class TestAffine:
             canvas_size=bounding_boxes.canvas_size,
             **{param: value},
             check_scripted_vs_eager=not (param == "shear" and isinstance(value, (int, float))),
+            check_cuda_vs_cpu=dict(atol=1e-5, rtol=1e-5),
         )
 
     @param_value_parametrization(
