@@ -145,7 +145,15 @@ class PILToTensor:
 
     This transform does not support torchscript.
 
-    Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
+    Convert a PIL Image with H height, W width, and C channels to a Tensor of shape (C x H x W).
+
+    Example:
+        >>> from PIL import Image
+        >>> import torchvision.transforms as T
+        >>> img = Image.new("RGB", (320, 240))  # size (W=320, H=240)
+        >>> tensor = T.PILToTensor()(img)
+        >>> print(tensor.shape)
+        torch.Size([3, 240, 320])
     """
 
     def __init__(self) -> None:
