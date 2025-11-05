@@ -1509,7 +1509,7 @@ def rotate_video(
 
 
 def pad(
-    inpt: torch.Tensor,
+    inpt: Union[Image.Image, torch.Tensor],
     padding: list[int],
     fill: Optional[Union[int, float, list[float]]] = None,
     padding_mode: str = "constant",
