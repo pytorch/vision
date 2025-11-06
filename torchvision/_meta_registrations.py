@@ -223,3 +223,36 @@ def meta_deform_conv2d_backward(
     grad_mask = mask.new_empty(mask.shape)
     grad_bias = bias.new_empty(bias.shape)
     return grad_input, grad_weight, grad_offset, grad_mask, grad_bias
+
+
+@register_meta("deform_attn")
+def meta_deform_attn(
+    value,
+    spatial_shapes,
+    level_start_index,
+    sampling_loc,
+    attn_weight,
+    im2col_step,
+):
+    batch_size = value.shape[0]
+    num_query = sampling_loc.shape[1]
+    num_heads = value.shape[2]
+    channels = value.shape[3]
+    # Output shape [batch_size, num_query, num_heads * channels]
+    return value.new_empty((batch_size, num_query, num_heads * channels))
+
+
+@register_meta("_deform_attn_backward")
+def meta_deform_attn_backward(
+    value,
+    spatial_shapes,
+    level_start_index,
+    sampling_loc,
+    attn_weight,
+    grad_output,
+    im2col_step,
+):
+    grad_value = value.new_empty(value.shape)
+    grad_sampling_loc = sampling_loc.new_empty(sampling_loc.shape)
+    grad_attn_weight = attn_weight.new_empty(attn_weight.shape)
+    return grad_value, grad_sampling_loc, grad_attn_weight
