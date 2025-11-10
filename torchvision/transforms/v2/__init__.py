@@ -51,10 +51,11 @@ from ._misc import (
     LinearTransformation,
     Normalize,
     SanitizeBoundingBoxes,
+    SanitizeKeyPoints,
     ToDtype,
 )
 from ._temporal import UniformTemporalSubsample
 from ._type_conversion import PILToTensor, ToImage, ToPILImage, ToPureTensor
-from ._utils import check_type, get_bounding_boxes, has_all, has_any, query_chw, query_size
+from ._utils import check_type, get_bounding_boxes, get_keypoints, has_all, has_any, query_chw, query_size
 
 from ._deprecated import ToTensor  # usort: skip
