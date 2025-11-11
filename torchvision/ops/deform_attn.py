@@ -1,11 +1,5 @@
-import math
-from typing import Optional
-
 import torch
-from torch import nn, Tensor
-from torch.nn import init
-from torch.nn.modules.utils import _pair
-from torch.nn.parameter import Parameter
+from torch import Tensor
 from torchvision.extension import _assert_has_ops
 
 from ..utils import _log_api_usage_once

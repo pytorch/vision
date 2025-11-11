@@ -1393,6 +1393,7 @@ class TestDeformAttn:
             fast_mode=True,
         )
 
+    @needs_cuda
     def test_forward_scriptability(self):
         @torch.jit.script
         def script_func(
