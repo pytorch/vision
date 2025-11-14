@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+9e37c3a) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+2d82dc5) &#x25BC</a>
     </div>
     
 
@@ -411,13 +411,19 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.transforms.v2.functional._type_conversion</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">PIL.Image</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">tv_tensors</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">_F</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_import_cvcuda</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">cvcuda</span>  <span class="c1"># type: ignore[import-not-found]</span>
 
 
 <div class="viewcode-block" id="to_image"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.to_image.html#torchvision.transforms.v2.functional.to_image">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span>
@@ -438,6 +444,37 @@
 
 <span class="n">to_pil_image</span> <span class="o">=</span> <span class="n">_F</span><span class="o">.</span><span class="n">to_pil_image</span>
 <span class="n">pil_to_tensor</span> <span class="o">=</span> <span class="n">_F</span><span class="o">.</span><span class="n">pil_to_tensor</span>
+
+
+<span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_cvcuda_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;cvcuda.Tensor&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:``~torchvision.transforms.v2.ToCVCUDATensor`` for details.&quot;&quot;&quot;</span>
+    <span class="n">cvcuda</span> <span class="o">=</span> <span class="n">_import_cvcuda</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
+        <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">to_cvcuda_tensor</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;inpt should be ``torch.Tensor`` or ``tv_tensors.Image``. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">inpt</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pic should be 4 dimensional. Got </span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2"> dimensions.&quot;</span><span class="p">)</span>
+    <span class="c1"># Convert to NHWC as CVCUDA transforms do not support NCHW</span>
+    <span class="n">inpt</span> <span class="o">=</span> <span class="n">inpt</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cvcuda</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span><span class="o">.</span><span class="n">contiguous</span><span class="p">(),</span> <span class="n">cvcuda</span><span class="o">.</span><span class="n">TensorLayout</span><span class="o">.</span><span class="n">NHWC</span><span class="p">)</span>
+
+
+<span class="nd">@torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">unused</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cvcuda_to_tensor</span><span class="p">(</span><span class="n">cvcuda_img</span><span class="p">:</span> <span class="s2">&quot;cvcuda.Tensor&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:``~torchvision.transforms.v2.CVCUDAToTensor`` for details.&quot;&quot;&quot;</span>
+    <span class="n">cvcuda</span> <span class="o">=</span> <span class="n">_import_cvcuda</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
+        <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">cvcuda_to_tensor</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cvcuda_img</span><span class="p">,</span> <span class="n">cvcuda</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cvcuda_img should be ``cvcuda.Tensor``. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">cvcuda_img</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">cuda_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">cvcuda_img</span><span class="o">.</span><span class="n">cuda</span><span class="p">(),</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cvcuda_img</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image should be 4 dimensional. Got </span><span class="si">{</span><span class="n">cuda_tensor</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2"> dimensions.&quot;</span><span class="p">)</span>
+    <span class="c1"># Convert to NCHW shape from CVCUDA default NHWC</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">cuda_tensor</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">img</span>
 </pre></div>
 
              </article>

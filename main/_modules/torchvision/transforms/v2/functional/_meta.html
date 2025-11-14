@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+9e37c3a) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+2d82dc5) &#x25BC</a>
     </div>
     
 
@@ -411,7 +411,7 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.transforms.v2.functional._meta</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">PIL.Image</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
@@ -422,7 +422,14 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_kernel</span><span class="p">,</span> <span class="n">_register_kernel_internal</span><span class="p">,</span> <span class="n">is_pure_tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_kernel</span><span class="p">,</span> <span class="n">_import_cvcuda</span><span class="p">,</span> <span class="n">_is_cvcuda_available</span><span class="p">,</span> <span class="n">_register_kernel_internal</span><span class="p">,</span> <span class="n">is_pure_tensor</span>
+
+<span class="n">CVCUDA_AVAILABLE</span> <span class="o">=</span> <span class="n">_is_cvcuda_available</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">cvcuda</span>  <span class="c1"># type: ignore[import-not-found]</span>
+<span class="k">if</span> <span class="n">CVCUDA_AVAILABLE</span><span class="p">:</span>
+    <span class="n">cvcuda</span> <span class="o">=</span> <span class="n">_import_cvcuda</span><span class="p">()</span>  <span class="c1"># noqa: F811</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_dimensions</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
@@ -518,6 +525,20 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_size_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">_FP</span><span class="o">.</span><span class="n">get_image_size</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_size_image_cvcuda</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="s2">&quot;cvcuda.Tensor&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get size of `cvcuda.Tensor` with NHWC layout.&quot;&quot;&quot;</span>
+    <span class="n">hw</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">ndims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hw</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ndims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">hw</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor should have at least two dimensions, but got </span><span class="si">{</span><span class="n">ndims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="n">CVCUDA_AVAILABLE</span><span class="p">:</span>
+    <span class="n">_get_size_image_cvcuda</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">get_size</span><span class="p">,</span> <span class="n">cvcuda</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)(</span><span class="n">get_size_image_cvcuda</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">get_size</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>

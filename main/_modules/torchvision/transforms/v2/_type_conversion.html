@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+9e37c3a) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+2d82dc5) &#x25BC</a>
     </div>
     
 
@@ -411,7 +411,7 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.transforms.v2._type_conversion</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">PIL.Image</span>
@@ -419,8 +419,11 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">tv_tensors</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span><span class="p">,</span> <span class="n">Transform</span>
-
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_pure_tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2.functional._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_import_cvcuda</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">cvcuda</span>  <span class="c1"># type: ignore[import-not-found]</span>
 
 
 <div class="viewcode-block" id="PILToTensor"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.PILToTensor.html#torchvision.transforms.v2.PILToTensor">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">PILToTensor</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
@@ -503,6 +506,34 @@
 
 <div class="viewcode-block" id="ToPureTensor.transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.ToPureTensor.html#torchvision.transforms.v2.ToPureTensor.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span></div></div>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ToCVCUDATensor</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a ``torch.Tensor`` with NCHW shape to a ``cvcuda.Tensor``.</span>
+<span class="sd">    If the input tensor is on CPU, it will automatically be transferred to GPU.</span>
+<span class="sd">    Only 1-channel and 3-channel images are supported.</span>
+
+<span class="sd">    This transform does not support torchscript.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;cvcuda.Tensor&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">to_cvcuda_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CVCUDAToTensor</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a ``cvcuda.Tensor`` to a ``torch.Tensor`` with NCHW shape.</span>
+
+<span class="sd">    This function does not support torchscript.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">cvcuda</span> <span class="o">=</span> <span class="n">_import_cvcuda</span><span class="p">()</span>
+        <span class="n">_transformed_types</span> <span class="o">=</span> <span class="p">(</span><span class="n">cvcuda</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">cvcuda_to_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span>
 </pre></div>
 
              </article>
