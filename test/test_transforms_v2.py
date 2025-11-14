@@ -7348,6 +7348,82 @@ class TestSanitizeBoundingBoxes:
         assert isinstance(out_img, tv_tensors.Image)
         assert isinstance(out_boxes, tv_tensors.BoundingBoxes)
 
+    def test_semantic_masks_passthrough(self):
+        # Test that semantic masks (2D) pass through unchanged
+        H, W = 256, 128
+        boxes = tv_tensors.BoundingBoxes(
+            [[0, 0, 50, 50], [60, 60, 100, 100]],
+            format=tv_tensors.BoundingBoxFormat.XYXY,
+            canvas_size=(H, W),
+        )
+
+        # Create semantic segmentation mask (H, W) - should NOT be sanitized
+        semantic_mask = tv_tensors.Mask(torch.randint(0, 10, size=(H, W)))
+
+        sample = {
+            "boxes": boxes,
+            "semantic_mask": semantic_mask,
+        }
+
+        out = transforms.SanitizeBoundingBoxes(labels_getter=None)(sample)
+
+        # Check that semantic mask passed through unchanged
+        assert isinstance(out["semantic_mask"], tv_tensors.Mask)
+        assert out["semantic_mask"].shape == (H, W)
+        assert_equal(out["semantic_mask"], semantic_mask)
+
+    def test_masks_with_mismatched_shape_passthrough(self):
+        # Test that masks with shapes that don't match the number of boxes are passed through
+        H, W = 256, 128
+        boxes = tv_tensors.BoundingBoxes(
+            [[0, 0, 10, 10], [20, 20, 30, 30], [50, 50, 60, 60]],
+            format=tv_tensors.BoundingBoxFormat.XYXY,
+            canvas_size=(H, W),
+        )
+
+        # Create masks with different number of instances than boxes
+        mismatched_masks = tv_tensors.Mask(torch.randint(0, 2, size=(5, H, W)))  # 5 masks but 3 boxes
+
+        sample = {
+            "boxes": boxes,
+            "masks": mismatched_masks,
+        }
+
+        # Should not raise an error, masks should pass through unchanged
+        out = transforms.SanitizeBoundingBoxes(labels_getter=None)(sample)
+
+        assert isinstance(out["masks"], tv_tensors.Mask)
+        assert out["masks"].shape == (5, H, W)
+        assert_equal(out["masks"], mismatched_masks)
+
+    def test_per_instance_masks_sanitized(self):
+        # Test that per-instance masks (N, H, W) are correctly sanitized
+        H, W = 256, 128
+        boxes, expected_valid_mask = self._get_boxes_and_valid_mask(H=H, W=W, min_size=10, min_area=10)
+        valid_indices = [i for (i, is_valid) in enumerate(expected_valid_mask) if is_valid]
+        num_boxes = boxes.shape[0]
+
+        # Create per-instance masks matching the number of boxes
+        per_instance_masks = tv_tensors.Mask(torch.randint(0, 2, size=(num_boxes, H, W)))
+        labels = torch.arange(num_boxes)
+
+        sample = {
+            "boxes": boxes,
+            "masks": per_instance_masks,
+            "labels": labels,
+        }
+
+        out = transforms.SanitizeBoundingBoxes(min_size=10, min_area=10)(sample)
+
+        # Check that masks were sanitized correctly
+        assert isinstance(out["masks"], tv_tensors.Mask)
+        assert out["masks"].shape[0] == len(valid_indices)
+        assert out["masks"].shape[0] == out["boxes"].shape[0] == out["labels"].shape[0]
+
+        # Verify correct masks were kept
+        for i, valid_idx in enumerate(valid_indices):
+            assert_equal(out["masks"][i], per_instance_masks[valid_idx])
+
     def test_errors_transform(self):
         good_bbox = tv_tensors.BoundingBoxes(
             [[0, 0, 10, 10]],

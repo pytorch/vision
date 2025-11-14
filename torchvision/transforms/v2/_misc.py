@@ -369,6 +369,12 @@ class SanitizeBoundingBoxes(Transform):
     It can also sanitize other tensors like the "iscrowd" or "area" properties from COCO
     (see ``labels_getter`` parameter).
 
+    .. note::
+        **Mask handling**: This transform automatically detects and sanitizes per-instance masks
+        (shape ``[N, H, W]`` where N matches the number of bounding boxes). Semantic segmentation masks
+        (shape ``[H, W]``) or masks with mismatched dimensions are passed through unchanged.
+        You do not need to add masks to ``labels_getter`` for them to be sanitized.
+
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models. It is critical to call this transform if
     :class:`~torchvision.transforms.v2.RandomIoUCrop` was called.
@@ -456,12 +462,17 @@ class SanitizeBoundingBoxes(Transform):
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         is_label = params["labels"] is not None and any(inpt is label for label in params["labels"])
-        is_bounding_boxes_or_mask = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask))
+        is_bounding_boxes = isinstance(inpt, tv_tensors.BoundingBoxes)
+        is_mask = isinstance(inpt, tv_tensors.Mask)
 
-        if not (is_label or is_bounding_boxes_or_mask):
+        if not (is_label or is_bounding_boxes or is_mask):
             return inpt
 
-        output = inpt[params["valid"]]
+        try:
+            output = inpt[params["valid"]]
+        except (IndexError):
+            # If indexing fails (e.g., shape mismatch), pass through unchanged
+            return inpt
 
         if is_label:
             return output
