@@ -21,7 +21,7 @@ jobs:
         with:
           repository: pytorch/vision
           stable-branch: viable/strict
-          requires: '[\"Build Linux\", \"Build M1\", \"Build Macos\", \"Build Windows\", \"Tests\", \"CMake\", \"Lint\", \"Docs\"]'
+          requires: '[\"Build Linux Wheels\", \"Build M1 Wheels\", \"Tests\", \"CMake\", \"Lint\", \"Docs\"]'
           secret-bot-token: ${{ secrets.UPDATEBOT_TOKEN }}
           clickhouse-url: ${{ secrets.CLICKHOUSE_URL }}
           clickhouse-username: ${{ secrets.CLICKHOUSE_VIABLESTRICT_USERNAME }}
