@@ -5580,6 +5580,79 @@ class TestNormalize:
         assert_equal(actual, expected)
 
 
+@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+@needs_cuda
+class TestNormalizeCVCUDA:
+    MEANS_STDS = {
+        "RGB": TestNormalize.MEANS_STDS,
+        "GRAY": [([0.5], [2.0])],
+    }
+    MEAN_STD = {
+        "RGB": MEANS_STDS["RGB"][0],
+        "GRAY": MEANS_STDS["GRAY"][0],
+    }
+
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
+    def test_functional(self, color_space, batch_dims, dtype):
+        means_stds = self.MEANS_STDS[color_space]
+        for mean, std in means_stds:
+            image = make_image_cvcuda(color_space=color_space, dtype=dtype, batch_dims=batch_dims)
+            check_functional(F.normalize, image, mean=mean, std=std)
+
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
+    def test_functional_scalar(self, color_space, batch_dims, dtype):
+        image = make_image_cvcuda(color_space=color_space, dtype=dtype, batch_dims=batch_dims)
+        check_functional(F.normalize, image, mean=0.5, std=2.0)
+
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32])
+    @pytest.mark.parametrize("batch_dims", [(1,)])
+    def test_functional_error(self, dtype, batch_dims):
+        rgb_mean, rgb_std = self.MEAN_STD["RGB"]
+        gray_mean, gray_std = self.MEAN_STD["GRAY"]
+
+        with pytest.raises(ValueError, match="Inplace normalization is not supported for CVCUDA."):
+            F.normalize(make_image_cvcuda(batch_dims=batch_dims, dtype=dtype), mean=rgb_mean, std=rgb_std, inplace=True)
+
+        with pytest.raises(ValueError, match="Mean should have 3 elements. Got 1."):
+            F.normalize(make_image_cvcuda(batch_dims=batch_dims, color_space="RGB", dtype=dtype), mean=gray_mean, std=rgb_std)
+
+        with pytest.raises(ValueError, match="Std should have 3 elements. Got 1."):
+            F.normalize(make_image_cvcuda(batch_dims=batch_dims, color_space="RGB", dtype=dtype), mean=rgb_mean, std=gray_std)
+
+        with pytest.raises(ValueError, match="Mean should have 1 elements. Got 3."):
+            F.normalize(make_image_cvcuda(batch_dims=batch_dims, color_space="GRAY", dtype=dtype), mean=rgb_mean, std=gray_std)
+
+        with pytest.raises(ValueError, match="Std should have 1 elements. Got 3."):
+            F.normalize(make_image_cvcuda(batch_dims=batch_dims, color_space="GRAY", dtype=dtype), mean=gray_mean, std=rgb_std)
+
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32])
+    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
+    def test_transform(self, dtype, color_space, batch_dims):
+        means_stds = self.MEANS_STDS[color_space]
+        for mean, std in means_stds:
+            check_transform(
+                transforms.Normalize(mean=mean, std=std),
+                make_image_cvcuda(color_space=color_space, dtype=dtype, batch_dims=batch_dims),
+            )
+
+    @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
+    def test_correctness_image(self, batch_dims):
+        mean, std = self.MEAN_STD["RGB"]
+        torch_image = make_image(batch_dims=batch_dims, dtype=torch.float32, device="cuda")
+        cvc_image = F.to_cvcuda_tensor(torch_image)
+
+        gold = F.normalize(torch_image, mean=mean, std=std)
+        image = F.normalize(cvc_image, mean=mean, std=std)
+        image = F.cvcuda_to_tensor(image)
+
+        assert_close(image, gold, rtol=1e-7, atol=1e-7)
+
+
 class TestClampBoundingBoxes:
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
     @pytest.mark.parametrize("clamping_mode", ("soft", "hard", None))
