@@ -98,14 +98,18 @@ def normalize_cvcuda(
     elif len(std) != channels:
         raise ValueError(f"Std should have {channels} elements. Got {len(std)}.")
 
-    mean = torch.as_tensor(mean, dtype=torch.float32)
-    std = torch.as_tensor(std, dtype=torch.float32)
-    mean_tensor = mean.reshape(1, 1, 1, channels)
-    std_tensor = std.reshape(1, 1, 1, channels)
-    mean_tensor = mean_tensor.cuda()
-    std_tensor = std_tensor.cuda()
-    mean_cv = cvcuda.as_tensor(mean_tensor, cvcuda.TensorLayout.NHWC)
-    std_cv = cvcuda.as_tensor(std_tensor, cvcuda.TensorLayout.NHWC)
+    # CV-CUDA requires float32 tensors for the mean/std parameters
+    # at small batchs, this is costly relative to normalize operation
+    # if CV-CUDA is known to be a backend, could optimize this
+    # For Normalize class:
+    # by creating tensors at class initialization time
+    # For functional API:
+    # by storing cached tensors in helper function with functools.lru_cache (would it even be worth it?)
+    # Since CV-CUDA is 1) not default backend, 2) only strictly faster at large batch size, ignore
+    mt = torch.as_tensor(mean, dtype=torch.float32).reshape(1, 1, 1, channels).cuda()
+    st = torch.as_tensor(std, dtype=torch.float32).reshape(1, 1, 1, channels).cuda()
+    mean_cv = cvcuda.as_tensor(mt, cvcuda.TensorLayout.NHWC)
+    std_cv = cvcuda.as_tensor(st, cvcuda.TensorLayout.NHWC)
 
     return cvcuda.normalize(image, base=mean_cv, scale=std_cv, flags=cvcuda.NormalizeFlags.SCALE_IS_STDDEV)
 
