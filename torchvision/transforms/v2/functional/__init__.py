@@ -147,6 +147,7 @@ from ._geometry import (
 from ._misc import (
     convert_image_dtype,
     gaussian_blur,
+    gaussian_blur_cvcuda,
     gaussian_blur_image,
     gaussian_blur_video,
     gaussian_noise,
