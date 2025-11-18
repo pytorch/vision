@@ -5077,6 +5077,13 @@ class TestCenterCropCVCUDA:
     def test_functional_signature(self):
         check_functional_kernel_signature_match(F.center_crop, kernel=F.center_crop_cvcuda, input_type=cvcuda.Tensor)
 
+    @pytest.mark.parametrize("output_size", TestCenterCrop.OUTPUT_SIZES)
+    def test_functional_correctness(self, output_size):
+        image = make_image_cvcuda(TestCenterCrop.INPUT_SIZE, batch_dims=(1,))
+        actual = F.center_crop(image, output_size)
+        expected = F.center_crop(F.cvcuda_to_tensor(image), output_size)
+        assert_equal(F.cvcuda_to_tensor(actual), expected)
+
     def test_transform(self):
         check_transform(
             transforms.CenterCrop(TestCenterCrop.OUTPUT_SIZES[0]),

@@ -2729,16 +2729,25 @@ def center_crop_cvcuda(
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
         image = cvcuda.copymakeborder(
             image,
+            border_mode=cvcuda.Border.CONSTANT,
+            border_value=[0.0] * channels,
             top=padding_ltrb[1],
             left=padding_ltrb[0],
             bottom=padding_ltrb[3],
             right=padding_ltrb[2],
-            border_mode=cvcuda.Border.CONSTANT,
-            value=[0.0] * channels,
         )
-    return cvcuda.center_crop(
+
+        image_height = image.shape[1]
+        image_width = image.shape[2]
+
+        if crop_width == image_width and crop_height == image_height:
+            return image
+
+    # use customcrop to match crop_image behavior
+    crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, image_height, image_width)
+    return cvcuda.customcrop(
         image,
-        crop_size=(crop_width, crop_height),
+        cvcuda.RectI(x=crop_left, y=crop_top, width=crop_width, height=crop_height),
     )
 
 
