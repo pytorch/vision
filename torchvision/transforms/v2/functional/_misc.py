@@ -1,5 +1,5 @@
 import math
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, Sequence, TYPE_CHECKING
 
 import PIL.Image
 import torch
@@ -106,11 +106,10 @@ def _get_gaussian_kernel2d(
     return kernel2d
 
 
-@_register_kernel_internal(gaussian_blur, torch.Tensor)
-@_register_kernel_internal(gaussian_blur, tv_tensors.Image)
-def gaussian_blur_image(
-    image: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None
-) -> torch.Tensor:
+def _validate_kernel_size_and_sigma(
+    kernel_size: Sequence[int] | int,
+    sigma: Sequence[float | int] | float | int | None = None,
+) -> tuple[list[int], list[float]]:
     # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
@@ -138,6 +137,16 @@ def gaussian_blur_image(
     for s in sigma:
         if s <= 0.0:
             raise ValueError(f"sigma should have positive values. Got {sigma}")
+
+    return kernel_size, sigma
+
+
+@_register_kernel_internal(gaussian_blur, torch.Tensor)
+@_register_kernel_internal(gaussian_blur, tv_tensors.Image)
+def gaussian_blur_image(
+    image: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None
+) -> torch.Tensor:
+    kernel_size, sigma = _validate_kernel_size_and_sigma(kernel_size, sigma)
 
     if image.numel() == 0:
         return image
@@ -186,6 +195,25 @@ def gaussian_blur_video(
     video: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None
 ) -> torch.Tensor:
     return gaussian_blur_image(video, kernel_size, sigma)
+
+
+def gaussian_blur_cvcuda(
+    image: "cvcuda.Tensor",
+    kernel_size: Sequence[int] | int,
+    sigma: Sequence[float | int] | float | int | None = None,
+) -> "cvcuda.Tensor":
+    kernel_size, sigma = _validate_kernel_size_and_sigma(kernel_size, sigma)
+
+    return cvcuda.gaussian(
+        image,
+        tuple(kernel_size),
+        tuple(sigma),
+        border=cvcuda.Border.REFLECT,
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _gaussian_blur_cvcuda = _register_kernel_internal(gaussian_blur, cvcuda.Tensor)(gaussian_blur_cvcuda)
 
 
 def gaussian_noise(inpt: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
