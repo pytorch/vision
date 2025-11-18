@@ -13,6 +13,7 @@ from .boxes import (
     remove_small_boxes,
 )
 from .ciou_loss import complete_box_iou_loss
+from .deform_attn import deform_attn
 from .deform_conv import deform_conv2d, DeformConv2d
 from .diou_loss import distance_box_iou_loss
 from .drop_block import drop_block2d, drop_block3d, DropBlock2d, DropBlock3d
@@ -34,6 +35,7 @@ __all__ = [
     "masks_to_boxes",
     "deform_conv2d",
     "DeformConv2d",
+    "deform_attn",
     "nms",
     "batched_nms",
     "remove_small_boxes",

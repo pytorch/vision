@@ -1,5 +1,6 @@
 #pragma once
 
+#include "deform_attn.h"
 #include "deform_conv2d.h"
 #include "nms.h"
 #include "ps_roi_align.h"
