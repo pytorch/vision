@@ -1924,6 +1924,23 @@ def crop_video(video: torch.Tensor, top: int, left: int, height: int, width: int
     return crop_image(video, top, left, height, width)
 
 
+def crop_cvcuda(
+    image: "cvcuda.Tensor",
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+) -> "cvcuda.Tensor":
+    return cvcuda.customcrop(
+        image,
+        cvcuda.RectI(x=left, y=top, width=width, height=height),
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(crop, cvcuda.Tensor)(crop_cvcuda)
+
+
 def perspective(
     inpt: torch.Tensor,
     startpoints: Optional[list[list[int]]],
@@ -2672,6 +2689,21 @@ def center_crop_mask(mask: torch.Tensor, output_size: list[int]) -> torch.Tensor
 @_register_kernel_internal(center_crop, tv_tensors.Video)
 def center_crop_video(video: torch.Tensor, output_size: list[int]) -> torch.Tensor:
     return center_crop_image(video, output_size)
+
+
+def center_crop_cvcuda(
+    image: "cvcuda.Tensor",
+    output_size: list[int],
+) -> "cvcuda.Tensor":
+    crop_height, crop_width = _center_crop_parse_output_size(output_size)
+    return cvcuda.center_crop(
+        image,
+        crop_size=(crop_width, crop_height),
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(center_crop, cvcuda.Tensor)(center_crop_cvcuda)
 
 
 def resized_crop(

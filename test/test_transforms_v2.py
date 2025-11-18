@@ -3765,6 +3765,18 @@ class TestCrop:
             transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
 
 
+@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="cvcuda not available")
+@needs_cuda
+class TestCropCVCUDA:
+    def test_functional(self):
+        check_functional(
+            F.crop, make_image_cvcuda(TestCrop.INPUT_SIZE, batch_dims=(1,)), **TestCrop.MINIMAL_CROP_KWARGS
+        )
+
+    def test_functional_signature(self):
+        check_functional_kernel_signature_match(F.crop, kernel=F.crop_cvcuda, input_type=cvcuda.Tensor)
+
+
 class TestErase:
     INPUT_SIZE = (17, 11)
     FUNCTIONAL_KWARGS = dict(
@@ -5043,6 +5055,26 @@ class TestCenterCrop:
         expected = self._reference_center_crop_keypoints(keypoints, output_size)
 
         assert_equal(actual, expected)
+
+
+@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="cvcuda not available")
+@needs_cuda
+class TestCenterCropCVCUDA:
+    def test_functional(self):
+        check_functional(
+            F.center_crop,
+            make_image_cvcuda(TestCenterCrop.INPUT_SIZE, batch_dims=(1,)),
+            output_size=TestCenterCrop.OUTPUT_SIZES[0],
+        )
+
+    def test_functional_signature(self):
+        check_functional_kernel_signature_match(F.center_crop, kernel=F.center_crop_cvcuda, input_type=cvcuda.Tensor)
+
+    def test_transform(self):
+        check_transform(
+            transforms.CenterCrop(TestCenterCrop.OUTPUT_SIZES[0]),
+            make_image_cvcuda(TestCenterCrop.INPUT_SIZE, batch_dims=(1,)),
+        )
 
 
 class TestPerspective:
