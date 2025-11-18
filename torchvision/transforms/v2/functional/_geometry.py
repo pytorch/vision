@@ -1931,6 +1931,33 @@ def crop_cvcuda(
     height: int,
     width: int,
 ) -> "cvcuda.Tensor":
+    image_height, image_width, channels = image.shape[1:]
+    top_diff = 0
+    left_diff = 0
+    height_diff = 0
+    width_diff = 0
+    if top < 0:
+        top_diff = -1 * top
+    if left < 0:
+        left_diff = -1 * left
+    if top + height > image_height:
+        height_diff = top + height - image_height
+    if left + width > image_width:
+        width_diff = left + width - image_width
+    if top_diff or left_diff or height_diff or width_diff:
+        image = cvcuda.copymakeborder(
+            image,
+            top=top_diff,
+            left=left_diff,
+            bottom=height_diff,
+            right=width_diff,
+            border_mode=cvcuda.Border.CONSTANT,
+            value=[0.0] * channels,
+        )
+        top = 0
+        left = 0
+        height = image_height
+        width = image_width
     return cvcuda.customcrop(
         image,
         cvcuda.RectI(x=left, y=top, width=width, height=height),
@@ -2696,6 +2723,21 @@ def center_crop_cvcuda(
     output_size: list[int],
 ) -> "cvcuda.Tensor":
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
+    # we only allow cvcuda conversion for 4 ndim, and always use nhwc layout
+    image_height = image.shape[1]
+    image_width = image.shape[2]
+    channels = image.shape[3]
+    if crop_height > image_height or crop_width > image_width:
+        padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
+        image = cvcuda.copymakeborder(
+            image,
+            top=padding_ltrb[1],
+            left=padding_ltrb[0],
+            bottom=padding_ltrb[3],
+            right=padding_ltrb[2],
+            border_mode=cvcuda.Border.CONSTANT,
+            value=[0.0] * channels,
+        )
     return cvcuda.center_crop(
         image,
         crop_size=(crop_width, crop_height),
