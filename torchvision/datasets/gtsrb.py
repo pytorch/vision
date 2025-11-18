@@ -35,7 +35,7 @@ class GTSRB(VisionDataset):
         super().__init__(root, transform=transform, target_transform=target_transform)
 
         self._split = verify_str_arg(split, "split", ("train", "test"))
-        self._base_folder = pathlib.Path(root) / "gtsrb"
+        self._base_folder = pathlib.Path(self.root) / "gtsrb"
         self._target_folder = (
             self._base_folder / "GTSRB" / ("Training" if self._split == "train" else "Final_Test/Images")
         )
