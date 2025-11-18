@@ -1937,27 +1937,25 @@ def crop_cvcuda(
     height_diff = 0
     width_diff = 0
     if top < 0:
-        top_diff = -1 * top
+        top_diff = int(-1 * top)
     if left < 0:
-        left_diff = -1 * left
+        left_diff = int(-1 * left)
     if top + height > image_height:
-        height_diff = top + height - image_height
+        height_diff = int(top + height - image_height)
     if left + width > image_width:
-        width_diff = left + width - image_width
+        width_diff = int(left + width - image_width)
     if top_diff or left_diff or height_diff or width_diff:
         image = cvcuda.copymakeborder(
             image,
+            border_mode=cvcuda.Border.CONSTANT,
+            border_value=[0.0] * channels,
             top=top_diff,
             left=left_diff,
             bottom=height_diff,
             right=width_diff,
-            border_mode=cvcuda.Border.CONSTANT,
-            value=[0.0] * channels,
         )
-        top = 0
-        left = 0
-        height = image_height
-        width = image_width
+        top = top + top_diff
+        left = left + left_diff
     return cvcuda.customcrop(
         image,
         cvcuda.RectI(x=left, y=top, width=width, height=height),

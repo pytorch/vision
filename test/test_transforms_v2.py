@@ -3776,6 +3776,13 @@ class TestCropCVCUDA:
     def test_functional_signature(self):
         check_functional_kernel_signature_match(F.crop, kernel=F.crop_cvcuda, input_type=cvcuda.Tensor)
 
+    @pytest.mark.parametrize("size", [(10, 5), (25, 15), (25, 5), (10, 15)])
+    def test_functional_correctness(self, size):
+        image = make_image_cvcuda(TestCrop.INPUT_SIZE, batch_dims=(1,))
+        actual = F.crop(image, 0, 0, *size)
+        expected = F.crop(F.cvcuda_to_tensor(image), 0, 0, *size)
+        assert_equal(F.cvcuda_to_tensor(actual), expected)
+
 
 class TestErase:
     INPUT_SIZE = (17, 11)
