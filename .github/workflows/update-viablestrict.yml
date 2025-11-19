@@ -1,0 +1,28 @@
+name: Update viable/strict
+
+on:
+  schedule:
+    # Run every 30 minutes at 10 and 40 minute marks
+    - cron: 10,40 * * * *
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  do_update_viablestrict:
+    if: ${{ github.repository_owner == 'pytorch' }}
+    runs-on: ubuntu-latest
+    environment: ${{ (github.event_name == 'schedule') && 'update-viable-strict' || '' }}
+    steps:
+      - name: Update viable/strict
+        uses: pytorch/test-infra/.github/actions/update-viablestrict@main
+        with:
+          repository: pytorch/vision
+          stable-branch: viable/strict
+          requires: '[\"Build Linux Wheels\", \"Build M1 Wheels\", \"Tests\"]'
+          secret-bot-token: ${{ secrets.UPDATEBOT_TOKEN }}
+          clickhouse-url: ${{ secrets.CLICKHOUSE_URL }}
+          clickhouse-username: ${{ secrets.CLICKHOUSE_VIABLESTRICT_USERNAME }}
+          clickhouse-password: ${{ secrets.CLICKHOUSE_VIABLESTRICT_PASSWORD }}
