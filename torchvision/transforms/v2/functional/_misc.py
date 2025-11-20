@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import PIL.Image
 import torch
@@ -13,7 +13,14 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import _convert_bounding_box_format
 
-from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
+from ._utils import _get_kernel, _import_cvcuda, _is_cvcuda_available, _register_kernel_internal, is_pure_tensor
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
+if CVCUDA_AVAILABLE:
+    cvcuda = _import_cvcuda()  # noqa: F811
 
 
 def normalize(
@@ -338,6 +345,73 @@ def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale:
 def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
     # We don't need to unwrap and rewrap here, since TVTensor.to() preserves the type
     return inpt.to(dtype)
+
+
+# cvcuda is only used if it is installed, so we can simply define empty mappings
+_torch_to_cvcuda_dtypes = {}
+_cvcuda_to_torch_dtypes = {}
+if CVCUDA_AVAILABLE:
+    # put the entire conversion set here
+    # only a subset are used for torchvision
+    _torch_to_cvcuda_dtypes = {
+        torch.uint8: cvcuda.Type.U8,
+        torch.uint16: cvcuda.Type.U16,
+        torch.uint32: cvcuda.Type.U32,
+        torch.uint64: cvcuda.Type.U64,
+        torch.int8: cvcuda.Type.S8,
+        torch.int16: cvcuda.Type.S16,
+        torch.int32: cvcuda.Type.S32,
+        torch.int64: cvcuda.Type.S64,
+        torch.float32: cvcuda.Type.F32,
+        torch.float64: cvcuda.Type.F64,
+        torch.complex64: cvcuda.Type.C64,
+        torch.complex128: cvcuda.Type.C128,
+    }
+    # create reverse mapping
+    _cvcuda_to_torch_dtypes = {v: k for k, v in _torch_to_cvcuda_dtypes.items()}
+
+
+def _to_dtype_cvcuda(
+    inpt: "cvcuda.Tensor",
+    dtype: torch.dtype,
+    scale: bool = False,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    dtype_in = _cvcuda_to_torch_dtypes[inpt.dtype]
+    cvc_dtype = _torch_to_cvcuda_dtypes[dtype]
+
+    if not scale:
+        return cvcuda.convertto(inpt, dtype=cvc_dtype)
+
+    scale_val, offset = 1.0, 0.0
+    in_dtype_float = dtype_in.is_floating_point
+    out_dtype_float = dtype.is_floating_point
+
+    # four cases for the scaling setup
+    # 1. float -> float
+    # 2. int -> int
+    # 3. float -> int
+    # 4. int -> float
+    if in_dtype_float and out_dtype_float:
+        scale_val, offset = 1.0, 0.0
+    elif not in_dtype_float and not out_dtype_float:
+        scale_val, offset = 1.0, 0.0
+    elif in_dtype_float and not out_dtype_float:
+        scale_val, offset = float(_max_value(dtype)), 0.0
+    else:
+        scale_val, offset = 1.0 / float(_max_value(dtype_in)), 0.0
+
+    return cvcuda.convertto(
+        inpt,
+        dtype=cvc_dtype,
+        scale=scale_val,
+        offset=offset,
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _to_dtype_cvcuda_registered = _register_kernel_internal(to_dtype, _import_cvcuda().Tensor)(_to_dtype_cvcuda)
 
 
 def sanitize_bounding_boxes(
