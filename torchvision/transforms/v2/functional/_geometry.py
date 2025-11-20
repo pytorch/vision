@@ -2718,7 +2718,7 @@ def center_crop_video(video: torch.Tensor, output_size: list[int]) -> torch.Tens
     return center_crop_image(video, output_size)
 
 
-def center_crop_cvcuda(
+def _center_crop_cvcuda(
     image: "cvcuda.Tensor",
     output_size: list[int],
 ) -> "cvcuda.Tensor":
@@ -2754,7 +2754,9 @@ def center_crop_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(center_crop, cvcuda.Tensor)(center_crop_cvcuda)
+    _center_crop_cvcuda_registered = _register_kernel_internal(center_crop, _import_cvcuda().Tensor)(
+        _center_crop_cvcuda
+    )
 
 
 def resized_crop(

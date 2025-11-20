@@ -4965,6 +4965,9 @@ class TestCenterCrop:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
         ],
     )
     def test_functional(self, make_input):
@@ -4980,6 +4983,11 @@ class TestCenterCrop:
             (F.center_crop_mask, tv_tensors.Mask),
             (F.center_crop_video, tv_tensors.Video),
             (F.center_crop_keypoints, tv_tensors.KeyPoints),
+            pytest.param(
+                F._geometry._center_crop_cvcuda,
+                _import_cvcuda().Tensor,
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -4995,6 +5003,9 @@ class TestCenterCrop:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
         ],
     )
     def test_transform(self, make_input):
@@ -5009,6 +5020,17 @@ class TestCenterCrop:
         expected = F.to_image(F.center_crop(F.to_pil_image(image), output_size=output_size))
 
         assert_equal(actual, expected)
+
+    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
+    def test_cvcuda_correctness(self, output_size, fn):
+        image = make_image_cvcuda(self.INPUT_SIZE, dtype=torch.uint8, device="cuda")
+
+        actual = fn(image, output_size)
+        expected = F.center_crop(F.cvcuda_to_tensor(image), output_size)
+
+        assert_equal(F.cvcuda_to_tensor(actual), expected)
 
     def _reference_center_crop_bounding_boxes(self, bounding_boxes, output_size):
         image_height, image_width = bounding_boxes.canvas_size
@@ -5079,33 +5101,6 @@ class TestCenterCrop:
         expected = self._reference_center_crop_keypoints(keypoints, output_size)
 
         assert_equal(actual, expected)
-
-
-@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="cvcuda not available")
-@needs_cuda
-class TestCenterCropCVCUDA:
-    def test_functional(self):
-        check_functional(
-            F.center_crop,
-            make_image_cvcuda(TestCenterCrop.INPUT_SIZE, batch_dims=(1,)),
-            output_size=TestCenterCrop.OUTPUT_SIZES[0],
-        )
-
-    def test_functional_signature(self):
-        check_functional_kernel_signature_match(F.center_crop, kernel=F.center_crop_cvcuda, input_type=cvcuda.Tensor)
-
-    @pytest.mark.parametrize("output_size", TestCenterCrop.OUTPUT_SIZES)
-    def test_functional_correctness(self, output_size):
-        image = make_image_cvcuda(TestCenterCrop.INPUT_SIZE, batch_dims=(1,))
-        actual = F.center_crop(image, output_size)
-        expected = F.center_crop(F.cvcuda_to_tensor(image), output_size)
-        assert_equal(F.cvcuda_to_tensor(actual), expected)
-
-    def test_transform(self):
-        check_transform(
-            transforms.CenterCrop(TestCenterCrop.OUTPUT_SIZES[0]),
-            make_image_cvcuda(TestCenterCrop.INPUT_SIZE, batch_dims=(1,)),
-        )
 
 
 class TestPerspective:
