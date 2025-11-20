@@ -3937,7 +3937,15 @@ class TestGaussianBlur:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available")
+            ),
+        ],
     )
     def test_functional(self, make_input):
         check_functional(F.gaussian_blur, make_input(), kernel_size=(3, 3))
@@ -3949,6 +3957,11 @@ class TestGaussianBlur:
             (F._misc._gaussian_blur_image_pil, PIL.Image.Image),
             (F.gaussian_blur_image, tv_tensors.Image),
             (F.gaussian_blur_video, tv_tensors.Video),
+            pytest.param(
+                F._misc._gaussian_blur_cvcuda,
+                cvcuda.Tensor,
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -3956,7 +3969,17 @@ class TestGaussianBlur:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available")
+            ),
+        ],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("sigma", [5, 2.0, (0.5, 2), [1.3, 2.7]])
@@ -4047,39 +4070,8 @@ class TestGaussianBlur:
 
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
 
-
-@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-@needs_cuda
-class TestGaussianBlurCVCUDA:
-    def test_kernel_image_errors(self):
-        image = make_image_cvcuda(batch_dims=(1,))
-
-        with pytest.raises(ValueError, match="kernel_size is a sequence its length should be 2"):
-            F.gaussian_blur_cvcuda(image, kernel_size=[1, 2, 3])
-
-        for kernel_size in [2, -1]:
-            with pytest.raises(ValueError, match="kernel_size should have odd and positive integers"):
-                F.gaussian_blur_cvcuda(image, kernel_size=kernel_size)
-
-        with pytest.raises(ValueError, match="sigma is a sequence, its length should be 2"):
-            F.gaussian_blur_cvcuda(image, kernel_size=1, sigma=[1, 2, 3])
-
-        with pytest.raises(TypeError, match="sigma should be either float or sequence of floats"):
-            F.gaussian_blur_cvcuda(image, kernel_size=1, sigma=object())
-
-        with pytest.raises(ValueError, match="sigma should have positive values"):
-            F.gaussian_blur_cvcuda(image, kernel_size=1, sigma=-1)
-
-    def test_functional(self):
-        check_functional(F.gaussian_blur, make_image_cvcuda(batch_dims=(1,)), kernel_size=(3, 3))
-
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("sigma", [5, 2.0, (0.5, 2), [1.3, 2.7]])
-    def test_transform(self, device, sigma):
-        check_transform(
-            transforms.GaussianBlur(kernel_size=3, sigma=sigma), make_image_cvcuda(batch_dims=(1,), device=device)
-        )
-
+    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+    @needs_cuda
     @pytest.mark.parametrize(
         ("dimensions", "kernel_size", "sigma"),
         [
@@ -4093,7 +4085,7 @@ class TestGaussianBlurCVCUDA:
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
     @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
-    def test_functional_image_correctness(self, dimensions, kernel_size, sigma, color_space, batch_dims, dtype):
+    def test_functional_cvcuda_parity(self, dimensions, kernel_size, sigma, color_space, batch_dims, dtype):
         height, width = dimensions
 
         image_tensor = make_image(
@@ -4102,7 +4094,7 @@ class TestGaussianBlurCVCUDA:
         image_cvcuda = F.to_cvcuda_tensor(image_tensor)
 
         expected = F.gaussian_blur_image(image_tensor, kernel_size=kernel_size, sigma=sigma)
-        actual = F.gaussian_blur_cvcuda(image_cvcuda, kernel_size=kernel_size, sigma=sigma)
+        actual = F._misc._gaussian_blur_cvcuda(image_cvcuda, kernel_size=kernel_size, sigma=sigma)
         actual_torch = F.cvcuda_to_tensor(actual)
 
         if dtype.is_floating_point:
