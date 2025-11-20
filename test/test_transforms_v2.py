@@ -1249,6 +1249,10 @@ class TestHorizontalFlip:
     def test_functional(self, make_input):
         check_functional(F.horizontal_flip, make_input())
 
+    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available")
+    def test_functional_cvcuda(self):
+        check_functional(F.horizontal_flip, make_image_cvcuda(batch_dims=(1,)))
+
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
         [
@@ -1290,6 +1294,15 @@ class TestHorizontalFlip:
         expected = F.to_image(F.horizontal_flip(F.to_pil_image(image)))
 
         torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available")
+    def test_image_correctness_cvcuda(self):
+        image = make_image_cvcuda(batch_dims=(1,))
+
+        actual = F.horizontal_flip(image)
+        expected_torch = F.horizontal_flip(F.cvcuda_to_tensor(image))
+
+        assert torch.equal(F.cvcuda_to_tensor(actual), expected_torch)
 
     def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
@@ -1865,6 +1878,10 @@ class TestVerticalFlip:
     def test_functional(self, make_input):
         check_functional(F.vertical_flip, make_input())
 
+    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available")
+    def test_functional_cvcuda(self):
+        check_functional(F.vertical_flip, make_image_cvcuda())
+
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
         [
@@ -1904,6 +1921,15 @@ class TestVerticalFlip:
         expected = F.to_image(F.vertical_flip(F.to_pil_image(image)))
 
         torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available")
+    def test_image_correctness_cvcuda(self):
+        image = make_image_cvcuda(batch_dims=(1,))
+
+        actual = F.vertical_flip(image)
+        expected_torch = F.vertical_flip(F.cvcuda_to_tensor(image))
+
+        assert torch.equal(F.cvcuda_to_tensor(actual), expected_torch)
 
     def _reference_vertical_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
