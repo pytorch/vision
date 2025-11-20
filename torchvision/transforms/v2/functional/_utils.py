@@ -5,6 +5,7 @@ from typing import Any, Callable, Optional, Union
 import torch
 from torchvision import tv_tensors
 
+
 _FillType = Union[int, float, Sequence[int], Sequence[float], None]
 _FillTypeJIT = Optional[list[float]]
 

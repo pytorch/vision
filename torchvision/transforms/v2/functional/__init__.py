@@ -1,6 +1,6 @@
 from torchvision.transforms import InterpolationMode  # usort: skip
 
-from ._utils import is_pure_tensor, register_kernel  # usort: skip
+from ._utils import is_pure_tensor, register_kernel, is_cvcuda_tensor  # usort: skip
 
 from ._meta import (
     clamp_bounding_boxes,
@@ -76,14 +76,12 @@ from ._geometry import (
     affine_video,
     center_crop,
     center_crop_bounding_boxes,
-    center_crop_cvcuda,
     center_crop_image,
     center_crop_keypoints,
     center_crop_mask,
     center_crop_video,
     crop,
     crop_bounding_boxes,
-    crop_cvcuda,
     crop_image,
     crop_keypoints,
     crop_mask,

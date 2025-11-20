@@ -3506,6 +3506,9 @@ class TestCrop:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
         ],
     )
     def test_functional(self, make_input):
@@ -3521,6 +3524,11 @@ class TestCrop:
             (F.crop_mask, tv_tensors.Mask),
             (F.crop_video, tv_tensors.Video),
             (F.crop_keypoints, tv_tensors.KeyPoints),
+            pytest.param(
+                F._geometry._crop_cvcuda,
+                _import_cvcuda().Tensor,
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -3549,15 +3557,18 @@ class TestCrop:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
         ],
     )
     def test_transform(self, param, value, make_input):
-        input = make_input(self.INPUT_SIZE)
+        input_data = make_input(self.INPUT_SIZE)
 
         check_sample_input = True
         if param == "fill":
             if isinstance(value, (tuple, list)):
-                if isinstance(input, tv_tensors.Mask):
+                if isinstance(input_data, tv_tensors.Mask):
                     pytest.skip("F.pad_mask doesn't support non-scalar fill.")
                 else:
                     check_sample_input = False
@@ -3566,14 +3577,14 @@ class TestCrop:
                 # 1. size is required
                 # 2. the fill parameter only has an affect if we need padding
                 size=[s + 4 for s in self.INPUT_SIZE],
-                fill=adapt_fill(value, dtype=input.dtype if isinstance(input, torch.Tensor) else torch.uint8),
+                fill=adapt_fill(value, dtype=input_data.dtype if isinstance(input_data, torch.Tensor) else torch.uint8),
             )
         else:
             kwargs = {param: value}
 
         check_transform(
             transforms.RandomCrop(**kwargs, pad_if_needed=True),
-            input,
+            input_data,
             check_v1_compatibility=param != "fill" or isinstance(value, (int, float)),
             check_sample_input=check_sample_input,
         )
@@ -3636,6 +3647,31 @@ class TestCrop:
             expected = F.to_image(transform(F.to_pil_image(image)))
 
         assert_equal(actual, expected)
+
+    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+    @pytest.mark.parametrize("size", [(10, 5), (25, 15), (25, 5), (10, 15), (10, 10)])
+    @pytest.mark.parametrize("seed", list(range(5)))
+    def test_transform_cvcuda_correctness(self, size, seed):
+        pad_if_needed = False
+        if size[0] > self.INPUT_SIZE[0] or size[1] > self.INPUT_SIZE[1]:
+            pad_if_needed = True
+        transform = transforms.RandomCrop(size, pad_if_needed=pad_if_needed)
+
+        image = make_image(size=self.INPUT_SIZE, batch_dims=(1,), device="cuda")
+        cv_image = F.to_cvcuda_tensor(image)
+
+        with freeze_rng_state():
+            torch.manual_seed(seed)
+            actual = transform(cv_image)
+
+            torch.manual_seed(seed)
+            expected = transform(image)
+
+        if not pad_if_needed:
+            torch.testing.assert_close(F.cvcuda_to_tensor(actual), expected, rtol=0, atol=0)
+        else:
+            # if padding is requied, CV-CUDA will always fill with zeros
+            torch.testing.assert_close(F.cvcuda_to_tensor(actual), expected, rtol=0, atol=get_max_value(image.dtype))
 
     def _reference_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width):
         affine_matrix = np.array(
@@ -3763,25 +3799,6 @@ class TestCrop:
 
         with pytest.raises(ValueError, match="Padding mode should be either"):
             transforms.RandomCrop([10, 12], padding=1, padding_mode="abc")
-
-
-@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="cvcuda not available")
-@needs_cuda
-class TestCropCVCUDA:
-    def test_functional(self):
-        check_functional(
-            F.crop, make_image_cvcuda(TestCrop.INPUT_SIZE, batch_dims=(1,)), **TestCrop.MINIMAL_CROP_KWARGS
-        )
-
-    def test_functional_signature(self):
-        check_functional_kernel_signature_match(F.crop, kernel=F.crop_cvcuda, input_type=cvcuda.Tensor)
-
-    @pytest.mark.parametrize("size", [(10, 5), (25, 15), (25, 5), (10, 15)])
-    def test_functional_correctness(self, size):
-        image = make_image_cvcuda(TestCrop.INPUT_SIZE, batch_dims=(1,))
-        actual = F.crop(image, 0, 0, *size)
-        expected = F.crop(F.cvcuda_to_tensor(image), 0, 0, *size)
-        assert_equal(F.cvcuda_to_tensor(actual), expected)
 
 
 class TestErase:

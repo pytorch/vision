@@ -1924,13 +1924,15 @@ def crop_video(video: torch.Tensor, top: int, left: int, height: int, width: int
     return crop_image(video, top, left, height, width)
 
 
-def crop_cvcuda(
+def _crop_cvcuda(
     image: "cvcuda.Tensor",
     top: int,
     left: int,
     height: int,
     width: int,
 ) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
     image_height, image_width, channels = image.shape[1:]
     top_diff = 0
     left_diff = 0
@@ -1963,7 +1965,7 @@ def crop_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(crop, cvcuda.Tensor)(crop_cvcuda)
+    _crop_cvcuda_registered = _register_kernel_internal(crop, _import_cvcuda().Tensor)(_crop_cvcuda)
 
 
 def perspective(
