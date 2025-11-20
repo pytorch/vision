@@ -5517,7 +5517,17 @@ class TestNormalize:
     def test_kernel_video(self):
         check_kernel(F.normalize_video, make_video(dtype=torch.float32), mean=self.MEAN, std=self.STD)
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
     def test_functional(self, make_input):
         check_functional(F.normalize, make_input(dtype=torch.float32), mean=self.MEAN, std=self.STD)
 
@@ -5527,6 +5537,11 @@ class TestNormalize:
             (F.normalize_image, torch.Tensor),
             (F.normalize_image, tv_tensors.Image),
             (F.normalize_video, tv_tensors.Video),
+            pytest.param(
+                F._misc._normalize_cvcuda,
+                _import_cvcuda().Tensor,
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
@@ -5555,7 +5570,17 @@ class TestNormalize:
             adapted_input[key] = value
         return adapted_input
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
     def test_transform(self, make_input):
         check_transform(
             transforms.Normalize(mean=self.MEAN, std=self.STD),
@@ -5578,6 +5603,17 @@ class TestNormalize:
         expected = self._reference_normalize_image(image, mean=mean, std=std)
 
         assert_equal(actual, expected)
+
+    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+    @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
+    @pytest.mark.parametrize("dtype", [torch.float32])
+    @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
+    def test_correctness_cvcuda(self, mean, std, dtype, fn):
+        image = make_image(batch_dims=(1,), dtype=dtype, device="cuda")
+        cvc_image = F.to_cvcuda_tensor(image)
+        actual = F._misc._normalize_cvcuda(cvc_image, mean=mean, std=std)
+        expected = fn(image, mean=mean, std=std)
+        torch.testing.assert_close(F.cvcuda_to_tensor(actual), expected, rtol=1e-7, atol=1e-7)
 
 
 class TestClampBoundingBoxes:
