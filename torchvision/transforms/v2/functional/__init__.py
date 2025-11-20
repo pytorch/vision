@@ -153,7 +153,6 @@ from ._misc import (
     gaussian_noise_image,
     gaussian_noise_video,
     normalize,
-    normalize_cvcuda,
     normalize_image,
     normalize_video,
     sanitize_bounding_boxes,
