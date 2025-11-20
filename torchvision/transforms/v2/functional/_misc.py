@@ -79,14 +79,21 @@ def normalize_video(video: torch.Tensor, mean: list[float], std: list[float], in
     return normalize_image(video, mean, std, inplace=inplace)
 
 
-def normalize_cvcuda(
+def _normalize_cvcuda(
     image: "cvcuda.Tensor",
-    mean: Sequence[float | int] | float | int,
-    std: Sequence[float | int] | float | int,
+    mean: list[float],
+    std: list[float],
     inplace: bool = False,
 ) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
     if inplace:
         raise ValueError("Inplace normalization is not supported for CVCUDA.")
+
+    # CV-CUDA supports signed int and float tensors
+    # torchvision only supports uint and float, right now CV-CUDA doesnt expose float16, so only check 32
+    # in the future add float16 once exposed in CV-CUDA
+    if not (image.dtype == cvcuda.Type.F32):
+        raise ValueError(f"Input tensor should be a float tensor. Got {image.dtype}.")
 
     channels = image.shape[3]
     if isinstance(mean, float | int):
@@ -115,7 +122,7 @@ def normalize_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _normalize_cvcuda = _register_kernel_internal(normalize, cvcuda.Tensor)(normalize_cvcuda)
+    _normalize_cvcuda_registered = _register_kernel_internal(normalize, _import_cvcuda().Tensor)(_normalize_cvcuda)
 
 
 def gaussian_blur(inpt: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None) -> torch.Tensor:
