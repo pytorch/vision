@@ -400,8 +400,9 @@ def make_image_pil(*args, **kwargs):
     return to_pil_image(make_image(*args, **kwargs))
 
 
-def make_image_cvcuda(*args, **kwargs):
-    return to_cvcuda_tensor(make_image(*args, **kwargs))
+def make_image_cvcuda(*args, batch_dims=(1,), **kwargs):
+    # explicitly default batch_dims to (1,) since to_cvcuda_tensor requires a batch dimension (ndims == 4)
+    return to_cvcuda_tensor(make_image(*args, batch_dims=batch_dims, **kwargs))
 
 
 def make_keypoints(canvas_size=DEFAULT_SIZE, *, num_points=4, dtype=None, device="cpu"):
