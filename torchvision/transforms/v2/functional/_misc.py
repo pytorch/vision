@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, Sequence, TYPE_CHECKING
 
 import PIL.Image
 import torch
@@ -13,7 +13,14 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import _convert_bounding_box_format
 
-from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
+from ._utils import _get_kernel, _import_cvcuda, _is_cvcuda_available, _register_kernel_internal, is_pure_tensor
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
+if CVCUDA_AVAILABLE:
+    cvcuda = _import_cvcuda()  # noqa: F811
 
 
 def normalize(
@@ -99,6 +106,41 @@ def _get_gaussian_kernel2d(
     return kernel2d
 
 
+def _validate_kernel_size_and_sigma(
+    kernel_size: Sequence[int] | int,
+    sigma: Sequence[float | int] | float | int | None = None,
+) -> tuple[list[int], list[float]]:
+    # duplicated logic from gaussian_blur_image for use in gaussian_blur_cvcuda
+    if isinstance(kernel_size, int):
+        kernel_size = [kernel_size, kernel_size]
+    elif len(kernel_size) != 2:
+        raise ValueError(f"If kernel_size is a sequence its length should be 2. Got {len(kernel_size)}")
+    for ksize in kernel_size:
+        if ksize % 2 == 0 or ksize < 0:
+            raise ValueError(f"kernel_size should have odd and positive integers. Got {kernel_size}")
+
+    if sigma is None:
+        sigma = [ksize * 0.15 + 0.35 for ksize in kernel_size]
+    else:
+        if isinstance(sigma, (list, tuple)):
+            length = len(sigma)
+            if length == 1:
+                s = sigma[0]
+                sigma = [s, s]
+            elif length != 2:
+                raise ValueError(f"If sigma is a sequence, its length should be 2. Got {length}")
+        elif isinstance(sigma, (int, float)):
+            s = float(sigma)
+            sigma = [s, s]
+        else:
+            raise TypeError(f"sigma should be either float or sequence of floats. Got {type(sigma)}")
+    for s in sigma:
+        if s <= 0.0:
+            raise ValueError(f"sigma should have positive values. Got {sigma}")
+
+    return kernel_size, sigma
+
+
 @_register_kernel_internal(gaussian_blur, torch.Tensor)
 @_register_kernel_internal(gaussian_blur, tv_tensors.Image)
 def gaussian_blur_image(
@@ -179,6 +221,27 @@ def gaussian_blur_video(
     video: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None
 ) -> torch.Tensor:
     return gaussian_blur_image(video, kernel_size, sigma)
+
+
+def _gaussian_blur_cvcuda(
+    image: "cvcuda.Tensor", kernel_size: list[int], sigma: Optional[list[float]] = None
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    kernel_size, sigma = _validate_kernel_size_and_sigma(kernel_size, sigma)
+
+    return cvcuda.gaussian(
+        image,
+        tuple(kernel_size),
+        tuple(sigma),
+        border=cvcuda.Border.REFLECT,
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _gaussian_blur_cvcuda_registered = _register_kernel_internal(gaussian_blur, _import_cvcuda().Tensor)(
+        _gaussian_blur_cvcuda
+    )
 
 
 def gaussian_noise(inpt: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
