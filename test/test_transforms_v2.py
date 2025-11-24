@@ -5661,10 +5661,9 @@ class TestNormalize:
 
     @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
     @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
-    @pytest.mark.parametrize("dtype", [torch.float32])
     @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
-    def test_correctness_cvcuda(self, mean, std, dtype, fn):
-        image = make_image(batch_dims=(1,), dtype=dtype, device="cuda")
+    def test_correctness_cvcuda(self, mean, std, fn):
+        image = make_image(batch_dims=(1,), dtype=torch.float32, device="cuda")
         cvc_image = F.to_cvcuda_tensor(image)
         actual = F._misc._normalize_cvcuda(cvc_image, mean=mean, std=std)
         expected = fn(image, mean=mean, std=std)
