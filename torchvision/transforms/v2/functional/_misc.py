@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional, TYPE_CHECKING, Union
+from typing import List, Optional, Tuple, TYPE_CHECKING, Union
 
 import PIL.Image
 import torch
@@ -109,7 +109,7 @@ def _get_gaussian_kernel2d(
 def _validate_kernel_size_and_sigma(
     kernel_size: List[int] | int,
     sigma: Optional[Union[List[float], float, int]] = None,
-) -> tuple[list[int], list[float]]:
+) -> Tuple[List[int], List[float]]:
     # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
@@ -213,9 +213,7 @@ def _gaussian_blur_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _gaussian_blur_cvcuda_registered = _register_kernel_internal(gaussian_blur, _import_cvcuda().Tensor)(
-        _gaussian_blur_cvcuda
-    )
+    _register_kernel_internal(gaussian_blur, _import_cvcuda().Tensor)(_gaussian_blur_cvcuda)
 
 
 def gaussian_noise(inpt: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:

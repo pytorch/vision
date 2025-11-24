@@ -4085,7 +4085,7 @@ class TestGaussianBlur:
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
     @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
-    def test_functional_cvcuda_parity(self, dimensions, kernel_size, sigma, color_space, batch_dims, dtype):
+    def test_functional_cvcuda_correctness(self, dimensions, kernel_size, sigma, color_space, batch_dims, dtype):
         height, width = dimensions
 
         image_tensor = make_image(
@@ -4098,6 +4098,9 @@ class TestGaussianBlur:
         actual_torch = F.cvcuda_to_tensor(actual)
 
         if dtype.is_floating_point:
+            # floating point precision differences between torch and cvcuda are present
+            # observed greatest absolute error is 0.3
+            # most likely stemming from different implementation
             torch.testing.assert_close(actual_torch, expected, rtol=0, atol=0.3)
         else:
             # uint8/16 gaussians can differ by up to max-value, most likely an overflow issue
