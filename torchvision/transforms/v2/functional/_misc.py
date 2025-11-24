@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional, Tuple, TYPE_CHECKING, Union
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import PIL.Image
 import torch
@@ -107,8 +107,8 @@ def _get_gaussian_kernel2d(
 
 
 def _validate_kernel_size_and_sigma(
-    kernel_size: List[int] | int,
-    sigma: Optional[Union[List[float], float, int]] = None,
+    kernel_size: List[int],
+    sigma: Optional[List[float]] = None,
 ) -> Tuple[List[int], List[float]]:
     # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
