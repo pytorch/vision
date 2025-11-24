@@ -105,14 +105,6 @@ def _normalize_cvcuda(
     elif len(std) != channels:
         raise ValueError(f"Std should have {channels} elements. Got {len(std)}.")
 
-    # CV-CUDA requires float32 tensors for the mean/std parameters
-    # at small batchs, this is costly relative to normalize operation
-    # if CV-CUDA is known to be a backend, could optimize this
-    # For Normalize class:
-    # by creating tensors at class initialization time
-    # For functional API:
-    # by storing cached tensors in helper function with functools.lru_cache (would it even be worth it?)
-    # Since CV-CUDA is 1) not default backend, 2) only strictly faster at large batch size, ignore
     mt = torch.as_tensor(mean, dtype=torch.float32).reshape(1, 1, 1, channels).cuda()
     st = torch.as_tensor(std, dtype=torch.float32).reshape(1, 1, 1, channels).cuda()
     mean_cv = cvcuda.as_tensor(mt, cvcuda.TensorLayout.NHWC)
@@ -122,7 +114,7 @@ def _normalize_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _normalize_cvcuda_registered = _register_kernel_internal(normalize, _import_cvcuda().Tensor)(_normalize_cvcuda)
+    _register_kernel_internal(normalize, _import_cvcuda().Tensor)(_normalize_cvcuda)
 
 
 def gaussian_blur(inpt: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None) -> torch.Tensor:
