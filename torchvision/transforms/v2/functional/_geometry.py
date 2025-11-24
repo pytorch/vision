@@ -1965,7 +1965,7 @@ def _crop_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _crop_cvcuda_registered = _register_kernel_internal(crop, _import_cvcuda().Tensor)(_crop_cvcuda)
+    _register_kernel_internal(crop, _import_cvcuda().Tensor)(_crop_cvcuda)
 
 
 def perspective(
@@ -2754,9 +2754,7 @@ def _center_crop_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _center_crop_cvcuda_registered = _register_kernel_internal(center_crop, _import_cvcuda().Tensor)(
-        _center_crop_cvcuda
-    )
+    _register_kernel_internal(center_crop, _import_cvcuda().Tensor)(_center_crop_cvcuda)
 
 
 def resized_crop(

@@ -3526,12 +3526,14 @@ class TestCrop:
             (F.crop_keypoints, tv_tensors.KeyPoints),
             pytest.param(
                 F._geometry._crop_cvcuda,
-                _import_cvcuda().Tensor,
+                "cvcuda.Tensor",
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if input_type == "cvcuda.Tensor":
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.crop, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
@@ -4985,12 +4987,14 @@ class TestCenterCrop:
             (F.center_crop_keypoints, tv_tensors.KeyPoints),
             pytest.param(
                 F._geometry._center_crop_cvcuda,
-                _import_cvcuda().Tensor,
+                "cvcuda.Tensor",
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if input_type == "cvcuda.Tensor":
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.center_crop, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
