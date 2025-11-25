@@ -1544,7 +1544,6 @@ def _rotate_cvcuda(
     fill: _FillTypeJIT = None,
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
-
     return cvcuda.rotate(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
 
