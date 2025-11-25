@@ -690,6 +690,42 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
     return invert_image(video)
 
 
+if _CVCUDA_AVAILABLE:
+    _invert_cvcuda_tensors = {}
+
+
+def _invert_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if "base" not in _invert_cvcuda_tensors:
+        _invert_cvcuda_tensors["base"] = cvcuda.as_tensor(
+            torch.tensor([0.0, 0.0, 0.0], dtype=torch.float32, device="cuda").reshape(1, 1, 1, 3).contiguous(), "NHWC"
+        )
+    if "scale" not in _invert_cvcuda_tensors:
+        _invert_cvcuda_tensors["scale"] = cvcuda.as_tensor(
+            torch.tensor([-1.0, -1.0, -1.0], dtype=torch.float32, device="cuda").reshape(1, 1, 1, 3).contiguous(),
+            "NHWC",
+        )
+
+    base = _invert_cvcuda_tensors["base"]
+    scale = _invert_cvcuda_tensors["scale"]
+
+    if image.dtype == cvcuda.Type.U8:
+        shift = 255.0
+    elif image.dtype == cvcuda.Type.F32:
+        shift = 1.0
+    else:
+        raise ValueError(f"Input image dtype must be uint8 or float32, got {image.dtype}")
+
+    # Use normalize to invert: output = (input - base) * scale * global_scale + shift
+    # For inversion: output = (input - 0) * (-1) * 1 + shift = shift - input
+    return cvcuda.normalize(image, base=base, scale=scale, globalscale=1.0, globalshift=shift)
+
+
+if _CVCUDA_AVAILABLE:
+    _register_kernel_internal(invert, _import_cvcuda().Tensor)(_invert_cvcuda)
+
+
 def permute_channels(inpt: torch.Tensor, permutation: list[int]) -> torch.Tensor:
     """Permute the channels of the input according to the given permutation.
 
