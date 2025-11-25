@@ -145,6 +145,19 @@ def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> to
     return adjust_brightness_image(video, brightness_factor=brightness_factor)
 
 
+def _adjust_brightness_cvcuda(image: "cvcuda.Tensor", brightness_factor: float) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    cv_brightness = torch.tensor([brightness_factor], dtype=torch.float32, device="cuda")
+    cv_brightness = cvcuda.as_tensor(cv_brightness, "N")
+
+    return cvcuda.brightness_contrast(image, brightness=cv_brightness)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(adjust_brightness, _import_cvcuda().Tensor)(_adjust_brightness_cvcuda)
+
+
 def adjust_saturation(inpt: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     """Adjust saturation."""
     if torch.jit.is_scripting():
