@@ -11,7 +11,7 @@ from torchvision import tv_tensors
 from torchvision.transforms.v2._utils import check_type, has_any, is_pure_tensor
 from torchvision.utils import _log_api_usage_once
 
-from .functional._utils import _get_kernel
+from .functional._utils import _get_kernel, is_cvcuda_tensor
 
 
 class Transform(nn.Module):
@@ -23,7 +23,7 @@ class Transform(nn.Module):
 
     # Class attribute defining transformed types. Other types are passed-through without any transformation
     # We support both Types and callables that are able to do further checks on the type of the input.
-    _transformed_types: tuple[type | Callable[[Any], bool], ...] = (torch.Tensor, PIL.Image.Image)
+    _transformed_types: tuple[type | Callable[[Any], bool], ...] = (torch.Tensor, PIL.Image.Image, is_cvcuda_tensor)
 
     def __init__(self) -> None:
         super().__init__()
