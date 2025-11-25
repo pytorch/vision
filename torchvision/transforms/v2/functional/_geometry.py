@@ -1682,6 +1682,49 @@ def _pad_with_vector_fill(
 _pad_image_pil = _register_kernel_internal(pad, PIL.Image.Image)(_FP.pad)
 
 
+if _CVCUDA_AVAILABLE:
+    cvcuda = _import_cvcuda()
+    _pad_mode_to_cvcuda = {
+        "constant": cvcuda.BorderType.CONSTANT,
+        "reflect": cvcuda.BorderType.REFLECT,
+        "replicate": cvcuda.BorderType.REPLICATE,
+        "symmetric": cvcuda.BorderType.WRAP,
+    }
+
+
+def _pad_cvcuda(
+    image: "cvcuda.Tensor",
+    padding: list[int],
+    fill: Optional[Union[int, float, list[float]]] = None,
+    padding_mode: str = "constant",
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if padding_mode not in _pad_mode_to_cvcuda:
+        raise ValueError(f"Padding mode '{padding_mode}' is not supported with CVCUDA")
+
+    if fill is None:
+        fill = 0
+    if isinstance(fill, (int, float)):
+        fill = [fill] * image.shape[3]
+
+    left, right, top, bottom = _parse_pad_padding(padding)
+
+    return cvcuda.copymakeborder(
+        image,
+        border_mode=_pad_mode_to_cvcuda[padding_mode],
+        border_value=fill,
+        top=top,
+        left=left,
+        bottom=bottom,
+        right=right,
+    )
+
+
+if _CVCUDA_AVAILABLE:
+    _register_kernel_internal(pad, _import_cvcuda().Tensor)(_pad_cvcuda)
+
+
 @_register_kernel_internal(pad, tv_tensors.Mask)
 def pad_mask(
     mask: torch.Tensor,

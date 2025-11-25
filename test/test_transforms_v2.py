@@ -4728,6 +4728,7 @@ class TestPad:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            make_image_cvcuda,
         ],
     )
     def test_functional(self, make_input):
@@ -4746,9 +4747,16 @@ class TestPad:
             (F.pad_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.pad_mask, tv_tensors.Mask),
             (F.pad_video, tv_tensors.Video),
+            pytest.param(
+                F.pad_image_cvcuda,
+                "cvcuda.Tensor",
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if input_type == "cvcuda.Tensor":
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.pad, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
@@ -4761,6 +4769,7 @@ class TestPad:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            make_image_cvcuda,
         ],
     )
     def test_transform(self, make_input):
