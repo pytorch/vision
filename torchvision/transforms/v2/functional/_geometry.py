@@ -1535,6 +1535,30 @@ def rotate_video(
     return rotate_image(video, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
 
+if CVCUDA_AVAILABLE:
+    _cvcuda_interp = {
+        InterpolationMode.BILINEAR: cvcuda.Interp.LINEAR,
+        "bilinear": cvcuda.Interp.LINEAR,
+        "linear": cvcuda.Interp.LINEAR,
+        2: cvcuda.Interp.LINEAR,
+        InterpolationMode.BICUBIC: cvcuda.Interp.CUBIC,
+        "bicubic": cvcuda.Interp.CUBIC,
+        3: cvcuda.Interp.CUBIC,
+        InterpolationMode.NEAREST: cvcuda.Interp.NEAREST,
+        "nearest": cvcuda.Interp.NEAREST,
+        0: cvcuda.Interp.NEAREST,
+        InterpolationMode.BOX: cvcuda.Interp.BOX,
+        "box": cvcuda.Interp.BOX,
+        4: cvcuda.Interp.BOX,
+        InterpolationMode.HAMMING: cvcuda.Interp.HAMMING,
+        "hamming": cvcuda.Interp.HAMMING,
+        5: cvcuda.Interp.HAMMING,
+        InterpolationMode.LANCZOS: cvcuda.Interp.LANCZOS,
+        "lanczos": cvcuda.Interp.LANCZOS,
+        1: cvcuda.Interp.LANCZOS,
+    }
+
+
 def _rotate_cvcuda(
     inpt: "cvcuda.Tensor",
     angle: float,
@@ -1544,11 +1568,16 @@ def _rotate_cvcuda(
     fill: _FillTypeJIT = None,
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
-    return cvcuda.rotate(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
+
+    interp = _cvcuda_interp.get(interpolation)
+    if interp is None:
+        raise ValueError(f"Interpolation mode {interpolation} is not supported with CV-CUDA")
+    
+    return cvcuda.rotate(inpt, angle_deg=angle, shift=(0.0, 0.0), interpolation=interpolation)
 
 
-if _CVCUDA_AVAILABLE:
-    _register_kernel_internal(rotate, _import_cvcuda().Tensor)(rotate_cvcuda)
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(rotate, _import_cvcuda().Tensor)(_rotate_cvcuda)
 
 
 def pad(
