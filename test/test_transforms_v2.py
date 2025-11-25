@@ -4748,7 +4748,7 @@ class TestPad:
             (F.pad_mask, tv_tensors.Mask),
             (F.pad_video, tv_tensors.Video),
             pytest.param(
-                F.pad_image_cvcuda,
+                F._geometry._pad_cvcuda,
                 "cvcuda.Tensor",
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
@@ -4812,6 +4812,26 @@ class TestPad:
         expected = F.to_image(F.pad(F.to_pil_image(image), padding=padding, padding_mode=padding_mode, fill=fill))
 
         assert_equal(actual, expected)
+
+    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+    @pytest.mark.parametrize("padding", CORRECTNESS_PADDINGS)
+    @pytest.mark.parametrize(
+        ("padding_mode", "fill"),
+        [
+            *[("constant", fill) for fill in CORRECTNESS_FILLS],
+            *[(padding_mode, None) for padding_mode in ["symmetric", "edge", "reflect"]],
+        ],
+    )
+    @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
+    def test_cvcuda_correctness(self, padding, padding_mode, fill, fn):
+        image = make_image_cvcuda(dtype=torch.uint8, device="cuda")
+
+        fill = adapt_fill(fill, dtype=torch.uint8)
+
+        actual = fn(image, padding=padding, padding_mode=padding_mode, fill=fill)
+        expected = F.pad(F.cvcuda_to_tensor(image), padding=padding, padding_mode=padding_mode, fill=fill)
+
+        assert_equal(F.cvcuda_to_tensor(actual), expected)
 
     def _reference_pad_bounding_boxes(self, bounding_boxes, *, padding):
         if isinstance(padding, int):

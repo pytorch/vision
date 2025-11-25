@@ -1683,12 +1683,12 @@ _pad_image_pil = _register_kernel_internal(pad, PIL.Image.Image)(_FP.pad)
 
 
 if _CVCUDA_AVAILABLE:
-    cvcuda = _import_cvcuda()
     _pad_mode_to_cvcuda = {
-        "constant": cvcuda.BorderType.CONSTANT,
-        "reflect": cvcuda.BorderType.REFLECT,
-        "replicate": cvcuda.BorderType.REPLICATE,
-        "symmetric": cvcuda.BorderType.WRAP,
+        "constant": cvcuda.Border.CONSTANT,
+        "reflect": cvcuda.Border.REFLECT101,
+        "replicate": cvcuda.Border.REPLICATE,
+        "edge": cvcuda.Border.REPLICATE,
+        "symmetric": cvcuda.Border.REFLECT,
     }
 
 
@@ -1700,7 +1700,7 @@ def _pad_cvcuda(
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
-    if padding_mode not in _pad_mode_to_cvcuda:
+    if _pad_mode_to_cvcuda.get(padding_mode) is None:
         raise ValueError(f"Padding mode '{padding_mode}' is not supported with CVCUDA")
 
     if fill is None:
