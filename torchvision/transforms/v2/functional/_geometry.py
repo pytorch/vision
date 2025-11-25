@@ -1535,6 +1535,25 @@ def rotate_video(
     return rotate_image(video, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
 
+def _rotate_cvcuda(
+    inpt: "cvcuda.Tensor",
+    angle: float,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    expand: bool = False,
+    center: Optional[list[float]] = None,
+    fill: _FillTypeJIT = None,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+    
+    
+    
+    return cvcuda.rotate(inpt, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
+
+
+if _CVCUDA_AVAILABLE:
+    _register_kernel_internal(rotate, _import_cvcuda().Tensor)(rotate_cvcuda)
+
+
 def pad(
     inpt: torch.Tensor,
     padding: list[int],
