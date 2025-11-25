@@ -4,6 +4,8 @@ import warnings
 from collections.abc import Sequence
 from typing import Any, Optional, TYPE_CHECKING, Union
 
+import numpy as np
+
 import PIL.Image
 import torch
 from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
@@ -2283,6 +2285,70 @@ def perspective_video(
     return perspective_image(
         video, startpoints, endpoints, interpolation=interpolation, fill=fill, coefficients=coefficients
     )
+
+
+if CVCUDA_AVAILABLE:
+    _cvcuda_interp = {
+        InterpolationMode.BILINEAR: cvcuda.Interp.LINEAR,
+        "bilinear": cvcuda.Interp.LINEAR,
+        "linear": cvcuda.Interp.LINEAR,
+        2: cvcuda.Interp.LINEAR,
+        InterpolationMode.BICUBIC: cvcuda.Interp.CUBIC,
+        "bicubic": cvcuda.Interp.CUBIC,
+        3: cvcuda.Interp.CUBIC,
+        InterpolationMode.NEAREST: cvcuda.Interp.NEAREST,
+        "nearest": cvcuda.Interp.NEAREST,
+        0: cvcuda.Interp.NEAREST,
+        InterpolationMode.BOX: cvcuda.Interp.BOX,
+        "box": cvcuda.Interp.BOX,
+        4: cvcuda.Interp.BOX,
+        InterpolationMode.HAMMING: cvcuda.Interp.HAMMING,
+        "hamming": cvcuda.Interp.HAMMING,
+        5: cvcuda.Interp.HAMMING,
+        InterpolationMode.LANCZOS: cvcuda.Interp.LANCZOS,
+        "lanczos": cvcuda.Interp.LANCZOS,
+        1: cvcuda.Interp.LANCZOS,
+    }
+
+
+def _perspective_cvcuda(
+    image: "cvcuda.Tensor",
+    startpoints: Optional[list[list[int]]],
+    endpoints: Optional[list[list[int]]],
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    fill: _FillTypeJIT = None,
+    coefficients: Optional[list[float]] = None,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    c = _perspective_coefficients(startpoints, endpoints, coefficients)
+    interpolation = _check_interpolation(interpolation)
+
+    interp = _cvcuda_interp.get(interpolation)
+    if interp is None:
+        raise ValueError(f"Invalid interpolation mode: {interpolation}")
+
+    xform = np.array([[c[0], c[1], c[2]], [c[3], c[4], c[5]], [c[6], c[7], 1.0]], dtype=np.float32)
+
+    num_channels = image.shape[-1]
+    if fill is None:
+        border_value = np.zeros(num_channels, dtype=np.float32)
+    elif isinstance(fill, (int, float)):
+        border_value = np.full(num_channels, fill, dtype=np.float32)
+    else:
+        border_value = np.array(fill, dtype=np.float32)[:num_channels]
+
+    return cvcuda.warp_perspective(
+        image,
+        xform,
+        flags=interp | cvcuda.Interp.WARP_INVERSE_MAP,
+        border_mode=cvcuda.Border.CONSTANT,
+        border_value=border_value,
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(perspective, _import_cvcuda().Tensor)(_perspective_cvcuda)
 
 
 def elastic(
