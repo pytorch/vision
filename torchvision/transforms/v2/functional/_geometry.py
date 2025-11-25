@@ -4,6 +4,7 @@ import warnings
 from collections.abc import Sequence
 from typing import Any, Optional, TYPE_CHECKING, Union
 
+import numpy as np
 import PIL.Image
 import torch
 from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
@@ -1329,6 +1330,80 @@ def affine_video(
         fill=fill,
         center=center,
     )
+
+
+if CVCUDA_AVAILABLE:
+    _cvcuda_interp = {
+        InterpolationMode.BILINEAR: cvcuda.Interp.LINEAR,
+        "bilinear": cvcuda.Interp.LINEAR,
+        "linear": cvcuda.Interp.LINEAR,
+        2: cvcuda.Interp.LINEAR,
+        InterpolationMode.BICUBIC: cvcuda.Interp.CUBIC,
+        "bicubic": cvcuda.Interp.CUBIC,
+        3: cvcuda.Interp.CUBIC,
+        InterpolationMode.NEAREST: cvcuda.Interp.NEAREST,
+        "nearest": cvcuda.Interp.NEAREST,
+        0: cvcuda.Interp.NEAREST,
+        InterpolationMode.BOX: cvcuda.Interp.BOX,
+        "box": cvcuda.Interp.BOX,
+        4: cvcuda.Interp.BOX,
+        InterpolationMode.HAMMING: cvcuda.Interp.HAMMING,
+        "hamming": cvcuda.Interp.HAMMING,
+        5: cvcuda.Interp.HAMMING,
+        InterpolationMode.LANCZOS: cvcuda.Interp.LANCZOS,
+        "lanczos": cvcuda.Interp.LANCZOS,
+        1: cvcuda.Interp.LANCZOS,
+    }
+
+
+def _affine_cvcuda(
+    image: "cvcuda.Tensor",
+    angle: Union[int, float],
+    translate: list[float],
+    scale: float,
+    shear: list[float],
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    fill: _FillTypeJIT = None,
+    center: Optional[list[float]] = None,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    interpolation = _check_interpolation(interpolation)
+    angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
+
+    height, width, num_channels = image.shape[1:]
+
+    center_f = [0.0, 0.0]
+    if center is not None:
+        center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
+
+    translate_f = [float(t) for t in translate]
+    matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
+
+    interp = _cvcuda_interp.get(interpolation)
+    if interp is None:
+        raise ValueError(f"Invalid interpolation mode: {interpolation}")
+
+    xform = np.array([[matrix[0], matrix[1], matrix[2]], [matrix[3], matrix[4], matrix[5]]], dtype=np.float32)
+
+    if fill is None:
+        border_value = np.zeros(num_channels, dtype=np.float32)
+    elif isinstance(fill, (int, float)):
+        border_value = np.full(num_channels, fill, dtype=np.float32)
+    else:
+        border_value = np.array(fill, dtype=np.float32)[:num_channels]
+
+    return cvcuda.warp_affine(
+        image,
+        xform,
+        flags=interp | cvcuda.Interp.WARP_INVERSE_MAP,
+        border_mode=cvcuda.Border.CONSTANT,
+        border_value=border_value,
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(affine, _import_cvcuda().Tensor)(_affine_cvcuda)
 
 
 def rotate(
