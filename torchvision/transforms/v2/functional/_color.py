@@ -201,35 +201,31 @@ def _adjust_saturation_cvcuda(image: "cvcuda.Tensor", saturation_factor: float) 
     if saturation_factor < 0:
         raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
-    c = image.shape[-1]  # NHWC layout
+    c = image.shape[3]
     if c not in [1, 3, 4]:
         raise TypeError(f"Input image tensor permitted channel values are 1, 3, or 4, but found {c}")
 
     if c == 1:  # Match PIL behaviour
         return image
 
-    # Grayscale weights (same as _rgb_to_grayscale_image)
+    # grayscale weights
     sf = saturation_factor
     r, g, b = 0.2989, 0.587, 0.114
-
-    # Build 3x4 saturation matrix
     twist_data = [
         [sf + (1 - sf) * r, (1 - sf) * g, (1 - sf) * b, 0.0],
         [(1 - sf) * r, sf + (1 - sf) * g, (1 - sf) * b, 0.0],
         [(1 - sf) * r, (1 - sf) * g, sf + (1 - sf) * b, 0.0],
     ]
-    twist = cvcuda.Tensor(
-        torch.tensor(twist_data, dtype=torch.float32, device="cuda").contiguous(),
-        layout="HW",
+    twist_tensor = cvcuda.as_tensor(
+        torch.tensor(twist_data, dtype=torch.float32, device="cuda"),
+        "HW",
     )
 
-    return cvcuda.color_twist(image, twist)
+    return cvcuda.color_twist(image, twist_tensor)
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(adjust_saturation, cvcuda.Tensor)(
-        _adjust_saturation_cvcuda
-    )
+    _register_kernel_internal(adjust_saturation, cvcuda.Tensor)(_adjust_saturation_cvcuda)
 
 
 def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
