@@ -659,6 +659,17 @@ def equalize_video(video: torch.Tensor) -> torch.Tensor:
     return equalize_image(video)
 
 
+def _equalize_cvcuda(
+    image: "cvcuda.Tensor",
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+    return cvcuda.histogrameq(image, dtype=image.dtype)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(equalize, _import_cvcuda().Tensor)(_equalize_cvcuda)
+
+
 def invert(inpt: torch.Tensor) -> torch.Tensor:
     """See :func:`~torchvision.transforms.v2.RandomInvert`."""
     if torch.jit.is_scripting():

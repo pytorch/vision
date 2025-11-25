@@ -5450,7 +5450,18 @@ class TestEqualize:
     def test_kernel_video(self):
         check_kernel(F.equalize_image, make_video())
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
+    )
     def test_functional(self, make_input):
         check_functional(F.equalize, make_input())
 
@@ -5461,33 +5472,71 @@ class TestEqualize:
             (F._color._equalize_image_pil, PIL.Image.Image),
             (F.equalize_image, tv_tensors.Image),
             (F.equalize_video, tv_tensors.Video),
+            pytest.param(
+                F._color._equalize_cvcuda,
+                "cvcuda.Tensor",
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if input_type == "cvcuda.Tensor":
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.equalize, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
     )
     def test_transform(self, make_input):
         check_transform(transforms.RandomEqualize(p=1), make_input())
 
     @pytest.mark.parametrize(("low", "high"), [(0, 64), (64, 192), (192, 256), (0, 1), (127, 128), (255, 256)])
+    @pytest.mark.parametrize(
+        "tensor_type",
+        [
+            torch.Tensor,
+            pytest.param(
+                "cvcuda.Tensor", marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("fn", [F.equalize, transform_cls_to_functional(transforms.RandomEqualize, p=1)])
-    def test_image_correctness(self, low, high, fn):
+    def test_image_correctness(self, low, high, tensor_type, fn):
         # We are not using the default `make_image` here since that uniformly samples the values over the whole value
         # range. Since the whole point of F.equalize is to transform an arbitrary distribution of values into a uniform
         # one over the full range, the information gain is low if we already provide something really close to the
         # expected value.
-        image = tv_tensors.Image(
-            torch.testing.make_tensor((3, 117, 253), dtype=torch.uint8, device="cpu", low=low, high=high)
-        )
+        shape = (3, 117, 253)
+        if tensor_type == "cvcuda.Tensor":
+            shape = (1, *shape)
+        image = tv_tensors.Image(torch.testing.make_tensor(shape, dtype=torch.uint8, device="cpu", low=low, high=high))
+
+        if tensor_type == "cvcuda.Tensor":
+            image = F.to_cvcuda_tensor(image)
 
         actual = fn(image)
+
+        if tensor_type == "cvcuda.Tensor":
+            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
+            actual = actual.squeeze(0)
+            image = F.cvcuda_to_tensor(image)
+            image = image.squeeze(0)
+
         expected = F.to_image(F.equalize(F.to_pil_image(image)))
 
-        assert_equal(actual, expected)
+        if tensor_type == "cvcuda.Tensor":
+            torch.testing.assert_close(actual, expected, rtol=1e-10, atol=1)
+        else:
+            assert_equal(actual, expected)
 
 
 class TestUniformTemporalSubsample:
