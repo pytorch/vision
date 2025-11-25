@@ -73,6 +73,38 @@ def _rgb_to_grayscale_image_pil(image: PIL.Image.Image, num_output_channels: int
     return _FP.to_grayscale(image, num_output_channels=num_output_channels)
 
 
+def _rgb_to_grayscale_cvcuda(
+    image: "cvcuda.Tensor",
+    num_output_channels: int = 1,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if num_output_channels not in (1, 3):
+        raise ValueError(f"num_output_channels must be 1 or 3, got {num_output_channels}.")
+
+    if num_output_channels == 3:
+        raise ValueError("num_output_channels must be 1 for CV-CUDA, got 3.")
+
+    if image.shape[3] == 1:
+        # if we already have a single channel, just clone the tensor
+        # we will use copymakeborder since CV-CUDA has no native clone
+        return cvcuda.copymakeborder(
+            image,
+            border_mode=cvcuda.Border.CONSTANT,
+            border_value=[0],
+            top=0,
+            left=0,
+            bottom=0,
+            right=0,
+        )
+
+    return cvcuda.cvtcolor(image, cvcuda.ColorConversion.RGB2GRAY)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(rgb_to_grayscale, _import_cvcuda().Tensor)(_rgb_to_grayscale_cvcuda)
+
+
 def grayscale_to_rgb(inpt: torch.Tensor) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.RGB` for details."""
     if torch.jit.is_scripting():
@@ -97,6 +129,31 @@ def grayscale_to_rgb_image(image: torch.Tensor) -> torch.Tensor:
 @_register_kernel_internal(grayscale_to_rgb, PIL.Image.Image)
 def grayscale_to_rgb_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return image.convert(mode="RGB")
+
+
+def _grayscale_to_rgb_cvcuda(
+    image: "cvcuda.Tensor",
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if image.shape[3] == 3:
+        # if we already have RGB channels, just clone the tensor
+        # we will use copymakeborder since CV-CUDA has no native clone
+        return cvcuda.copymakeborder(
+            image,
+            border_mode=cvcuda.Border.CONSTANT,
+            border_value=[0],
+            top=0,
+            left=0,
+            bottom=0,
+            right=0,
+        )
+
+    return cvcuda.cvtcolor(image, cvcuda.ColorConversion.GRAY2RGB)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(grayscale_to_rgb, _import_cvcuda().Tensor)(_grayscale_to_rgb_cvcuda)
 
 
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:
