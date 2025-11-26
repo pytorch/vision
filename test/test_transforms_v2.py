@@ -1312,14 +1312,10 @@ class TestHorizontalFlip:
         image = make_input()
         actual = fn(image)
         if isinstance(image, cvcuda.Tensor):
-            # For CVCUDA input
             expected = F.horizontal_flip(F.cvcuda_to_tensor(image))
-            print("actual is ", F.cvcuda_to_tensor(actual))
-            print("expected is ", expected)
             assert_equal(F.cvcuda_to_tensor(actual), expected)
             
         else:
-            # For PIL/regular image input
             expected = F.to_image(F.horizontal_flip(F.to_pil_image(image)))
             assert_equal(actual, expected)
 
@@ -1962,11 +1958,9 @@ class TestVerticalFlip:
         image = make_input()
         actual = fn(image)
         if isinstance(image, cvcuda.Tensor):
-            # For CVCUDA input
             expected = F.vertical_flip(F.cvcuda_to_tensor(image))
             assert_equal(F.cvcuda_to_tensor(actual), expected)
         else:
-            # For PIL/regular image input
             expected = F.to_image(F.vertical_flip(F.to_pil_image(image)))
             assert_equal(actual, expected)
 

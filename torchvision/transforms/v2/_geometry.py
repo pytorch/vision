@@ -34,6 +34,7 @@ CVCUDA_AVAILABLE = _is_cvcuda_available()
 if CVCUDA_AVAILABLE:
     cvcuda = _import_cvcuda()
 
+
 class RandomHorizontalFlip(_RandomApplyTransform):
     """Horizontally flip the input with a given probability.
 
@@ -47,9 +48,6 @@ class RandomHorizontalFlip(_RandomApplyTransform):
     """
 
     _v1_transform_cls = _transforms.RandomHorizontalFlip
-
-    if CVCUDA_AVAILABLE:
-        _transformed_types = (torch.Tensor, PIL.Image.Image, cvcuda.Tensor)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.horizontal_flip, inpt)
@@ -68,10 +66,6 @@ class RandomVerticalFlip(_RandomApplyTransform):
     """
 
     _v1_transform_cls = _transforms.RandomVerticalFlip
-
-    if CVCUDA_AVAILABLE:
-        _transformed_types = (torch.Tensor, PIL.Image.Image, cvcuda.Tensor)
-
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.vertical_flip, inpt)

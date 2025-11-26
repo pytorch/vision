@@ -26,7 +26,14 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_box_format
 
-from ._utils import _FillTypeJIT, _get_kernel, _import_cvcuda, _is_cvcuda_available, _register_five_ten_crop_kernel_internal, _register_kernel_internal
+from ._utils import (
+    _FillTypeJIT,
+    _get_kernel,
+    _import_cvcuda,
+    _is_cvcuda_available,
+    _register_five_ten_crop_kernel_internal,
+    _register_kernel_internal,
+)
 
 CVCUDA_AVAILABLE = _is_cvcuda_available()
 if TYPE_CHECKING:
@@ -67,12 +74,16 @@ def horizontal_flip_image(image: torch.Tensor) -> torch.Tensor:
 def _horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.hflip(image)
 
+
 def _horizontal_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
     return _import_cvcuda().flip(image, flipCode=1)
 
 
 if CVCUDA_AVAILABLE:
-    _horizontal_flip_image_cvcuda_registered = _register_kernel_internal(horizontal_flip, _import_cvcuda().Tensor)(_horizontal_flip_image_cvcuda)
+    _register_kernel_internal(horizontal_flip, _import_cvcuda().Tensor)(
+        _horizontal_flip_image_cvcuda
+    )
+
 
 @_register_kernel_internal(horizontal_flip, tv_tensors.Mask)
 def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
@@ -167,7 +178,9 @@ def _vertical_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
 
 
 if CVCUDA_AVAILABLE:
-    _vertical_flip_image_cvcuda_registered = _register_kernel_internal(vertical_flip, _import_cvcuda().Tensor)(_vertical_flip_image_cvcuda)
+    _register_kernel_internal(vertical_flip, _import_cvcuda().Tensor)(
+        _vertical_flip_image_cvcuda
+    )
 
 
 @_register_kernel_internal(vertical_flip, tv_tensors.Mask)
