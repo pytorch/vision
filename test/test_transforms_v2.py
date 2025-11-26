@@ -3355,6 +3355,9 @@ class TestElastic:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
+            ),
         ],
     )
     def test_functional(self, make_input):
@@ -3370,9 +3373,16 @@ class TestElastic:
             (F.elastic_mask, tv_tensors.Mask),
             (F.elastic_video, tv_tensors.Video),
             (F.elastic_keypoints, tv_tensors.KeyPoints),
+            pytest.param(
+                F._geometry._elastic_cvcuda,
+                "cvcuda.Tensor",
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if input_type == "cvcuda.Tensor":
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.elastic, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
@@ -3385,6 +3395,9 @@ class TestElastic:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
+            ),
         ],
     )
     def test_displacement_error(self, make_input):
@@ -3406,6 +3419,9 @@ class TestElastic:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
+            ),
         ],
     )
     # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
