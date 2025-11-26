@@ -3537,10 +3537,26 @@ class TestCrop:
         check_functional_kernel_signature_match(F.crop, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize("kwargs", CORRECTNESS_CROP_KWARGS)
-    def test_functional_image_correctness(self, kwargs):
-        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
+    def test_functional_image_correctness(self, kwargs, make_input):
+        image = make_input(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
 
         actual = F.crop(image, **kwargs)
+
+        if make_input == make_image_cvcuda:
+            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
+            actual = actual.squeeze(0)
+            image = F.cvcuda_to_tensor(image).to(device="cpu")
+            image = image.squeeze(0)
+
         expected = F.to_image(F.crop(F.to_pil_image(image), **kwargs))
 
         assert_equal(actual, expected)
@@ -3628,7 +3644,16 @@ class TestCrop:
         padding_mode=["constant", "edge", "reflect", "symmetric"],
     )
     @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_image_correctness(self, param, value, seed):
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
+    def test_transform_image_correctness(self, param, value, seed, make_input):
         kwargs = {param: value}
         if param != "size":
             # 1. size is required
@@ -3639,41 +3664,32 @@ class TestCrop:
 
         transform = transforms.RandomCrop(pad_if_needed=True, **kwargs)
 
-        image = make_image(self.INPUT_SIZE)
+        will_pad = False
+        if kwargs["size"][0] > self.INPUT_SIZE[0] or kwargs["size"][1] > self.INPUT_SIZE[1]:
+            will_pad = True
+
+        image = make_input(self.INPUT_SIZE)
 
         with freeze_rng_state():
             torch.manual_seed(seed)
             actual = transform(image)
 
             torch.manual_seed(seed)
+
+            if make_input == make_image_cvcuda:
+                actual = F.cvcuda_to_tensor(actual).to(device="cpu")
+                actual = actual.squeeze(0)
+                image = F.cvcuda_to_tensor(image).to(device="cpu")
+                image = image.squeeze(0)
+
             expected = F.to_image(transform(F.to_pil_image(image)))
 
-        assert_equal(actual, expected)
-
-    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-    @pytest.mark.parametrize("size", [(10, 5), (25, 15), (25, 5), (10, 15), (10, 10)])
-    @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_cvcuda_correctness(self, size, seed):
-        pad_if_needed = False
-        if size[0] > self.INPUT_SIZE[0] or size[1] > self.INPUT_SIZE[1]:
-            pad_if_needed = True
-        transform = transforms.RandomCrop(size, pad_if_needed=pad_if_needed)
-
-        image = make_image(size=self.INPUT_SIZE, batch_dims=(1,), device="cuda")
-        cv_image = F.to_cvcuda_tensor(image)
-
-        with freeze_rng_state():
-            torch.manual_seed(seed)
-            actual = transform(cv_image)
-
-            torch.manual_seed(seed)
-            expected = transform(image)
-
-        if not pad_if_needed:
-            torch.testing.assert_close(F.cvcuda_to_tensor(actual), expected, rtol=0, atol=0)
+        if make_input == make_image_cvcuda and will_pad:
+            # when padding is applied, CV-CUDA will always fill with zeros
+            # cannot use assert_equal since it will fail unless random is all zeros
+            torch.testing.assert_close(actual, expected, rtol=0, atol=get_max_value(image.dtype))
         else:
-            # if padding is requied, CV-CUDA will always fill with zeros
-            torch.testing.assert_close(F.cvcuda_to_tensor(actual), expected, rtol=0, atol=get_max_value(image.dtype))
+            assert_equal(actual, expected)
 
     def _reference_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width):
         affine_matrix = np.array(
