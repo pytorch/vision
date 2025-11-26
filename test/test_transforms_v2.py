@@ -5032,25 +5032,30 @@ class TestCenterCrop:
         check_transform(transforms.CenterCrop(self.OUTPUT_SIZES[0]), make_input(self.INPUT_SIZE))
 
     @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
-    def test_image_correctness(self, output_size, fn):
-        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+    def test_image_correctness(self, output_size, make_input, fn):
+        image = make_input(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
 
         actual = fn(image, output_size)
+
+        if make_input == make_image_cvcuda:
+            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
+            actual = actual.squeeze(0)
+            image = F.cvcuda_to_tensor(image).to(device="cpu")
+            image = image.squeeze(0)
+
         expected = F.to_image(F.center_crop(F.to_pil_image(image), output_size=output_size))
 
         assert_equal(actual, expected)
-
-    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-    @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
-    @pytest.mark.parametrize("fn", [F.center_crop, transform_cls_to_functional(transforms.CenterCrop)])
-    def test_cvcuda_correctness(self, output_size, fn):
-        image = make_image_cvcuda(self.INPUT_SIZE, dtype=torch.uint8, device="cuda")
-
-        actual = fn(image, output_size)
-        expected = F.center_crop(F.cvcuda_to_tensor(image), output_size)
-
-        assert_equal(F.cvcuda_to_tensor(actual), expected)
 
     def _reference_center_crop_bounding_boxes(self, bounding_boxes, output_size):
         image_height, image_width = bounding_boxes.canvas_size
