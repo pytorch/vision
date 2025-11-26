@@ -296,6 +296,90 @@ def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torc
     return adjust_sharpness_image(video, sharpness_factor=sharpness_factor)
 
 
+_max_value_map = {}
+_dtype_to_format = {}
+if CVCUDA_AVAILABLE:
+    _max_value_map = {
+        cvcuda.Type.U8: 255,
+        cvcuda.Type.F32: 1.0,
+    }
+    _dtype_to_format = {
+        (cvcuda.Type.U8, 1): cvcuda.Format.U8,
+        (cvcuda.Type.U8, 3): cvcuda.Format.RGB8,
+        (cvcuda.Type.F32, 1): cvcuda.Format.F32,
+        (cvcuda.Type.F32, 3): cvcuda.Format.RGBf32,
+    }
+
+
+def _adjust_sharpness_cvcuda(
+    image: "cvcuda.Tensor",
+    sharpness_factor: float,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if sharpness_factor < 0:
+        raise ValueError(f"sharpness_factor ({sharpness_factor}) is not non-negative.")
+
+    n, h, w, c = image.shape
+    if c not in (1, 3):
+        raise TypeError(f"Input image tensor can have 1 or 3 channels, but found {c}")
+
+    if h <= 2 or w <= 2:
+        return image
+
+    # grab the constants like in the torchvision
+    bound = _max_value_map[image.dtype]
+    fp = image.dtype == cvcuda.Type.F32
+    img_format = _dtype_to_format.get((image.dtype, c))
+    if img_format is None:
+        raise TypeError(f"Unsupported dtype/channel combination: {image.dtype}, {c} channels")
+
+    # conv2d requires ImageBatchVarShape, so we split the batch into individual images
+    # CV-CUDA has no split, so use zero-copy and torch
+    batch = cvcuda.ImageBatchVarShape(capacity=n)
+    for tensor in torch.as_tensor(image.cuda()).split(n, dim=0):
+        cv_image = cvcuda.as_image(tensor, format=img_format)
+        batch.pushback(cv_image)
+
+    # create kernel same as adjust_sharpness_image
+    a, b = 1.0 / 13.0, 5.0 / 13.0
+    torch_kernel = torch.tensor([[a, a, a], [a, b, a], [a, a, a]], dtype=torch.float32, device="cuda")
+    kernel_batch = cvcuda.ImageBatchVarShape(capacity=n)
+    for _ in range(n):
+        kernel_batch.pushback(cvcuda.as_image(torch_kernel, format=cvcuda.Format.F32))
+
+    # anchors of kernel for cvcuda, [-1, -1] means center of kernel
+    anchor_data = torch.tensor([[-1, -1]] * n, dtype=torch.int32, device="cuda")
+    anchor = cvcuda.as_tensor(anchor_data, "NC")
+
+    # run the sharpen operator using cvcuda.conv2d
+    sharpened_batch = cvcuda.conv2d(batch, kernel=kernel_batch, kernel_anchor=anchor, border=cvcuda.Border.REPLICATE)
+    sharpened_list = []
+    for sharpened_img in sharpened_batch:
+        tensor = cvcuda.as_tensor(sharpened_img.cuda(), cvcuda.TensorLayout.HWC)
+        sharpened_list.append(tensor)
+    sharpened = cvcuda.stack(sharpened_list)
+
+    # handle the final blend operations using zero-copy from the adjust_sharpness_image
+    blurred_degenerate = torch.as_tensor(sharpened.cuda())
+    output = torch.as_tensor(image.cuda()).to(dtype=torch.float32, copy=True)
+    if not fp:
+        blurred_degenerate = blurred_degenerate.round()
+    view = output[:, 1:-1, 1:-1, :]
+    blurred_inner = blurred_degenerate[:, 1:-1, 1:-1, :]
+    view.add_(blurred_inner.sub(view), alpha=(1.0 - sharpness_factor))
+    output = output.clamp_(0, bound)
+    if not fp:
+        output = output.to(torch.uint8)
+
+    # convert back to cvcuda.Tensor
+    return cvcuda.as_tensor(output.contiguous(), cvcuda.TensorLayout.NHWC)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(adjust_sharpness, _import_cvcuda().Tensor)(_adjust_sharpness_cvcuda)
+
+
 def adjust_hue(inpt: torch.Tensor, hue_factor: float) -> torch.Tensor:
     """Adjust hue"""
     if torch.jit.is_scripting():
