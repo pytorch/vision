@@ -236,6 +236,35 @@ def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.
     return adjust_contrast_image(video, contrast_factor=contrast_factor)
 
 
+def _adjust_contrast_cvcuda(image: "cvcuda.Tensor", contrast_factor: float) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if contrast_factor < 0:
+        raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
+
+    c = image.shape[3]
+    if c not in [1, 3]:
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
+
+    if c == 3:
+        grayscale = cvcuda.cvtcolor(image, cvcuda.ColorConversion.RGB2GRAY)
+    else:
+        grayscale = image
+
+    contrast = cvcuda.as_tensor(torch.tensor([contrast_factor], dtype=torch.float32, device="cuda"))
+
+    torch_image = torch.as_tensor(grayscale.cuda())
+    mean = torch.mean(torch_image.float())
+
+    contrast_center = cvcuda.as_tensor(torch.tensor([mean.item()], dtype=torch.float32, device="cuda"))
+
+    return cvcuda.brightness_contrast(image, contrast=contrast, contrast_center=contrast_center)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(adjust_contrast, _import_cvcuda().Tensor)(_adjust_contrast_cvcuda)
+
+
 def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
     """See :class:`~torchvision.transforms.RandomAdjustSharpness`"""
     if torch.jit.is_scripting():
