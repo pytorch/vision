@@ -208,7 +208,7 @@ def _gaussian_blur_cvcuda(
         image,
         tuple(kernel_size),
         tuple(sigma),
-        border=cvcuda.Border.REFLECT,
+        border=cvcuda.Border.REFLECT101,
     )
 
 

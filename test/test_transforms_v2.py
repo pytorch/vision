@@ -4044,11 +4044,22 @@ class TestGaussianBlur:
             ((1, 26, 28), (23, 23), 1.7),
         ],
     )
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.float16])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32, torch.float64, torch.float16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_functional_image_correctness(self, dimensions, kernel_size, sigma, dtype, device):
+    @pytest.mark.parametrize(
+        "input_type",
+        [
+            tv_tensors.Image,
+            pytest.param(
+                "cvcuda.Tensor", marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
+    )
+    def test_functional_image_correctness(self, dimensions, kernel_size, sigma, dtype, device, input_type):
         if dtype is torch.float16 and device == "cpu":
             pytest.skip("The CPU implementation of float16 on CPU differs from opencv")
+        if (dtype != torch.float32 and dtype != torch.uint8) and input_type == "cvcuda.Tensor":
+            pytest.skip("CVCUDA does not support non-float32 or uint8 dtypes for gaussian blur")
 
         num_channels, height, width = dimensions
 
@@ -4068,45 +4079,17 @@ class TestGaussianBlur:
             device=device,
         )
 
-        actual = F.gaussian_blur_image(image, kernel_size=kernel_size, sigma=sigma)
+        if input_type == "cvcuda.Tensor":
+            image = image.unsqueeze(0)
+            image = F.to_cvcuda_tensor(image)
+
+        actual = F.gaussian_blur(image, kernel_size=kernel_size, sigma=sigma)
+
+        if input_type == "cvcuda.Tensor":
+            actual = F.cvcuda_to_tensor(actual)
+            actual = actual.squeeze(0).to(device=device)
 
         torch.testing.assert_close(actual, expected, rtol=0, atol=1)
-
-    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-    @needs_cuda
-    @pytest.mark.parametrize(
-        ("dimensions", "kernel_size", "sigma"),
-        [
-            ((10, 12), (3, 3), 0.8),
-            ((10, 12), (3, 3), 0.5),
-            ((10, 12), (3, 5), 0.8),
-            ((10, 12), (3, 5), 0.5),
-            ((26, 28), (23, 23), 1.7),
-        ],
-    )
-    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
-    @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
-    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
-    def test_functional_cvcuda_correctness(self, dimensions, kernel_size, sigma, color_space, batch_dims, dtype):
-        height, width = dimensions
-
-        image_tensor = make_image(
-            size=(height, width), color_space=color_space, batch_dims=batch_dims, dtype=dtype, device="cuda"
-        )
-        image_cvcuda = F.to_cvcuda_tensor(image_tensor)
-
-        expected = F.gaussian_blur_image(image_tensor, kernel_size=kernel_size, sigma=sigma)
-        actual = F._misc._gaussian_blur_cvcuda(image_cvcuda, kernel_size=kernel_size, sigma=sigma)
-        actual_torch = F.cvcuda_to_tensor(actual)
-
-        if dtype.is_floating_point:
-            # floating point precision differences between torch and cvcuda are present
-            # observed greatest absolute error is 0.3
-            # most likely stemming from different implementation
-            torch.testing.assert_close(actual_torch, expected, rtol=0, atol=0.3)
-        else:
-            # uint8/16 gaussians can differ by up to max-value, most likely an overflow issue
-            torch.testing.assert_close(actual_torch, expected, rtol=0, atol=get_max_value(dtype))
 
 
 class TestGaussianNoise:
