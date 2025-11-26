@@ -5650,24 +5650,36 @@ class TestNormalize:
 
     @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
     @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.float64])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
-    def test_correctness_image(self, mean, std, dtype, fn):
-        image = make_image(dtype=dtype)
+    def test_correctness_image(self, mean, std, dtype, make_input, fn):
+        if make_input == make_image_cvcuda and dtype != torch.float32:
+            pytest.skip("CVCUDA only supports float32 for normalize")
+
+        image = make_input(dtype=dtype)
 
         actual = fn(image, mean=mean, std=std)
+
+        if make_input == make_image_cvcuda:
+            image = F.cvcuda_to_tensor(image).to(device="cpu")
+            image = image.squeeze(0)
+            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
+            actual = actual.squeeze(0)
+
         expected = self._reference_normalize_image(image, mean=mean, std=std)
 
-        assert_equal(actual, expected)
-
-    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-    @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
-    @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
-    def test_correctness_cvcuda(self, mean, std, fn):
-        image = make_image(batch_dims=(1,), dtype=torch.float32, device="cuda")
-        cvc_image = F.to_cvcuda_tensor(image)
-        actual = F._misc._normalize_cvcuda(cvc_image, mean=mean, std=std)
-        expected = fn(image, mean=mean, std=std)
-        torch.testing.assert_close(F.cvcuda_to_tensor(actual), expected, rtol=1e-7, atol=1e-7)
+        if make_input == make_image_cvcuda:
+            torch.testing.assert_close(actual, expected, rtol=0, atol=1e-6)
+        else:
+            assert_equal(actual, expected)
 
 
 class TestClampBoundingBoxes:
