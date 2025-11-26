@@ -6039,7 +6039,18 @@ class TestAdjustContrast:
     def test_kernel_video(self):
         check_kernel(F.adjust_contrast_video, make_video(), contrast_factor=0.5)
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image,
+            make_image_pil,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
+    )
     def test_functional(self, make_input):
         check_functional(F.adjust_contrast, make_input(), contrast_factor=0.5)
 
@@ -6050,9 +6061,16 @@ class TestAdjustContrast:
             (F._color._adjust_contrast_image_pil, PIL.Image.Image),
             (F.adjust_contrast_image, tv_tensors.Image),
             (F.adjust_contrast_video, tv_tensors.Video),
+            pytest.param(
+                F._color._adjust_contrast_cvcuda,
+                "cvcuda.Tensor",
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if input_type == "cvcuda.Tensor":
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.adjust_contrast, kernel=kernel, input_type=input_type)
 
     def test_functional_error(self):
@@ -6062,11 +6080,27 @@ class TestAdjustContrast:
         with pytest.raises(ValueError, match="is not non-negative"):
             F.adjust_contrast(make_image(), contrast_factor=-1)
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("contrast_factor", [0.1, 0.5, 1.0])
-    def test_correctness_image(self, contrast_factor):
-        image = make_image(dtype=torch.uint8, device="cpu")
+    def test_correctness_image(self, make_input, contrast_factor):
+        image = make_input(dtype=torch.uint8, device="cpu")
 
         actual = F.adjust_contrast(image, contrast_factor=contrast_factor)
+
+        if make_input is make_image_cvcuda:
+            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
+            actual = actual.squeeze(0)
+            image = F.cvcuda_to_tensor(image)
+            image = image.squeeze(0)
+
         expected = F.to_image(F.adjust_contrast(F.to_pil_image(image), contrast_factor=contrast_factor))
 
         assert_close(actual, expected, rtol=0, atol=1)
