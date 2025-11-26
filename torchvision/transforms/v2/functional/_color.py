@@ -457,6 +457,31 @@ def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
     return adjust_hue_image(video, hue_factor=hue_factor)
 
 
+def _adjust_hue_cvcuda(image: "cvcuda.Tensor", hue_factor: float) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if not (-0.5 <= hue_factor <= 0.5):
+        raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
+
+    c = image.shape[3]
+    if c not in [1, 3, 4]:
+        raise TypeError(f"Input image tensor permitted channel values are 1, 3, or 4, but found {c}")
+
+    if c == 1:  # Match PIL behaviour
+        return image
+
+    # no native adjust_hue, use CV-CUDA for color converison, use torch for elementwise operations
+    hsv = cvcuda.cvtcolor(image, cvcuda.ColorConversion.RGB2HSV)
+    hsv_torch = torch.as_tensor(hsv.cuda()).float()
+    hsv_torch[..., 0] = (hsv_torch[..., 0] + hue_factor * 180) % 180
+    hsv_modified = cvcuda.as_tensor(hsv_torch.to(torch.uint8), "NHWC")
+    return cvcuda.cvtcolor(hsv_modified, cvcuda.ColorConversion.HSV2RGB)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(adjust_hue, _import_cvcuda().Tensor)(_adjust_hue_cvcuda)
+
+
 def adjust_gamma(inpt: torch.Tensor, gamma: float, gain: float = 1) -> torch.Tensor:
     """Adjust gamma."""
     if torch.jit.is_scripting():
