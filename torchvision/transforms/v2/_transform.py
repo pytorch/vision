@@ -12,8 +12,9 @@ from torchvision.transforms.v2._utils import check_type, has_any, is_pure_tensor
 from torchvision.utils import _log_api_usage_once
 
 from .functional._utils import _get_kernel
-from torchvision.transforms.v2.functional._utils import _import_cvcuda, _is_cvcuda_available
+
 CVCUDA_AVAILABLE = _is_cvcuda_available()
+
 
 class Transform(nn.Module):
     """Base class to implement your own v2 transforms.
@@ -25,9 +26,6 @@ class Transform(nn.Module):
     # Class attribute defining transformed types. Other types are passed-through without any transformation
     # We support both Types and callables that are able to do further checks on the type of the input.
     _transformed_types: tuple[type | Callable[[Any], bool], ...] = (torch.Tensor, PIL.Image.Image)
-    if CVCUDA_AVAILABLE:
-        _transformed_types += (_import_cvcuda().Tensor,)
-
 
     def __init__(self) -> None:
         super().__init__()

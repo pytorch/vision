@@ -188,7 +188,12 @@ def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
 
 
 def _assert_approx_equal_tensor_to_pil(
-    tensor, pil_image, tol=1e-5, msg=None, agg_method="mean", allowed_percentage_diff=None
+    tensor,
+    pil_image,
+    tol=1e-5,
+    msg=None,
+    agg_method="mean",
+    allowed_percentage_diff=None,
 ):
     # FIXME: this is handled automatically by `assert_close` below. Let's remove this in favor of it
     # TODO: we could just merge this into _assert_equal_tensor_to_pil
@@ -284,8 +289,29 @@ class ImagePair(TensorLikePair):
         mae=False,
         **other_parameters,
     ):
-        if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
-            actual, expected = (to_image(input) for input in [actual, expected])
+        # Convert PIL images to tv_tensors.Image (regardless of what the other is)
+        if isinstance(actual, PIL.Image.Image):
+            actual = to_image(actual)
+        if isinstance(expected, PIL.Image.Image):
+            expected = to_image(expected)
+
+        # Convert CV-CUDA tensors to torch.Tensor (regardless of what the other is)
+        try:
+            import cvcuda
+            from torchvision.transforms.v2.functional import cvcuda_to_tensor
+
+            if isinstance(actual, cvcuda.Tensor):
+                actual = cvcuda_to_tensor(actual)
+                # Remove batch dimension if it's 1 for easier comparison
+                if actual.shape[0] == 1:
+                    actual = actual[0]
+            if isinstance(expected, cvcuda.Tensor):
+                expected = cvcuda_to_tensor(expected)
+                # Remove batch dimension if it's 1 for easier comparison
+                if expected.shape[0] == 1:
+                    expected = expected[0]
+        except ImportError:
+            pass
 
         super().__init__(actual, expected, **other_parameters)
         self.mae = mae
@@ -400,8 +426,8 @@ def make_image_pil(*args, **kwargs):
     return to_pil_image(make_image(*args, **kwargs))
 
 
-def make_image_cvcuda(*args, **kwargs):
-    return to_cvcuda_tensor(make_image(*args, **kwargs))
+def make_image_cvcuda(*args, batch_dims=(1,), **kwargs):
+    return to_cvcuda_tensor(make_image(*args, batch_dims=batch_dims, **kwargs))
 
 
 def make_keypoints(canvas_size=DEFAULT_SIZE, *, num_points=4, dtype=None, device="cpu"):
@@ -541,5 +567,9 @@ def ignore_jit_no_profile_information_warning():
     # with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
     # them.
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message=re.escape("operator() profile_node %"), category=UserWarning)
+        warnings.filterwarnings(
+            "ignore",
+            message=re.escape("operator() profile_node %"),
+            category=UserWarning,
+        )
         yield

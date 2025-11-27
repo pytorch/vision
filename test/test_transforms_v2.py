@@ -1241,7 +1241,7 @@ class TestHorizontalFlip:
             make_image_pil,
             make_image,
             pytest.param(
-                functools.partial(make_image_cvcuda, batch_dims=(1,)),
+                make_image_cvcuda,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
             make_bounding_boxes,
@@ -1280,7 +1280,7 @@ class TestHorizontalFlip:
             make_image_pil,
             make_image,
             pytest.param(
-                functools.partial(make_image_cvcuda, batch_dims=(1,)),
+                make_image_cvcuda,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
             make_bounding_boxes,
@@ -1296,28 +1296,24 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
-
     @pytest.mark.parametrize(
         "make_input",
         [
             make_image,
             pytest.param(
-                functools.partial(make_image_cvcuda, batch_dims=(1,)),
+                make_image_cvcuda,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
         ],
     )
-
     def test_image_correctness(self, fn, make_input):
         image = make_input()
         actual = fn(image)
-        if isinstance(image, cvcuda.Tensor):
-            expected = F.horizontal_flip(F.cvcuda_to_tensor(image))
-            assert_equal(F.cvcuda_to_tensor(actual), expected)
-            
-        else:
-            expected = F.to_image(F.horizontal_flip(F.to_pil_image(image)))
-            assert_equal(actual, expected)
+        if make_input is make_image_cvcuda:
+            image = F.cvcuda_to_tensor(image)[0]  # Remove batch dimension: [1, C, H, W] -> [C, H, W]
+        expected = F.horizontal_flip(F.to_pil_image(image))
+        # CV-CUDA tensors are on CUDA, PIL images are on CPU, so disable device checking
+        assert_equal(actual, expected, check_device=False)
 
     def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
@@ -1374,7 +1370,7 @@ class TestHorizontalFlip:
             make_image_pil,
             make_image,
             pytest.param(
-                functools.partial(make_image_cvcuda, batch_dims=(1,)),
+                make_image_cvcuda,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
             make_bounding_boxes,
@@ -1392,7 +1388,6 @@ class TestHorizontalFlip:
             assert_equal(F.cvcuda_to_tensor(output), F.cvcuda_to_tensor(input))
         else:
             assert_equal(output, input)
-
 
 
 class TestAffine:
@@ -1890,7 +1885,7 @@ class TestVerticalFlip:
             make_image_pil,
             make_image,
             pytest.param(
-                functools.partial(make_image_cvcuda, batch_dims=(1,)),
+                make_image_cvcuda,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
             make_bounding_boxes,
@@ -1929,7 +1924,7 @@ class TestVerticalFlip:
             make_image_pil,
             make_image,
             pytest.param(
-                functools.partial(make_image_cvcuda, batch_dims=(1,)),
+                make_image_cvcuda,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
             make_bounding_boxes,
@@ -1948,21 +1943,19 @@ class TestVerticalFlip:
         [
             make_image,
             pytest.param(
-                functools.partial(make_image_cvcuda, batch_dims=(1,)),
+                make_image_cvcuda,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
         ],
     )
-
     def test_image_correctness(self, fn, make_input):
         image = make_input()
         actual = fn(image)
-        if isinstance(image, cvcuda.Tensor):
-            expected = F.vertical_flip(F.cvcuda_to_tensor(image))
-            assert_equal(F.cvcuda_to_tensor(actual), expected)
-        else:
-            expected = F.to_image(F.vertical_flip(F.to_pil_image(image)))
-            assert_equal(actual, expected)
+        if make_input is make_image_cvcuda:
+            image = F.cvcuda_to_tensor(image)[0]  # Remove batch dimension: [1, C, H, W] -> [C, H, W]
+        expected = F.vertical_flip(F.to_pil_image(image))
+        # CV-CUDA tensors are on CUDA, PIL images are on CPU, so disable device checking
+        assert_equal(actual, expected, check_device=False)
 
     def _reference_vertical_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
@@ -2015,7 +2008,7 @@ class TestVerticalFlip:
             make_image_pil,
             make_image,
             pytest.param(
-                functools.partial(make_image_cvcuda, batch_dims=(1,)),
+                make_image_cvcuda,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
             make_bounding_boxes,
@@ -7164,7 +7157,7 @@ def test_classification_preset(image_type, label_type, dataset_return_type, to_t
 
     out = t(sample)
 
-    assert type(out) == type(sample)
+    assert type(out) is type(sample)
 
     if dataset_return_type is tuple:
         out_image, out_label = out
@@ -7475,7 +7468,7 @@ class TestSanitizeBoundingBoxes:
         boxes, valid = F.sanitize_bounding_boxes(boxes, format=format, canvas_size=canvas_size, min_size=min_size)
 
         assert_equal(valid, torch.tensor(expected_valid_mask))
-        assert type(valid) == torch.Tensor
+        assert type(valid) is torch.Tensor
         assert boxes.shape[0] == sum(valid)
         assert isinstance(boxes, input_type)
 
