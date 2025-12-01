@@ -17,6 +17,7 @@ from ._utils import (
     get_bounding_boxes,
     get_keypoints,
     has_any,
+    is_cvcuda_tensor,
     is_pure_tensor,
 )
 
@@ -239,6 +240,8 @@ class GaussianNoise(Transform):
             ``False`` may cause unsigned integer overflows with uint8 inputs.
             Default is True.
     """
+
+    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
 
     def __init__(self, mean: float = 0.0, sigma: float = 0.1, clip=True) -> None:
         super().__init__()
