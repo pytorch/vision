@@ -156,11 +156,12 @@ from ._misc import (
     normalize_image,
     normalize_video,
     sanitize_bounding_boxes,
+    sanitize_keypoints,
     to_dtype,
     to_dtype_image,
     to_dtype_video,
 )
 from ._temporal import uniform_temporal_subsample, uniform_temporal_subsample_video
-from ._type_conversion import pil_to_tensor, to_image, to_pil_image
+from ._type_conversion import cvcuda_to_tensor, pil_to_tensor, to_cvcuda_tensor, to_image, to_pil_image
 
 from ._deprecated import get_image_size, to_tensor  # usort: skip

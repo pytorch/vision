@@ -20,7 +20,7 @@ import torch.testing
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import to_image, to_pil_image
+from torchvision.transforms.v2.functional import to_cvcuda_tensor, to_image, to_pil_image
 from torchvision.utils import _Image_fromarray
 
 
@@ -398,6 +398,10 @@ def make_image_tensor(*args, **kwargs):
 
 def make_image_pil(*args, **kwargs):
     return to_pil_image(make_image(*args, **kwargs))
+
+
+def make_image_cvcuda(*args, **kwargs):
+    return to_cvcuda_tensor(make_image(*args, **kwargs))
 
 
 def make_keypoints(canvas_size=DEFAULT_SIZE, *, num_points=4, dtype=None, device="cpu"):
