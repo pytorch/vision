@@ -3677,10 +3677,7 @@ class TestCrop:
             torch.manual_seed(seed)
 
             if make_input == make_image_cvcuda:
-                actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-                actual = actual.squeeze(0)
-                image = F.cvcuda_to_tensor(image).to(device="cpu")
-                image = image.squeeze(0)
+                image = cvcuda_to_pil_compatible_tensor(image)
 
             expected = F.to_image(transform(F.to_pil_image(image)))
 
@@ -5048,10 +5045,7 @@ class TestCenterCrop:
         actual = fn(image, output_size)
 
         if make_input == make_image_cvcuda:
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            actual = actual.squeeze(0)
-            image = F.cvcuda_to_tensor(image).to(device="cpu")
-            image = image.squeeze(0)
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(F.center_crop(F.to_pil_image(image), output_size=output_size))
 
@@ -6327,7 +6321,15 @@ class TestFiveTenCrop:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
     )
     @pytest.mark.parametrize("functional", [F.five_crop, F.ten_crop])
     def test_functional(self, make_input, functional):
@@ -6345,13 +6347,27 @@ class TestFiveTenCrop:
             (F.five_crop, F._geometry._five_crop_image_pil, PIL.Image.Image),
             (F.five_crop, F.five_crop_image, tv_tensors.Image),
             (F.five_crop, F.five_crop_video, tv_tensors.Video),
+            pytest.param(
+                F.five_crop,
+                F._geometry._five_crop_cvcuda,
+                "cvcuda.Tensor",
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+            ),
             (F.ten_crop, F.ten_crop_image, torch.Tensor),
             (F.ten_crop, F._geometry._ten_crop_image_pil, PIL.Image.Image),
             (F.ten_crop, F.ten_crop_image, tv_tensors.Image),
             (F.ten_crop, F.ten_crop_video, tv_tensors.Video),
+            pytest.param(
+                F.ten_crop,
+                F._geometry._ten_crop_cvcuda,
+                "cvcuda.Tensor",
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+            ),
         ],
     )
     def test_functional_signature(self, functional, kernel, input_type):
+        if input_type == "cvcuda.Tensor":
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(functional, kernel=kernel, input_type=input_type)
 
     class _TransformWrapper(nn.Module):
@@ -6373,7 +6389,15 @@ class TestFiveTenCrop:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
     )
     @pytest.mark.parametrize("transform_cls", [transforms.FiveCrop, transforms.TenCrop])
     def test_transform(self, make_input, transform_cls):
@@ -6391,19 +6415,41 @@ class TestFiveTenCrop:
         with pytest.raises(TypeError, match="not supported"):
             transform(make_input(self.INPUT_SIZE))
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("fn", [F.five_crop, transform_cls_to_functional(transforms.FiveCrop)])
-    def test_correctness_image_five_crop(self, fn):
-        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+    def test_correctness_image_five_crop(self, make_input, fn):
+        image = make_input(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
 
         actual = fn(image, size=self.OUTPUT_SIZE)
+
+        if make_input is make_image_cvcuda:
+            image = cvcuda_to_pil_compatible_tensor(image)
+
         expected = F.five_crop(F.to_pil_image(image), size=self.OUTPUT_SIZE)
 
         assert isinstance(actual, tuple)
         assert_equal(actual, [F.to_image(e) for e in expected])
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("fn_or_class", [F.ten_crop, transforms.TenCrop])
     @pytest.mark.parametrize("vertical_flip", [False, True])
-    def test_correctness_image_ten_crop(self, fn_or_class, vertical_flip):
+    def test_correctness_image_ten_crop(self, make_input, fn_or_class, vertical_flip):
         if fn_or_class is transforms.TenCrop:
             fn = transform_cls_to_functional(fn_or_class, size=self.OUTPUT_SIZE, vertical_flip=vertical_flip)
             kwargs = dict()
@@ -6411,9 +6457,13 @@ class TestFiveTenCrop:
             fn = fn_or_class
             kwargs = dict(size=self.OUTPUT_SIZE, vertical_flip=vertical_flip)
 
-        image = make_image(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
+        image = make_input(self.INPUT_SIZE, dtype=torch.uint8, device="cpu")
 
         actual = fn(image, **kwargs)
+
+        if make_input is make_image_cvcuda:
+            image = cvcuda_to_pil_compatible_tensor(image)
+
         expected = F.ten_crop(F.to_pil_image(image), size=self.OUTPUT_SIZE, vertical_flip=vertical_flip)
 
         assert isinstance(actual, tuple)

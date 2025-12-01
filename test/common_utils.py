@@ -276,6 +276,17 @@ def combinations_grid(**kwargs):
     return [dict(zip(kwargs.keys(), values)) for values in itertools.product(*kwargs.values())]
 
 
+def cvcuda_to_pil_compatible_tensor(tensor: "cvcuda.Tensor") -> torch.Tensor:
+    tensor = cvcuda_to_tensor(tensor)
+    if tensor.ndim != 4:
+        raise ValueError(f"CV-CUDA Tensor should be 4 dimensional. Got {tensor.ndim} dimensions.")
+    if tensor.shape[0] != 1:
+        raise ValueError(
+            f"CV-CUDA Tensor should have batch dimension 1 for comparison with PIL.Image.Image. Got {tensor.shape[0]}."
+        )
+    return tensor.squeeze(0).cpu()
+
+
 class ImagePair(TensorLikePair):
     def __init__(
         self,

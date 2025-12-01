@@ -147,6 +147,14 @@ def horizontal_flip_video(video: torch.Tensor) -> torch.Tensor:
     return horizontal_flip_image(video)
 
 
+def _horizontal_flip_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
+    return _import_cvcuda().flip(image, flipCode=1)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(horizontal_flip, _import_cvcuda().Tensor)(_horizontal_flip_cvcuda)
+
+
 def vertical_flip(inpt: torch.Tensor) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.RandomVerticalFlip` for details."""
     if torch.jit.is_scripting():
@@ -241,6 +249,14 @@ def _vertical_flip_bounding_boxes_dispatch(inpt: tv_tensors.BoundingBoxes) -> tv
 @_register_kernel_internal(vertical_flip, tv_tensors.Video)
 def vertical_flip_video(video: torch.Tensor) -> torch.Tensor:
     return vertical_flip_image(video)
+
+
+def _vertical_flip_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
+    return _import_cvcuda().flip(image, flipCode=0)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(vertical_flip, _import_cvcuda().Tensor)(_vertical_flip_cvcuda)
 
 
 # We changed the names to align them with the transforms, i.e. `RandomHorizontalFlip`. Still, `hflip` and `vflip` are
@@ -3016,6 +3032,29 @@ def five_crop_video(
     return five_crop_image(video, size)
 
 
+def _five_crop_cvcuda(
+    image: "cvcuda.Tensor",
+    size: list[int],
+) -> tuple["cvcuda.Tensor", "cvcuda.Tensor", "cvcuda.Tensor", "cvcuda.Tensor", "cvcuda.Tensor"]:
+    crop_height, crop_width = _parse_five_crop_size(size)
+    image_height, image_width = image.shape[-2:]
+
+    if crop_width > image_width or crop_height > image_height:
+        raise ValueError(f"Requested crop size {size} is bigger than input size {(image_height, image_width)}")
+
+    tl = _crop_cvcuda(image, 0, 0, crop_height, crop_width)
+    tr = _crop_cvcuda(image, 0, image_width - crop_height, crop_width, crop_height)
+    bl = _crop_cvcuda(image, image_height - crop_height, 0, crop_width, crop_height)
+    br = _crop_cvcuda(image, image_height - crop_height, image_width - crop_width, crop_width, crop_height)
+    center = _center_crop_cvcuda(image, [crop_height, crop_width])
+
+    return tl, tr, bl, br, center
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(five_crop, _import_cvcuda().Tensor)(_five_crop_cvcuda)
+
+
 def ten_crop(
     inpt: torch.Tensor, size: list[int], vertical_flip: bool = False
 ) -> tuple[
@@ -3111,3 +3150,35 @@ def ten_crop_video(
     torch.Tensor,
 ]:
     return ten_crop_image(video, size, vertical_flip=vertical_flip)
+
+
+def _ten_crop_cvcuda(
+    image: "cvcuda.Tensor",
+    size: list[int],
+    vertical_flip: bool = False,
+) -> tuple[
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+]:
+    non_flipped = _five_crop_cvcuda(image, size)
+
+    if vertical_flip:
+        image = _vertical_flip_cvcuda(image)
+    else:
+        image = _horizontal_flip_cvcuda(image)
+
+    flipped = _five_crop_cvcuda(image, size)
+
+    return non_flipped + flipped
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(ten_crop, _import_cvcuda().Tensor)(_ten_crop_cvcuda)

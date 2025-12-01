@@ -26,6 +26,7 @@ from ._utils import (
     get_bounding_boxes,
     has_all,
     has_any,
+    is_cvcuda_tensor,
     is_pure_tensor,
     query_size,
 )
@@ -194,6 +195,8 @@ class CenterCrop(Transform):
 
     _v1_transform_cls = _transforms.CenterCrop
 
+    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+
     def __init__(self, size: Union[int, Sequence[int]]):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -360,6 +363,8 @@ class FiveCrop(Transform):
 
     _v1_transform_cls = _transforms.FiveCrop
 
+    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
@@ -403,6 +408,8 @@ class TenCrop(Transform):
     """
 
     _v1_transform_cls = _transforms.TenCrop
+
+    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
@@ -811,6 +818,8 @@ class RandomCrop(Transform):
 
     _v1_transform_cls = _transforms.RandomCrop
 
+    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+
     def _extract_params_for_v1_transform(self) -> dict[str, Any]:
         params = super()._extract_params_for_v1_transform()
 
@@ -1120,6 +1129,8 @@ class RandomIoUCrop(Transform):
         trials (int, optional): Number of trials to find a crop for a given value of minimal IoU (Jaccard) overlap.
             Default, 40.
     """
+
+    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
 
     def __init__(
         self,
