@@ -4075,14 +4075,28 @@ class TestGaussianNoise:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
+            ),
+        ],
     )
     def test_functional_float(self, make_input):
         check_functional(F.gaussian_noise, make_input(dtype=torch.float32))
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
+            ),
+        ],
     )
     def test_functional_uint8(self, make_input):
         check_functional(F.gaussian_noise, make_input(dtype=torch.uint8))
@@ -4093,14 +4107,28 @@ class TestGaussianNoise:
             (F.gaussian_noise, torch.Tensor),
             (F.gaussian_noise_image, tv_tensors.Image),
             (F.gaussian_noise_video, tv_tensors.Video),
+            pytest.param(
+                F._misc._gaussian_noise_cvcuda,
+                "cvcuda.Tensor",
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if input_type == "cvcuda.Tensor":
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.gaussian_noise, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
+            ),
+        ],
     )
     def test_transform_float(self, make_input):
         def adapter(_, input, __):
@@ -4118,7 +4146,14 @@ class TestGaussianNoise:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
+            ),
+        ],
     )
     def test_transform_uint8(self, make_input):
         def adapter(_, input, __):

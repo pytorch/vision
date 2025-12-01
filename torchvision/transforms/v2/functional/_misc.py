@@ -238,6 +238,35 @@ def _gaussian_noise_pil(
     raise ValueError("Gaussian Noise is not implemented for PIL images.")
 
 
+def _gaussian_noise_cvcuda(
+    image: "cvcuda.Tensor",
+    mean: float = 0.0,
+    sigma: float = 0.1,
+    clip: bool = True,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    batch_size = image.shape[0]
+    mu_tensor = cvcuda.as_tensor(torch.full((batch_size,), mean, dtype=torch.float32).cuda(), "N")
+    sigma_tensor = cvcuda.as_tensor(torch.full((batch_size,), sigma, dtype=torch.float32).cuda(), "N")
+
+    # per-channel means each channel gets unique random noise, same behavior as torch.randn_like
+    # produce a seed with torch RNG, if seed is manually set then this will be deterministic
+    # note: clip is not supported in CV-CUDA, so we don't need to clamp the values
+    # by default, clamping is done for floats, and uint8 overflows so is clamped from 0-255 anyways
+    return cvcuda.gaussiannoise(
+        image,
+        mu=mu_tensor,
+        sigma=sigma_tensor,
+        per_channel=True,
+        seed=int(torch.empty((), dtype=torch.int64).random_().item()),
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(gaussian_noise, _import_cvcuda().Tensor)(_gaussian_noise_cvcuda)
+
+
 def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
     """See :func:`~torchvision.transforms.v2.ToDtype` for details."""
     if torch.jit.is_scripting():
