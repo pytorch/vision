@@ -1596,8 +1596,11 @@ def _rotate_cvcuda(
     # We need to calculate a shift to effectively rotate around the desired center
     if center is None:
         cx, cy = input_width / 2.0, input_height / 2.0
+        center_f = [0.0, 0.0]
     else:
         cx, cy = float(center[0]), float(center[1])
+        # Convert to image-center-relative coordinates (same as torchvision)
+        center_f = [cx - input_width * 0.5, cy - input_height * 0.5]
 
     angle_rad = math.radians(angle)
     cos_angle = math.cos(angle_rad)
@@ -1611,7 +1614,8 @@ def _rotate_cvcuda(
         return cvcuda.rotate(inpt, angle_deg=angle, shift=(shift_x, shift_y), interpolation=interp)
 
     # if we need to expand, use much of the same logic as torchvision, for output size/pad
-    matrix = _get_inverse_affine_matrix([0.0, 0.0], -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+    # Use center_f (image-center-relative coords) to match torchvision's output size calculation
+    matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
     output_width, output_height = _compute_affine_output_size(matrix, input_width, input_height)
 
     pad_left = (output_width - input_width) // 2

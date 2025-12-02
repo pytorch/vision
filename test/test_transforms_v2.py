@@ -2204,7 +2204,8 @@ class TestRotate:
 
         actual = F.rotate(image, angle=angle, center=center, interpolation=interpolation, expand=expand, fill=fill)
 
-        if make_input == make_image_cvcuda:
+        if make_input is make_image_cvcuda:
+            actual = cvcuda_to_pil_compatible_tensor(actual)
             image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(
@@ -2214,7 +2215,7 @@ class TestRotate:
         )
 
         mae = (actual.float() - expected.float()).abs().mean()
-        if make_input == make_image_cvcuda:
+        if make_input is make_image_cvcuda:
             # CV-CUDA nearest interpolation differs significantly from PIL, set much higher bound
             assert mae < (122.5) if interpolation is transforms.InterpolationMode.NEAREST else 6, f"MAE: {mae}"
         else:
@@ -2254,16 +2255,14 @@ class TestRotate:
 
         torch.manual_seed(seed)
 
-        if make_input == make_image_cvcuda:
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            image = F.cvcuda_to_tensor(image)
-            # drop the batch dimensions
-            image = image.squeeze(0)
+        if make_input is make_image_cvcuda:
+            actual = cvcuda_to_pil_compatible_tensor(actual)
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(transform(F.to_pil_image(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
-        if make_input == make_image_cvcuda:
+        if make_input is make_image_cvcuda:
             # CV-CUDA nearest interpolation differs significantly from PIL, set much higher bound
             assert mae < (122.5) if interpolation is transforms.InterpolationMode.NEAREST else 6, f"MAE: {mae}"
         else:
