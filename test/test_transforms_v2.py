@@ -5526,15 +5526,12 @@ class TestEqualize:
         actual = fn(image)
 
         if tensor_type == "cvcuda.Tensor":
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            actual = actual.squeeze(0)
-            image = F.cvcuda_to_tensor(image)
-            image = image.squeeze(0)
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(F.equalize(F.to_pil_image(image)))
 
         if tensor_type == "cvcuda.Tensor":
-            torch.testing.assert_close(actual, expected, rtol=1e-10, atol=1)
+            assert_close(actual, expected, rtol=1e-10, atol=1)
         else:
             assert_equal(actual, expected)
 
