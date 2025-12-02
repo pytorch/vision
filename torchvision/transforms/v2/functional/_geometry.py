@@ -1682,7 +1682,7 @@ def _pad_with_vector_fill(
 _pad_image_pil = _register_kernel_internal(pad, PIL.Image.Image)(_FP.pad)
 
 
-if _CVCUDA_AVAILABLE:
+if CVCUDA_AVAILABLE:
     _pad_mode_to_cvcuda = {
         "constant": cvcuda.Border.CONSTANT,
         "reflect": cvcuda.Border.REFLECT101,
@@ -1721,7 +1721,7 @@ def _pad_cvcuda(
     )
 
 
-if _CVCUDA_AVAILABLE:
+if CVCUDA_AVAILABLE:
     _register_kernel_internal(pad, _import_cvcuda().Tensor)(_pad_cvcuda)
 
 

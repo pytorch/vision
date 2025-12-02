@@ -4728,7 +4728,9 @@ class TestPad:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            make_image_cvcuda,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
         ],
     )
     def test_functional(self, make_input):
@@ -4769,7 +4771,9 @@ class TestPad:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            make_image_cvcuda,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
         ],
     )
     def test_transform(self, make_input):
@@ -4794,6 +4798,15 @@ class TestPad:
         with pytest.raises(ValueError, match="Padding mode should be either"):
             transforms.Pad(12, padding_mode="abc")
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("padding", CORRECTNESS_PADDINGS)
     @pytest.mark.parametrize(
         ("padding_mode", "fill"),
@@ -4803,35 +4816,19 @@ class TestPad:
         ],
     )
     @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
-    def test_image_correctness(self, padding, padding_mode, fill, fn):
-        image = make_image(dtype=torch.uint8, device="cpu")
+    def test_image_correctness(self, make_input, padding, padding_mode, fill, fn):
+        image = make_input(dtype=torch.uint8, device="cpu")
 
         fill = adapt_fill(fill, dtype=torch.uint8)
 
         actual = fn(image, padding=padding, padding_mode=padding_mode, fill=fill)
+
+        if make_input is make_image_cvcuda:
+            image = cvcuda_to_pil_compatible_tensor(image)
+
         expected = F.to_image(F.pad(F.to_pil_image(image), padding=padding, padding_mode=padding_mode, fill=fill))
 
         assert_equal(actual, expected)
-
-    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-    @pytest.mark.parametrize("padding", CORRECTNESS_PADDINGS)
-    @pytest.mark.parametrize(
-        ("padding_mode", "fill"),
-        [
-            *[("constant", fill) for fill in CORRECTNESS_FILLS],
-            *[(padding_mode, None) for padding_mode in ["symmetric", "edge", "reflect"]],
-        ],
-    )
-    @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
-    def test_cvcuda_correctness(self, padding, padding_mode, fill, fn):
-        image = make_image_cvcuda(dtype=torch.uint8, device="cuda")
-
-        fill = adapt_fill(fill, dtype=torch.uint8)
-
-        actual = fn(image, padding=padding, padding_mode=padding_mode, fill=fill)
-        expected = F.pad(F.cvcuda_to_tensor(image), padding=padding, padding_mode=padding_mode, fill=fill)
-
-        assert_equal(F.cvcuda_to_tensor(actual), expected)
 
     def _reference_pad_bounding_boxes(self, bounding_boxes, *, padding):
         if isinstance(padding, int):
