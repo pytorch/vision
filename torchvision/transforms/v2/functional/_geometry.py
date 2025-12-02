@@ -2563,7 +2563,6 @@ def _elastic_cvcuda(
     if not isinstance(displacement, torch.Tensor):
         raise TypeError("Argument displacement should be a Tensor")
 
-    # Input image is NHWC format: (N, H, W, C)
     batch_size, height, width, num_channels = image.shape
     device = torch.device("cuda")
     dtype = torch.float32
@@ -2578,6 +2577,10 @@ def _elastic_cvcuda(
         raise ValueError(f"cvcuda.remap requires uint8 dtype for 3-channel images, but got {input_dtype}")
     elif num_channels == 1 and input_dtype != cvcuda.Type.F32:
         raise ValueError(f"cvcuda.remap requires float32 dtype for 1-channel images, but got {input_dtype}")
+
+    interp = _cvcuda_interp.get(interpolation, cvcuda.Interp.LINEAR)
+    if interp is None:
+        raise ValueError(f"Invalid interpolation mode: {interpolation}")
 
     # Build normalized grid: identity + displacement
     # _create_identity_grid returns (1, H, W, 2) with values in [-1, 1]
@@ -2599,28 +2602,20 @@ def _elastic_cvcuda(
     # Create cvcuda map tensor (NHWC layout with 2 channels for x,y)
     cv_map = cvcuda.as_tensor(pixel_map.contiguous(), "NHWC")
 
-    # Resolve interpolation
-    src_interp = _cvcuda_interp.get(interpolation, cvcuda.Interp.LINEAR)
-
-    # Resolve border mode and value
+    border_mode = cvcuda.Border.CONSTANT
     if fill is None:
-        border_mode = cvcuda.Border.CONSTANT
         border_value = np.array([], dtype=np.float32)
     elif isinstance(fill, (int, float)):
-        border_mode = cvcuda.Border.CONSTANT
         border_value = np.array([fill], dtype=np.float32)
     elif isinstance(fill, (list, tuple)):
-        border_mode = cvcuda.Border.CONSTANT
         border_value = np.array(fill, dtype=np.float32)
     else:
-        border_mode = cvcuda.Border.CONSTANT
         border_value = np.array([], dtype=np.float32)
 
-    # Call cvcuda.remap
     output = cvcuda.remap(
         image,
         cv_map,
-        src_interp=src_interp,
+        src_interp=interp,
         map_interp=cvcuda.Interp.LINEAR,
         map_type=cvcuda.Remap.ABSOLUTE,
         align_corners=False,
