@@ -471,9 +471,12 @@ def _adjust_hue_cvcuda(image: "cvcuda.Tensor", hue_factor: float) -> "cvcuda.Ten
         return image
 
     # no native adjust_hue, use CV-CUDA for color converison, use torch for elementwise operations
+    # CV-CUDA accelerates the HSV conversion
     hsv = cvcuda.cvtcolor(image, cvcuda.ColorConversion.RGB2HSV)
+    # then use torch for elementwise operations
     hsv_torch = torch.as_tensor(hsv.cuda()).float()
     hsv_torch[..., 0] = (hsv_torch[..., 0] + hue_factor * 180) % 180
+    # convert back to cvcuda tensor and accelerate the HSV2RGB conversion
     hsv_modified = cvcuda.as_tensor(hsv_torch.to(torch.uint8), "NHWC")
     return cvcuda.cvtcolor(hsv_modified, cvcuda.ColorConversion.HSV2RGB)
 

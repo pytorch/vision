@@ -6259,10 +6259,8 @@ class TestAdjustHue:
         actual = F.adjust_hue(image, hue_factor=hue_factor)
 
         if make_input is make_image_cvcuda:
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            actual = actual.squeeze(0)
-            image = F.cvcuda_to_tensor(image)
-            image = image.squeeze(0)
+            actual = cvcuda_to_pil_compatible_tensor(actual)
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(F.adjust_hue(F.to_pil_image(image), hue_factor=hue_factor))
 
