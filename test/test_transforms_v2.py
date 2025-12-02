@@ -3551,11 +3551,8 @@ class TestCrop:
 
         actual = F.crop(image, **kwargs)
 
-        if make_input == make_image_cvcuda:
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            actual = actual.squeeze(0)
-            image = F.cvcuda_to_tensor(image).to(device="cpu")
-            image = image.squeeze(0)
+        if make_input is make_image_cvcuda:
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(F.crop(F.to_pil_image(image), **kwargs))
 
@@ -3676,7 +3673,7 @@ class TestCrop:
 
             torch.manual_seed(seed)
 
-            if make_input == make_image_cvcuda:
+            if make_input is make_image_cvcuda:
                 image = cvcuda_to_pil_compatible_tensor(image)
 
             expected = F.to_image(transform(F.to_pil_image(image)))
@@ -3684,7 +3681,7 @@ class TestCrop:
         if make_input == make_image_cvcuda and will_pad:
             # when padding is applied, CV-CUDA will always fill with zeros
             # cannot use assert_equal since it will fail unless random is all zeros
-            torch.testing.assert_close(actual, expected, rtol=0, atol=get_max_value(image.dtype))
+            assert_close(actual, expected, rtol=0, atol=get_max_value(image.dtype))
         else:
             assert_equal(actual, expected)
 
@@ -4510,6 +4507,9 @@ class TestResizedCrop:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
         ],
     )
     def test_functional(self, make_input):
@@ -4526,9 +4526,16 @@ class TestResizedCrop:
             (F.resized_crop_mask, tv_tensors.Mask),
             (F.resized_crop_video, tv_tensors.Video),
             (F.resized_crop_keypoints, tv_tensors.KeyPoints),
+            pytest.param(
+                F.resized_crop_image,
+                "cvcuda.Tensor",
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if input_type == "cvcuda.Tensor":
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.resized_crop, kernel=kernel, input_type=input_type)
 
     @param_value_parametrization(
@@ -4545,6 +4552,9 @@ class TestResizedCrop:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
         ],
     )
     def test_transform(self, param, value, make_input):
@@ -4556,20 +4566,37 @@ class TestResizedCrop:
 
     # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
     # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
-    def test_functional_image_correctness(self, interpolation):
-        image = make_image(self.INPUT_SIZE, dtype=torch.uint8)
+    def test_functional_image_correctness(self, make_input, interpolation):
+        image = make_input(self.INPUT_SIZE, dtype=torch.uint8)
 
         actual = F.resized_crop(
             image, **self.CROP_KWARGS, size=self.OUTPUT_SIZE, interpolation=interpolation, antialias=True
         )
+
+        if make_input is make_image_cvcuda:
+            image = cvcuda_to_pil_compatible_tensor(image)
+
         expected = F.to_image(
             F.resized_crop(
                 F.to_pil_image(image), **self.CROP_KWARGS, size=self.OUTPUT_SIZE, interpolation=interpolation
             )
         )
 
-        torch.testing.assert_close(actual, expected, atol=1, rtol=0)
+        atol = 1
+        if make_input is make_image_cvcuda and interpolation == transforms.InterpolationMode.BICUBIC:
+            # CV-CUDA BICUBIC differs from PIL ground truth BICUBIC
+            atol = 10
+        assert_close(actual, expected, atol=atol, rtol=0)
 
     def _reference_resized_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width, size):
         new_height, new_width = size
@@ -5044,7 +5071,7 @@ class TestCenterCrop:
 
         actual = fn(image, output_size)
 
-        if make_input == make_image_cvcuda:
+        if make_input is make_image_cvcuda:
             image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(F.center_crop(F.to_pil_image(image), output_size=output_size))

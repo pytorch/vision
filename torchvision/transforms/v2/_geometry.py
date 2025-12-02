@@ -255,6 +255,8 @@ class RandomResizedCrop(Transform):
 
     _v1_transform_cls = _transforms.RandomResizedCrop
 
+    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+
     def __init__(
         self,
         size: Union[int, Sequence[int]],

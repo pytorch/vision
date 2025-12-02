@@ -618,6 +618,32 @@ def resize_video(
     return resize_image(video, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
 
+def _resize_cvcuda(
+    image: "cvcuda.Tensor",
+    size: Optional[list[int]],
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    max_size: Optional[int] = None,
+    antialias: Optional[bool] = True,
+) -> "cvcuda.Tensor":
+    # placeholder func for now, will be handled in PR for resize alone
+    # since placeholder convert to from torch tensor and use resize_image
+    from ._type_conversion import cvcuda_to_tensor, to_cvcuda_tensor
+
+    return to_cvcuda_tensor(
+        resize_image(
+            cvcuda_to_tensor(image),
+            size=size,
+            interpolation=interpolation,
+            max_size=max_size,
+            antialias=antialias,
+        )
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(resize, _import_cvcuda().Tensor)(_resize_cvcuda)
+
+
 def affine(
     inpt: torch.Tensor,
     angle: Union[int, float],
@@ -2959,6 +2985,24 @@ def resized_crop_video(
     )
 
 
+def _resized_crop_cvcuda(
+    image: "cvcuda.Tensor",
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: list[int],
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    antialias: Optional[bool] = True,
+) -> "cvcuda.Tensor":
+    image = _crop_cvcuda(image, top, left, height, width)
+    return _resize_cvcuda(image, size, interpolation=interpolation, antialias=antialias)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(resized_crop, _import_cvcuda().Tensor)(_resized_crop_cvcuda)
+
+
 def five_crop(
     inpt: torch.Tensor, size: list[int]
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -3037,15 +3081,15 @@ def _five_crop_cvcuda(
     size: list[int],
 ) -> tuple["cvcuda.Tensor", "cvcuda.Tensor", "cvcuda.Tensor", "cvcuda.Tensor", "cvcuda.Tensor"]:
     crop_height, crop_width = _parse_five_crop_size(size)
-    image_height, image_width = image.shape[-2:]
+    image_height, image_width = image.shape[1], image.shape[2]
 
     if crop_width > image_width or crop_height > image_height:
         raise ValueError(f"Requested crop size {size} is bigger than input size {(image_height, image_width)}")
 
     tl = _crop_cvcuda(image, 0, 0, crop_height, crop_width)
-    tr = _crop_cvcuda(image, 0, image_width - crop_height, crop_width, crop_height)
-    bl = _crop_cvcuda(image, image_height - crop_height, 0, crop_width, crop_height)
-    br = _crop_cvcuda(image, image_height - crop_height, image_width - crop_width, crop_width, crop_height)
+    tr = _crop_cvcuda(image, 0, image_width - crop_width, crop_height, crop_width)
+    bl = _crop_cvcuda(image, image_height - crop_height, 0, crop_height, crop_width)
+    br = _crop_cvcuda(image, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
     center = _center_crop_cvcuda(image, [crop_height, crop_width])
 
     return tl, tr, bl, br, center
