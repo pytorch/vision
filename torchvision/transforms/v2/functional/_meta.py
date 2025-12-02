@@ -51,6 +51,16 @@ def get_dimensions_video(video: torch.Tensor) -> list[int]:
     return get_dimensions_image(video)
 
 
+def _get_dimensions_cvcuda(image: "cvcuda.Tensor") -> list[int]:
+    # CV-CUDA tensor is always in NHWC layout
+    # get_dimensions is CHW
+    return [image.shape[3], image.shape[1], image.shape[2]]
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(get_dimensions, cvcuda.Tensor)(_get_dimensions_cvcuda)
+
+
 def get_num_channels(inpt: torch.Tensor) -> int:
     if torch.jit.is_scripting():
         return get_num_channels_image(inpt)
@@ -87,6 +97,16 @@ def get_num_channels_video(video: torch.Tensor) -> int:
 get_image_num_channels = get_num_channels
 
 
+def _get_num_channels_cvcuda(image: "cvcuda.Tensor") -> int:
+    # CV-CUDA tensor is always in NHWC layout
+    # get_num_channels is C
+    return image.shape[3]
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(get_num_channels, cvcuda.Tensor)(_get_num_channels_cvcuda)
+
+
 def get_size(inpt: torch.Tensor) -> list[int]:
     if torch.jit.is_scripting():
         return get_size_image(inpt)
@@ -114,7 +134,7 @@ def _get_size_image_pil(image: PIL.Image.Image) -> list[int]:
     return [height, width]
 
 
-def get_size_image_cvcuda(image: "cvcuda.Tensor") -> list[int]:
+def _get_size_cvcuda(image: "cvcuda.Tensor") -> list[int]:
     """Get size of `cvcuda.Tensor` with NHWC layout."""
     hw = list(image.shape[-3:-1])
     ndims = len(hw)
@@ -125,7 +145,7 @@ def get_size_image_cvcuda(image: "cvcuda.Tensor") -> list[int]:
 
 
 if CVCUDA_AVAILABLE:
-    _get_size_image_cvcuda = _register_kernel_internal(get_size, cvcuda.Tensor)(get_size_image_cvcuda)
+    _register_kernel_internal(get_size, cvcuda.Tensor)(_get_size_cvcuda)
 
 
 @_register_kernel_internal(get_size, tv_tensors.Video, tv_tensor_wrapper=False)
