@@ -13,8 +13,6 @@ from torchvision.utils import _log_api_usage_once
 
 from .functional._utils import _get_kernel
 
-CVCUDA_AVAILABLE = _is_cvcuda_available()
-
 
 class Transform(nn.Module):
     """Base class to implement your own v2 transforms.

@@ -11,7 +11,12 @@ from torchvision import transforms as _transforms, tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._utils import _FillType, _import_cvcuda, _is_cvcuda_available
+from torchvision.transforms.v2.functional._utils import (
+    _FillType,
+    _import_cvcuda,
+    _is_cvcuda_available,
+    is_cvcuda_tensor,
+)
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
@@ -50,7 +55,7 @@ class RandomHorizontalFlip(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomHorizontalFlip
 
     if CVCUDA_AVAILABLE:
-        _transformed_types = (torch.Tensor, PIL.Image.Image, cvcuda.Tensor)
+        _transformed_types = _RandomApplyTransform._transformed_types + (is_cvcuda_tensor,)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.horizontal_flip, inpt)
@@ -71,7 +76,7 @@ class RandomVerticalFlip(_RandomApplyTransform):
     _v1_transform_cls = _transforms.RandomVerticalFlip
 
     if CVCUDA_AVAILABLE:
-        _transformed_types = (torch.Tensor, PIL.Image.Image, cvcuda.Tensor)
+        _transformed_types = _RandomApplyTransform._transformed_types + (is_cvcuda_tensor,)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.vertical_flip, inpt)

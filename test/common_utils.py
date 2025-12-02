@@ -20,7 +20,8 @@ import torch.testing
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import to_cvcuda_tensor, to_image, to_pil_image
+from torchvision.transforms.v2.functional import cvcuda_to_tensor, to_cvcuda_tensor, to_image, to_pil_image
+from torchvision.transforms.v2.functional._utils import _import_cvcuda, _is_cvcuda_available
 from torchvision.utils import _Image_fromarray
 
 
@@ -188,12 +189,7 @@ def _assert_equal_tensor_to_pil(tensor, pil_image, msg=None):
 
 
 def _assert_approx_equal_tensor_to_pil(
-    tensor,
-    pil_image,
-    tol=1e-5,
-    msg=None,
-    agg_method="mean",
-    allowed_percentage_diff=None,
+    tensor, pil_image, tol=1e-5, msg=None, agg_method="mean", allowed_percentage_diff=None
 ):
     # FIXME: this is handled automatically by `assert_close` below. Let's remove this in favor of it
     # TODO: we could just merge this into _assert_equal_tensor_to_pil
@@ -295,23 +291,21 @@ class ImagePair(TensorLikePair):
         if isinstance(expected, PIL.Image.Image):
             expected = to_image(expected)
 
-        # Convert CV-CUDA tensors to torch.Tensor (regardless of what the other is)
-        try:
-            import cvcuda
-            from torchvision.transforms.v2.functional import cvcuda_to_tensor
+        if _is_cvcuda_available():
+            cvcuda = _import_cvcuda()
 
             if isinstance(actual, cvcuda.Tensor):
-                actual = cvcuda_to_tensor(actual)
+                actual = cvcuda_to_tensor(actual)  # No import needed here anymore!
                 # Remove batch dimension if it's 1 for easier comparison
                 if actual.shape[0] == 1:
                     actual = actual[0]
+                actual = actual.cpu()
             if isinstance(expected, cvcuda.Tensor):
                 expected = cvcuda_to_tensor(expected)
                 # Remove batch dimension if it's 1 for easier comparison
                 if expected.shape[0] == 1:
                     expected = expected[0]
-        except ImportError:
-            pass
+                expected = expected.cpu()
 
         super().__init__(actual, expected, **other_parameters)
         self.mae = mae

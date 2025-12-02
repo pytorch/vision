@@ -1310,10 +1310,9 @@ class TestHorizontalFlip:
         image = make_input()
         actual = fn(image)
         if make_input is make_image_cvcuda:
-            image = F.cvcuda_to_tensor(image)[0]  # Remove batch dimension: [1, C, H, W] -> [C, H, W]
+            image = F.cvcuda_to_tensor(image)[0].cpu()
         expected = F.horizontal_flip(F.to_pil_image(image))
-        # CV-CUDA tensors are on CUDA, PIL images are on CPU, so disable device checking
-        assert_equal(actual, expected, check_device=False)
+        assert_equal(actual, expected)
 
     def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
@@ -1384,10 +1383,7 @@ class TestHorizontalFlip:
         input = make_input(device=device)
         transform = transforms.RandomHorizontalFlip(p=0)
         output = transform(input)
-        if isinstance(input, cvcuda.Tensor):
-            assert_equal(F.cvcuda_to_tensor(output), F.cvcuda_to_tensor(input))
-        else:
-            assert_equal(output, input)
+        assert_equal(output, input)
 
 
 class TestAffine:
@@ -1952,10 +1948,9 @@ class TestVerticalFlip:
         image = make_input()
         actual = fn(image)
         if make_input is make_image_cvcuda:
-            image = F.cvcuda_to_tensor(image)[0]  # Remove batch dimension: [1, C, H, W] -> [C, H, W]
+            image = F.cvcuda_to_tensor(image)[0].cpu()
         expected = F.vertical_flip(F.to_pil_image(image))
-        # CV-CUDA tensors are on CUDA, PIL images are on CPU, so disable device checking
-        assert_equal(actual, expected, check_device=False)
+        assert_equal(actual, expected)
 
     def _reference_vertical_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
@@ -2022,10 +2017,7 @@ class TestVerticalFlip:
         input = make_input(device=device)
         transform = transforms.RandomVerticalFlip(p=0)
         output = transform(input)
-        if isinstance(input, cvcuda.Tensor):
-            assert_equal(F.cvcuda_to_tensor(output), F.cvcuda_to_tensor(input))
-        else:
-            assert_equal(output, input)
+        assert_equal(output, input)
 
 
 class TestRotate:
@@ -7157,7 +7149,7 @@ def test_classification_preset(image_type, label_type, dataset_return_type, to_t
 
     out = t(sample)
 
-    assert type(out) is type(sample)
+    assert type(out) == type(sample)
 
     if dataset_return_type is tuple:
         out_image, out_label = out
@@ -7468,7 +7460,7 @@ class TestSanitizeBoundingBoxes:
         boxes, valid = F.sanitize_bounding_boxes(boxes, format=format, canvas_size=canvas_size, min_size=min_size)
 
         assert_equal(valid, torch.tensor(expected_valid_mask))
-        assert type(valid) is torch.Tensor
+        assert type(valid) == torch.Tensor
         assert boxes.shape[0] == sum(valid)
         assert isinstance(boxes, input_type)
 

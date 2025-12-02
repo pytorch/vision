@@ -38,8 +38,6 @@ from ._utils import (
 CVCUDA_AVAILABLE = _is_cvcuda_available()
 if TYPE_CHECKING:
     import cvcuda
-if CVCUDA_AVAILABLE:
-    cvcuda = _import_cvcuda()
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -80,9 +78,7 @@ def _horizontal_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(horizontal_flip, _import_cvcuda().Tensor)(
-        _horizontal_flip_image_cvcuda
-    )
+    _register_kernel_internal(horizontal_flip, _import_cvcuda().Tensor)(_horizontal_flip_image_cvcuda)
 
 
 @_register_kernel_internal(horizontal_flip, tv_tensors.Mask)
@@ -178,9 +174,7 @@ def _vertical_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(vertical_flip, _import_cvcuda().Tensor)(
-        _vertical_flip_image_cvcuda
-    )
+    _register_kernel_internal(vertical_flip, _import_cvcuda().Tensor)(_vertical_flip_image_cvcuda)
 
 
 @_register_kernel_internal(vertical_flip, tv_tensors.Mask)
