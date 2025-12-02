@@ -25,6 +25,7 @@ from common_utils import (
     assert_equal,
     cache,
     cpu_and_cuda,
+    cvcuda_to_pil_compatible_tensor,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
