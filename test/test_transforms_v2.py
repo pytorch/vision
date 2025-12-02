@@ -5256,11 +5256,8 @@ class TestPerspective:
             image, startpoints=None, endpoints=None, coefficients=coefficients, interpolation=interpolation, fill=fill
         )
         if make_input is make_image_cvcuda:
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            actual = actual.squeeze(0)
-            # drop the batch dimension
-            image = F.cvcuda_to_tensor(image).to(device="cpu")
-            image = image.squeeze(0)
+            actual = cvcuda_to_pil_compatible_tensor(actual)
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(
             F.perspective(
@@ -5286,7 +5283,7 @@ class TestPerspective:
             # visually the results are the same on real images,
             # realistically, the diff is not visible to the human eye
             tolerance = 255 if interpolation is transforms.InterpolationMode.NEAREST else 125
-            torch.testing.assert_close(actual, expected, rtol=0, atol=tolerance)
+            assert_close(actual, expected, rtol=0, atol=tolerance)
 
     def _reference_perspective_bounding_boxes(self, bounding_boxes, *, startpoints, endpoints):
         format = bounding_boxes.format
