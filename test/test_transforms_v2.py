@@ -4089,7 +4089,7 @@ class TestGaussianBlur:
             actual = F.cvcuda_to_tensor(actual)
             actual = actual.squeeze(0).to(device=device)
 
-        torch.testing.assert_close(actual, expected, rtol=0, atol=1)
+        assert_close(actual, expected, rtol=0, atol=1)
 
 
 class TestGaussianNoise:
