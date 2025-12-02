@@ -1569,12 +1569,17 @@ def _rotate_cvcuda(
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
+    angle = angle % 360
+
+    if angle == 0:
+        return inpt
+
+    if angle == 180:
+        return cvcuda.flip(inpt, flipCode=-1)
+
     interp = _cvcuda_interp.get(interpolation)
     if interp is None:
         raise ValueError(f"Interpolation mode {interpolation} is not supported with CV-CUDA")
-
-    if center is not None and len(center) != 2:
-        raise ValueError("Center must be a list of two floats")
 
     input_height, input_width = inpt.shape[1], inpt.shape[2]
     num_channels = inpt.shape[3]
@@ -1586,85 +1591,50 @@ def _rotate_cvcuda(
     else:
         fill_value = [float(f) for f in fill]
 
-    # Compute center offset (shift from image center)
-    # CV-CUDA's shift parameter is the offset from the image center
+    # Determine the rotation center
+    # torchvision uses image center by default, cvcuda rotates around upper-left (0,0)
+    # We need to calculate a shift to effectively rotate around the desired center
     if center is None:
-        center_offset = (0.0, 0.0)
+        cx, cy = input_width / 2.0, input_height / 2.0
     else:
-        center_offset = (center[0] - input_width / 2.0, center[1] - input_height / 2.0)
+        cx, cy = float(center[0]), float(center[1])
 
-    if expand:
-        # Calculate the expanded output size using the same logic as torch
-        center_f = [0.0, 0.0]
-        if center is not None:
-            center_f = [(c - s * 0.5) for c, s in zip(center, [input_width, input_height])]
-        matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
-        output_width, output_height = _compute_affine_output_size(matrix, input_width, input_height)
+    angle_rad = math.radians(angle)
+    cos_angle = math.cos(angle_rad)
+    sin_angle = math.sin(angle_rad)
 
-        # compute padding
-        pad_left = (output_width - input_width) // 2
-        pad_right = output_width - input_width - pad_left
-        pad_top = (output_height - input_height) // 2
-        pad_bottom = output_height - input_height - pad_top
-        padded = cvcuda.copymakeborder(
-            inpt,
-            border_mode=cvcuda.Border.CONSTANT,
-            border_value=fill_value,
-            top=pad_top,
-            bottom=pad_bottom,
-            left=pad_left,
-            right=pad_right,
-        )
+    # if we are not expanding, simple case
+    if not expand:
+        shift_x = (1 - cos_angle) * cx - sin_angle * cy
+        shift_y = sin_angle * cx + (1 - cos_angle) * cy
 
-        # get the new center offset
-        # The center of the original image has moved by (pad_left, pad_top)
-        new_center_x = (input_width / 2.0 + center_offset[0]) + pad_left
-        new_center_y = (input_height / 2.0 + center_offset[1]) + pad_top
-        padded_shift = (new_center_x - output_width / 2.0, new_center_y - output_height / 2.0)
+        return cvcuda.rotate(inpt, angle_deg=angle, shift=(shift_x, shift_y), interpolation=interp)
 
-        return cvcuda.rotate(padded, angle_deg=angle, shift=padded_shift, interpolation=interp)
+    # if we need to expand, use much of the same logic as torchvision, for output size/pad
+    matrix = _get_inverse_affine_matrix([0.0, 0.0], -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+    output_width, output_height = _compute_affine_output_size(matrix, input_width, input_height)
 
-    elif fill is not None and fill_value != [0.0] * num_channels:
-        # For non-zero fill without expand:
-        # 1. Pad with fill value to create a larger canvas
-        # 2. Rotate around the appropriate center
-        # 3. Crop back to original size
+    pad_left = (output_width - input_width) // 2
+    pad_right = output_width - input_width - pad_left
+    pad_top = (output_height - input_height) // 2
+    pad_bottom = output_height - input_height - pad_top
 
-        # compute padding
-        diag = int(math.ceil(math.sqrt(input_width**2 + input_height**2)))
-        pad_left = (diag - input_width) // 2
-        pad_right = diag - input_width - pad_left
-        pad_top = (diag - input_height) // 2
-        pad_bottom = diag - input_height - pad_top
-        padded = cvcuda.copymakeborder(
-            inpt,
-            border_mode=cvcuda.Border.CONSTANT,
-            border_value=fill_value,
-            top=pad_top,
-            bottom=pad_bottom,
-            left=pad_left,
-            right=pad_right,
-        )
+    padded = cvcuda.copymakeborder(
+        inpt,
+        top=pad_top,
+        left=pad_left,
+        bottom=pad_bottom,
+        right=pad_right,
+        border_mode=cvcuda.Border.CONSTANT,
+        border_value=fill_value,
+    )
 
-        # get the new center offset
-        padded_width, padded_height = padded.shape[2], padded.shape[1]
-        new_center_x = (input_width / 2.0 + center_offset[0]) + pad_left
-        new_center_y = (input_height / 2.0 + center_offset[1]) + pad_top
-        padded_shift = (new_center_x - padded_width / 2.0, new_center_y - padded_height / 2.0)
+    new_cx = pad_left + cx
+    new_cy = pad_top + cy
+    shift_x = (1 - cos_angle) * new_cx - sin_angle * new_cy
+    shift_y = sin_angle * new_cx + (1 - cos_angle) * new_cy
 
-        # rotate the padded image
-        rotated = cvcuda.rotate(padded, angle_deg=angle, shift=padded_shift, interpolation=interp)
-
-        # crop back to original size
-        crop_left = (rotated.shape[2] - input_width) // 2
-        crop_top = (rotated.shape[1] - input_height) // 2
-        return cvcuda.customcrop(
-            rotated,
-            rect=cvcuda.RectI(x=crop_left, y=crop_top, width=input_width, height=input_height),
-        )
-
-    else:
-        return cvcuda.rotate(inpt, angle_deg=angle, shift=center_offset, interpolation=interp)
+    return cvcuda.rotate(padded, angle_deg=angle, shift=(shift_x, shift_y), interpolation=interp)
 
 
 if CVCUDA_AVAILABLE:

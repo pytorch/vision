@@ -2205,10 +2205,7 @@ class TestRotate:
         actual = F.rotate(image, angle=angle, center=center, interpolation=interpolation, expand=expand, fill=fill)
 
         if make_input == make_image_cvcuda:
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            image = F.cvcuda_to_tensor(image)
-            # drop the batch dimensions
-            image = image.squeeze(0)
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(
             F.rotate(
