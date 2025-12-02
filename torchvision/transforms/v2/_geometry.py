@@ -29,6 +29,7 @@ from ._utils import (
     is_pure_tensor,
     query_size,
 )
+from .functional._utils import is_cvcuda_tensor
 
 CVCUDA_AVAILABLE = _is_cvcuda_available()
 
@@ -1044,6 +1045,8 @@ class ElasticTransform(Transform):
     """
 
     _v1_transform_cls = _transforms.ElasticTransform
+
+    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
 
     def __init__(
         self,
