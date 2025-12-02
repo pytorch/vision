@@ -2873,17 +2873,14 @@ class TestAdjustBrightness:
         actual = F.adjust_brightness(image, brightness_factor=brightness_factor)
 
         if make_input is make_image_cvcuda:
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            actual = actual.squeeze(0)
-            image = F.cvcuda_to_tensor(image)
-            image = image.squeeze(0)
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(F.adjust_brightness(F.to_pil_image(image), brightness_factor=brightness_factor))
 
         if make_input is make_image_cvcuda:
-            torch.testing.assert_close(actual, expected, rtol=0, atol=1)
+            assert_close(actual, expected, rtol=0, atol=1)
         else:
-            torch.testing.assert_close(actual, expected)
+            assert_close(actual, expected)
 
 
 class TestCutMixMixUp:
@@ -6148,10 +6145,7 @@ class TestAdjustContrast:
         actual = F.adjust_contrast(image, contrast_factor=contrast_factor)
 
         if make_input is make_image_cvcuda:
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            actual = actual.squeeze(0)
-            image = F.cvcuda_to_tensor(image)
-            image = image.squeeze(0)
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(F.adjust_contrast(F.to_pil_image(image), contrast_factor=contrast_factor))
 

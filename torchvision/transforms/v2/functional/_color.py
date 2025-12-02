@@ -253,9 +253,10 @@ def _adjust_contrast_cvcuda(image: "cvcuda.Tensor", contrast_factor: float) -> "
 
     contrast = cvcuda.as_tensor(torch.tensor([contrast_factor], dtype=torch.float32, device="cuda"))
 
+    # torchvision uses the mean of the image as the center of contrast
+    # we will compute that here using torch as well for consistency
     torch_image = torch.as_tensor(grayscale.cuda())
     mean = torch.mean(torch_image.float())
-
     contrast_center = cvcuda.as_tensor(torch.tensor([mean.item()], dtype=torch.float32, device="cuda"))
 
     return cvcuda.brightness_contrast(image, contrast=contrast, contrast_center=contrast_center)
