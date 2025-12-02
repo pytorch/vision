@@ -5874,23 +5874,26 @@ class TestInvert:
     def test_transform(self, make_input):
         check_transform(transforms.RandomInvert(p=1), make_input())
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("fn", [F.invert, transform_cls_to_functional(transforms.RandomInvert, p=1)])
-    def test_correctness_image(self, fn):
-        image = make_image(dtype=torch.uint8, device="cpu")
+    def test_correctness_image(self, make_input, fn):
+        image = make_input(dtype=torch.uint8, device="cpu")
 
         actual = fn(image)
+
+        if make_input is make_image_cvcuda:
+            image = cvcuda_to_pil_compatible_tensor(image)
+
         expected = F.to_image(F.invert(F.to_pil_image(image)))
 
-        assert_equal(actual, expected)
-
-    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
-    @pytest.mark.parametrize("fn", [F.invert, transform_cls_to_functional(transforms.RandomInvert, p=1)])
-    def test_correctness_cvcuda(self, dtype, fn):
-        image = make_image(batch_dims=(1,), dtype=dtype, device="cuda")
-        cv_image = F.to_cvcuda_tensor(image)
-        actual = F.cvcuda_to_tensor(fn(cv_image))
-        expected = F.invert_image(image)
         assert_equal(actual, expected)
 
 

@@ -690,13 +690,15 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
     return invert_image(video)
 
 
-if _CVCUDA_AVAILABLE:
+if CVCUDA_AVAILABLE:
     _invert_cvcuda_tensors = {}
 
 
 def _invert_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
+    # save the tensors into a dictionary only if CV-CUDA is actually used
+    # we save these here, since they are static and small in size
     if "base" not in _invert_cvcuda_tensors:
         _invert_cvcuda_tensors["base"] = cvcuda.as_tensor(
             torch.tensor([0.0, 0.0, 0.0], dtype=torch.float32, device="cuda").reshape(1, 1, 1, 3).contiguous(), "NHWC"
@@ -722,7 +724,7 @@ def _invert_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
     return cvcuda.normalize(image, base=base, scale=scale, globalscale=1.0, globalshift=shift)
 
 
-if _CVCUDA_AVAILABLE:
+if CVCUDA_AVAILABLE:
     _register_kernel_internal(invert, _import_cvcuda().Tensor)(_invert_cvcuda)
 
 
