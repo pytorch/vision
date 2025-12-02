@@ -1601,11 +1601,8 @@ class TestAffine:
         )
 
         if make_input is make_image_cvcuda:
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            actual = actual.squeeze(0)
-            # drop the batch dimensions for image now
-            image = F.cvcuda_to_tensor(image)
-            image = image.squeeze(0)
+            actual = cvcuda_to_pil_compatible_tensor(actual)
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = F.to_image(
             F.affine(
@@ -1655,11 +1652,8 @@ class TestAffine:
         actual = transform(image)
 
         if make_input is make_image_cvcuda:
-            actual = F.cvcuda_to_tensor(actual).to(device="cpu")
-            actual = actual.squeeze(0)
-            # drop the batch dimensions for image now
-            image = F.cvcuda_to_tensor(image)
-            image = image.squeeze(0)
+            actual = cvcuda_to_pil_compatible_tensor(actual)
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         torch.manual_seed(seed)
         expected = F.to_image(transform(F.to_pil_image(image)))

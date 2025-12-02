@@ -1373,12 +1373,17 @@ def _affine_cvcuda(
 
     height, width, num_channels = image.shape[1:]
 
-    center_f = [0.0, 0.0]
-    if center is not None:
-        center_f = [(c - s * 0.5) for c, s in zip(center, [width, height])]
+    # Determine the actual center point (cx, cy)
+    # torchvision uses image center by default, cvcuda transforms around upper-left (0,0)
+    # Unlike the tensor version which uses normalized coordinates centered at image center,
+    # CV-CUDA uses absolute pixel coordinates, so we pass actual center to _get_inverse_affine_matrix
+    if center is None:
+        cx, cy = width / 2.0, height / 2.0
+    else:
+        cx, cy = float(center[0]), float(center[1])
 
     translate_f = [float(t) for t in translate]
-    matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
+    matrix = _get_inverse_affine_matrix([cx, cy], angle, translate_f, scale, shear)
 
     interp = _cvcuda_interp.get(interpolation)
     if interp is None:
