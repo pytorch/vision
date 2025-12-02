@@ -17,6 +17,7 @@ from ._utils import (
     get_bounding_boxes,
     get_keypoints,
     has_any,
+    is_cvcuda_tensor,
     is_pure_tensor,
 )
 
@@ -159,6 +160,8 @@ class Normalize(Transform):
     """
 
     _v1_transform_cls = _transforms.Normalize
+
+    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()

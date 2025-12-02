@@ -28,6 +28,7 @@ from torchvision.utils import _Image_fromarray
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
+CVCUDA_AVAILABLE = _is_cvcuda_available()
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
 MPS_NOT_AVAILABLE_MSG = "MPS device not available"
 OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't need cuda."
@@ -276,6 +277,17 @@ def combinations_grid(**kwargs):
     return [dict(zip(kwargs.keys(), values)) for values in itertools.product(*kwargs.values())]
 
 
+def cvcuda_to_pil_compatible_tensor(tensor: "cvcuda.Tensor") -> torch.Tensor:
+    tensor = cvcuda_to_tensor(tensor)
+    if tensor.ndim != 4:
+        raise ValueError(f"CV-CUDA Tensor should be 4 dimensional. Got {tensor.ndim} dimensions.")
+    if tensor.shape[0] != 1:
+        raise ValueError(
+            f"CV-CUDA Tensor should have batch dimension 1 for comparison with PIL.Image.Image. Got {tensor.shape[0]}."
+        )
+    return tensor.squeeze(0).cpu()
+
+
 class ImagePair(TensorLikePair):
     def __init__(
         self,
@@ -303,6 +315,11 @@ class ImagePair(TensorLikePair):
                 if expected.shape[0] == 1:
                     expected = expected[0]
                 expected = expected.cpu()
+
+        # handle check for CV-CUDA Tensors
+        if CVCUDA_AVAILABLE and isinstance(actual, _import_cvcuda().Tensor):
+            # Use the PIL compatible tensor, so we can always compare with PIL.Image.Image
+            actual = cvcuda_to_pil_compatible_tensor(actual)
 
         super().__init__(actual, expected, **other_parameters)
         self.mae = mae
