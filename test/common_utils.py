@@ -21,7 +21,7 @@ from torch.testing._comparison import BooleanPair, NonePair, not_close_error_met
 from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.v2.functional import cvcuda_to_tensor, to_cvcuda_tensor, to_image, to_pil_image
-from torchvision.transforms.v2.functional._utils import _import_cvcuda, _is_cvcuda_available
+from torchvision.transforms.v2.functional._utils import _is_cvcuda_available, _is_cvcuda_tensor
 from torchvision.utils import _Image_fromarray
 
 
@@ -292,15 +292,13 @@ class ImagePair(TensorLikePair):
             expected = to_image(expected)
 
         if _is_cvcuda_available():
-            cvcuda = _import_cvcuda()
-
-            if isinstance(actual, cvcuda.Tensor):
+            if _is_cvcuda_tensor(actual):
                 actual = cvcuda_to_tensor(actual)
                 # Remove batch dimension if it's 1 for easier comparison against 3D PIL images
                 if actual.shape[0] == 1:
                     actual = actual[0]
                 actual = actual.cpu()
-            if isinstance(expected, cvcuda.Tensor):
+            if _is_cvcuda_tensor(expected):
                 expected = cvcuda_to_tensor(expected)
                 if expected.shape[0] == 1:
                     expected = expected[0]
