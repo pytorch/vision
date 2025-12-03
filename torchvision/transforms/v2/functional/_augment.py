@@ -91,7 +91,6 @@ def _erase_cvcuda(
     num_channels = image.shape[3]
     # Flatten v and expand to match the number of channels if it's a single value
     # CV-CUDA erase expects values as float32
-    # Use repeat instead of expand to create a new tensor (avoids cvcuda state pollution)
     v_dup = v.clone()
     v_flat = v_dup.flatten().to(dtype=torch.float32, device="cuda")
     if v_flat.numel() == 1:
