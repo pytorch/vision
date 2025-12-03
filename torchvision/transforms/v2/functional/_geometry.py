@@ -37,7 +37,7 @@ from ._utils import (
 
 CVCUDA_AVAILABLE = _is_cvcuda_available()
 if TYPE_CHECKING:
-    import cvcuda
+    import cvcuda  # type: ignore[import-not-found]
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
