@@ -171,7 +171,7 @@ def _is_cvcuda_available():
         return False
 
 
-def is_cvcuda_tensor(inpt: Any) -> bool:
+def _is_cvcuda_tensor(inpt: Any) -> bool:
     try:
         cvcuda = _import_cvcuda()
         return isinstance(inpt, cvcuda.Tensor)

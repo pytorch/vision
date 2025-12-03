@@ -295,14 +295,13 @@ class ImagePair(TensorLikePair):
             cvcuda = _import_cvcuda()
 
             if isinstance(actual, cvcuda.Tensor):
-                actual = cvcuda_to_tensor(actual)  # No import needed here anymore!
-                # Remove batch dimension if it's 1 for easier comparison
+                actual = cvcuda_to_tensor(actual)
+                # Remove batch dimension if it's 1 for easier comparison against 3D PIL images
                 if actual.shape[0] == 1:
                     actual = actual[0]
                 actual = actual.cpu()
             if isinstance(expected, cvcuda.Tensor):
                 expected = cvcuda_to_tensor(expected)
-                # Remove batch dimension if it's 1 for easier comparison
                 if expected.shape[0] == 1:
                     expected = expected[0]
                 expected = expected.cpu()

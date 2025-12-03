@@ -1261,7 +1261,7 @@ class TestHorizontalFlip:
             (F.horizontal_flip_image, tv_tensors.Image),
             pytest.param(
                 F._geometry._horizontal_flip_image_cvcuda,
-                cvcuda.Tensor,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
             (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
@@ -1271,6 +1271,8 @@ class TestHorizontalFlip:
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if kernel is F._geometry._horizontal_flip_image_cvcuda:
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.horizontal_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
@@ -1901,7 +1903,7 @@ class TestVerticalFlip:
             (F.vertical_flip_image, tv_tensors.Image),
             pytest.param(
                 F._geometry._vertical_flip_image_cvcuda,
-                cvcuda.Tensor,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
             (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
@@ -1911,6 +1913,8 @@ class TestVerticalFlip:
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if kernel is F._geometry._vertical_flip_image_cvcuda:
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.vertical_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
