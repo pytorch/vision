@@ -1,6 +1,8 @@
 import io
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 import PIL.Image
 
 import torch
@@ -65,6 +67,52 @@ def erase_video(
     video: torch.Tensor, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
 ) -> torch.Tensor:
     return erase_image(video, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
+
+
+def _erase_cvcuda(
+    image: "cvcuda.Tensor",
+    i: int,
+    j: int,
+    h: int,
+    w: int,
+    v: torch.Tensor,
+    inplace: bool = False,
+) -> "cvcuda.Tensor":
+    if inplace:
+        raise ValueError("inplace is not supported for cvcuda.Tensor")
+
+    anchor = torch.tensor(np.array([j, i]), dtype=torch.int32, device="cuda")
+    cv_anchor = cvcuda.as_tensor(anchor, "NC").reshape((2,), "N")
+    erasing = torch.tensor(np.array([w, h, 7]), dtype=torch.int32, device="cuda")
+    cv_erasing = cvcuda.as_tensor(erasing, "NC").reshape((3,), "N")
+    imgIdx = torch.tensor(np.array([0]), dtype=torch.int32, device="cuda")
+    cv_imgIdx = cvcuda.as_tensor(imgIdx, "N").reshape((1,), "N")
+
+    num_channels = image.shape[3]
+    # Flatten v and expand to match the number of channels if it's a single value
+    # CV-CUDA erase expects values as float32
+    # Use repeat instead of expand to create a new tensor (avoids cvcuda state pollution)
+    v_dup = v.clone()
+    v_flat = v_dup.flatten().to(dtype=torch.float32, device="cuda")
+    if v_flat.numel() == 1:
+        v_flat = v_flat.repeat(num_channels)
+    cv_values = cvcuda.as_tensor(v_flat, "NC").reshape((num_channels,), "N")
+
+    result = cvcuda.erase(
+        src=image,
+        anchor=cv_anchor,
+        erasing=cv_erasing,
+        values=cv_values,
+        imgIdx=cv_imgIdx,
+        random=False,
+        seed=0,
+    )
+
+    return result
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(erase, _import_cvcuda().Tensor)(_erase_cvcuda)
 
 
 def jpeg(image: torch.Tensor, quality: int) -> torch.Tensor:

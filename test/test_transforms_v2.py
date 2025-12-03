@@ -3779,17 +3779,17 @@ class TestErase:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_image_inplace(self, dtype, device):
-        input = make_image(self.INPUT_SIZE, dtype=dtype, device=device)
-        input_version = input._version
+        inpt = make_image(self.INPUT_SIZE, dtype=dtype, device=device)
+        input_version = inpt._version
 
-        output_out_of_place = F.erase_image(input, **self.FUNCTIONAL_KWARGS)
-        assert output_out_of_place.data_ptr() != input.data_ptr()
-        assert output_out_of_place is not input
+        output_out_of_place = F.erase_image(inpt, **self.FUNCTIONAL_KWARGS)
+        assert output_out_of_place.data_ptr() != inpt.data_ptr()
+        assert output_out_of_place is not inpt
 
-        output_inplace = F.erase_image(input, **self.FUNCTIONAL_KWARGS, inplace=True)
-        assert output_inplace.data_ptr() == input.data_ptr()
+        output_inplace = F.erase_image(inpt, **self.FUNCTIONAL_KWARGS, inplace=True)
+        assert output_inplace.data_ptr() == inpt.data_ptr()
         assert output_inplace._version > input_version
-        assert output_inplace is input
+        assert output_inplace is inpt
 
         assert_equal(output_inplace, output_out_of_place)
 
@@ -3798,7 +3798,15 @@ class TestErase:
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
     )
     def test_functional(self, make_input):
         check_functional(F.erase, make_input(), **self.FUNCTIONAL_KWARGS)
@@ -3810,25 +3818,48 @@ class TestErase:
             (F._augment._erase_image_pil, PIL.Image.Image),
             (F.erase_image, tv_tensors.Image),
             (F.erase_video, tv_tensors.Video),
+            pytest.param(
+                F._augment._erase_cvcuda,
+                "cvcuda.Tensor",
+                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if input_type == "cvcuda.Tensor":
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.erase, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
-        input = make_input(device=device)
+        inpt = make_input(device=device)
 
-        with pytest.warns(UserWarning, match="currently passing through inputs of type"):
+        # shouldn't get a warning for cvcuda
+        if make_input is make_image_cvcuda:
             check_transform(
                 transforms.RandomErasing(p=1),
-                input,
-                check_v1_compatibility=not isinstance(input, PIL.Image.Image),
+                inpt,
+                check_v1_compatibility=False,
             )
+        else:
+            with pytest.warns(UserWarning, match="currently passing through inputs of type"):
+                check_transform(
+                    transforms.RandomErasing(p=1),
+                    inpt,
+                    check_v1_compatibility=not isinstance(inpt, PIL.Image.Image),
+                )
 
     def _reference_erase_image(self, image, *, i, j, h, w, v):
         mask = torch.zeros_like(image, dtype=torch.bool)
@@ -3843,16 +3874,38 @@ class TestErase:
 
         return erased_image
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_functional_image_correctness(self, dtype, device):
-        image = make_image(dtype=dtype, device=device)
+    def test_functional_image_correctness(self, make_input, dtype, device):
+        image = make_input(dtype=dtype, device=device)
 
         actual = F.erase(image, **self.FUNCTIONAL_KWARGS)
+
+        if make_input is make_image_cvcuda:
+            image = cvcuda_to_pil_compatible_tensor(image)
+
         expected = self._reference_erase_image(image, **self.FUNCTIONAL_KWARGS)
 
         assert_equal(actual, expected)
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
+    )
     @param_value_parametrization(
         scale=[(0.1, 0.2), [0.0, 1.0]],
         ratio=[(0.3, 0.7), [0.1, 5.0]],
@@ -3861,10 +3914,10 @@ class TestErase:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("seed", list(range(5)))
-    def test_transform_image_correctness(self, param, value, dtype, device, seed):
+    def test_transform_image_correctness(self, make_input, param, value, dtype, device, seed):
         transform = transforms.RandomErasing(**{param: value}, p=1)
 
-        image = make_image(dtype=dtype, device=device)
+        image = make_input(dtype=dtype, device=device)
 
         with freeze_rng_state():
             torch.manual_seed(seed)
@@ -3874,6 +3927,9 @@ class TestErase:
 
             torch.manual_seed(seed)
             actual = transform(image)
+
+        if make_input is make_image_cvcuda:
+            image = cvcuda_to_pil_compatible_tensor(image)
 
         expected = self._reference_erase_image(image, **params)
 
