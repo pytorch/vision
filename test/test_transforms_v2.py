@@ -3958,13 +3958,13 @@ class TestGaussianBlur:
             (F.gaussian_blur_video, tv_tensors.Video),
             pytest.param(
                 F._misc._gaussian_blur_image_cvcuda,
-                "cvcuda.Tensor",
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._misc._gaussian_blur_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.gaussian_blur, kernel=kernel, input_type=input_type)
 
