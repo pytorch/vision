@@ -40,7 +40,7 @@ Transforms
   .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_transforms_getting_started_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py`
+  :doc:`/auto_examples/transforms/plot_transforms_getting_started`
 
 .. raw:: html
 
@@ -57,7 +57,7 @@ Transforms
   .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_transforms_illustrations_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py`
+  :doc:`/auto_examples/transforms/plot_transforms_illustrations`
 
 .. raw:: html
 
@@ -74,7 +74,7 @@ Transforms
   .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_transforms_e2e_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py`
+  :doc:`/auto_examples/transforms/plot_transforms_e2e`
 
 .. raw:: html
 
@@ -91,7 +91,7 @@ Transforms
   .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_cutmix_mixup_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py`
+  :doc:`/auto_examples/transforms/plot_cutmix_mixup`
 
 .. raw:: html
 
@@ -108,7 +108,7 @@ Transforms
   .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_rotated_box_transforms_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_rotated_box_transforms.py`
+  :doc:`/auto_examples/transforms/plot_rotated_box_transforms`
 
 .. raw:: html
 
@@ -125,7 +125,7 @@ Transforms
   .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_keypoints_transforms_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_keypoints_transforms.py`
+  :doc:`/auto_examples/transforms/plot_keypoints_transforms`
 
 .. raw:: html
 
@@ -142,7 +142,7 @@ Transforms
   .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_custom_transforms_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`
+  :doc:`/auto_examples/transforms/plot_custom_transforms`
 
 .. raw:: html
 
@@ -159,7 +159,7 @@ Transforms
   .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_tv_tensors_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py`
+  :doc:`/auto_examples/transforms/plot_tv_tensors`
 
 .. raw:: html
 
@@ -176,7 +176,7 @@ Transforms
   .. image:: /auto_examples/transforms/images/thumb/sphx_glr_plot_custom_tv_tensors_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py`
+  :doc:`/auto_examples/transforms/plot_custom_tv_tensors`
 
 .. raw:: html
 
@@ -210,7 +210,7 @@ Others
   .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_optical_flow_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py`
+  :doc:`/auto_examples/others/plot_optical_flow`
 
 .. raw:: html
 
@@ -227,7 +227,7 @@ Others
   .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_repurposing_annotations_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py`
+  :doc:`/auto_examples/others/plot_repurposing_annotations`
 
 .. raw:: html
 
@@ -244,7 +244,7 @@ Others
   .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_scripted_tensor_transforms_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`
+  :doc:`/auto_examples/others/plot_scripted_tensor_transforms`
 
 .. raw:: html
 
@@ -261,7 +261,7 @@ Others
   .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_visualization_utils_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py`
+  :doc:`/auto_examples/others/plot_visualization_utils`
 
 .. raw:: html
 

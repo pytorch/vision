@@ -22,7 +22,7 @@ Others
   .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_optical_flow_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py`
+  :doc:`/auto_examples/others/plot_optical_flow`
 
 .. raw:: html
 
@@ -39,7 +39,7 @@ Others
   .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_repurposing_annotations_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py`
+  :doc:`/auto_examples/others/plot_repurposing_annotations`
 
 .. raw:: html
 
@@ -56,7 +56,7 @@ Others
   .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_scripted_tensor_transforms_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py`
+  :doc:`/auto_examples/others/plot_scripted_tensor_transforms`
 
 .. raw:: html
 
@@ -73,7 +73,7 @@ Others
   .. image:: /auto_examples/others/images/thumb/sphx_glr_plot_visualization_utils_thumb.png
     :alt:
 
-  :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py`
+  :doc:`/auto_examples/others/plot_visualization_utils`
 
 .. raw:: html
 
