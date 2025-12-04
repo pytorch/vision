@@ -296,26 +296,24 @@ def adjust_sharpness_video(video: torch.Tensor, sharpness_factor: float) -> torc
     return adjust_sharpness_image(video, sharpness_factor=sharpness_factor)
 
 
-_max_value_map = {}
-_dtype_to_format = {}
-if CVCUDA_AVAILABLE:
-    _max_value_map = {
-        cvcuda.Type.U8: 255,
-        cvcuda.Type.F32: 1.0,
-    }
-    _dtype_to_format = {
-        (cvcuda.Type.U8, 1): cvcuda.Format.U8,
-        (cvcuda.Type.U8, 3): cvcuda.Format.RGB8,
-        (cvcuda.Type.F32, 1): cvcuda.Format.F32,
-        (cvcuda.Type.F32, 3): cvcuda.Format.RGBf32,
-    }
+_max_value_map: dict["cvcuda.Type", float | int] = {}
+_dtype_to_format: dict[tuple["cvcuda.Type", int], "cvcuda.Format"] = {}
 
 
-def _adjust_sharpness_cvcuda(
+def _adjust_sharpness_image_cvcuda(
     image: "cvcuda.Tensor",
     sharpness_factor: float,
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
+
+    if len(_max_value_map) == 0:
+        _max_value_map[cvcuda.Type.U8] = 255
+        _max_value_map[cvcuda.Type.F32] = 1.0
+    if len(_dtype_to_format) == 0:
+        _dtype_to_format[(cvcuda.Type.U8, 1)] = cvcuda.Format.U8
+        _dtype_to_format[(cvcuda.Type.U8, 3)] = cvcuda.Format.RGB8
+        _dtype_to_format[(cvcuda.Type.F32, 1)] = cvcuda.Format.F32
+        _dtype_to_format[(cvcuda.Type.F32, 3)] = cvcuda.Format.RGBf32
 
     if sharpness_factor < 0:
         raise ValueError(f"sharpness_factor ({sharpness_factor}) is not non-negative.")
@@ -377,7 +375,7 @@ def _adjust_sharpness_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(adjust_sharpness, _import_cvcuda().Tensor)(_adjust_sharpness_cvcuda)
+    _register_kernel_internal(adjust_sharpness, _import_cvcuda().Tensor)(_adjust_sharpness_image_cvcuda)
 
 
 def adjust_hue(inpt: torch.Tensor, hue_factor: float) -> torch.Tensor:
