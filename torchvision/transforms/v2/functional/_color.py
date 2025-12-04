@@ -690,11 +690,10 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
     return invert_image(video)
 
 
-if CVCUDA_AVAILABLE:
-    _invert_cvcuda_tensors = {}
+_invert_cvcuda_tensors = {}
 
 
-def _invert_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
+def _invert_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
     # save the tensors into a dictionary only if CV-CUDA is actually used
@@ -725,7 +724,7 @@ def _invert_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(invert, _import_cvcuda().Tensor)(_invert_cvcuda)
+    _register_kernel_internal(invert, _import_cvcuda().Tensor)(_invert_image_cvcuda)
 
 
 def permute_channels(inpt: torch.Tensor, permutation: list[int]) -> torch.Tensor:
