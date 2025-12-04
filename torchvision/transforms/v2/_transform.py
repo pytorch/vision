@@ -8,7 +8,7 @@ import torch
 from torch import nn
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import tv_tensors
-from torchvision.transforms.v2._utils import check_type, has_any, is_cvcuda_tensor, is_pure_tensor
+from torchvision.transforms.v2._utils import check_type, has_any, is_pure_tensor
 from torchvision.utils import _log_api_usage_once
 
 from .functional._utils import _get_kernel
@@ -91,7 +91,10 @@ class Transform(nn.Module):
 
         needs_transform_list = []
         transform_pure_tensor = not has_any(
-            flat_inputs, tv_tensors.Image, tv_tensors.Video, PIL.Image.Image, is_cvcuda_tensor
+            flat_inputs,
+            tv_tensors.Image,
+            tv_tensors.Video,
+            PIL.Image.Image,
         )
         for inpt in flat_inputs:
             needs_transform = True

@@ -25,7 +25,6 @@ from common_utils import (
     assert_equal,
     cache,
     cpu_and_cuda,
-    cvcuda_to_pil_compatible_tensor,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
@@ -3525,7 +3524,7 @@ class TestCrop:
             (F.crop_video, tv_tensors.Video),
             (F.crop_keypoints, tv_tensors.KeyPoints),
             pytest.param(
-                F._geometry._crop_cvcuda,
+                F._geometry._crop_image_cvcuda,
                 "cvcuda.Tensor",
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
@@ -3552,7 +3551,7 @@ class TestCrop:
         actual = F.crop(image, **kwargs)
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(F.crop(F.to_pil_image(image), **kwargs))
 
@@ -3674,7 +3673,7 @@ class TestCrop:
             torch.manual_seed(seed)
 
             if make_input is make_image_cvcuda:
-                image = cvcuda_to_pil_compatible_tensor(image)
+                image = F.cvcuda_to_tensor(image)[0].cpu()
 
             expected = F.to_image(transform(F.to_pil_image(image)))
 
@@ -4527,7 +4526,7 @@ class TestResizedCrop:
             (F.resized_crop_video, tv_tensors.Video),
             (F.resized_crop_keypoints, tv_tensors.KeyPoints),
             pytest.param(
-                F.resized_crop_image,
+                F._geometry._resized_crop_image_cvcuda,
                 "cvcuda.Tensor",
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
@@ -4584,7 +4583,7 @@ class TestResizedCrop:
         )
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(
             F.resized_crop(
@@ -5026,7 +5025,7 @@ class TestCenterCrop:
             (F.center_crop_video, tv_tensors.Video),
             (F.center_crop_keypoints, tv_tensors.KeyPoints),
             pytest.param(
-                F._geometry._center_crop_cvcuda,
+                F._geometry._center_crop_image_cvcuda,
                 "cvcuda.Tensor",
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
@@ -5072,7 +5071,7 @@ class TestCenterCrop:
         actual = fn(image, output_size)
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(F.center_crop(F.to_pil_image(image), output_size=output_size))
 
@@ -6376,7 +6375,7 @@ class TestFiveTenCrop:
             (F.five_crop, F.five_crop_video, tv_tensors.Video),
             pytest.param(
                 F.five_crop,
-                F._geometry._five_crop_cvcuda,
+                F._geometry._five_crop_image_cvcuda,
                 "cvcuda.Tensor",
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
@@ -6386,7 +6385,7 @@ class TestFiveTenCrop:
             (F.ten_crop, F.ten_crop_video, tv_tensors.Video),
             pytest.param(
                 F.ten_crop,
-                F._geometry._ten_crop_cvcuda,
+                F._geometry._ten_crop_image_cvcuda,
                 "cvcuda.Tensor",
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
@@ -6458,7 +6457,7 @@ class TestFiveTenCrop:
         actual = fn(image, size=self.OUTPUT_SIZE)
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.five_crop(F.to_pil_image(image), size=self.OUTPUT_SIZE)
 
@@ -6489,7 +6488,7 @@ class TestFiveTenCrop:
         actual = fn(image, **kwargs)
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.ten_crop(F.to_pil_image(image), size=self.OUTPUT_SIZE, vertical_flip=vertical_flip)
 

@@ -26,7 +26,6 @@ from ._utils import (
     get_bounding_boxes,
     has_all,
     has_any,
-    is_cvcuda_tensor,
     is_pure_tensor,
     query_size,
 )
@@ -140,6 +139,9 @@ class Resize(Transform):
 
     _v1_transform_cls = _transforms.Resize
 
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+
     def __init__(
         self,
         size: Union[int, Sequence[int], None],
@@ -195,7 +197,8 @@ class CenterCrop(Transform):
 
     _v1_transform_cls = _transforms.CenterCrop
 
-    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, size: Union[int, Sequence[int]]):
         super().__init__()
@@ -255,7 +258,8 @@ class RandomResizedCrop(Transform):
 
     _v1_transform_cls = _transforms.RandomResizedCrop
 
-    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(
         self,
@@ -365,7 +369,8 @@ class FiveCrop(Transform):
 
     _v1_transform_cls = _transforms.FiveCrop
 
-    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
@@ -411,7 +416,8 @@ class TenCrop(Transform):
 
     _v1_transform_cls = _transforms.TenCrop
 
-    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
@@ -820,7 +826,8 @@ class RandomCrop(Transform):
 
     _v1_transform_cls = _transforms.RandomCrop
 
-    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def _extract_params_for_v1_transform(self) -> dict[str, Any]:
         params = super()._extract_params_for_v1_transform()
@@ -1132,7 +1139,8 @@ class RandomIoUCrop(Transform):
             Default, 40.
     """
 
-    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(
         self,
@@ -1414,6 +1422,9 @@ class RandomResize(Transform):
             The default value changed from ``None`` to ``True`` in
             v0.17, for the PIL and Tensor backends to be consistent.
     """
+
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(
         self,
