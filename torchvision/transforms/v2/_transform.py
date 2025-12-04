@@ -90,12 +90,7 @@ class Transform(nn.Module):
         # However, this case wasn't supported by transforms v1 either, so there is no BC concern.
 
         needs_transform_list = []
-        transform_pure_tensor = not has_any(
-            flat_inputs,
-            tv_tensors.Image,
-            tv_tensors.Video,
-            PIL.Image.Image,
-        )
+        transform_pure_tensor = not has_any(flat_inputs, tv_tensors.Image, tv_tensors.Video, PIL.Image.Image)
         for inpt in flat_inputs:
             needs_transform = True
 
