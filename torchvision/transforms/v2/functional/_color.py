@@ -73,7 +73,7 @@ def _rgb_to_grayscale_image_pil(image: PIL.Image.Image, num_output_channels: int
     return _FP.to_grayscale(image, num_output_channels=num_output_channels)
 
 
-def _rgb_to_grayscale_cvcuda(
+def _rgb_to_grayscale_image_cvcuda(
     image: "cvcuda.Tensor",
     num_output_channels: int = 1,
 ) -> "cvcuda.Tensor":
@@ -102,7 +102,7 @@ def _rgb_to_grayscale_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(rgb_to_grayscale, _import_cvcuda().Tensor)(_rgb_to_grayscale_cvcuda)
+    _register_kernel_internal(rgb_to_grayscale, _import_cvcuda().Tensor)(_rgb_to_grayscale_image_cvcuda)
 
 
 def grayscale_to_rgb(inpt: torch.Tensor) -> torch.Tensor:
@@ -131,7 +131,7 @@ def grayscale_to_rgb_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return image.convert(mode="RGB")
 
 
-def _grayscale_to_rgb_cvcuda(
+def _grayscale_to_rgb_image_cvcuda(
     image: "cvcuda.Tensor",
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
@@ -153,7 +153,7 @@ def _grayscale_to_rgb_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(grayscale_to_rgb, _import_cvcuda().Tensor)(_grayscale_to_rgb_cvcuda)
+    _register_kernel_internal(grayscale_to_rgb, _import_cvcuda().Tensor)(_grayscale_to_rgb_image_cvcuda)
 
 
 def _blend(image1: torch.Tensor, image2: torch.Tensor, ratio: float) -> torch.Tensor:

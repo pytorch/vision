@@ -5,9 +5,13 @@ from typing import Any, Optional, Union
 import torch
 from torchvision import transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
+from torchvision.transforms.v2.functional._utils import _is_cvcuda_available, _is_cvcuda_tensor
 
 from ._transform import _RandomApplyTransform
-from ._utils import is_cvcuda_tensor, query_chw
+from ._utils import query_chw
+
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
 
 
 class Grayscale(Transform):
@@ -22,7 +26,8 @@ class Grayscale(Transform):
 
     _v1_transform_cls = _transforms.Grayscale
 
-    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, num_output_channels: int = 1):
         super().__init__()
@@ -46,7 +51,8 @@ class RandomGrayscale(_RandomApplyTransform):
 
     _v1_transform_cls = _transforms.RandomGrayscale
 
-    _transformed_types = _RandomApplyTransform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = _RandomApplyTransform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, p: float = 0.1) -> None:
         super().__init__(p=p)
@@ -66,7 +72,8 @@ class RGB(Transform):
     to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions
     """
 
-    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self):
         super().__init__()
