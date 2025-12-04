@@ -26,7 +26,6 @@ from ._utils import (
     get_bounding_boxes,
     has_all,
     has_any,
-    is_cvcuda_tensor,
     is_pure_tensor,
     query_size,
 )
@@ -466,7 +465,8 @@ class Pad(Transform):
 
     _v1_transform_cls = _transforms.Pad
 
-    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def _extract_params_for_v1_transform(self) -> dict[str, Any]:
         params = super()._extract_params_for_v1_transform()

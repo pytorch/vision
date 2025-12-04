@@ -28,6 +28,7 @@ from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_b
 
 from ._utils import (
     _FillTypeJIT,
+    _get_cvcuda_border_from_pad_mode,
     _get_kernel,
     _import_cvcuda,
     _is_cvcuda_available,
@@ -1682,17 +1683,7 @@ def _pad_with_vector_fill(
 _pad_image_pil = _register_kernel_internal(pad, PIL.Image.Image)(_FP.pad)
 
 
-if CVCUDA_AVAILABLE:
-    _pad_mode_to_cvcuda = {
-        "constant": cvcuda.Border.CONSTANT,
-        "reflect": cvcuda.Border.REFLECT101,
-        "replicate": cvcuda.Border.REPLICATE,
-        "edge": cvcuda.Border.REPLICATE,
-        "symmetric": cvcuda.Border.REFLECT,
-    }
-
-
-def _pad_cvcuda(
+def _pad_image_cvcuda(
     image: "cvcuda.Tensor",
     padding: list[int],
     fill: Optional[Union[int, float, list[float]]] = None,
@@ -1700,8 +1691,7 @@ def _pad_cvcuda(
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
-    if _pad_mode_to_cvcuda.get(padding_mode) is None:
-        raise ValueError(f"Padding mode '{padding_mode}' is not supported with CVCUDA")
+    border_mode = _get_cvcuda_border_from_pad_mode(padding_mode)
 
     if fill is None:
         fill = 0
@@ -1712,7 +1702,7 @@ def _pad_cvcuda(
 
     return cvcuda.copymakeborder(
         image,
-        border_mode=_pad_mode_to_cvcuda[padding_mode],
+        border_mode=border_mode,
         border_value=fill,
         top=top,
         left=left,
@@ -1722,7 +1712,7 @@ def _pad_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(pad, _import_cvcuda().Tensor)(_pad_cvcuda)
+    _register_kernel_internal(pad, _import_cvcuda().Tensor)(_pad_image_cvcuda)
 
 
 @_register_kernel_internal(pad, tv_tensors.Mask)

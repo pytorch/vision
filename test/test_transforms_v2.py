@@ -25,7 +25,6 @@ from common_utils import (
     assert_equal,
     cache,
     cpu_and_cuda,
-    cvcuda_to_pil_compatible_tensor,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
@@ -4750,14 +4749,14 @@ class TestPad:
             (F.pad_mask, tv_tensors.Mask),
             (F.pad_video, tv_tensors.Video),
             pytest.param(
-                F._geometry._pad_cvcuda,
-                "cvcuda.Tensor",
+                F._geometry._pad_image_cvcuda,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._geometry._pad_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.pad, kernel=kernel, input_type=input_type)
 
@@ -4824,7 +4823,7 @@ class TestPad:
         actual = fn(image, padding=padding, padding_mode=padding_mode, fill=fill)
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(F.pad(F.to_pil_image(image), padding=padding, padding_mode=padding_mode, fill=fill))
 

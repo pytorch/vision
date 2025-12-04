@@ -1,9 +1,12 @@
 import functools
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, TYPE_CHECKING, Union
 
 import torch
 from torchvision import tv_tensors
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 _FillType = Union[int, float, Sequence[int], Sequence[float], None]
 _FillTypeJIT = Optional[list[float]]
@@ -177,3 +180,26 @@ def _is_cvcuda_tensor(inpt: Any) -> bool:
         return isinstance(inpt, cvcuda.Tensor)
     except ImportError:
         return False
+
+
+_pad_mode_to_cvcuda_border: dict[str, "cvcuda.Border"] = {}
+
+
+def _populate_cvcuda_pad_to_border_tables():
+    cvcuda = _import_cvcuda()
+
+    global _pad_mode_to_cvcuda_border
+
+    _pad_mode_to_cvcuda_border = {
+        "constant": cvcuda.Border.CONSTANT,
+        "reflect": cvcuda.Border.REFLECT101,
+        "replicate": cvcuda.Border.REPLICATE,
+        "edge": cvcuda.Border.REPLICATE,
+        "symmetric": cvcuda.Border.REFLECT,
+    }
+
+
+def _get_cvcuda_border_from_pad_mode(pad_mode: str) -> "cvcuda.Border":
+    if len(_pad_mode_to_cvcuda_border) == 0:
+        _populate_cvcuda_pad_to_border_tables()
+    return _pad_mode_to_cvcuda_border[pad_mode]
