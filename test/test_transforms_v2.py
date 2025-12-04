@@ -25,7 +25,6 @@ from common_utils import (
     assert_equal,
     cache,
     cpu_and_cuda,
-    cvcuda_to_pil_compatible_tensor,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
@@ -2846,14 +2845,14 @@ class TestAdjustBrightness:
             (F.adjust_brightness_image, tv_tensors.Image),
             (F.adjust_brightness_video, tv_tensors.Video),
             pytest.param(
-                F._color._adjust_brightness_cvcuda,
-                "cvcuda.Tensor",
+                F._color._adjust_brightness_image_cvcuda,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._color._adjust_brightness_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.adjust_brightness, kernel=kernel, input_type=input_type)
 
@@ -2873,7 +2872,7 @@ class TestAdjustBrightness:
         actual = F.adjust_brightness(image, brightness_factor=brightness_factor)
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(F.adjust_brightness(F.to_pil_image(image), brightness_factor=brightness_factor))
 
@@ -6111,14 +6110,14 @@ class TestAdjustContrast:
             (F.adjust_contrast_image, tv_tensors.Image),
             (F.adjust_contrast_video, tv_tensors.Video),
             pytest.param(
-                F._color._adjust_contrast_cvcuda,
-                "cvcuda.Tensor",
+                F._color._adjust_contrast_image_cvcuda,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._color._adjust_contrast_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.adjust_contrast, kernel=kernel, input_type=input_type)
 
@@ -6145,7 +6144,7 @@ class TestAdjustContrast:
         actual = F.adjust_contrast(image, contrast_factor=contrast_factor)
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(F.adjust_contrast(F.to_pil_image(image), contrast_factor=contrast_factor))
 
@@ -6224,14 +6223,14 @@ class TestAdjustHue:
             (F.adjust_hue_image, tv_tensors.Image),
             (F.adjust_hue_video, tv_tensors.Video),
             pytest.param(
-                F._color._adjust_hue_cvcuda,
-                "cvcuda.Tensor",
+                F._color._adjust_hue_image_cvcuda,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._color._adjust_hue_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.adjust_hue, kernel=kernel, input_type=input_type)
 
@@ -6259,8 +6258,8 @@ class TestAdjustHue:
         actual = F.adjust_hue(image, hue_factor=hue_factor)
 
         if make_input is make_image_cvcuda:
-            actual = cvcuda_to_pil_compatible_tensor(actual)
-            image = cvcuda_to_pil_compatible_tensor(image)
+            actual = F.cvcuda_to_tensor(actual)[0].cpu()
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(F.adjust_hue(F.to_pil_image(image), hue_factor=hue_factor))
 
@@ -6300,14 +6299,14 @@ class TestAdjustSaturation:
             (F.adjust_saturation_image, tv_tensors.Image),
             (F.adjust_saturation_video, tv_tensors.Video),
             pytest.param(
-                F._color._adjust_saturation_cvcuda,
-                "cvcuda.Tensor",
+                F._color._adjust_saturation_image_cvcuda,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._color._adjust_saturation_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.adjust_saturation, kernel=kernel, input_type=input_type)
 
@@ -6335,7 +6334,7 @@ class TestAdjustSaturation:
         actual = F.adjust_saturation(image, saturation_factor=saturation_factor)
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(F.adjust_saturation(F.to_pil_image(image), saturation_factor=saturation_factor))
 

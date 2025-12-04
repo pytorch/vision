@@ -145,7 +145,7 @@ def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> to
     return adjust_brightness_image(video, brightness_factor=brightness_factor)
 
 
-def _adjust_brightness_cvcuda(image: "cvcuda.Tensor", brightness_factor: float) -> "cvcuda.Tensor":
+def _adjust_brightness_image_cvcuda(image: "cvcuda.Tensor", brightness_factor: float) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
     cv_brightness = torch.tensor([brightness_factor], dtype=torch.float32, device="cuda")
@@ -155,7 +155,7 @@ def _adjust_brightness_cvcuda(image: "cvcuda.Tensor", brightness_factor: float) 
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(adjust_brightness, _import_cvcuda().Tensor)(_adjust_brightness_cvcuda)
+    _register_kernel_internal(adjust_brightness, _import_cvcuda().Tensor)(_adjust_brightness_image_cvcuda)
 
 
 def adjust_saturation(inpt: torch.Tensor, saturation_factor: float) -> torch.Tensor:
@@ -197,7 +197,7 @@ def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> to
     return adjust_saturation_image(video, saturation_factor=saturation_factor)
 
 
-def _adjust_saturation_cvcuda(image: "cvcuda.Tensor", saturation_factor: float) -> "cvcuda.Tensor":
+def _adjust_saturation_image_cvcuda(image: "cvcuda.Tensor", saturation_factor: float) -> "cvcuda.Tensor":
     if saturation_factor < 0:
         raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
@@ -225,7 +225,7 @@ def _adjust_saturation_cvcuda(image: "cvcuda.Tensor", saturation_factor: float) 
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(adjust_saturation, cvcuda.Tensor)(_adjust_saturation_cvcuda)
+    _register_kernel_internal(adjust_saturation, cvcuda.Tensor)(_adjust_saturation_image_cvcuda)
 
 
 def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
@@ -267,7 +267,7 @@ def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.
     return adjust_contrast_image(video, contrast_factor=contrast_factor)
 
 
-def _adjust_contrast_cvcuda(image: "cvcuda.Tensor", contrast_factor: float) -> "cvcuda.Tensor":
+def _adjust_contrast_image_cvcuda(image: "cvcuda.Tensor", contrast_factor: float) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
     if contrast_factor < 0:
@@ -294,7 +294,7 @@ def _adjust_contrast_cvcuda(image: "cvcuda.Tensor", contrast_factor: float) -> "
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(adjust_contrast, _import_cvcuda().Tensor)(_adjust_contrast_cvcuda)
+    _register_kernel_internal(adjust_contrast, _import_cvcuda().Tensor)(_adjust_contrast_image_cvcuda)
 
 
 def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
@@ -488,7 +488,7 @@ def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
     return adjust_hue_image(video, hue_factor=hue_factor)
 
 
-def _adjust_hue_cvcuda(image: "cvcuda.Tensor", hue_factor: float) -> "cvcuda.Tensor":
+def _adjust_hue_image_cvcuda(image: "cvcuda.Tensor", hue_factor: float) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
     if not (-0.5 <= hue_factor <= 0.5):
@@ -513,7 +513,7 @@ def _adjust_hue_cvcuda(image: "cvcuda.Tensor", hue_factor: float) -> "cvcuda.Ten
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(adjust_hue, _import_cvcuda().Tensor)(_adjust_hue_cvcuda)
+    _register_kernel_internal(adjust_hue, _import_cvcuda().Tensor)(_adjust_hue_image_cvcuda)
 
 
 def adjust_gamma(inpt: torch.Tensor, gamma: float, gain: float = 1) -> torch.Tensor:
