@@ -25,7 +25,6 @@ from common_utils import (
     assert_equal,
     cache,
     cpu_and_cuda,
-    cvcuda_to_pil_compatible_tensor,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
@@ -3958,7 +3957,7 @@ class TestGaussianBlur:
             (F.gaussian_blur_image, tv_tensors.Image),
             (F.gaussian_blur_video, tv_tensors.Video),
             pytest.param(
-                F._misc._gaussian_blur_cvcuda,
+                F._misc._gaussian_blur_image_cvcuda,
                 "cvcuda.Tensor",
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
             ),

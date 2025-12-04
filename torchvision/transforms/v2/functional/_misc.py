@@ -197,7 +197,7 @@ def gaussian_blur_video(
     return gaussian_blur_image(video, kernel_size, sigma)
 
 
-def _gaussian_blur_cvcuda(
+def _gaussian_blur_image_cvcuda(
     image: "cvcuda.Tensor", kernel_size: list[int], sigma: Optional[list[float]] = None
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
@@ -213,7 +213,7 @@ def _gaussian_blur_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(gaussian_blur, _import_cvcuda().Tensor)(_gaussian_blur_cvcuda)
+    _register_kernel_internal(gaussian_blur, _import_cvcuda().Tensor)(_gaussian_blur_image_cvcuda)
 
 
 def gaussian_noise(inpt: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
