@@ -3525,13 +3525,13 @@ class TestCrop:
             (F.crop_keypoints, tv_tensors.KeyPoints),
             pytest.param(
                 F._geometry._crop_image_cvcuda,
-                "cvcuda.Tensor",
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._geometry._crop_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.crop, kernel=kernel, input_type=input_type)
 
@@ -4527,13 +4527,13 @@ class TestResizedCrop:
             (F.resized_crop_keypoints, tv_tensors.KeyPoints),
             pytest.param(
                 F._geometry._resized_crop_image_cvcuda,
-                "cvcuda.Tensor",
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._geometry._resized_crop_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.resized_crop, kernel=kernel, input_type=input_type)
 
@@ -5026,13 +5026,13 @@ class TestCenterCrop:
             (F.center_crop_keypoints, tv_tensors.KeyPoints),
             pytest.param(
                 F._geometry._center_crop_image_cvcuda,
-                "cvcuda.Tensor",
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._geometry._center_crop_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.center_crop, kernel=kernel, input_type=input_type)
 
@@ -6376,7 +6376,7 @@ class TestFiveTenCrop:
             pytest.param(
                 F.five_crop,
                 F._geometry._five_crop_image_cvcuda,
-                "cvcuda.Tensor",
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
             (F.ten_crop, F.ten_crop_image, torch.Tensor),
@@ -6386,13 +6386,13 @@ class TestFiveTenCrop:
             pytest.param(
                 F.ten_crop,
                 F._geometry._ten_crop_image_cvcuda,
-                "cvcuda.Tensor",
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
         ],
     )
     def test_functional_signature(self, functional, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._geometry._five_crop_image_cvcuda or kernel is F._geometry._ten_crop_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(functional, kernel=kernel, input_type=input_type)
 
