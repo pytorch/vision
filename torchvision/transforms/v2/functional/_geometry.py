@@ -1559,7 +1559,7 @@ if CVCUDA_AVAILABLE:
     }
 
 
-def _rotate_cvcuda(
+def _rotate_image_cvcuda(
     inpt: "cvcuda.Tensor",
     angle: float,
     interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
@@ -1642,7 +1642,7 @@ def _rotate_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(rotate, _import_cvcuda().Tensor)(_rotate_cvcuda)
+    _register_kernel_internal(rotate, _import_cvcuda().Tensor)(_rotate_image_cvcuda)
 
 
 def pad(
