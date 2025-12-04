@@ -1,9 +1,13 @@
 import functools
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, TYPE_CHECKING, Union
 
 import torch
 from torchvision import tv_tensors
+from torchvision.transforms.functional import InterpolationMode
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 _FillType = Union[int, float, Sequence[int], Sequence[float], None]
 _FillTypeJIT = Optional[list[float]]
@@ -177,3 +181,45 @@ def _is_cvcuda_tensor(inpt: Any) -> bool:
         return isinstance(inpt, cvcuda.Tensor)
     except ImportError:
         return False
+
+
+_interpolation_mode_to_cvcuda_interp: dict[InterpolationMode | str | int, "cvcuda.Interp"] = {}
+
+
+def _populate_interpolation_mode_to_cvcuda_interp():
+    cvcuda = _import_cvcuda()
+
+    global _interpolation_mode_to_cvcuda_interp
+
+    _interpolation_mode_to_cvcuda_interp = {
+        InterpolationMode.BILINEAR: cvcuda.Interp.LINEAR,
+        "bilinear": cvcuda.Interp.LINEAR,
+        "linear": cvcuda.Interp.LINEAR,
+        2: cvcuda.Interp.LINEAR,
+        InterpolationMode.BICUBIC: cvcuda.Interp.CUBIC,
+        "bicubic": cvcuda.Interp.CUBIC,
+        3: cvcuda.Interp.CUBIC,
+        InterpolationMode.NEAREST: cvcuda.Interp.NEAREST,
+        "nearest": cvcuda.Interp.NEAREST,
+        0: cvcuda.Interp.NEAREST,
+        InterpolationMode.BOX: cvcuda.Interp.BOX,
+        "box": cvcuda.Interp.BOX,
+        4: cvcuda.Interp.BOX,
+        InterpolationMode.HAMMING: cvcuda.Interp.HAMMING,
+        "hamming": cvcuda.Interp.HAMMING,
+        5: cvcuda.Interp.HAMMING,
+        InterpolationMode.LANCZOS: cvcuda.Interp.LANCZOS,
+        "lanczos": cvcuda.Interp.LANCZOS,
+        1: cvcuda.Interp.LANCZOS,
+    }
+
+
+def _get_cvcuda_interp(interpolation: InterpolationMode | str | int) -> "cvcuda.Interp":
+    if len(_interpolation_mode_to_cvcuda_interp) == 0:
+        _populate_interpolation_mode_to_cvcuda_interp()
+
+    interp = _interpolation_mode_to_cvcuda_interp.get(interpolation)
+    if interp is None:
+        raise ValueError(f"Interpolation mode {interpolation} is not supported with CV-CUDA")
+
+    return interp

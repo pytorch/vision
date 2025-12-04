@@ -28,6 +28,7 @@ from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_b
 
 from ._utils import (
     _FillTypeJIT,
+    _get_cvcuda_interp,
     _get_kernel,
     _import_cvcuda,
     _is_cvcuda_available,
@@ -1535,30 +1536,6 @@ def rotate_video(
     return rotate_image(video, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
 
-if CVCUDA_AVAILABLE:
-    _cvcuda_interp = {
-        InterpolationMode.BILINEAR: cvcuda.Interp.LINEAR,
-        "bilinear": cvcuda.Interp.LINEAR,
-        "linear": cvcuda.Interp.LINEAR,
-        2: cvcuda.Interp.LINEAR,
-        InterpolationMode.BICUBIC: cvcuda.Interp.CUBIC,
-        "bicubic": cvcuda.Interp.CUBIC,
-        3: cvcuda.Interp.CUBIC,
-        InterpolationMode.NEAREST: cvcuda.Interp.NEAREST,
-        "nearest": cvcuda.Interp.NEAREST,
-        0: cvcuda.Interp.NEAREST,
-        InterpolationMode.BOX: cvcuda.Interp.BOX,
-        "box": cvcuda.Interp.BOX,
-        4: cvcuda.Interp.BOX,
-        InterpolationMode.HAMMING: cvcuda.Interp.HAMMING,
-        "hamming": cvcuda.Interp.HAMMING,
-        5: cvcuda.Interp.HAMMING,
-        InterpolationMode.LANCZOS: cvcuda.Interp.LANCZOS,
-        "lanczos": cvcuda.Interp.LANCZOS,
-        1: cvcuda.Interp.LANCZOS,
-    }
-
-
 def _rotate_image_cvcuda(
     inpt: "cvcuda.Tensor",
     angle: float,
@@ -1577,9 +1554,7 @@ def _rotate_image_cvcuda(
     if angle == 180:
         return cvcuda.flip(inpt, flipCode=-1)
 
-    interp = _cvcuda_interp.get(interpolation)
-    if interp is None:
-        raise ValueError(f"Interpolation mode {interpolation} is not supported with CV-CUDA")
+    interp = _get_cvcuda_interp(interpolation)
 
     input_height, input_width = inpt.shape[1], inpt.shape[2]
     num_channels = inpt.shape[3]
