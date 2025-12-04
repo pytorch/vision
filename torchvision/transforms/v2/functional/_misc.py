@@ -238,7 +238,7 @@ def _gaussian_noise_pil(
     raise ValueError("Gaussian Noise is not implemented for PIL images.")
 
 
-def _gaussian_noise_cvcuda(
+def _gaussian_noise_image_cvcuda(
     image: "cvcuda.Tensor",
     mean: float = 0.0,
     sigma: float = 0.1,
@@ -264,7 +264,7 @@ def _gaussian_noise_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(gaussian_noise, _import_cvcuda().Tensor)(_gaussian_noise_cvcuda)
+    _register_kernel_internal(gaussian_noise, _import_cvcuda().Tensor)(_gaussian_noise_image_cvcuda)
 
 
 def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:

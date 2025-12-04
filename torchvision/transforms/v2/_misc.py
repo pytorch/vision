@@ -9,6 +9,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
+from torchvision.transforms.v2.functional._utils import _is_cvcuda_available, _is_cvcuda_tensor
 
 from ._utils import (
     _parse_labels_getter,
@@ -17,9 +18,10 @@ from ._utils import (
     get_bounding_boxes,
     get_keypoints,
     has_any,
-    is_cvcuda_tensor,
     is_pure_tensor,
 )
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
 
 
 # TODO: do we want/need to expose this?
@@ -241,7 +243,8 @@ class GaussianNoise(Transform):
             Default is True.
     """
 
-    _transformed_types = Transform._transformed_types + (is_cvcuda_tensor,)
+    if CVCUDA_AVAILABLE:
+        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, mean: float = 0.0, sigma: float = 0.1, clip=True) -> None:
         super().__init__()
