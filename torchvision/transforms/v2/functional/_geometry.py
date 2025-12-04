@@ -29,6 +29,7 @@ from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_b
 
 from ._utils import (
     _FillTypeJIT,
+    _get_cvcuda_interp,
     _get_kernel,
     _import_cvcuda,
     _is_cvcuda_available,
@@ -2530,36 +2531,14 @@ def elastic_video(
     return elastic_image(video, displacement, interpolation=interpolation, fill=fill)
 
 
-if CVCUDA_AVAILABLE:
-    _cvcuda_interp = {
-        InterpolationMode.BILINEAR: cvcuda.Interp.LINEAR,
-        "bilinear": cvcuda.Interp.LINEAR,
-        "linear": cvcuda.Interp.LINEAR,
-        2: cvcuda.Interp.LINEAR,
-        InterpolationMode.BICUBIC: cvcuda.Interp.CUBIC,
-        "bicubic": cvcuda.Interp.CUBIC,
-        3: cvcuda.Interp.CUBIC,
-        InterpolationMode.NEAREST: cvcuda.Interp.NEAREST,
-        "nearest": cvcuda.Interp.NEAREST,
-        0: cvcuda.Interp.NEAREST,
-        InterpolationMode.BOX: cvcuda.Interp.BOX,
-        "box": cvcuda.Interp.BOX,
-        4: cvcuda.Interp.BOX,
-        InterpolationMode.HAMMING: cvcuda.Interp.HAMMING,
-        "hamming": cvcuda.Interp.HAMMING,
-        5: cvcuda.Interp.HAMMING,
-        InterpolationMode.LANCZOS: cvcuda.Interp.LANCZOS,
-        "lanczos": cvcuda.Interp.LANCZOS,
-        1: cvcuda.Interp.LANCZOS,
-    }
-
-
-def _elastic_cvcuda(
+def _elastic_image_cvcuda(
     image: "cvcuda.Tensor",
     displacement: torch.Tensor,
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
 ) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
     if not isinstance(displacement, torch.Tensor):
         raise TypeError("Argument displacement should be a Tensor")
 
@@ -2578,9 +2557,7 @@ def _elastic_cvcuda(
     elif num_channels == 1 and input_dtype != cvcuda.Type.F32:
         raise ValueError(f"cvcuda.remap requires float32 dtype for 1-channel images, but got {input_dtype}")
 
-    interp = _cvcuda_interp.get(interpolation, cvcuda.Interp.LINEAR)
-    if interp is None:
-        raise ValueError(f"Invalid interpolation mode: {interpolation}")
+    interp = _get_cvcuda_interp(interpolation)
 
     # Build normalized grid: identity + displacement
     # _create_identity_grid returns (1, H, W, 2) with values in [-1, 1]
@@ -2627,7 +2604,7 @@ def _elastic_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _elastic_cvcuda = _register_kernel_internal(elastic, cvcuda.Tensor)(_elastic_cvcuda)
+    _register_kernel_internal(elastic, _import_cvcuda().Tensor)(_elastic_image_cvcuda)
 
 
 def center_crop(inpt: torch.Tensor, output_size: list[int]) -> torch.Tensor:

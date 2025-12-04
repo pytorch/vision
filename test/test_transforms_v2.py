@@ -25,7 +25,6 @@ from common_utils import (
     assert_equal,
     cache,
     cpu_and_cuda,
-    cvcuda_to_pil_compatible_tensor,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
@@ -3374,14 +3373,14 @@ class TestElastic:
             (F.elastic_video, tv_tensors.Video),
             (F.elastic_keypoints, tv_tensors.KeyPoints),
             pytest.param(
-                F._geometry._elastic_cvcuda,
-                "cvcuda.Tensor",
+                F._geometry._elastic_image_cvcuda,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._geometry._elastic_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.elastic, kernel=kernel, input_type=input_type)
 
