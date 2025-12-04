@@ -35,13 +35,9 @@ from ._utils import (
     _register_kernel_internal,
 )
 
-
 CVCUDA_AVAILABLE = _is_cvcuda_available()
-
 if TYPE_CHECKING:
     import cvcuda  # type: ignore[import-not-found]
-if CVCUDA_AVAILABLE:
-    cvcuda = _import_cvcuda()  # noqa: F811
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -75,6 +71,14 @@ def horizontal_flip_image(image: torch.Tensor) -> torch.Tensor:
 @_register_kernel_internal(horizontal_flip, PIL.Image.Image)
 def _horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.hflip(image)
+
+
+def _horizontal_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
+    return _import_cvcuda().flip(image, flipCode=1)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(horizontal_flip, _import_cvcuda().Tensor)(_horizontal_flip_image_cvcuda)
 
 
 @_register_kernel_internal(horizontal_flip, tv_tensors.Mask)
@@ -163,6 +167,14 @@ def vertical_flip_image(image: torch.Tensor) -> torch.Tensor:
 @_register_kernel_internal(vertical_flip, PIL.Image.Image)
 def _vertical_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.vflip(image)
+
+
+def _vertical_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
+    return _import_cvcuda().flip(image, flipCode=0)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(vertical_flip, _import_cvcuda().Tensor)(_vertical_flip_image_cvcuda)
 
 
 @_register_kernel_internal(vertical_flip, tv_tensors.Mask)

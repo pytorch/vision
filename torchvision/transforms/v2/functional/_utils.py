@@ -171,16 +171,7 @@ def _is_cvcuda_available():
         return False
 
 
-def is_cvcuda_tensor(inpt: Any) -> bool:
-    """
-    Check if the input is a CVCUDA tensor.
-
-    Args:
-        inpt: The input to check.
-
-    Returns:
-        True if the input is a CV-CUDA tensor, False otherwise.
-    """
+def _is_cvcuda_tensor(inpt: Any) -> bool:
     try:
         cvcuda = _import_cvcuda()
         return isinstance(inpt, cvcuda.Tensor)

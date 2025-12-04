@@ -21,14 +21,13 @@ from torch.testing._comparison import BooleanPair, NonePair, not_close_error_met
 from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.v2.functional import cvcuda_to_tensor, to_cvcuda_tensor, to_image, to_pil_image
-from torchvision.transforms.v2.functional._utils import _import_cvcuda, _is_cvcuda_available
+from torchvision.transforms.v2.functional._utils import _is_cvcuda_available, _is_cvcuda_tensor
 from torchvision.utils import _Image_fromarray
 
 
 IN_OSS_CI = any(os.getenv(var) == "true" for var in ["CIRCLECI", "GITHUB_ACTIONS"])
 IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
 IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
-CVCUDA_AVAILABLE = _is_cvcuda_available()
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
 MPS_NOT_AVAILABLE_MSG = "MPS device not available"
 OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't need cuda."
@@ -277,17 +276,6 @@ def combinations_grid(**kwargs):
     return [dict(zip(kwargs.keys(), values)) for values in itertools.product(*kwargs.values())]
 
 
-def cvcuda_to_pil_compatible_tensor(tensor: "cvcuda.Tensor") -> torch.Tensor:
-    tensor = cvcuda_to_tensor(tensor)
-    if tensor.ndim != 4:
-        raise ValueError(f"CV-CUDA Tensor should be 4 dimensional. Got {tensor.ndim} dimensions.")
-    if tensor.shape[0] != 1:
-        raise ValueError(
-            f"CV-CUDA Tensor should have batch dimension 1 for comparison with PIL.Image.Image. Got {tensor.shape[0]}."
-        )
-    return tensor.squeeze(0).cpu()
-
-
 class ImagePair(TensorLikePair):
     def __init__(
         self,
@@ -297,13 +285,24 @@ class ImagePair(TensorLikePair):
         mae=False,
         **other_parameters,
     ):
-        if all(isinstance(input, PIL.Image.Image) for input in [actual, expected]):
-            actual, expected = (to_image(input) for input in [actual, expected])
+        # Convert PIL images to tv_tensors.Image (regardless of what the other is)
+        if isinstance(actual, PIL.Image.Image):
+            actual = to_image(actual)
+        if isinstance(expected, PIL.Image.Image):
+            expected = to_image(expected)
 
-        # handle check for CV-CUDA Tensors
-        if CVCUDA_AVAILABLE and isinstance(actual, _import_cvcuda().Tensor):
-            # Use the PIL compatible tensor, so we can always compare with PIL.Image.Image
-            actual = cvcuda_to_pil_compatible_tensor(actual)
+        if _is_cvcuda_available():
+            if _is_cvcuda_tensor(actual):
+                actual = cvcuda_to_tensor(actual)
+                # Remove batch dimension if it's 1 for easier comparison against 3D PIL images
+                if actual.shape[0] == 1:
+                    actual = actual[0]
+                actual = actual.cpu()
+            if _is_cvcuda_tensor(expected):
+                expected = cvcuda_to_tensor(expected)
+                if expected.shape[0] == 1:
+                    expected = expected[0]
+                expected = expected.cpu()
 
         super().__init__(actual, expected, **other_parameters)
         self.mae = mae
@@ -559,5 +558,9 @@ def ignore_jit_no_profile_information_warning():
     # with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
     # them.
     with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message=re.escape("operator() profile_node %"), category=UserWarning)
+        warnings.filterwarnings(
+            "ignore",
+            message=re.escape("operator() profile_node %"),
+            category=UserWarning,
+        )
         yield

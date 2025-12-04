@@ -134,7 +134,7 @@ def _get_size_image_pil(image: PIL.Image.Image) -> list[int]:
     return [height, width]
 
 
-def _get_size_cvcuda(image: "cvcuda.Tensor") -> list[int]:
+def get_size_image_cvcuda(image: "cvcuda.Tensor") -> list[int]:
     """Get size of `cvcuda.Tensor` with NHWC layout."""
     hw = list(image.shape[-3:-1])
     ndims = len(hw)
@@ -145,7 +145,7 @@ def _get_size_cvcuda(image: "cvcuda.Tensor") -> list[int]:
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(get_size, cvcuda.Tensor)(_get_size_cvcuda)
+    _register_kernel_internal(get_size, _import_cvcuda().Tensor)(get_size_image_cvcuda)
 
 
 @_register_kernel_internal(get_size, tv_tensors.Video, tv_tensor_wrapper=False)
