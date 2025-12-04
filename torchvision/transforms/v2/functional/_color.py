@@ -690,7 +690,7 @@ def invert_video(video: torch.Tensor) -> torch.Tensor:
     return invert_image(video)
 
 
-_invert_cvcuda_tensors = {}
+_invert_cvcuda_tensors: dict[str, "cvcuda.Tensor"] = {}
 
 
 def _invert_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
