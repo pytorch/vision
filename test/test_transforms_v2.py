@@ -6431,13 +6431,13 @@ class TestRgbToGrayscale:
             (F.rgb_to_grayscale_image, tv_tensors.Image),
             pytest.param(
                 F._color._rgb_to_grayscale_image_cvcuda,
-                "cvcuda.Tensor",
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._color._rgb_to_grayscale_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.rgb_to_grayscale, kernel=kernel, input_type=input_type)
 
@@ -6540,13 +6540,13 @@ class TestGrayscaleToRgb:
             (F.rgb_to_grayscale_image, tv_tensors.Image),
             pytest.param(
                 F._color._rgb_to_grayscale_image_cvcuda,
-                "cvcuda.Tensor",
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._color._rgb_to_grayscale_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.grayscale_to_rgb, kernel=kernel, input_type=input_type)
 
