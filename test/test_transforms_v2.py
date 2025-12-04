@@ -5591,13 +5591,13 @@ class TestNormalize:
             (F.normalize_video, tv_tensors.Video),
             pytest.param(
                 F._misc._normalize_image_cvcuda,
-                "cvcuda.Tensor",
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._misc._normalize_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.normalize, kernel=kernel, input_type=input_type)
 
