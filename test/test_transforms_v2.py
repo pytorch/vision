@@ -25,7 +25,6 @@ from common_utils import (
     assert_equal,
     cache,
     cpu_and_cuda,
-    cvcuda_to_pil_compatible_tensor,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
@@ -1532,14 +1531,14 @@ class TestAffine:
             (F.affine_video, tv_tensors.Video),
             (F.affine_keypoints, tv_tensors.KeyPoints),
             pytest.param(
-                F._geometry._affine_cvcuda,
-                "cvcuda.Tensor",
+                F._geometry._affine_image_cvcuda,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._geometry._affine_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.affine, kernel=kernel, input_type=input_type)
 
@@ -1601,8 +1600,8 @@ class TestAffine:
         )
 
         if make_input is make_image_cvcuda:
-            actual = cvcuda_to_pil_compatible_tensor(actual)
-            image = cvcuda_to_pil_compatible_tensor(image)
+            actual = F.cvcuda_to_tensor(actual)[0].cpu()
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(
             F.affine(
@@ -1652,8 +1651,8 @@ class TestAffine:
         actual = transform(image)
 
         if make_input is make_image_cvcuda:
-            actual = cvcuda_to_pil_compatible_tensor(actual)
-            image = cvcuda_to_pil_compatible_tensor(image)
+            actual = F.cvcuda_to_tensor(actual)[0].cpu()
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         torch.manual_seed(seed)
         expected = F.to_image(transform(F.to_pil_image(image)))
