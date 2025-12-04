@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 import PIL.Image
 import torch
@@ -26,7 +26,18 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_box_format
 
-from ._utils import _FillTypeJIT, _get_kernel, _register_five_ten_crop_kernel_internal, _register_kernel_internal
+from ._utils import (
+    _FillTypeJIT,
+    _get_kernel,
+    _import_cvcuda,
+    _is_cvcuda_available,
+    _register_five_ten_crop_kernel_internal,
+    _register_kernel_internal,
+)
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -60,6 +71,14 @@ def horizontal_flip_image(image: torch.Tensor) -> torch.Tensor:
 @_register_kernel_internal(horizontal_flip, PIL.Image.Image)
 def _horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.hflip(image)
+
+
+def _horizontal_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
+    return _import_cvcuda().flip(image, flipCode=1)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(horizontal_flip, _import_cvcuda().Tensor)(_horizontal_flip_image_cvcuda)
 
 
 @_register_kernel_internal(horizontal_flip, tv_tensors.Mask)
@@ -148,6 +167,14 @@ def vertical_flip_image(image: torch.Tensor) -> torch.Tensor:
 @_register_kernel_internal(vertical_flip, PIL.Image.Image)
 def _vertical_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.vflip(image)
+
+
+def _vertical_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
+    return _import_cvcuda().flip(image, flipCode=0)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(vertical_flip, _import_cvcuda().Tensor)(_vertical_flip_image_cvcuda)
 
 
 @_register_kernel_internal(vertical_flip, tv_tensors.Mask)
