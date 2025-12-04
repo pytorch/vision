@@ -25,7 +25,6 @@ from common_utils import (
     assert_equal,
     cache,
     cpu_and_cuda,
-    cvcuda_to_pil_compatible_tensor,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
@@ -5591,7 +5590,7 @@ class TestNormalize:
             (F.normalize_image, tv_tensors.Image),
             (F.normalize_video, tv_tensors.Video),
             pytest.param(
-                F._misc._normalize_cvcuda,
+                F._misc._normalize_image_cvcuda,
                 "cvcuda.Tensor",
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
             ),
@@ -5669,7 +5668,7 @@ class TestNormalize:
         actual = fn(image, mean=mean, std=std)
 
         if make_input == make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = self._reference_normalize_image(image, mean=mean, std=std)
 

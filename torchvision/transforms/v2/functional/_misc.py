@@ -79,7 +79,7 @@ def normalize_video(video: torch.Tensor, mean: list[float], std: list[float], in
     return normalize_image(video, mean, std, inplace=inplace)
 
 
-def _normalize_cvcuda(
+def _normalize_image_cvcuda(
     image: "cvcuda.Tensor",
     mean: list[float],
     std: list[float],
@@ -114,7 +114,7 @@ def _normalize_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(normalize, _import_cvcuda().Tensor)(_normalize_cvcuda)
+    _register_kernel_internal(normalize, _import_cvcuda().Tensor)(_normalize_image_cvcuda)
 
 
 def gaussian_blur(inpt: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None) -> torch.Tensor:
