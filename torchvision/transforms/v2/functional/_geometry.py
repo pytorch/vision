@@ -30,6 +30,7 @@ from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_b
 
 from ._utils import (
     _FillTypeJIT,
+    _get_cvcuda_interp,
     _get_kernel,
     _import_cvcuda,
     _is_cvcuda_available,
@@ -2287,31 +2288,7 @@ def perspective_video(
     )
 
 
-if CVCUDA_AVAILABLE:
-    _cvcuda_interp = {
-        InterpolationMode.BILINEAR: cvcuda.Interp.LINEAR,
-        "bilinear": cvcuda.Interp.LINEAR,
-        "linear": cvcuda.Interp.LINEAR,
-        2: cvcuda.Interp.LINEAR,
-        InterpolationMode.BICUBIC: cvcuda.Interp.CUBIC,
-        "bicubic": cvcuda.Interp.CUBIC,
-        3: cvcuda.Interp.CUBIC,
-        InterpolationMode.NEAREST: cvcuda.Interp.NEAREST,
-        "nearest": cvcuda.Interp.NEAREST,
-        0: cvcuda.Interp.NEAREST,
-        InterpolationMode.BOX: cvcuda.Interp.BOX,
-        "box": cvcuda.Interp.BOX,
-        4: cvcuda.Interp.BOX,
-        InterpolationMode.HAMMING: cvcuda.Interp.HAMMING,
-        "hamming": cvcuda.Interp.HAMMING,
-        5: cvcuda.Interp.HAMMING,
-        InterpolationMode.LANCZOS: cvcuda.Interp.LANCZOS,
-        "lanczos": cvcuda.Interp.LANCZOS,
-        1: cvcuda.Interp.LANCZOS,
-    }
-
-
-def _perspective_cvcuda(
+def _perspective_image_cvcuda(
     image: "cvcuda.Tensor",
     startpoints: Optional[list[list[int]]],
     endpoints: Optional[list[list[int]]],
@@ -2324,9 +2301,7 @@ def _perspective_cvcuda(
     c = _perspective_coefficients(startpoints, endpoints, coefficients)
     interpolation = _check_interpolation(interpolation)
 
-    interp = _cvcuda_interp.get(interpolation)
-    if interp is None:
-        raise ValueError(f"Invalid interpolation mode: {interpolation}")
+    interp = _get_cvcuda_interp(interpolation)
 
     xform = np.array([[c[0], c[1], c[2]], [c[3], c[4], c[5]], [c[6], c[7], 1.0]], dtype=np.float32)
 
@@ -2348,7 +2323,7 @@ def _perspective_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(perspective, _import_cvcuda().Tensor)(_perspective_cvcuda)
+    _register_kernel_internal(perspective, _import_cvcuda().Tensor)(_perspective_image_cvcuda)
 
 
 def elastic(
