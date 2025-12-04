@@ -659,7 +659,7 @@ def equalize_video(video: torch.Tensor) -> torch.Tensor:
     return equalize_image(video)
 
 
-def _equalize_cvcuda(
+def _equalize_image_cvcuda(
     image: "cvcuda.Tensor",
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
@@ -667,7 +667,7 @@ def _equalize_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(equalize, _import_cvcuda().Tensor)(_equalize_cvcuda)
+    _register_kernel_internal(equalize, _import_cvcuda().Tensor)(_equalize_image_cvcuda)
 
 
 def invert(inpt: torch.Tensor) -> torch.Tensor:

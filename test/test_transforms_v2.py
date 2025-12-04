@@ -25,7 +25,6 @@ from common_utils import (
     assert_equal,
     cache,
     cpu_and_cuda,
-    cvcuda_to_pil_compatible_tensor,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
@@ -5473,14 +5472,14 @@ class TestEqualize:
             (F.equalize_image, tv_tensors.Image),
             (F.equalize_video, tv_tensors.Video),
             pytest.param(
-                F._color._equalize_cvcuda,
-                "cvcuda.Tensor",
+                F._color._equalize_image_cvcuda,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._color._equalize_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.equalize, kernel=kernel, input_type=input_type)
 
@@ -5526,7 +5525,7 @@ class TestEqualize:
         actual = fn(image)
 
         if tensor_type == "cvcuda.Tensor":
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(F.equalize(F.to_pil_image(image)))
 
