@@ -401,6 +401,16 @@ def __resize_image_pil_dispatch(
     return _resize_image_pil(image, size=size, interpolation=interpolation, max_size=max_size)
 
 
+def _resize_image_cvcuda(
+    image: "cvcuda.Tensor",
+    size: Union[Sequence[int], int],
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    max_size: Optional[int] = None,
+    antialias: Optional[bool] = True,
+) -> "cvcuda.Tensor":
+    return cvcuda.resize(image, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
+
+
 def resize_mask(mask: torch.Tensor, size: Optional[list[int]], max_size: Optional[int] = None) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
