@@ -185,21 +185,17 @@ def _is_cvcuda_tensor(inpt: Any) -> bool:
 _pad_mode_to_cvcuda_border: dict[str, "cvcuda.Border"] = {}
 
 
-def _populate_cvcuda_pad_to_border_tables():
-    cvcuda = _import_cvcuda()
-
-    global _pad_mode_to_cvcuda_border
-
-    _pad_mode_to_cvcuda_border = {
-        "constant": cvcuda.Border.CONSTANT,
-        "reflect": cvcuda.Border.REFLECT101,
-        "replicate": cvcuda.Border.REPLICATE,
-        "edge": cvcuda.Border.REPLICATE,
-        "symmetric": cvcuda.Border.REFLECT,
-    }
-
-
 def _get_cvcuda_border_from_pad_mode(pad_mode: str) -> "cvcuda.Border":
     if len(_pad_mode_to_cvcuda_border) == 0:
-        _populate_cvcuda_pad_to_border_tables()
-    return _pad_mode_to_cvcuda_border[pad_mode]
+        cvcuda = _import_cvcuda()
+        _pad_mode_to_cvcuda_border["constant"] = cvcuda.Border.CONSTANT
+        _pad_mode_to_cvcuda_border["reflect"] = cvcuda.Border.REFLECT101
+        _pad_mode_to_cvcuda_border["replicate"] = cvcuda.Border.REPLICATE
+        _pad_mode_to_cvcuda_border["edge"] = cvcuda.Border.REPLICATE
+        _pad_mode_to_cvcuda_border["symmetric"] = cvcuda.Border.REFLECT
+
+    border_mode = _pad_mode_to_cvcuda_border.get(pad_mode)
+    if border_mode is None:
+        raise ValueError(f"Pad mode {pad_mode} is not supported with CV-CUDA")
+
+    return border_mode
