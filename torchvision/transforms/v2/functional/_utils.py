@@ -191,6 +191,8 @@ def _populate_interpolation_mode_to_cvcuda_interp():
 
     global _interpolation_mode_to_cvcuda_interp
 
+    # CV-CUDA's NEAREST matches PyTorch's 'nearest-exact' (PIL-style)
+    # not PyTorch's 'nearest' (OpenCV-style).
     _interpolation_mode_to_cvcuda_interp = {
         InterpolationMode.BILINEAR: cvcuda.Interp.LINEAR,
         "bilinear": cvcuda.Interp.LINEAR,
@@ -202,6 +204,8 @@ def _populate_interpolation_mode_to_cvcuda_interp():
         InterpolationMode.NEAREST: cvcuda.Interp.NEAREST,
         "nearest": cvcuda.Interp.NEAREST,
         0: cvcuda.Interp.NEAREST,
+        InterpolationMode.NEAREST_EXACT: cvcuda.Interp.NEAREST,
+        "nearest-exact": cvcuda.Interp.NEAREST,
         InterpolationMode.BOX: cvcuda.Interp.BOX,
         "box": cvcuda.Interp.BOX,
         4: cvcuda.Interp.BOX,
