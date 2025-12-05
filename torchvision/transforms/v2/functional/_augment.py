@@ -1,7 +1,6 @@
+import ctypes
 import io
 from typing import TYPE_CHECKING
-
-import numpy as np
 
 import PIL.Image
 
@@ -81,21 +80,71 @@ def _erase_image_cvcuda(
     if inplace:
         raise ValueError("inplace is not supported for cvcuda.Tensor")
 
-    anchor = torch.tensor(np.array([j, i]), dtype=torch.int32, device="cuda")
-    cv_anchor = cvcuda.as_tensor(anchor, "NC").reshape((2,), "N")
-    erasing = torch.tensor(np.array([w, h, 7]), dtype=torch.int32, device="cuda")
-    cv_erasing = cvcuda.as_tensor(erasing, "NC").reshape((3,), "N")
-    imgIdx = torch.tensor(np.array([0]), dtype=torch.int32, device="cuda")
-    cv_imgIdx = cvcuda.as_tensor(imgIdx, "N").reshape((1,), "N")
+    # Load CUDA runtime for memory copy
+    try:
+        cudart = ctypes.CDLL("libcudart.so")
+    except OSError:
+        cudart = ctypes.CDLL("libcudart.so.12")
+    cudart.cudaMemcpy.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int]
+    cudart.cudaMemcpy.restype = ctypes.c_int
+    CUDA_MEMCPY_D2D = 3  # cudaMemcpyDeviceToDevice
 
-    num_channels = image.shape[3]
-    # Flatten v and expand to match the number of channels if it's a single value
-    # CV-CUDA erase expects values as float32
-    v_dup = v.clone()
-    v_flat = v_dup.flatten().to(dtype=torch.float32, device="cuda")
+    num_erasing_areas = 1
+    num_channels = image.shape[3]  # NHWC layout
+
+    # Create CV-CUDA tensors with proper compound types
+    cv_anchor = cvcuda.Tensor((num_erasing_areas,), cvcuda.Type._2S32, "N")
+    cv_erasing = cvcuda.Tensor((num_erasing_areas,), cvcuda.Type._3S32, "N")
+    cv_imgIdx = cvcuda.Tensor((num_erasing_areas,), cvcuda.Type.S32, "N")
+    # Values tensor - 4 floats per erasing area (CV-CUDA standard, supports up to RGBA)
+    cv_values = cvcuda.Tensor((num_erasing_areas * 4,), cvcuda.Type.F32, "N")
+
+    # Create source torch tensors with the data
+    anchor_src = torch.tensor([j, i], dtype=torch.int32, device="cuda")
+    # The third value is a bitmask for which channels to fill: 7 = 0b111 = RGB all channels
+    channel_mask = (1 << num_channels) - 1  # e.g., 3 channels -> 0b111 = 7
+    erasing_src = torch.tensor([w, h, channel_mask], dtype=torch.int32, device="cuda")
+    imgIdx_src = torch.tensor([0], dtype=torch.int32, device="cuda")
+
+    # Get fill values for erasing - need 4 floats per erasing area (CV-CUDA format)
+    v_flat = v.flatten().to(dtype=torch.float32, device="cuda")
+    # Expand to 4 values (CV-CUDA always expects 4)
     if v_flat.numel() == 1:
-        v_flat = v_flat.repeat(num_channels)
-    cv_values = cvcuda.as_tensor(v_flat, "NC").reshape((num_channels,), "N")
+        # Single value - replicate to all 4 slots
+        values_src = v_flat.expand(4).contiguous()
+    elif v_flat.numel() >= 4:
+        # Has enough values, take first 4
+        values_src = v_flat[:4].contiguous()
+    else:
+        # Has fewer than 4 values, pad with zeros
+        padding = torch.zeros(4 - v_flat.numel(), dtype=torch.float32, device="cuda")
+        values_src = torch.cat([v_flat, padding])
+
+    # Copy data from torch tensors to CV-CUDA tensors using cudaMemcpy
+    cudart.cudaMemcpy(
+        cv_anchor.cuda().__cuda_array_interface__["data"][0],
+        anchor_src.data_ptr(),
+        8,
+        CUDA_MEMCPY_D2D,  # 2 x int32 = 8 bytes
+    )
+    cudart.cudaMemcpy(
+        cv_erasing.cuda().__cuda_array_interface__["data"][0],
+        erasing_src.data_ptr(),
+        12,
+        CUDA_MEMCPY_D2D,  # 3 x int32 = 12 bytes
+    )
+    cudart.cudaMemcpy(
+        cv_imgIdx.cuda().__cuda_array_interface__["data"][0],
+        imgIdx_src.data_ptr(),
+        4,
+        CUDA_MEMCPY_D2D,  # 1 x int32 = 4 bytes
+    )
+    cudart.cudaMemcpy(
+        cv_values.cuda().__cuda_array_interface__["data"][0],
+        values_src.data_ptr(),
+        16,
+        CUDA_MEMCPY_D2D,  # 4 x float32 = 16 bytes
+    )
 
     result = cvcuda.erase(
         src=image,

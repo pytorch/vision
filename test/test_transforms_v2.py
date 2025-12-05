@@ -3818,14 +3818,14 @@ class TestErase:
             (F.erase_image, tv_tensors.Image),
             (F.erase_video, tv_tensors.Video),
             pytest.param(
-                F._augment._erase_cvcuda,
-                "cvcuda.Tensor",
+                F._augment._erase_image_cvcuda,
+                None,
                 marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
             ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if input_type == "cvcuda.Tensor":
+        if kernel is F._augment._erase_image_cvcuda:
             input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.erase, kernel=kernel, input_type=input_type)
 
@@ -3928,11 +3928,15 @@ class TestErase:
             actual = transform(image)
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = self._reference_erase_image(image, **params)
 
-        assert_equal(actual, expected)
+        if make_input is make_image_cvcuda and value == "random":
+            # CV-CUDA doesnt not support random per-pixel fill types
+            assert_close(actual, expected, rtol=0, atol=255)
+        else:
+            assert_equal(actual, expected)
 
     def test_transform_errors(self):
         with pytest.raises(TypeError, match="Argument value should be either a number or str or a sequence"):

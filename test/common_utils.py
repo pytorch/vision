@@ -20,8 +20,8 @@ import torch.testing
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
 from torchvision import io, tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
-from torchvision.transforms.v2.functional import to_cvcuda_tensor, to_image, to_pil_image
-from torchvision.transforms.v2.functional._utils import _import_cvcuda, _is_cvcuda_available
+from torchvision.transforms.v2.functional import cvcuda_to_tensor, to_cvcuda_tensor, to_image, to_pil_image
+from torchvision.transforms.v2.functional._utils import _is_cvcuda_available, _is_cvcuda_tensor
 from torchvision.utils import _Image_fromarray
 
 
