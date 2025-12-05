@@ -3933,8 +3933,10 @@ class TestErase:
         expected = self._reference_erase_image(image, **params)
 
         if make_input is make_image_cvcuda and value == "random":
-            # CV-CUDA doesnt not support random per-pixel fill types
-            assert_close(actual, expected, rtol=0, atol=255)
+            # CV-CUDA doesnt have same random distribution as torchvision
+            # it uses its own seeding, but we have determinism
+            # set seed with torch.randint in the kernel
+            assert_close(actual, expected, rtol=0, atol=256)
         else:
             assert_equal(actual, expected)
 

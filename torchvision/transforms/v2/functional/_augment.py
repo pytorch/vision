@@ -1,5 +1,5 @@
-import ctypes
 import io
+from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
 import PIL.Image
@@ -80,83 +80,77 @@ def _erase_image_cvcuda(
     if inplace:
         raise ValueError("inplace is not supported for cvcuda.Tensor")
 
-    # Load CUDA runtime for memory copy
-    try:
-        cudart = ctypes.CDLL("libcudart.so")
-    except OSError:
-        cudart = ctypes.CDLL("libcudart.so.12")
-    cudart.cudaMemcpy.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int]
-    cudart.cudaMemcpy.restype = ctypes.c_int
-    CUDA_MEMCPY_D2D = 3  # cudaMemcpyDeviceToDevice
+    # the v tensor is random if it has spatial dimensions > 1x1
+    is_random_fill = v.shape[-2:] != (1, 1)
 
-    num_erasing_areas = 1
-    num_channels = image.shape[3]  # NHWC layout
+    # allocate any space for standard torch tensors
+    mask = (1 << image.shape[3]) - 1
+    src_anchor = torch.tensor([[j, i]], dtype=torch.int32, device="cuda")
+    src_erasing = torch.tensor([[w, h, mask]], dtype=torch.int32, device="cuda")
+    src_idx = torch.tensor([0], dtype=torch.int32, device="cuda")
 
-    # Create CV-CUDA tensors with proper compound types
-    cv_anchor = cvcuda.Tensor((num_erasing_areas,), cvcuda.Type._2S32, "N")
-    cv_erasing = cvcuda.Tensor((num_erasing_areas,), cvcuda.Type._3S32, "N")
-    cv_imgIdx = cvcuda.Tensor((num_erasing_areas,), cvcuda.Type.S32, "N")
-    # Values tensor - 4 floats per erasing area (CV-CUDA standard, supports up to RGBA)
-    cv_values = cvcuda.Tensor((num_erasing_areas * 4,), cvcuda.Type.F32, "N")
-
-    # Create source torch tensors with the data
-    anchor_src = torch.tensor([j, i], dtype=torch.int32, device="cuda")
-    # The third value is a bitmask for which channels to fill: 7 = 0b111 = RGB all channels
-    channel_mask = (1 << num_channels) - 1  # e.g., 3 channels -> 0b111 = 7
-    erasing_src = torch.tensor([w, h, channel_mask], dtype=torch.int32, device="cuda")
-    imgIdx_src = torch.tensor([0], dtype=torch.int32, device="cuda")
-
-    # Get fill values for erasing - need 4 floats per erasing area (CV-CUDA format)
-    v_flat = v.flatten().to(dtype=torch.float32, device="cuda")
-    # Expand to 4 values (CV-CUDA always expects 4)
-    if v_flat.numel() == 1:
-        # Single value - replicate to all 4 slots
-        values_src = v_flat.expand(4).contiguous()
-    elif v_flat.numel() >= 4:
-        # Has enough values, take first 4
-        values_src = v_flat[:4].contiguous()
+    # allocate the fill values based on if random or not
+    # use zeros for random fill since we have to pass the tensor to the kernel anyway
+    if is_random_fill:
+        src_vals = torch.zeros(4, device="cuda", dtype=torch.float32)
+    # CV-CUDA requires that the fill values is a flat size 4 tensor
+    # so we need to flatten the fill values and pad with zeros if needed
     else:
-        # Has fewer than 4 values, pad with zeros
-        padding = torch.zeros(4 - v_flat.numel(), dtype=torch.float32, device="cuda")
-        values_src = torch.cat([v_flat, padding])
+        v_flat = v.flatten().to(dtype=torch.float32, device="cuda")
+        if v_flat.numel() == 1:
+            src_vals = v_flat.expand(4).contiguous()
+        else:
+            if v_flat.numel() >= 4:
+                src_vals = v_flat[:4]
+            else:
+                pad_len = 4 - v_flat.numel()
+                src_vals = torch.cat([v_flat, torch.zeros(pad_len, device="cuda", dtype=torch.float32)])
+            src_vals = src_vals.contiguous()
 
-    # Copy data from torch tensors to CV-CUDA tensors using cudaMemcpy
-    cudart.cudaMemcpy(
-        cv_anchor.cuda().__cuda_array_interface__["data"][0],
-        anchor_src.data_ptr(),
-        8,
-        CUDA_MEMCPY_D2D,  # 2 x int32 = 8 bytes
+    # the simple tensors can be read directly by CV-CUDA
+    cv_imgIdx = cvcuda.as_tensor(
+        src_idx.reshape(
+            1,
+        ),
+        "N",
     )
-    cudart.cudaMemcpy(
-        cv_erasing.cuda().__cuda_array_interface__["data"][0],
-        erasing_src.data_ptr(),
-        12,
-        CUDA_MEMCPY_D2D,  # 3 x int32 = 12 bytes
-    )
-    cudart.cudaMemcpy(
-        cv_imgIdx.cuda().__cuda_array_interface__["data"][0],
-        imgIdx_src.data_ptr(),
-        4,
-        CUDA_MEMCPY_D2D,  # 1 x int32 = 4 bytes
-    )
-    cudart.cudaMemcpy(
-        cv_values.cuda().__cuda_array_interface__["data"][0],
-        values_src.data_ptr(),
-        16,
-        CUDA_MEMCPY_D2D,  # 4 x float32 = 16 bytes
+    cv_values = cvcuda.as_tensor(
+        src_vals.reshape(
+            1 * 4,
+        ),
+        "N",
     )
 
-    result = cvcuda.erase(
+    # packed types (_2S32, _3S32) need to be copied into pre-allocated tensors
+    # torch does not support these packed types directly, so we create a helper function
+    # which will enable torch copy into the data directly (by overriding type/strides info)
+    def _to_torch(cv_tensor: cvcuda.Tensor, shape: tuple[int, ...], typestr: str) -> torch.Tensor:
+        iface = cv_tensor.cuda().__cuda_array_interface__
+        iface.update(shape=shape, typestr=typestr, strides=None)
+        return torch.as_tensor(SimpleNamespace(__cuda_array_interface__=iface), device="cuda")
+
+    # allocate the data for packed types
+    cv_anchor = cvcuda.Tensor((1,), cvcuda.Type._2S32, "N")
+    cv_erasing = cvcuda.Tensor((1,), cvcuda.Type._3S32, "N")
+
+    # do a memcpy with torch, pretending data is scalar type contiguous
+    _to_torch(cv_anchor, (1, 2), "<i4").copy_(src_anchor)
+    _to_torch(cv_erasing, (1, 3), "<i4").copy_(src_erasing)
+
+    # derive seed from torch's RNG so CV-CUDA is deterministic when user sets torch.manual_seed()
+    seed = 0
+    if is_random_fill:
+        seed = int(torch.randint(0, 2147483648, (1,)).item())
+
+    return cvcuda.erase(
         src=image,
         anchor=cv_anchor,
         erasing=cv_erasing,
         values=cv_values,
         imgIdx=cv_imgIdx,
-        random=False,
-        seed=0,
+        random=is_random_fill,
+        seed=seed,
     )
-
-    return result
 
 
 if CVCUDA_AVAILABLE:
