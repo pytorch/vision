@@ -52,7 +52,3 @@ jobs:
       trigger-event: ${{ github.event_name }}
       architecture: aarch64
       setup-miniconda: false
-    secrets:
-      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
