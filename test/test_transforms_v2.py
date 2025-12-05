@@ -927,13 +927,14 @@ class TestResize:
     @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("antialias", [True, False])
-    def test_image_correctness_cvcuda(self, size, interpolation, use_max_size, antialias):
+    @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
+    def test_image_correctness_cvcuda(self, size, interpolation, use_max_size, antialias, fn):
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
         image = make_image_cvcuda(self.INPUT_SIZE, dtype=torch.uint8)
-        actual = F.resize(image, size=size, interpolation=interpolation, **max_size_kwarg, antialias=antialias)
-        expected = F.resize(
+        actual = fn(image, size=size, interpolation=interpolation, **max_size_kwarg, antialias=antialias)
+        expected = fn(
             F.cvcuda_to_tensor(image), size=size, interpolation=interpolation, **max_size_kwarg, antialias=antialias
         )
 
@@ -945,7 +946,7 @@ class TestResize:
             # cvcuda.hq_resize is accurate within 9 for the tests
             atol = 9
         elif interpolation == transforms.InterpolationMode.BICUBIC:
-            # the CV-CUDA bicubic interpolation differences significantly
+            # the CV-CUDA bicubic interpolation differs significantly
             atol = 91
         assert_close(actual, expected, atol=atol, rtol=0)
 
