@@ -25,7 +25,6 @@ from common_utils import (
     assert_equal,
     cache,
     cpu_and_cuda,
-    cvcuda_to_pil_compatible_tensor,
     freeze_rng_state,
     ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
@@ -3891,7 +3890,7 @@ class TestErase:
         actual = F.erase(image, **self.FUNCTIONAL_KWARGS)
 
         if make_input is make_image_cvcuda:
-            image = cvcuda_to_pil_compatible_tensor(image)
+            image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = self._reference_erase_image(image, **self.FUNCTIONAL_KWARGS)
 

@@ -18,8 +18,6 @@ CVCUDA_AVAILABLE = _is_cvcuda_available()
 
 if TYPE_CHECKING:
     import cvcuda  # type: ignore[import-not-found]
-if CVCUDA_AVAILABLE:
-    cvcuda = _import_cvcuda()  # noqa: F811
 
 
 def erase(
@@ -69,7 +67,7 @@ def erase_video(
     return erase_image(video, i=i, j=j, h=h, w=w, v=v, inplace=inplace)
 
 
-def _erase_cvcuda(
+def _erase_image_cvcuda(
     image: "cvcuda.Tensor",
     i: int,
     j: int,
@@ -78,6 +76,8 @@ def _erase_cvcuda(
     v: torch.Tensor,
     inplace: bool = False,
 ) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
     if inplace:
         raise ValueError("inplace is not supported for cvcuda.Tensor")
 
@@ -111,7 +111,7 @@ def _erase_cvcuda(
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(erase, _import_cvcuda().Tensor)(_erase_cvcuda)
+    _register_kernel_internal(erase, _import_cvcuda().Tensor)(_erase_image_cvcuda)
 
 
 def jpeg(image: torch.Tensor, quality: int) -> torch.Tensor:
