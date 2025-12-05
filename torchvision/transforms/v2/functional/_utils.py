@@ -186,41 +186,29 @@ def _is_cvcuda_tensor(inpt: Any) -> bool:
 _interpolation_mode_to_cvcuda_interp: dict[InterpolationMode | str | int, "cvcuda.Interp"] = {}
 
 
-def _populate_interpolation_mode_to_cvcuda_interp():
-    cvcuda = _import_cvcuda()
-
-    global _interpolation_mode_to_cvcuda_interp
-
-    # CV-CUDA's NEAREST matches PyTorch's 'nearest-exact' (PIL-style)
-    # not PyTorch's 'nearest' (OpenCV-style).
-    _interpolation_mode_to_cvcuda_interp = {
-        InterpolationMode.BILINEAR: cvcuda.Interp.LINEAR,
-        "bilinear": cvcuda.Interp.LINEAR,
-        "linear": cvcuda.Interp.LINEAR,
-        2: cvcuda.Interp.LINEAR,
-        InterpolationMode.BICUBIC: cvcuda.Interp.CUBIC,
-        "bicubic": cvcuda.Interp.CUBIC,
-        3: cvcuda.Interp.CUBIC,
-        InterpolationMode.NEAREST: cvcuda.Interp.NEAREST,
-        "nearest": cvcuda.Interp.NEAREST,
-        0: cvcuda.Interp.NEAREST,
-        InterpolationMode.NEAREST_EXACT: cvcuda.Interp.NEAREST,
-        "nearest-exact": cvcuda.Interp.NEAREST,
-        InterpolationMode.BOX: cvcuda.Interp.BOX,
-        "box": cvcuda.Interp.BOX,
-        4: cvcuda.Interp.BOX,
-        InterpolationMode.HAMMING: cvcuda.Interp.HAMMING,
-        "hamming": cvcuda.Interp.HAMMING,
-        5: cvcuda.Interp.HAMMING,
-        InterpolationMode.LANCZOS: cvcuda.Interp.LANCZOS,
-        "lanczos": cvcuda.Interp.LANCZOS,
-        1: cvcuda.Interp.LANCZOS,
-    }
-
-
 def _get_cvcuda_interp(interpolation: InterpolationMode | str | int) -> "cvcuda.Interp":
     if len(_interpolation_mode_to_cvcuda_interp) == 0:
-        _populate_interpolation_mode_to_cvcuda_interp()
+        cvcuda = _import_cvcuda()
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.NEAREST] = cvcuda.Interp.NEAREST
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.NEAREST_EXACT] = cvcuda.Interp.NEAREST
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.BILINEAR] = cvcuda.Interp.LINEAR
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.BICUBIC] = cvcuda.Interp.CUBIC
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.BOX] = cvcuda.Interp.BOX
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.HAMMING] = cvcuda.Interp.HAMMING
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.LANCZOS] = cvcuda.Interp.LANCZOS
+        _interpolation_mode_to_cvcuda_interp["nearest"] = cvcuda.Interp.NEAREST
+        _interpolation_mode_to_cvcuda_interp["nearest-exact"] = cvcuda.Interp.NEAREST
+        _interpolation_mode_to_cvcuda_interp["bilinear"] = cvcuda.Interp.LINEAR
+        _interpolation_mode_to_cvcuda_interp["bicubic"] = cvcuda.Interp.CUBIC
+        _interpolation_mode_to_cvcuda_interp["box"] = cvcuda.Interp.BOX
+        _interpolation_mode_to_cvcuda_interp["hamming"] = cvcuda.Interp.HAMMING
+        _interpolation_mode_to_cvcuda_interp["lanczos"] = cvcuda.Interp.LANCZOS
+        _interpolation_mode_to_cvcuda_interp[0] = cvcuda.Interp.NEAREST
+        _interpolation_mode_to_cvcuda_interp[2] = cvcuda.Interp.LINEAR
+        _interpolation_mode_to_cvcuda_interp[3] = cvcuda.Interp.CUBIC
+        _interpolation_mode_to_cvcuda_interp[4] = cvcuda.Interp.BOX
+        _interpolation_mode_to_cvcuda_interp[5] = cvcuda.Interp.HAMMING
+        _interpolation_mode_to_cvcuda_interp[1] = cvcuda.Interp.LANCZOS
 
     interp = _interpolation_mode_to_cvcuda_interp.get(interpolation)
     if interp is None:
