@@ -425,11 +425,20 @@ def _resize_image_cvcuda(
         _dtype_to_format_cvcuda[cvcuda.Type.F64] = cvcuda.Format.F64
 
     interp = _get_cvcuda_interp(interpolation)
+    # hamming error for parity to resize_image
     if interp == cvcuda.Interp.HAMMING:
-        raise NotImplementedError("Hamming interpolation is not supported for CV-CUDA resize.")
+        raise NotImplementedError("Unsupported interpolation for CV-CUDA resize, got hamming.")
+
+    # match the antialias behavior of resize_image
+    if not (interp == cvcuda.Interp.LINEAR or interp == cvcuda.Interp.CUBIC):
+        antialias = False
 
     old_height, old_width = image.shape[1], image.shape[2]
     new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
+
+    # No resize needed if dimensions match
+    if new_height == old_height and new_width == old_width:
+        return image
 
     # antialias is only supported for cvcuda.hq_resize, if set to true (which is also default)
     # we will fast-track to use hq_resize (also matchs the size parameter)
