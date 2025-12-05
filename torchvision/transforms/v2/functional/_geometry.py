@@ -28,6 +28,7 @@ from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_b
 
 from ._utils import (
     _FillTypeJIT,
+    _get_cvcuda_interp,
     _get_kernel,
     _import_cvcuda,
     _is_cvcuda_available,
@@ -401,14 +402,71 @@ def __resize_image_pil_dispatch(
     return _resize_image_pil(image, size=size, interpolation=interpolation, max_size=max_size)
 
 
+_dtype_to_format_cvcuda: dict["cvcuda.Type", "cvcuda.Format"] = {}
+
+
 def _resize_image_cvcuda(
     image: "cvcuda.Tensor",
-    size: Union[Sequence[int], int],
+    size: Optional[list[int]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
 ) -> "cvcuda.Tensor":
-    return cvcuda.resize(image, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
+    cvcuda = _import_cvcuda()
+
+    if len(_dtype_to_format_cvcuda) == 0:
+        _dtype_to_format_cvcuda[cvcuda.Type.U8] = cvcuda.Format.U8
+        _dtype_to_format_cvcuda[cvcuda.Type.U16] = cvcuda.Format.U16
+        _dtype_to_format_cvcuda[cvcuda.Type.U32] = cvcuda.Format.U32
+        _dtype_to_format_cvcuda[cvcuda.Type.S8] = cvcuda.Format.S8
+        _dtype_to_format_cvcuda[cvcuda.Type.S16] = cvcuda.Format.S16
+        _dtype_to_format_cvcuda[cvcuda.Type.S32] = cvcuda.Format.S32
+        _dtype_to_format_cvcuda[cvcuda.Type.F32] = cvcuda.Format.F32
+        _dtype_to_format_cvcuda[cvcuda.Type.F64] = cvcuda.Format.F64
+
+    interp = _get_cvcuda_interp(interpolation)
+    if interp == cvcuda.Interp.HAMMING:
+        raise NotImplementedError("Hamming interpolation is not supported for CV-CUDA resize.")
+
+    old_height, old_width = image.shape[1], image.shape[2]
+    new_height, new_width = _compute_resized_output_size((old_height, old_width), size=size, max_size=max_size)
+
+    # antialias is only supported for cvcuda.hq_resize, if set to true (which is also default)
+    # we will fast-track to use hq_resize (also matchs the size parameter)
+    if antialias:
+        return cvcuda.hq_resize(
+            image,
+            out_size=(new_height, new_width),
+            interpolation=interp,
+            antialias=antialias,
+        )
+
+    # if not using antialias, we will use cvcuda.resize/pillowresize instead
+    # resize requires that the shape has the same dimensions as the input
+    # CV-CUDA tensors are already in NHWC format so we can do a simple tuple creation
+    shape = image.shape
+    new_shape = (shape[0], new_height, new_width, shape[3])
+
+    # bicubic mode is not accurate when using cvcuda.resize
+    # cvcuda.pillowresize resolves some of the errors
+    if interp == cvcuda.Interp.CUBIC:
+        return cvcuda.pillowresize(
+            image,
+            shape=new_shape,
+            format=_dtype_to_format_cvcuda[image.dtype],
+            interp=interp,
+        )
+
+    # otherwise we will use cvcuda.resize
+    return cvcuda.resize(
+        image,
+        shape=new_shape,
+        interp=interp,
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(resize, _import_cvcuda().Tensor)(_resize_image_cvcuda)
 
 
 def resize_mask(mask: torch.Tensor, size: Optional[list[int]], max_size: Optional[int] = None) -> torch.Tensor:
