@@ -1242,7 +1242,10 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=(
+                    pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                    pytest.mark.needs_cuda,
+                ),
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1262,7 +1265,10 @@ class TestHorizontalFlip:
             pytest.param(
                 F._geometry._horizontal_flip_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=(
+                    pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                    pytest.mark.needs_cuda,
+                ),
             ),
             (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.horizontal_flip_mask, tv_tensors.Mask),
@@ -1283,7 +1289,10 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=(
+                    pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                    pytest.mark.needs_cuda,
+                ),
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1304,7 +1313,10 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=(
+                    pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                    pytest.mark.needs_cuda,
+                ),
             ),
         ],
     )
@@ -1372,7 +1384,10 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=(
+                    pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                    pytest.mark.needs_cuda,
+                ),
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1884,7 +1899,10 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=(
+                    pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                    pytest.mark.needs_cuda,
+                ),
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1904,7 +1922,10 @@ class TestVerticalFlip:
             pytest.param(
                 F._geometry._vertical_flip_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=(
+                    pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                    pytest.mark.needs_cuda,
+                ),
             ),
             (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.vertical_flip_mask, tv_tensors.Mask),
@@ -1925,7 +1946,10 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=(
+                    pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                    pytest.mark.needs_cuda,
+                ),
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1944,7 +1968,10 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=(
+                    pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                    pytest.mark.needs_cuda,
+                ),
             ),
         ],
     )
@@ -2008,7 +2035,10 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=(
+                    pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                    pytest.mark.needs_cuda,
+                ),
             ),
             make_bounding_boxes,
             make_segmentation_mask,
