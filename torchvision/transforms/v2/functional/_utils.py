@@ -182,7 +182,7 @@ def _is_cvcuda_tensor(inpt: Any) -> bool:
         return False
 
 
-def _cvcuda_sync_wrapper(fn: Callable[P, R]) -> Callable[P, R]:
+def _cvcuda_shared_stream(fn: Callable[P, R]) -> Callable[P, R]:
     cvcuda = _import_cvcuda()
 
     @functools.wraps(fn)
