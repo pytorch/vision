@@ -1,9 +1,12 @@
 import functools
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, ParamSpec, TypeVar, Union
 
 import torch
 from torchvision import tv_tensors
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 _FillType = Union[int, float, Sequence[int], Sequence[float], None]
 _FillTypeJIT = Optional[list[float]]
@@ -177,3 +180,18 @@ def _is_cvcuda_tensor(inpt: Any) -> bool:
         return isinstance(inpt, cvcuda.Tensor)
     except ImportError:
         return False
+
+
+def _cvcuda_sync_wrapper(fn: Callable[P, R]) -> Callable[P, R]:
+    cvcuda = _import_cvcuda()
+
+    @functools.wraps(fn)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        stream = torch.cuda.current_stream()
+
+        with cvcuda.as_stream(stream):
+            result = fn(*args, **kwargs)
+
+        return result
+
+    return wrapper
