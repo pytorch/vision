@@ -335,7 +335,7 @@ def _adjust_sharpness_image_cvcuda(
     # conv2d requires ImageBatchVarShape, so we split the batch into individual images
     # CV-CUDA has no split, so use zero-copy and torch
     batch = cvcuda.ImageBatchVarShape(capacity=n)
-    for tensor in torch.as_tensor(image.cuda()).split(n, dim=0):
+    for tensor in torch.as_tensor(image.cuda()).split(1, dim=0):
         cv_image = cvcuda.as_image(tensor, format=img_format)
         batch.pushback(cv_image)
 
