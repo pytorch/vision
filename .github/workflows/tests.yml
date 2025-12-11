@@ -45,36 +45,6 @@ jobs:
 
         ./.github/scripts/unittest.sh
 
-  unittests-linux-cvcuda:
-    strategy:
-      matrix:
-        python-version:
-          - "3.10"
-        runner: ["linux.g5.4xlarge.nvidia.gpu"]
-        gpu-arch-type: ["cuda"]
-        gpu-arch-version: ["12.6"]
-      fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.10
-    permissions:
-      id-token: write
-      contents: read
-    with:
-      repository: pytorch/vision
-      runner: ${{ matrix.runner }}
-      gpu-arch-type: ${{ matrix.gpu-arch-type }}
-      gpu-arch-version: ${{ matrix.gpu-arch-version }}
-      timeout: 120
-      test-infra-ref: release/2.10
-      script: |
-        set -euo pipefail
-
-        export PYTHON_VERSION=${{ matrix.python-version }}
-        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
-        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
-        export CVCUDA="1"
-
-        ./.github/scripts/unittest.sh
-
   unittests-macos:
     strategy:
       matrix:

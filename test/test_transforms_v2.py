@@ -29,7 +29,6 @@ from common_utils import (
     make_bounding_boxes,
     make_detection_masks,
     make_image,
-    make_image_cvcuda,
     make_image_pil,
     make_image_tensor,
     make_keypoints,
@@ -52,17 +51,8 @@ from torchvision.transforms.functional import pil_modes_mapping, to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import check_type, is_pure_tensor
 from torchvision.transforms.v2.functional._geometry import _get_perspective_coeffs, _parallelogram_to_bounding_boxes
-from torchvision.transforms.v2.functional._utils import (
-    _get_kernel,
-    _import_cvcuda,
-    _is_cvcuda_available,
-    _register_kernel_internal,
-)
+from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
-
-CVCUDA_AVAILABLE = _is_cvcuda_available()
-if CVCUDA_AVAILABLE:
-    cvcuda = _import_cvcuda()
 
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
@@ -1240,10 +1230,6 @@ class TestHorizontalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -1259,11 +1245,6 @@ class TestHorizontalFlip:
             (F.horizontal_flip_image, torch.Tensor),
             (F._geometry._horizontal_flip_image_pil, PIL.Image.Image),
             (F.horizontal_flip_image, tv_tensors.Image),
-            pytest.param(
-                F._geometry._horizontal_flip_image_cvcuda,
-                None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
-            ),
             (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.horizontal_flip_mask, tv_tensors.Mask),
             (F.horizontal_flip_video, tv_tensors.Video),
@@ -1271,8 +1252,6 @@ class TestHorizontalFlip:
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if kernel is F._geometry._horizontal_flip_image_cvcuda:
-            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.horizontal_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
@@ -1281,10 +1260,6 @@ class TestHorizontalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -1298,23 +1273,13 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
-    @pytest.mark.parametrize(
-        "make_input",
-        [
-            make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
-            ),
-        ],
-    )
-    def test_image_correctness(self, fn, make_input):
-        image = make_input()
+    def test_image_correctness(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
         actual = fn(image)
-        if make_input is make_image_cvcuda:
-            image = F.cvcuda_to_tensor(image)[0].cpu()
-        expected = F.horizontal_flip(F.to_pil_image(image))
-        assert_equal(actual, expected)
+        expected = F.to_image(F.horizontal_flip(F.to_pil_image(image)))
+
+        torch.testing.assert_close(actual, expected)
 
     def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
@@ -1370,10 +1335,6 @@ class TestHorizontalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -1383,8 +1344,11 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform_noop(self, make_input, device):
         input = make_input(device=device)
+
         transform = transforms.RandomHorizontalFlip(p=0)
+
         output = transform(input)
+
         assert_equal(output, input)
 
 
@@ -1882,10 +1846,6 @@ class TestVerticalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -1901,11 +1861,6 @@ class TestVerticalFlip:
             (F.vertical_flip_image, torch.Tensor),
             (F._geometry._vertical_flip_image_pil, PIL.Image.Image),
             (F.vertical_flip_image, tv_tensors.Image),
-            pytest.param(
-                F._geometry._vertical_flip_image_cvcuda,
-                None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
-            ),
             (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.vertical_flip_mask, tv_tensors.Mask),
             (F.vertical_flip_video, tv_tensors.Video),
@@ -1913,8 +1868,6 @@ class TestVerticalFlip:
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if kernel is F._geometry._vertical_flip_image_cvcuda:
-            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.vertical_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
@@ -1923,10 +1876,6 @@ class TestVerticalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -1938,23 +1887,13 @@ class TestVerticalFlip:
         check_transform(transforms.RandomVerticalFlip(p=1), make_input(device=device))
 
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
-    @pytest.mark.parametrize(
-        "make_input",
-        [
-            make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
-            ),
-        ],
-    )
-    def test_image_correctness(self, fn, make_input):
-        image = make_input()
+    def test_image_correctness(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
         actual = fn(image)
-        if make_input is make_image_cvcuda:
-            image = F.cvcuda_to_tensor(image)[0].cpu()
-        expected = F.vertical_flip(F.to_pil_image(image))
-        assert_equal(actual, expected)
+        expected = F.to_image(F.vertical_flip(F.to_pil_image(image)))
+
+        torch.testing.assert_close(actual, expected)
 
     def _reference_vertical_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
@@ -2006,10 +1945,6 @@ class TestVerticalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -2019,8 +1954,11 @@ class TestVerticalFlip:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform_noop(self, make_input, device):
         input = make_input(device=device)
+
         transform = transforms.RandomVerticalFlip(p=0)
+
         output = transform(input)
+
         assert_equal(output, input)
 
 
@@ -6792,93 +6730,6 @@ class TestPILToTensor:
     def test_functional_error(self):
         with pytest.raises(TypeError, match="pic should be PIL Image"):
             F.pil_to_tensor(object())
-
-
-@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-@needs_cuda
-class TestToCVCUDATensor:
-    @pytest.mark.parametrize("image_type", (torch.Tensor, tv_tensors.Image))
-    @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
-    @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
-    @pytest.mark.parametrize(
-        "fn",
-        [F.to_cvcuda_tensor, transform_cls_to_functional(transforms.ToCVCUDATensor)],
-    )
-    def test_functional_and_transform(self, image_type, dtype, device, color_space, batch_dims, fn):
-        image = make_image(dtype=dtype, device=device, color_space=color_space, batch_dims=batch_dims)
-        if image_type is torch.Tensor:
-            image = image.as_subclass(torch.Tensor)
-            assert is_pure_tensor(image)
-        output = fn(image)
-
-        assert isinstance(output, cvcuda.Tensor)
-        assert F.get_size(output) == F.get_size(image)
-        assert output is not None
-
-    def test_invalid_input_type(self):
-        with pytest.raises(TypeError, match=r"inpt should be ``torch.Tensor``"):
-            F.to_cvcuda_tensor("invalid_input")
-
-    def test_invalid_dimensions(self):
-        with pytest.raises(ValueError, match=r"pic should be 4 dimensional"):
-            img_data = torch.randint(0, 256, (3, 1, 3), dtype=torch.uint8)
-            img_data = img_data.cuda()
-            F.to_cvcuda_tensor(img_data)
-
-        with pytest.raises(ValueError, match=r"pic should be 4 dimensional"):
-            img_data = torch.randint(0, 256, (4,), dtype=torch.uint8)
-            img_data = img_data.cuda()
-            F.to_cvcuda_tensor(img_data)
-
-        with pytest.raises(ValueError, match=r"pic should be 4 dimensional"):
-            img_data = torch.randint(0, 256, (4, 4), dtype=torch.uint8)
-            img_data = img_data.cuda()
-            F.to_cvcuda_tensor(img_data)
-
-        with pytest.raises(ValueError, match=r"pic should be 4 dimensional"):
-            img_data = torch.randint(0, 256, (1, 1, 3, 4, 4), dtype=torch.uint8)
-            img_data = img_data.cuda()
-            F.to_cvcuda_tensor(img_data)
-
-    @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
-    @pytest.mark.parametrize("batch_size", [1, 2, 4])
-    def test_round_trip(self, dtype, device, color_space, batch_size):
-        original_tensor = make_image_tensor(
-            dtype=dtype, device=device, color_space=color_space, batch_dims=(batch_size,)
-        )
-        cvcuda_tensor = F.to_cvcuda_tensor(original_tensor)
-        result_tensor = F.cvcuda_to_tensor(cvcuda_tensor)
-        torch.testing.assert_close(result_tensor.to(device), original_tensor, rtol=0, atol=0)
-        assert result_tensor.shape[0] == batch_size
-
-
-@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-@needs_cuda
-class TestCVDUDAToTensor:
-    @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
-    @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
-    @pytest.mark.parametrize(
-        "fn",
-        [F.cvcuda_to_tensor, transform_cls_to_functional(transforms.CVCUDAToTensor)],
-    )
-    def test_functional_and_transform(self, dtype, device, color_space, batch_dims, fn):
-        input = make_image_cvcuda(dtype=dtype, device=device, color_space=color_space, batch_dims=batch_dims)
-
-        output = fn(input)
-
-        assert isinstance(output, torch.Tensor)
-        input_tensor = F.cvcuda_to_tensor(input)
-        assert F.get_size(output) == F.get_size(input_tensor)
-
-    def test_functional_error(self):
-        with pytest.raises(TypeError, match=r"cvcuda_img should be ``cvcuda\.Tensor``\. Got .+\."):
-            F.cvcuda_to_tensor(object())
 
 
 class TestLambda:
