@@ -44,9 +44,11 @@ def pytest_collection_modifyitems(items):
         # @pytest.mark.parametrize('device', cpu_and_cuda())
         # the "instances" of the tests where device == 'cuda' will have the 'needs_cuda' mark,
         # and the ones with device == 'cpu' won't have the mark.
+        needs_cvcuda = item.get_closest_marker("needs_cvcuda") is not None
+        if needs_cvcuda:
+            item.add_marker(pytest.mark.needs_cuda)
         needs_cuda = item.get_closest_marker("needs_cuda") is not None
         needs_mps = item.get_closest_marker("needs_mps") is not None
-        needs_cvcuda = item.get_closest_marker("needs_cvcuda") is not None
 
         if needs_cuda and not torch.cuda.is_available():
             # In general, we skip cuda tests on machines without a GPU

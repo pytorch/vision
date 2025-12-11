@@ -56,11 +56,7 @@ from torchvision.transforms.v2.functional._geometry import _get_perspective_coef
 from torchvision.transforms.v2.functional._utils import _get_kernel, _import_cvcuda, _register_kernel_internal
 
 
-CV_CUDA_TEST = (
-    pytest.mark.needs_cvcuda,
-    pytest.mark.needs_cuda,
-)
-
+CV_CUDA_TEST = pytest.mark.needs_cvcuda
 
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
@@ -6792,7 +6788,6 @@ class TestPILToTensor:
             F.pil_to_tensor(object())
 
 
-@needs_cuda
 @needs_cvcuda
 class TestToCVCUDATensor:
     @pytest.mark.parametrize("image_type", (torch.Tensor, tv_tensors.Image))
@@ -6854,7 +6849,6 @@ class TestToCVCUDATensor:
         assert result_tensor.shape[0] == batch_size
 
 
-@needs_cuda
 @needs_cvcuda
 class TestCVDUDAToTensor:
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32, torch.float64])
