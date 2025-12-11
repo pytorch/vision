@@ -56,8 +56,6 @@ from torchvision.transforms.v2.functional._geometry import _get_perspective_coef
 from torchvision.transforms.v2.functional._utils import _get_kernel, _import_cvcuda, _register_kernel_internal
 
 
-CV_CUDA_TEST = pytest.mark.needs_cvcuda
-
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
 
@@ -1236,7 +1234,7 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=CV_CUDA_TEST,
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1256,7 +1254,7 @@ class TestHorizontalFlip:
             pytest.param(
                 F._geometry._horizontal_flip_image_cvcuda,
                 None,
-                marks=CV_CUDA_TEST,
+                marks=pytest.mark.needs_cvcuda,
             ),
             (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.horizontal_flip_mask, tv_tensors.Mask),
@@ -1277,7 +1275,7 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=CV_CUDA_TEST,
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1298,7 +1296,7 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=CV_CUDA_TEST,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -1366,7 +1364,7 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=CV_CUDA_TEST,
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1878,7 +1876,7 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=CV_CUDA_TEST,
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1898,7 +1896,7 @@ class TestVerticalFlip:
             pytest.param(
                 F._geometry._vertical_flip_image_cvcuda,
                 None,
-                marks=CV_CUDA_TEST,
+                marks=pytest.mark.needs_cvcuda,
             ),
             (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.vertical_flip_mask, tv_tensors.Mask),
@@ -1919,7 +1917,7 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=CV_CUDA_TEST,
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1938,7 +1936,7 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=CV_CUDA_TEST,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -2002,7 +2000,7 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=CV_CUDA_TEST,
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -6806,7 +6804,7 @@ class TestToCVCUDATensor:
             assert is_pure_tensor(image)
         output = fn(image)
 
-        assert isinstance(output, cvcuda.Tensor)
+        assert isinstance(output, _import_cvcuda().Tensor)
         assert F.get_size(output) == F.get_size(image)
         assert output is not None
 
@@ -6850,7 +6848,7 @@ class TestToCVCUDATensor:
 
 
 @needs_cvcuda
-class TestCVDUDAToTensor:
+class TestCVCUDAToTensor:
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32, torch.float64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
