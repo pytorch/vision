@@ -602,32 +602,6 @@ def resize_video(
     return resize_image(video, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
 
-def _resize_image_cvcuda(
-    image: "cvcuda.Tensor",
-    size: Optional[list[int]],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
-    max_size: Optional[int] = None,
-    antialias: Optional[bool] = True,
-) -> "cvcuda.Tensor":
-    # placeholder func for now, will be handled in PR for resize alone
-    # since placeholder convert to from torch tensor and use resize_image
-    from ._type_conversion import cvcuda_to_tensor, to_cvcuda_tensor
-
-    return to_cvcuda_tensor(
-        resize_image(
-            cvcuda_to_tensor(image),
-            size=size,
-            interpolation=interpolation,
-            max_size=max_size,
-            antialias=antialias,
-        )
-    )
-
-
-if CVCUDA_AVAILABLE:
-    _register_kernel_internal(resize, _import_cvcuda().Tensor)(_resize_image_cvcuda)
-
-
 def affine(
     inpt: torch.Tensor,
     angle: Union[int, float],
@@ -1629,30 +1603,6 @@ def pad_image(
         return _pad_with_scalar_fill(image, torch_padding, fill=fill[0], padding_mode=padding_mode)
     else:
         return _pad_with_vector_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
-
-
-def _pad_image_cvcuda(
-    image: "cvcuda.Tensor",
-    padding: list[int],
-    fill: Optional[Union[int, float, list[float]]] = None,
-    padding_mode: str = "constant",
-) -> "cvcuda.Tensor":
-    # placeholder func for now, will be handled in PR for pad alone
-    # since placeholder convert to from torch tensor and use pad_image
-    from ._type_conversion import cvcuda_to_tensor, to_cvcuda_tensor
-
-    return to_cvcuda_tensor(
-        pad_image(
-            cvcuda_to_tensor(image),
-            padding=padding,
-            fill=fill,
-            padding_mode=padding_mode,
-        )
-    )
-
-
-if CVCUDA_AVAILABLE:
-    _register_kernel_internal(pad, _import_cvcuda().Tensor)(_pad_image_cvcuda)
 
 
 def _pad_with_scalar_fill(
