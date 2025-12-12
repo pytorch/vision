@@ -139,9 +139,6 @@ class Resize(Transform):
 
     _v1_transform_cls = _transforms.Resize
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
-
     def __init__(
         self,
         size: Union[int, Sequence[int], None],
@@ -257,8 +254,7 @@ class RandomResizedCrop(Transform):
 
     _v1_transform_cls = _transforms.RandomResizedCrop
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(
         self,
@@ -368,8 +364,7 @@ class FiveCrop(Transform):
 
     _v1_transform_cls = _transforms.FiveCrop
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
@@ -415,8 +410,7 @@ class TenCrop(Transform):
 
     _v1_transform_cls = _transforms.TenCrop
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
         super().__init__()
@@ -825,8 +819,7 @@ class RandomCrop(Transform):
 
     _v1_transform_cls = _transforms.RandomCrop
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def _extract_params_for_v1_transform(self) -> dict[str, Any]:
         params = super()._extract_params_for_v1_transform()
@@ -1138,8 +1131,7 @@ class RandomIoUCrop(Transform):
             Default, 40.
     """
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(
         self,

@@ -4582,11 +4582,7 @@ class TestResizedCrop:
             )
         )
 
-        atol = 1
-        if make_input is make_image_cvcuda and interpolation == transforms.InterpolationMode.BICUBIC:
-            # CV-CUDA BICUBIC differs from PIL ground truth BICUBIC
-            atol = 10
-        assert_close(actual, expected, atol=atol, rtol=0)
+        assert_close(actual, expected, atol=1, rtol=0)
 
     def _reference_resized_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width, size):
         new_height, new_width = size
