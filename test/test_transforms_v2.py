@@ -2215,8 +2215,10 @@ class TestRotate:
 
         mae = (actual.float() - expected.float()).abs().mean()
         if make_input is make_image_cvcuda:
-            # CV-CUDA nearest interpolation differs significantly from PIL, set much higher bound
-            assert mae < (122.5) if interpolation is transforms.InterpolationMode.NEAREST else 6, f"MAE: {mae}"
+            # CV-CUDA Interp.NEAREST is actually NEAREST_EXACT, it has no direct match
+            # Interp handler uses Interp.NEAREST (NEAREST_EXACT) for InterpolationMode.NEAREST
+            # As such, we compound error, mostly on borders where padding is added
+            assert mae < 122.5 if interpolation is transforms.InterpolationMode.NEAREST else 6, f"MAE: {mae}"
         else:
             assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6, f"MAE: {mae}"
 
