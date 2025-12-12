@@ -51,14 +51,14 @@ def get_dimensions_video(video: torch.Tensor) -> list[int]:
     return get_dimensions_image(video)
 
 
-def get_dimensions_image_cvcuda(image: "cvcuda.Tensor") -> list[int]:
-    # CV-CUDA tensor is always in NHWC layout
-    # get_dimensions is CHW
-    return [image.shape[3], image.shape[1], image.shape[2]]
+# def get_dimensions_image_cvcuda(image: "cvcuda.Tensor") -> list[int]:
+#     # CV-CUDA tensor is always in NHWC layout
+#     # get_dimensions is CHW
+#     return [image.shape[3], image.shape[1], image.shape[2]]
 
 
-if CVCUDA_AVAILABLE:
-    _register_kernel_internal(get_dimensions, cvcuda.Tensor)(get_dimensions_image_cvcuda)
+# if CVCUDA_AVAILABLE:
+#     _register_kernel_internal(get_dimensions, cvcuda.Tensor)(get_dimensions_image_cvcuda)
 
 
 def get_num_channels(inpt: torch.Tensor) -> int:
@@ -97,14 +97,14 @@ def get_num_channels_video(video: torch.Tensor) -> int:
 get_image_num_channels = get_num_channels
 
 
-def get_num_channels_image_cvcuda(image: "cvcuda.Tensor") -> int:
-    # CV-CUDA tensor is always in NHWC layout
-    # get_num_channels is C
-    return image.shape[3]
+# def get_num_channels_image_cvcuda(image: "cvcuda.Tensor") -> int:
+#     # CV-CUDA tensor is always in NHWC layout
+#     # get_num_channels is C
+#     return image.shape[3]
 
 
-if CVCUDA_AVAILABLE:
-    _register_kernel_internal(get_num_channels, cvcuda.Tensor)(get_num_channels_image_cvcuda)
+# if CVCUDA_AVAILABLE:
+#     _register_kernel_internal(get_num_channels, cvcuda.Tensor)(get_num_channels_image_cvcuda)
 
 
 def get_size(inpt: torch.Tensor) -> list[int]:
@@ -145,7 +145,7 @@ def get_size_image_cvcuda(image: "cvcuda.Tensor") -> list[int]:
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(get_size, _import_cvcuda().Tensor)(get_size_image_cvcuda)
+    _get_size_image_cvcuda = _register_kernel_internal(get_size, cvcuda.Tensor)(get_size_image_cvcuda)
 
 
 @_register_kernel_internal(get_size, tv_tensors.Video, tv_tensor_wrapper=False)

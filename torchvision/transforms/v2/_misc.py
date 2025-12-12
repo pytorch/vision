@@ -9,7 +9,7 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2.functional._utils import _is_cvcuda_available, _is_cvcuda_tensor
+from torchvision.transforms.v2.functional._utils import _is_cvcuda_tensor
 
 from ._utils import (
     _parse_labels_getter,
@@ -20,9 +20,6 @@ from ._utils import (
     has_any,
     is_pure_tensor,
 )
-
-
-CVCUDA_AVAILABLE = _is_cvcuda_available()
 
 
 # TODO: do we want/need to expose this?
@@ -164,8 +161,7 @@ class Normalize(Transform):
 
     _v1_transform_cls = _transforms.Normalize
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
         super().__init__()

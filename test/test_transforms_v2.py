@@ -5552,17 +5552,17 @@ class TestNormalize:
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_image_inplace(self, device):
-        inpt = make_image_tensor(dtype=torch.float32, device=device)
-        input_version = inpt._version
+        input = make_image_tensor(dtype=torch.float32, device=device)
+        input_version = input._version
 
-        output_out_of_place = F.normalize_image(inpt, mean=self.MEAN, std=self.STD)
-        assert output_out_of_place.data_ptr() != inpt.data_ptr()
-        assert output_out_of_place is not inpt
+        output_out_of_place = F.normalize_image(input, mean=self.MEAN, std=self.STD)
+        assert output_out_of_place.data_ptr() != input.data_ptr()
+        assert output_out_of_place is not input
 
-        output_inplace = F.normalize_image(inpt, mean=self.MEAN, std=self.STD, inplace=True)
-        assert output_inplace.data_ptr() == inpt.data_ptr()
+        output_inplace = F.normalize_image(input, mean=self.MEAN, std=self.STD, inplace=True)
+        assert output_inplace.data_ptr() == input.data_ptr()
         assert output_inplace._version > input_version
-        assert output_inplace is inpt
+        assert output_inplace is input
 
         assert_equal(output_inplace, output_out_of_place)
 
@@ -5612,9 +5612,9 @@ class TestNormalize:
             with pytest.raises(ValueError, match="std evaluated to zero, leading to division by zero"):
                 F.normalize_image(make_image(dtype=torch.float32), mean=self.MEAN, std=std)
 
-    def _sample_input_adapter(self, transform, inpt, device):
+    def _sample_input_adapter(self, transform, input, device):
         adapted_input = {}
-        for key, value in inpt.items():
+        for key, value in input.items():
             if isinstance(value, PIL.Image.Image):
                 # normalize doesn't support PIL images
                 continue
@@ -5660,19 +5660,19 @@ class TestNormalize:
     )
     @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
     def test_correctness_image(self, mean, std, dtype, make_input, fn):
-        if make_input == make_image_cvcuda and dtype != torch.float32:
+        if make_input is make_image_cvcuda and dtype != torch.float32:
             pytest.skip("CVCUDA only supports float32 for normalize")
 
         image = make_input(dtype=dtype)
 
         actual = fn(image, mean=mean, std=std)
 
-        if make_input == make_image_cvcuda:
+        if make_input is make_image_cvcuda:
             image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = self._reference_normalize_image(image, mean=mean, std=std)
 
-        if make_input == make_image_cvcuda:
+        if make_input is make_image_cvcuda:
             assert_close(actual, expected, rtol=0, atol=1e-6)
         else:
             assert_equal(actual, expected)
