@@ -19,8 +19,6 @@ CVCUDA_AVAILABLE = _is_cvcuda_available()
 
 if TYPE_CHECKING:
     import cvcuda  # type: ignore[import-not-found]
-if CVCUDA_AVAILABLE:
-    cvcuda = _import_cvcuda()  # noqa: F811
 
 
 def normalize(
