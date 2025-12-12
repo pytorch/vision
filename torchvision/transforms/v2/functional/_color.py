@@ -18,8 +18,6 @@ CVCUDA_AVAILABLE = _is_cvcuda_available()
 
 if TYPE_CHECKING:
     import cvcuda  # type: ignore[import-not-found]
-if CVCUDA_AVAILABLE:
-    cvcuda = _import_cvcuda()  # noqa: F811
 
 
 def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
@@ -79,26 +77,23 @@ def _rgb_to_grayscale_image_cvcuda(
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
-    if num_output_channels not in (1, 3):
+    if not (num_output_channels == 1 or num_output_channels == 3):
         raise ValueError(f"num_output_channels must be 1 or 3, got {num_output_channels}.")
 
+    if image.shape[3] == 1 and num_output_channels == 1:
+        # no work to do if already a single channel
+        return image
+
+    if image.shape[3] == 1 and num_output_channels == 3:
+        # just duplicate the channels
+        return cvcuda.cvtcolor(image, cvcuda.ColorConversion.GRAY2RGB)
+
+    gray = cvcuda.cvtcolor(image, cvcuda.ColorConversion.RGB2GRAY)
+
     if num_output_channels == 3:
-        raise ValueError("num_output_channels must be 1 for CV-CUDA, got 3.")
+        gray = cvcuda.cvtcolor(gray, cvcuda.ColorConversion.GRAY2RGB)
 
-    if image.shape[3] == 1:
-        # if we already have a single channel, just clone the tensor
-        # we will use copymakeborder since CV-CUDA has no native clone
-        return cvcuda.copymakeborder(
-            image,
-            border_mode=cvcuda.Border.CONSTANT,
-            border_value=[0],
-            top=0,
-            left=0,
-            bottom=0,
-            right=0,
-        )
-
-    return cvcuda.cvtcolor(image, cvcuda.ColorConversion.RGB2GRAY)
+    return gray
 
 
 if CVCUDA_AVAILABLE:
@@ -137,17 +132,8 @@ def _grayscale_to_rgb_image_cvcuda(
     cvcuda = _import_cvcuda()
 
     if image.shape[3] == 3:
-        # if we already have RGB channels, just clone the tensor
-        # we will use copymakeborder since CV-CUDA has no native clone
-        return cvcuda.copymakeborder(
-            image,
-            border_mode=cvcuda.Border.CONSTANT,
-            border_value=[0],
-            top=0,
-            left=0,
-            bottom=0,
-            right=0,
-        )
+        # if we already have RGB channels, just return the image
+        return image
 
     return cvcuda.cvtcolor(image, cvcuda.ColorConversion.GRAY2RGB)
 

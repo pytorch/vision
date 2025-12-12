@@ -207,7 +207,6 @@ def query_size(flat_inputs: list[Any]) -> tuple[int, int]:
                 tv_tensors.Mask,
                 tv_tensors.BoundingBoxes,
                 tv_tensors.KeyPoints,
-                _is_cvcuda_tensor,
             ),
         )
     }

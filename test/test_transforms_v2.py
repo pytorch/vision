@@ -6454,8 +6454,6 @@ class TestRgbToGrayscale:
         ],
     )
     def test_transform(self, transform, make_input):
-        if make_input is make_image_cvcuda and isinstance(transform, transforms.RandomGrayscale):
-            pytest.skip("CV-CUDA does not support RandomGrayscale, will have num_output_channels == 3")
         check_transform(transform, make_input())
 
     @pytest.mark.parametrize("num_output_channels", [1, 3])
@@ -6471,9 +6469,6 @@ class TestRgbToGrayscale:
     )
     @pytest.mark.parametrize("fn", [F.rgb_to_grayscale, transform_cls_to_functional(transforms.Grayscale)])
     def test_image_correctness(self, num_output_channels, color_space, make_input, fn):
-        if make_input is make_image_cvcuda and num_output_channels == 3:
-            pytest.skip("CV-CUDA does not support num_output_channels == 3")
-
         image = make_input(dtype=torch.uint8, device="cpu", color_space=color_space)
 
         actual = fn(image, num_output_channels=num_output_channels)
