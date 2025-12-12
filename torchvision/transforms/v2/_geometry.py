@@ -197,8 +197,7 @@ class CenterCrop(Transform):
 
     _v1_transform_cls = _transforms.CenterCrop
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, size: Union[int, Sequence[int]]):
         super().__init__()

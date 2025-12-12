@@ -3577,12 +3577,12 @@ class TestCrop:
         ],
     )
     def test_transform(self, param, value, make_input):
-        input_data = make_input(self.INPUT_SIZE)
+        input = make_input(self.INPUT_SIZE)
 
         check_sample_input = True
         if param == "fill":
             if isinstance(value, (tuple, list)):
-                if isinstance(input_data, tv_tensors.Mask):
+                if isinstance(input, tv_tensors.Mask):
                     pytest.skip("F.pad_mask doesn't support non-scalar fill.")
                 else:
                     check_sample_input = False
@@ -3591,14 +3591,14 @@ class TestCrop:
                 # 1. size is required
                 # 2. the fill parameter only has an affect if we need padding
                 size=[s + 4 for s in self.INPUT_SIZE],
-                fill=adapt_fill(value, dtype=input_data.dtype if isinstance(input_data, torch.Tensor) else torch.uint8),
+                fill=adapt_fill(value, dtype=input.dtype if isinstance(input, torch.Tensor) else torch.uint8),
             )
         else:
             kwargs = {param: value}
 
         check_transform(
             transforms.RandomCrop(**kwargs, pad_if_needed=True),
-            input_data,
+            input,
             check_v1_compatibility=param != "fill" or isinstance(value, (int, float)),
             check_sample_input=check_sample_input,
         )
@@ -3660,10 +3660,6 @@ class TestCrop:
 
         transform = transforms.RandomCrop(pad_if_needed=True, **kwargs)
 
-        will_pad = False
-        if kwargs["size"][0] > self.INPUT_SIZE[0] or kwargs["size"][1] > self.INPUT_SIZE[1]:
-            will_pad = True
-
         image = make_input(self.INPUT_SIZE)
 
         with freeze_rng_state():
@@ -3677,12 +3673,7 @@ class TestCrop:
 
             expected = F.to_image(transform(F.to_pil_image(image)))
 
-        if make_input == make_image_cvcuda and will_pad:
-            # when padding is applied, CV-CUDA will always fill with zeros
-            # cannot use assert_equal since it will fail unless random is all zeros
-            assert_close(actual, expected, rtol=0, atol=get_max_value(image.dtype))
-        else:
-            assert_equal(actual, expected)
+        assert_equal(actual, expected)
 
     def _reference_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width):
         affine_matrix = np.array(

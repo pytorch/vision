@@ -1631,6 +1631,30 @@ def pad_image(
         return _pad_with_vector_fill(image, torch_padding, fill=fill, padding_mode=padding_mode)
 
 
+def _pad_image_cvcuda(
+    image: "cvcuda.Tensor",
+    padding: list[int],
+    fill: Optional[Union[int, float, list[float]]] = None,
+    padding_mode: str = "constant",
+) -> "cvcuda.Tensor":
+    # placeholder func for now, will be handled in PR for pad alone
+    # since placeholder convert to from torch tensor and use pad_image
+    from ._type_conversion import cvcuda_to_tensor, to_cvcuda_tensor
+
+    return to_cvcuda_tensor(
+        pad_image(
+            cvcuda_to_tensor(image),
+            padding=padding,
+            fill=fill,
+            padding_mode=padding_mode,
+        )
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(pad, _import_cvcuda().Tensor)(_pad_image_cvcuda)
+
+
 def _pad_with_scalar_fill(
     image: torch.Tensor,
     torch_padding: list[int],
