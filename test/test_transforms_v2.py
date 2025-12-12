@@ -3438,6 +3438,37 @@ class TestElastic:
             check_v1_compatibility=check_v1_compatibility,
         )
 
+    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
+    @needs_cuda
+    @pytest.mark.parametrize(
+        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
+    )
+    def test_image_cvcuda_correctness(self, interpolation):
+        image = make_image_cvcuda(dtype=torch.uint8)
+        displacement = self._make_displacement(image)
+
+        result = F._geometry._elastic_image_cvcuda(image, displacement=displacement, interpolation=interpolation)
+        result = F.cvcuda_to_tensor(result)
+
+        expected = F._geometry.elastic_image(
+            F.cvcuda_to_tensor(image), displacement=displacement, interpolation=interpolation
+        )
+
+        # mainly for checking properties (outside pixel values) are correct
+        # see note below on pixel-value differences
+        assert_close(result, expected, atol=get_max_value(torch.uint8), rtol=0)
+
+        # visually, the results are identical, however the underlying computations are different
+        # we can define an mae_threshold based on the interpolation mode
+        # the primary difference is along the borders where pixels appear to be shifted in location
+        # by up to 1, causing potentially up to a diff of 255 on a single pixel
+        # this could be because one has fill of 0 and CV-CUDA is shifted and has value with some color
+        # thresholds decrease as image size gets larger
+        # (640, 480) input, has 20.0, 13.0 respectively to pass
+        mae = (expected.float() - result.float()).abs().mean()
+        mae_threshold = 30.0 if interpolation is transforms.InterpolationMode.NEAREST else 20.0
+        assert mae < mae_threshold, f"MAE {mae} exceeds threshold"
+
 
 class TestToPureTensor:
     def test_correctness(self):

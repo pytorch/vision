@@ -187,6 +187,14 @@ _interpolation_mode_to_cvcuda_interp: dict[InterpolationMode | str | int, "cvcud
 
 
 def _get_cvcuda_interp(interpolation: InterpolationMode | str | int) -> "cvcuda.Interp":
+    """
+    Get the CV-CUDA interpolation mode for a given interpolation mode.
+
+    CV-CUDA has the two following differences (evaluated in tests) comapred to TorchVision/PIL:
+    1. CV-CUDA does not have a match for NEAREST, its Interp.NEAREST is actually NEAREST_EXACT
+       Since we need to do interpolation, we will map NEAREST to Interp.NEAREST (which is NEAREST_EXACT)
+    2. BICUBIC interpolation method is different compared to TorchVision/PIL, algorithmic difference
+    """
     if len(_interpolation_mode_to_cvcuda_interp) == 0:
         cvcuda = _import_cvcuda()
         _interpolation_mode_to_cvcuda_interp[InterpolationMode.NEAREST] = cvcuda.Interp.NEAREST
