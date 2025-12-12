@@ -1414,9 +1414,6 @@ class RandomResize(Transform):
             v0.17, for the PIL and Tensor backends to be consistent.
     """
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
-
     def __init__(
         self,
         min_size: int,
