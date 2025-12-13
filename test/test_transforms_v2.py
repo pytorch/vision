@@ -6468,7 +6468,15 @@ class TestFiveTenCrop:
 class TestColorJitter:
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
     )
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -6512,12 +6520,21 @@ class TestColorJitter:
         with pytest.raises(ValueError, match="values should be between"):
             transforms.ColorJitter(hue=1)
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+            ),
+        ],
+    )
     @pytest.mark.parametrize("brightness", [None, 0.1, (0.2, 0.3)])
     @pytest.mark.parametrize("contrast", [None, 0.4, (0.5, 0.6)])
     @pytest.mark.parametrize("saturation", [None, 0.7, (0.8, 0.9)])
     @pytest.mark.parametrize("hue", [None, 0.3, (-0.1, 0.2)])
-    def test_transform_correctness(self, brightness, contrast, saturation, hue):
-        image = make_image(dtype=torch.uint8, device="cpu")
+    def test_transform_correctness(self, make_input, brightness, contrast, saturation, hue):
+        image = make_input(dtype=torch.uint8, device="cpu")
 
         transform = transforms.ColorJitter(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
 
@@ -6525,11 +6542,18 @@ class TestColorJitter:
             torch.manual_seed(0)
             actual = transform(image)
 
+            if make_input is make_image_cvcuda:
+                actual = F.cvcuda_to_tensor(actual)[0].cpu()
+                image = F.cvcuda_to_tensor(image)[0].cpu()
+
             torch.manual_seed(0)
             expected = F.to_image(transform(F.to_pil_image(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 2
+        mae_threshold = 2
+        if make_input is make_image_cvcuda:
+            mae_threshold = 3
+        assert mae < mae_threshold, f"MAE: {mae}"
 
 
 class TestRgbToGrayscale:
