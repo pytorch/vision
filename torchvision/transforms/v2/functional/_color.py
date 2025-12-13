@@ -277,8 +277,15 @@ def _adjust_contrast_image_cvcuda(image: "cvcuda.Tensor", contrast_factor: float
     if c not in [1, 3]:
         raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
 
-    if c == 3:
+    # for now only float32 is supported for cvcuda, add float16 in the future
+    fp = image.dtype == cvcuda.Type.F32
+
+    if c == 3 and not fp:
         grayscale = cvcuda.cvtcolor(image, cvcuda.ColorConversion.RGB2GRAY)
+    elif c == 3 and fp:
+        grayscale = cvcuda.cvtcolor(
+            cvcuda.convertto(image, cvcuda.Type.U8, scale=1.0 / 255.0, offset=0.0), cvcuda.ColorConversion.RGB2GRAY
+        )
     else:
         grayscale = image
 
@@ -290,7 +297,12 @@ def _adjust_contrast_image_cvcuda(image: "cvcuda.Tensor", contrast_factor: float
     mean = torch.mean(torch_image.float())
     contrast_center = cvcuda.as_tensor(torch.tensor([mean.item()], dtype=torch.float32, device="cuda"))
 
-    return cvcuda.brightness_contrast(image, contrast=contrast, contrast_center=contrast_center)
+    result = cvcuda.brightness_contrast(image, contrast=contrast, contrast_center=contrast_center)
+
+    if fp:
+        result = cvcuda.convertto(result, cvcuda.Type.F32, scale=256.0 - 1e-3, offset=0.0)
+
+    return result
 
 
 if CVCUDA_AVAILABLE:
@@ -501,6 +513,11 @@ def _adjust_hue_image_cvcuda(image: "cvcuda.Tensor", hue_factor: float) -> "cvcu
     if c == 1:  # Match PIL behaviour
         return image
 
+    # for now only float32 is supported for cvcuda, add float16 in the future
+    fp = image.dtype == cvcuda.Type.F32
+    if fp:
+        image = cvcuda.convertto(image, cvcuda.Type.U8, scale=1.0 / 255.0, offset=0.0)
+
     # no native adjust_hue, use CV-CUDA for color converison, use torch for elementwise operations
     # CV-CUDA accelerates the HSV conversion
     hsv = cvcuda.cvtcolor(image, cvcuda.ColorConversion.RGB2HSV)
@@ -509,7 +526,12 @@ def _adjust_hue_image_cvcuda(image: "cvcuda.Tensor", hue_factor: float) -> "cvcu
     hsv_torch[..., 0] = (hsv_torch[..., 0] + hue_factor * 180) % 180
     # convert back to cvcuda tensor and accelerate the HSV2RGB conversion
     hsv_modified = cvcuda.as_tensor(hsv_torch.to(torch.uint8), "NHWC")
-    return cvcuda.cvtcolor(hsv_modified, cvcuda.ColorConversion.HSV2RGB)
+    rgb = cvcuda.cvtcolor(hsv_modified, cvcuda.ColorConversion.HSV2RGB)
+
+    if fp:
+        rgb = cvcuda.convertto(rgb, cvcuda.Type.F32, scale=256.0 - 1e-3, offset=0.0)
+
+    return rgb
 
 
 if CVCUDA_AVAILABLE:
