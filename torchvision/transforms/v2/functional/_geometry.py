@@ -1049,7 +1049,7 @@ def _affine_keypoints_with_expand(
         # Translate keypoints
         transformed_points.sub_(tr)
         # Estimate meta-data for image with inverted=True
-        affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
+        affine_vector = _get_inverse_affine_matrix([0.0, 0.0], angle, translate, scale, shear)
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         canvas_size = (new_height, new_width)
 
