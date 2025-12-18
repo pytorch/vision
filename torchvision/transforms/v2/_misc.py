@@ -268,7 +268,7 @@ class ToDtype(Transform):
             Default: ``False``.
     """
 
-    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+    _transformed_types = (torch.Tensor, _is_cvcuda_tensor)
 
     def __init__(
         self, dtype: Union[torch.dtype, dict[Union[type, str], Optional[torch.dtype]]], scale: bool = False
