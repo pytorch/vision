@@ -263,7 +263,7 @@ def _compute_resized_output_size(
 
 
 def resize(
-    inpt: torch.Tensor,
+    inpt: Union[PIL.Image.Image, torch.Tensor],
     size: Optional[list[int]],
     interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
@@ -1536,7 +1536,7 @@ def rotate_video(
 
 
 def pad(
-    inpt: torch.Tensor,
+    inpt: Union[PIL.Image.Image, torch.Tensor],
     padding: list[int],
     fill: Optional[Union[int, float, list[float]]] = None,
     padding_mode: str = "constant",
