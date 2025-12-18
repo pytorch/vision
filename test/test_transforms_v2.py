@@ -21,7 +21,6 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 
 from common_utils import (
-    assert_close,
     assert_equal,
     cache,
     cpu_and_cuda,
@@ -43,6 +42,7 @@ from common_utils import (
 )
 
 from torch import nn
+from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten, tree_map
 from torch.utils.data import DataLoader, default_collate
 from torchvision import tv_tensors
