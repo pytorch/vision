@@ -3,20 +3,19 @@
 [![total torchvision downloads](https://pepy.tech/badge/torchvision)](https://pepy.tech/project/torchvision)
 [![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchvision%2Fjson&query=%24.info.version&colorB=brightgreen&prefix=v)](https://pytorch.org/vision/stable/index.html)
 
-The torchvision package consists of popular datasets, model architectures, and common image transformations for computer
-vision.
+torchvision paketi; popüler veri kümeleri, model mimarileri ve bilgisayarlı görü için yaygın görüntü dönüşümlerinden oluşur.
 
-## Installation
+## Kurulum
 
-Please refer to the [official
-instructions](https://pytorch.org/get-started/locally/) to install the stable
-versions of `torch` and `torchvision` on your system.
+Sisteminize `torch` ve `torchvision` paketlerinin kararlı sürümlerini kurmak için lütfen [resmi talimatlara](https://pytorch.org/get-started/locally/) başvurun.
 
-To build source, refer to our [contributing
-page](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation).
+Kaynak koddan derlemek için [katkıda bulunma sayfamıza](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation) göz atın.
 
-The following is the corresponding `torchvision` versions and supported Python
-versions.
+Aşağıda, ilgili `torchvision` sürümleri ve desteklenen Python sürümleri yer almaktadır.
+
+---
+
+Bu çevirinin altına eklemek istediğiniz bir versiyon tablosu veya iletişim notu var mı? İsterseniz bu teknik metni projenizin genel duyurusuna uygun şekilde daha da detaylandırabilirim.
 
 | `torch`            | `torchvision`      | Python              |
 | ------------------ | ------------------ | ------------------- |
@@ -27,7 +26,7 @@ versions.
 | `2.6`              | `0.21`             | `>=3.9`, `<=3.12`   |
 
 <details>
-    <summary>older versions</summary>
+    <summary>eskki versiyon</summary>
 
 | `torch` | `torchvision`     | Python                    |
 |---------|-------------------|---------------------------|
@@ -54,47 +53,46 @@ versions.
 
 </details>
 
-## Image Backends
+## Görüntü Arka Uçları (Image Backends)
 
-Torchvision currently supports the following image backends:
+Torchvision şu anda aşağıdaki görüntü arka uçlarını desteklemektedir:
 
-- torch tensors
-- PIL images:
-    - [Pillow](https://python-pillow.org/)
-    - [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - a **much faster** drop-in replacement for Pillow with SIMD.
+* torch tensor'ları
+* PIL görüntüleri:
+* [Pillow](https://python-pillow.org/)
+* [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - SIMD ile Pillow için **çok daha hızlı**, doğrudan değiştirilebilir bir alternatif.
 
-Read more in in our [docs](https://pytorch.org/vision/stable/transforms.html).
 
-## Documentation
 
-You can find the API documentation on the pytorch website: <https://pytorch.org/vision/stable/index.html>
+Daha fazlasını [dokümantasyonumuzdan](https://pytorch.org/vision/stable/transforms.html) okuyabilirsiniz.
 
-## Contributing
+## Dokümantasyon
 
-See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out.
+API dokümantasyonunu PyTorch web sitesinde bulabilirsiniz: [https://pytorch.org/vision/stable/index.html](https://pytorch.org/vision/stable/index.html)
 
-## Disclaimer on Datasets
+## Katkıda Bulunma
 
-This is a utility library that downloads and prepares public datasets. We do not host or distribute these datasets,
-vouch for their quality or fairness, or claim that you have license to use the dataset. It is your responsibility to
-determine whether you have permission to use the dataset under the dataset's license.
+Nasıl yardımcı olabileceğinizi öğrenmek için [CONTRIBUTING](https://www.google.com/search?q=CONTRIBUTING.md) dosyasına bakın.
 
-If you're a dataset owner and wish to update any part of it (description, citation, etc.), or do not want your dataset
-to be included in this library, please get in touch through a GitHub issue. Thanks for your contribution to the ML
-community!
+## Veri Kümeleri Hakkında Feragatname
 
-## Pre-trained Model License
+Bu, halka açık veri kümelerini indiren ve hazırlayan bir yardımcı kütüphanedir. Bu veri kümelerini barındırmıyoruz veya dağıtmıyoruz, kalitelerine veya tarafsızlıklarına kefil olmuyoruz veya veri kümesini kullanma lisansınız olduğunu iddia etmiyoruz. Veri kümesini, veri kümesinin lisansı kapsamında kullanma izniniz olup olmadığını belirlemek sizin sorumluluğunuzdadır.
 
-The pre-trained models provided in this library may have their own licenses or terms and conditions derived from the
-dataset used for training. It is your responsibility to determine whether you have permission to use the models for your
-use case.
+Bir veri kümesi sahibiyseniz ve herhangi bir bölümünü güncellemek istiyorsanız (açıklama, alıntı vb.) veya veri kümenizin bu kütüphaneye dahil edilmesini istemiyorsanız, lütfen bir GitHub issue'su aracılığıyla iletişime geçin. ML topluluğuna katkılarınız için teşekkürler!
 
-More specifically, SWAG models are released under the CC-BY-NC 4.0 license. See
-[SWAG LICENSE](https://github.com/facebookresearch/SWAG/blob/main/LICENSE) for additional details.
+## Önceden Eğitilmiş Model Lisansı
 
-## Citing TorchVision
+Bu kütüphanede sağlanan önceden eğitilmiş modellerin, eğitim için kullanılan veri kümesinden türetilen kendi lisansları veya şart ve koşulları olabilir. Modelleri kendi kullanım durumunuz için kullanma izniniz olup olmadığını belirlemek sizin sorumluluğunuzdadır.
 
-If you find TorchVision useful in your work, please consider citing the following BibTeX entry:
+Daha spesifik olarak, SWAG modelleri CC-BY-NC 4.0 lisansı altında yayınlanmıştır. Ek detaylar için [SWAG LİSANSI](https://github.com/facebookresearch/SWAG/blob/main/LICENSE) dosyasına bakın.
+
+## TorchVision'a Atıfta Bulunma
+
+Çalışmalarınızda TorchVision'ı faydalı buluyorsanız, lütfen aşağıdaki BibTeX girişini atıfta bulunmayı düşünün:
+
+---
+
+Bu teknik dokümantasyonun devamında yer alan BibTeX kod bloğunu da çevirmemi veya formatlamamı ister misiniz?
 
 ```bibtex
 @software{torchvision2016,
