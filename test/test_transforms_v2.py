@@ -5567,9 +5567,7 @@ class TestNormalize:
             make_image_tensor,
             make_image,
             make_video,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional(self, make_input):
@@ -5584,7 +5582,7 @@ class TestNormalize:
             pytest.param(
                 F._misc._normalize_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -5622,9 +5620,7 @@ class TestNormalize:
             make_image_tensor,
             make_image,
             make_video,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_transform(self, make_input):
@@ -5645,9 +5641,7 @@ class TestNormalize:
         "make_input",
         [
             make_image,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
