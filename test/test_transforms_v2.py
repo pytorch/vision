@@ -5646,19 +5646,21 @@ class TestNormalize:
     )
     @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
     def test_correctness_image(self, mean, std, dtype, make_input, fn):
-        if make_input is make_image_cvcuda and dtype != torch.float32:
+        is_cvcuda = make_input is make_image_cvcuda
+
+        if is_cvcuda and dtype != torch.float32:
             pytest.skip("CVCUDA only supports float32 for normalize")
 
         image = make_input(dtype=dtype)
 
         actual = fn(image, mean=mean, std=std)
 
-        if make_input is make_image_cvcuda:
+        if is_cvcuda:
             image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = self._reference_normalize_image(image, mean=mean, std=std)
 
-        if make_input is make_image_cvcuda:
+        if is_cvcuda:
             assert_close(actual, expected, rtol=0, atol=1e-6)
         else:
             assert_equal(actual, expected)
