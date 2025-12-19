@@ -21,7 +21,6 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 
 from common_utils import (
-    assert_close,
     assert_equal,
     cache,
     cpu_and_cuda,
@@ -43,6 +42,7 @@ from common_utils import (
 )
 
 from torch import nn
+from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten, tree_map
 from torch.utils.data import DataLoader, default_collate
 from torchvision import tv_tensors
@@ -6408,7 +6408,8 @@ class TestRgbToGrayscale:
             make_image_pil,
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6424,7 +6425,7 @@ class TestRgbToGrayscale:
             pytest.param(
                 F._color._rgb_to_grayscale_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6441,7 +6442,8 @@ class TestRgbToGrayscale:
             make_image_pil,
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6455,7 +6457,8 @@ class TestRgbToGrayscale:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6512,7 +6515,8 @@ class TestGrayscaleToRgb:
             make_image_pil,
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6528,7 +6532,7 @@ class TestGrayscaleToRgb:
             pytest.param(
                 F._color._rgb_to_grayscale_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6544,7 +6548,8 @@ class TestGrayscaleToRgb:
             make_image_pil,
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6556,7 +6561,8 @@ class TestGrayscaleToRgb:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
