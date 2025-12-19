@@ -2822,7 +2822,8 @@ class TestAdjustBrightness:
             make_image,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -2839,7 +2840,7 @@ class TestAdjustBrightness:
             pytest.param(
                 F._color._adjust_brightness_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -2853,7 +2854,8 @@ class TestAdjustBrightness:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6087,7 +6089,8 @@ class TestAdjustContrast:
             make_image_pil,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6104,7 +6107,7 @@ class TestAdjustContrast:
             pytest.param(
                 F._color._adjust_contrast_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6125,7 +6128,8 @@ class TestAdjustContrast:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6200,7 +6204,8 @@ class TestAdjustHue:
             make_image_pil,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6217,7 +6222,7 @@ class TestAdjustHue:
             pytest.param(
                 F._color._adjust_hue_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6239,7 +6244,8 @@ class TestAdjustHue:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6276,7 +6282,8 @@ class TestAdjustSaturation:
             make_image_pil,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6293,7 +6300,7 @@ class TestAdjustSaturation:
             pytest.param(
                 F._color._adjust_saturation_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6314,7 +6321,8 @@ class TestAdjustSaturation:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6466,7 +6474,8 @@ class TestColorJitter:
             make_image,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6517,7 +6526,8 @@ class TestColorJitter:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
