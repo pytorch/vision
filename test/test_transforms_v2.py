@@ -4719,9 +4719,7 @@ class TestPad:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional(self, make_input):
@@ -4743,7 +4741,7 @@ class TestPad:
             pytest.param(
                 F._geometry._pad_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -4762,9 +4760,7 @@ class TestPad:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_transform(self, make_input):
@@ -4793,9 +4789,7 @@ class TestPad:
         "make_input",
         [
             make_image,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     @pytest.mark.parametrize("padding", CORRECTNESS_PADDINGS)
