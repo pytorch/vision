@@ -5501,21 +5501,22 @@ class TestEqualize:
         # one over the full range, the information gain is low if we already provide something really close to the
         # expected value.
         shape = (3, 117, 253)
-        if tensor_type == "cvcuda.Tensor":
+        is_cvcuda = tensor_type == "cvcuda.Tensor"
+        if is_cvcuda:
             shape = (1, *shape)
         image = tv_tensors.Image(torch.testing.make_tensor(shape, dtype=torch.uint8, device="cpu", low=low, high=high))
 
-        if tensor_type == "cvcuda.Tensor":
+        if is_cvcuda:
             image = F.to_cvcuda_tensor(image)
 
         actual = fn(image)
 
-        if tensor_type == "cvcuda.Tensor":
+        if is_cvcuda:
             image = F.cvcuda_to_tensor(image)[0].cpu()
 
         expected = F.to_image(F.equalize(F.to_pil_image(image)))
 
-        if tensor_type == "cvcuda.Tensor":
+        if is_cvcuda:
             assert_close(actual, expected, rtol=1e-10, atol=1)
         else:
             assert_equal(actual, expected)
