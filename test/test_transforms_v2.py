@@ -37,6 +37,7 @@ from common_utils import (
     make_video,
     make_video_tensor,
     needs_cuda,
+    needs_cvcuda,
     set_rng_seed,
 )
 
@@ -56,14 +57,9 @@ from torchvision.transforms.v2.functional._utils import (
     _cvcuda_shared_stream,
     _get_kernel,
     _import_cvcuda,
-    _is_cvcuda_available,
     _register_kernel_internal,
 )
 
-
-CVCUDA_AVAILABLE = _is_cvcuda_available()
-if CVCUDA_AVAILABLE:
-    cvcuda = _import_cvcuda()
 
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
@@ -1243,7 +1239,7 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1263,7 +1259,7 @@ class TestHorizontalFlip:
             pytest.param(
                 F._geometry._horizontal_flip_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
             (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.horizontal_flip_mask, tv_tensors.Mask),
@@ -1284,7 +1280,7 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1305,7 +1301,7 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -1373,7 +1369,7 @@ class TestHorizontalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1885,7 +1881,7 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1905,7 +1901,7 @@ class TestVerticalFlip:
             pytest.param(
                 F._geometry._vertical_flip_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
             (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.vertical_flip_mask, tv_tensors.Mask),
@@ -1926,7 +1922,7 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -1945,7 +1941,7 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -2009,7 +2005,7 @@ class TestVerticalFlip:
             make_image,
             pytest.param(
                 make_image_cvcuda,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA is not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
             make_bounding_boxes,
             make_segmentation_mask,
@@ -6795,8 +6791,7 @@ class TestPILToTensor:
             F.pil_to_tensor(object())
 
 
-@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-@needs_cuda
+@needs_cvcuda
 class TestToCVCUDATensor:
     @pytest.mark.parametrize("image_type", (torch.Tensor, tv_tensors.Image))
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32, torch.float64])
@@ -6814,7 +6809,7 @@ class TestToCVCUDATensor:
             assert is_pure_tensor(image)
         output = fn(image)
 
-        assert isinstance(output, cvcuda.Tensor)
+        assert isinstance(output, _import_cvcuda().Tensor)
         assert F.get_size(output) == F.get_size(image)
         assert output is not None
 
@@ -6857,9 +6852,8 @@ class TestToCVCUDATensor:
         assert result_tensor.shape[0] == batch_size
 
 
-@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-@needs_cuda
-class TestCVDUDAToTensor:
+@needs_cvcuda
+class TestCVCUDAToTensor:
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32, torch.float64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
@@ -8078,27 +8072,27 @@ class TestUtils:
             query(["blah"])
 
 
-@pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
-@needs_cuda
+@needs_cvcuda
 class TestCVCUDASharedStream:
-    if _is_cvcuda_available():
+    def test_shared_stream(self):
         cvcuda = _import_cvcuda()
 
-    def test_shared_stream(self):
         stream = torch.cuda.Stream(device=None)
 
         @_cvcuda_shared_stream
         def _assert_cvcuda_shared_stream():
-            assert self.cvcuda.Stream.current.handle == stream.cuda_stream
+            assert cvcuda.Stream.current.handle == stream.cuda_stream
 
         with stream:
             _assert_cvcuda_shared_stream()
 
     def test_shared_stream_negative(self):
+        cvcuda = _import_cvcuda()
+
         stream = torch.cuda.Stream(device=None)
 
         def _assert_cvcuda_shared_stream_negative():
-            assert self.cvcuda.Stream.current.handle != stream.cuda_stream
+            assert cvcuda.Stream.current.handle != stream.cuda_stream
 
         with stream:
             _assert_cvcuda_shared_stream_negative()
