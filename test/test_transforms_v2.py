@@ -3346,9 +3346,7 @@ class TestElastic:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional(self, make_input):
@@ -3367,7 +3365,7 @@ class TestElastic:
             pytest.param(
                 F._geometry._elastic_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -3386,9 +3384,7 @@ class TestElastic:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_displacement_error(self, make_input):
@@ -3410,9 +3406,7 @@ class TestElastic:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
@@ -3430,7 +3424,7 @@ class TestElastic:
             check_v1_compatibility=check_v1_compatibility,
         )
 
-    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
+    @pytest.mark.needs_cvcuda
     @needs_cuda
     @pytest.mark.parametrize(
         "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
@@ -3446,7 +3440,7 @@ class TestElastic:
             F.cvcuda_to_tensor(image), displacement=displacement, interpolation=interpolation
         )
 
-        # mainly for checking properties (outside pixel values) are correct
+        # checking properties that are not the pixel values
         # see note below on pixel-value differences
         assert_close(result, expected, atol=get_max_value(torch.uint8), rtol=0)
 
@@ -3455,8 +3449,7 @@ class TestElastic:
         # the primary difference is along the borders where pixels appear to be shifted in location
         # by up to 1, causing potentially up to a diff of 255 on a single pixel
         # this could be because one has fill of 0 and CV-CUDA is shifted and has value with some color
-        # thresholds decrease as image size gets larger
-        # (640, 480) input, has 20.0, 13.0 respectively to pass
+        # thresholds decrease as image size gets larger since shifted pixels are fewer in comparision
         mae = (expected.float() - result.float()).abs().mean()
         mae_threshold = 30.0 if interpolation is transforms.InterpolationMode.NEAREST else 20.0
         assert mae < mae_threshold, f"MAE {mae} exceeds threshold"
