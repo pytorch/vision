@@ -5448,9 +5448,7 @@ class TestEqualize:
             make_image_pil,
             make_image,
             make_video,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional(self, make_input):
@@ -5466,7 +5464,7 @@ class TestEqualize:
             pytest.param(
                 F._color._equalize_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -5482,9 +5480,7 @@ class TestEqualize:
             make_image_pil,
             make_image,
             make_video,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_transform(self, make_input):
@@ -5495,9 +5491,7 @@ class TestEqualize:
         "tensor_type",
         [
             torch.Tensor,
-            pytest.param(
-                "cvcuda.Tensor", marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param("cvcuda.Tensor", marks=pytest.mark.needs_cvcuda),
         ],
     )
     @pytest.mark.parametrize("fn", [F.equalize, transform_cls_to_functional(transforms.RandomEqualize, p=1)])
