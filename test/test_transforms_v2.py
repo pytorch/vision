@@ -1504,9 +1504,7 @@ class TestAffine:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional(self, make_input):
@@ -1525,7 +1523,7 @@ class TestAffine:
             pytest.param(
                 F._geometry._affine_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -1544,9 +1542,7 @@ class TestAffine:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -1568,9 +1564,7 @@ class TestAffine:
         "make_input",
         [
             make_image,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional_image_correctness(
@@ -1625,9 +1619,7 @@ class TestAffine:
         "make_input",
         [
             make_image,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_transform_image_correctness(self, center, interpolation, fill, seed, make_input):
