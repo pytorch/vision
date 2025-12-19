@@ -5,13 +5,10 @@ from typing import Any, Optional, Union
 import torch
 from torchvision import transforms as _transforms
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2.functional._utils import _is_cvcuda_available, _is_cvcuda_tensor
+from torchvision.transforms.v2.functional._utils import _is_cvcuda_tensor
 
 from ._transform import _RandomApplyTransform
 from ._utils import query_chw
-
-
-CVCUDA_AVAILABLE = _is_cvcuda_available()
 
 
 class Grayscale(Transform):
@@ -373,8 +370,7 @@ class RandomAdjustSharpness(_RandomApplyTransform):
 
     _v1_transform_cls = _transforms.RandomAdjustSharpness
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = _RandomApplyTransform._transformed_types + (_is_cvcuda_tensor,)
+    _transformed_types = _RandomApplyTransform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(self, sharpness_factor: float, p: float = 0.5) -> None:
         super().__init__(p=p)
