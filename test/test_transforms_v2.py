@@ -3795,7 +3795,8 @@ class TestErase:
             make_image,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -3812,7 +3813,7 @@ class TestErase:
             pytest.param(
                 F._augment._erase_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -3829,7 +3830,8 @@ class TestErase:
             make_image,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -3870,7 +3872,8 @@ class TestErase:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -3893,7 +3896,8 @@ class TestErase:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
