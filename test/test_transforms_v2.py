@@ -21,7 +21,6 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 
 from common_utils import (
-    assert_close,
     assert_equal,
     cache,
     cpu_and_cuda,
@@ -43,6 +42,7 @@ from common_utils import (
 )
 
 from torch import nn
+from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten, tree_map
 from torch.utils.data import DataLoader, default_collate
 from torchvision import tv_tensors
@@ -6004,7 +6004,8 @@ class TestAdjustSharpness:
             make_image_pil,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6021,7 +6022,7 @@ class TestAdjustSharpness:
             pytest.param(
                 F._color._adjust_sharpness_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6038,7 +6039,8 @@ class TestAdjustSharpness:
             make_image,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -6058,7 +6060,8 @@ class TestAdjustSharpness:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
