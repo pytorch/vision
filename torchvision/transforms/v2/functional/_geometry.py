@@ -5,7 +5,6 @@ from collections.abc import Sequence
 from typing import Any, Optional, TYPE_CHECKING, Union
 
 import numpy as np
-
 import PIL.Image
 import torch
 from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
