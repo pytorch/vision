@@ -10,13 +10,10 @@ from torch.nn.functional import one_hot
 from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F
-from torchvision.transforms.v2.functional._utils import _is_cvcuda_available, _is_cvcuda_tensor
+from torchvision.transforms.v2.functional._utils import _is_cvcuda_tensor
 
 from ._transform import _RandomApplyTransform, Transform
 from ._utils import _check_sequence_input, _parse_labels_getter, has_any, is_pure_tensor, query_chw, query_size
-
-
-CVCUDA_AVAILABLE = _is_cvcuda_available()
 
 
 class RandomErasing(_RandomApplyTransform):
@@ -52,8 +49,7 @@ class RandomErasing(_RandomApplyTransform):
 
     _v1_transform_cls = _transforms.RandomErasing
 
-    if CVCUDA_AVAILABLE:
-        _transformed_types = _RandomApplyTransform._transformed_types + (_is_cvcuda_tensor,)
+    _transformed_types = _RandomApplyTransform._transformed_types + (_is_cvcuda_tensor,)
 
     def _extract_params_for_v1_transform(self) -> dict[str, Any]:
         return dict(
