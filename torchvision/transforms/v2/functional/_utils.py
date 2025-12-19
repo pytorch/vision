@@ -195,7 +195,7 @@ def _get_cvcuda_interp(interpolation: InterpolationMode | str | int) -> "cvcuda.
        Since we need to do interpolation, we will map NEAREST to Interp.NEAREST (which is NEAREST_EXACT)
     2. BICUBIC interpolation method is different compared to TorchVision/PIL, algorithmic difference
     """
-    if len(_interpolation_mode_to_cvcuda_interp) == 0:
+    if not _interpolation_mode_to_cvcuda_interp:
         cvcuda = _import_cvcuda()
         _interpolation_mode_to_cvcuda_interp[InterpolationMode.NEAREST] = cvcuda.Interp.NEAREST
         _interpolation_mode_to_cvcuda_interp[InterpolationMode.NEAREST_EXACT] = cvcuda.Interp.NEAREST
