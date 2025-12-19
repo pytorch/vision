@@ -3837,21 +3837,21 @@ class TestErase:
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform(self, make_input, device):
-        inpt = make_input(device=device)
+        input = make_input(device=device)
 
         # shouldn't get a warning for cvcuda
         if make_input is make_image_cvcuda:
             check_transform(
                 transforms.RandomErasing(p=1),
-                inpt,
+                input,
                 check_v1_compatibility=False,
             )
         else:
             with pytest.warns(UserWarning, match="currently passing through inputs of type"):
                 check_transform(
                     transforms.RandomErasing(p=1),
-                    inpt,
-                    check_v1_compatibility=not isinstance(inpt, PIL.Image.Image),
+                    input,
+                    check_v1_compatibility=not isinstance(input, PIL.Image.Image),
                 )
 
     def _reference_erase_image(self, image, *, i, j, h, w, v):
