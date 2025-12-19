@@ -3770,17 +3770,17 @@ class TestErase:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_image_inplace(self, dtype, device):
-        inpt = make_image(self.INPUT_SIZE, dtype=dtype, device=device)
-        input_version = inpt._version
+        input = make_image(self.INPUT_SIZE, dtype=dtype, device=device)
+        input_version = input._version
 
-        output_out_of_place = F.erase_image(inpt, **self.FUNCTIONAL_KWARGS)
-        assert output_out_of_place.data_ptr() != inpt.data_ptr()
-        assert output_out_of_place is not inpt
+        output_out_of_place = F.erase_image(input, **self.FUNCTIONAL_KWARGS)
+        assert output_out_of_place.data_ptr() != input.data_ptr()
+        assert output_out_of_place is not input
 
-        output_inplace = F.erase_image(inpt, **self.FUNCTIONAL_KWARGS, inplace=True)
-        assert output_inplace.data_ptr() == inpt.data_ptr()
+        output_inplace = F.erase_image(input, **self.FUNCTIONAL_KWARGS, inplace=True)
+        assert output_inplace.data_ptr() == input.data_ptr()
         assert output_inplace._version > input_version
-        assert output_inplace is inpt
+        assert output_inplace is input
 
         assert_equal(output_inplace, output_out_of_place)
 
