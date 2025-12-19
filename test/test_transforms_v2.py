@@ -21,7 +21,6 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 
 from common_utils import (
-    assert_close,
     assert_equal,
     cache,
     cpu_and_cuda,
@@ -43,6 +42,7 @@ from common_utils import (
 )
 
 from torch import nn
+from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten, tree_map
 from torch.utils.data import DataLoader, default_collate
 from torchvision import tv_tensors
@@ -2122,9 +2122,7 @@ class TestRotate:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional(self, make_input):
@@ -2142,7 +2140,7 @@ class TestRotate:
             pytest.param(
                 F._geometry._rotate_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -2161,9 +2159,7 @@ class TestRotate:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -2183,9 +2179,7 @@ class TestRotate:
         "make_input",
         [
             make_image,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional_image_correctness(self, angle, center, interpolation, expand, fill, make_input):
@@ -2225,9 +2219,7 @@ class TestRotate:
         "make_input",
         [
             make_image,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_transform_image_correctness(self, center, interpolation, expand, fill, seed, make_input):
