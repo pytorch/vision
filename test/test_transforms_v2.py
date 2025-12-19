@@ -5172,9 +5172,7 @@ class TestPerspective:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional(self, make_input):
@@ -5193,7 +5191,7 @@ class TestPerspective:
             pytest.param(
                 F._geometry._perspective_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -5213,9 +5211,7 @@ class TestPerspective:
             make_segmentation_mask,
             make_video,
             make_keypoints,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_transform(self, distortion_scale, make_input):
@@ -5235,9 +5231,7 @@ class TestPerspective:
         "make_input",
         [
             make_image,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CVCUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_image_functional_correctness(self, coefficients, interpolation, fill, make_input):

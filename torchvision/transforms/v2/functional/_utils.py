@@ -187,7 +187,7 @@ _interpolation_mode_to_cvcuda_interp: dict[InterpolationMode | str | int, "cvcud
 
 
 def _get_cvcuda_interp(interpolation: InterpolationMode | str | int) -> "cvcuda.Interp":
-    if len(_interpolation_mode_to_cvcuda_interp) == 0:
+    if not _interpolation_mode_to_cvcuda_interp:
         cvcuda = _import_cvcuda()
         _interpolation_mode_to_cvcuda_interp[InterpolationMode.NEAREST] = cvcuda.Interp.NEAREST
         _interpolation_mode_to_cvcuda_interp[InterpolationMode.NEAREST_EXACT] = cvcuda.Interp.NEAREST
