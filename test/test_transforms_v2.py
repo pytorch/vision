@@ -805,7 +805,8 @@ class TestResize:
             make_video,
             make_keypoints,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -833,7 +834,7 @@ class TestResize:
             pytest.param(
                 F._geometry._resize_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -856,7 +857,8 @@ class TestResize:
             make_video,
             make_keypoints,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -880,7 +882,8 @@ class TestResize:
         [
             make_image,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -907,6 +910,8 @@ class TestResize:
 
         atol = 1
         # when using antialias, CV-CUDA is different for BICUBIC and BILINEAR, since antialias requires hq_resize
+        # hq_resize using interpolation will have differences on the edge boundaries
+        # no noticable visual difference
         if make_input is make_image_cvcuda and (
             interpolation is transforms.InterpolationMode.BILINEAR
             or interpolation is transforms.InterpolationMode.BICUBIC
@@ -914,7 +919,7 @@ class TestResize:
             atol = 9
         assert_close(actual, expected, atol=atol, rtol=0)
 
-    @pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+    @needs_cvcuda
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
     @pytest.mark.parametrize("use_max_size", [True, False])
@@ -939,6 +944,8 @@ class TestResize:
             atol = 9
         elif interpolation == transforms.InterpolationMode.BICUBIC:
             # the CV-CUDA bicubic interpolation differs significantly
+            # importantly, this is only the edge boundaries
+            # visually, there is no noticable difference
             atol = 91
         assert_close(actual, expected, atol=atol, rtol=0)
 
@@ -1032,7 +1039,8 @@ class TestResize:
             make_image,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -1074,7 +1082,8 @@ class TestResize:
             make_video,
             make_keypoints,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -1120,7 +1129,8 @@ class TestResize:
             make_video,
             make_keypoints,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -1138,7 +1148,8 @@ class TestResize:
             make_image,
             make_video,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -1205,7 +1216,8 @@ class TestResize:
             make_video,
             make_keypoints,
             pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="test requires CVCUDA")
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )

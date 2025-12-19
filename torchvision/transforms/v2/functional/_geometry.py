@@ -414,7 +414,7 @@ def _resize_image_cvcuda(
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
-    if len(_dtype_to_format_cvcuda) == 0:
+    if not _dtype_to_format_cvcuda:
         _dtype_to_format_cvcuda[cvcuda.Type.U8] = cvcuda.Format.U8
         _dtype_to_format_cvcuda[cvcuda.Type.U16] = cvcuda.Format.U16
         _dtype_to_format_cvcuda[cvcuda.Type.U32] = cvcuda.Format.U32
