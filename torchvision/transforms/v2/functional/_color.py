@@ -196,6 +196,8 @@ def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> to
 
 
 def _adjust_saturation_image_cvcuda(image: "cvcuda.Tensor", saturation_factor: float) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
     if saturation_factor < 0:
         raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
@@ -223,7 +225,7 @@ def _adjust_saturation_image_cvcuda(image: "cvcuda.Tensor", saturation_factor: f
 
 
 if CVCUDA_AVAILABLE:
-    _register_kernel_internal(adjust_saturation, cvcuda.Tensor)(_adjust_saturation_image_cvcuda)
+    _register_kernel_internal(adjust_saturation, _import_cvcuda().Tensor)(_adjust_saturation_image_cvcuda)
 
 
 def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
