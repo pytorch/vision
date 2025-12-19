@@ -4070,9 +4070,7 @@ class TestGaussianNoise:
             make_image_tensor,
             make_image,
             make_video,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional_float(self, make_input):
@@ -4084,9 +4082,7 @@ class TestGaussianNoise:
             make_image_tensor,
             make_image,
             make_video,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional_uint8(self, make_input):
@@ -4101,7 +4097,7 @@ class TestGaussianNoise:
             pytest.param(
                 F._misc._gaussian_noise_image_cvcuda,
                 None,
-                marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available"),
+                marks=pytest.mark.needs_cvcuda,
             ),
         ],
     )
@@ -4116,9 +4112,7 @@ class TestGaussianNoise:
             make_image_tensor,
             make_image,
             make_video,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_transform_float(self, make_input):
@@ -4141,9 +4135,7 @@ class TestGaussianNoise:
             make_image_tensor,
             make_image,
             make_video,
-            pytest.param(
-                make_image_cvcuda, marks=pytest.mark.skipif(not CVCUDA_AVAILABLE, reason="CV-CUDA not available")
-            ),
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_transform_uint8(self, make_input):
