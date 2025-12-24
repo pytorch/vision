@@ -242,7 +242,7 @@ def crop(
 def resize(
     img: Image.Image,
     size: Union[list[int], int],
-    interpolation: int = Image.BILINEAR,
+    interpolation: int = Image.Resampling.BILINEAR,
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -288,7 +288,7 @@ def _parse_fill(
 def affine(
     img: Image.Image,
     matrix: list[float],
-    interpolation: int = Image.NEAREST,
+    interpolation: int = Image.Resampling.NEAREST,
     fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
 
@@ -304,7 +304,7 @@ def affine(
 def rotate(
     img: Image.Image,
     angle: float,
-    interpolation: int = Image.NEAREST,
+    interpolation: int = Image.Resampling.NEAREST,
     expand: bool = False,
     center: Optional[tuple[int, int]] = None,
     fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
@@ -321,7 +321,7 @@ def rotate(
 def perspective(
     img: Image.Image,
     perspective_coeffs: list[float],
-    interpolation: int = Image.BICUBIC,
+    interpolation: int = Image.Resampling.BICUBIC,
     fill: Optional[Union[int, float, Sequence[int], Sequence[float]]] = None,
 ) -> Image.Image:
 
