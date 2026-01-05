@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+3e1e5f0) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+269805e) &#x25BC</a>
     </div>
     
 
@@ -626,12 +626,12 @@
 <span class="sd">    x3, y3 bottom right, and x4, y4 bottom left.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        boxes (Tensor[N, K]): boxes which will be converted. K is the number of coordinates (4 for unrotated bounding boxes, 5 or 8 for rotated bounding boxes)</span>
+<span class="sd">        boxes (Tensor[..., K]): boxes which will be converted. K is the number of coordinates (4 for unrotated bounding boxes, 5 or 8 for rotated bounding boxes). Supports any number of leading batch dimensions.</span>
 <span class="sd">        in_fmt (str): Input format of given boxes. Supported formats are [&#39;xyxy&#39;, &#39;xywh&#39;, &#39;cxcywh&#39;, &#39;xywhr&#39;, &#39;cxcywhr&#39;, &#39;xyxyxyxy&#39;].</span>
 <span class="sd">        out_fmt (str): Output format of given boxes. Supported formats are [&#39;xyxy&#39;, &#39;xywh&#39;, &#39;cxcywh&#39;, &#39;xywhr&#39;, &#39;cxcywhr&#39;, &#39;xyxyxyxy&#39;]</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Tensor[N, K]: Boxes into converted format.</span>
+<span class="sd">        Tensor[..., K]: Boxes into converted format.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">box_convert</span><span class="p">)</span>
