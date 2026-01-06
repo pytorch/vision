@@ -4412,6 +4412,25 @@ class TestConvertBoundingBoxFormat:
                 input_tv_tensor, old_format=input_tv_tensor.format, new_format=input_tv_tensor.format
             )
 
+    def test_cxcywh_to_xyxy_int64_odd_dimensions(self):
+        # Non-regression test for https://github.com/pytorch/vision/issues/8887
+        # Integer bounding boxes with odd width/height produced incorrect results
+        # due to integer division rounding issues (ceil instead of truncation).
+        bounding_boxes = tv_tensors.BoundingBoxes(
+            [[5, 6, 10, 13]],
+            format=tv_tensors.BoundingBoxFormat.CXCYWH,
+            canvas_size=(17, 11),
+        )
+
+        actual = F.convert_bounding_box_format(bounding_boxes, new_format=tv_tensors.BoundingBoxFormat.XYXY)
+        expected = tv_tensors.BoundingBoxes(
+            [[0, 0, 10, 12]],
+            format=tv_tensors.BoundingBoxFormat.XYXY,
+            canvas_size=(17, 11),
+        )
+
+        torch.testing.assert_close(actual, expected)
+
 
 class TestResizedCrop:
     INPUT_SIZE = (17, 11)
