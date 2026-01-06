@@ -176,6 +176,31 @@ def _xyxy_to_xywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xywh
 
 
+def _xywh_to_cxcywh(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        xywh = xywh.clone()
+
+    # cx = x + width / 2, cy = y + height / 2, width and height stay the same
+    xywh[..., :2].add_(
+        xywh[..., 2:].div(2, rounding_mode=None if xywh.is_floating_point() else "floor")
+    )
+
+    return xywh
+
+
+def _cxcywh_to_xywh(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        cxcywh = cxcywh.clone()
+
+    # x = cx - ceil(width / 2), y = cy - ceil(height / 2), width and height stay the same
+    # Use ceil (via div(-2).abs_() trick) to match the two-step conversion CXCYWH -> XYXY -> XYWH,
+    # where _cxcywh_to_xyxy uses ceil for computing x1, y1
+    half_wh = cxcywh[..., 2:].div(-2, rounding_mode=None if cxcywh.is_floating_point() else "floor").abs_()
+    cxcywh[..., :2].sub_(half_wh)
+
+    return cxcywh
+
+
 def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
     if not inplace:
         cxcywh = cxcywh.clone()
@@ -304,7 +329,13 @@ def _convert_bounding_box_format(
     if tv_tensors.is_rotated_bounding_format(old_format) ^ tv_tensors.is_rotated_bounding_format(new_format):
         raise ValueError("Cannot convert between rotated and unrotated bounding boxes.")
 
-    # TODO: Add _xywh_to_cxcywh and _cxcywh_to_xywh to improve performance
+    # Direct conversion between XYWH and CXCYWH for better performance
+    if old_format == BoundingBoxFormat.XYWH and new_format == BoundingBoxFormat.CXCYWH:
+        return _xywh_to_cxcywh(bounding_boxes, inplace)
+    if old_format == BoundingBoxFormat.CXCYWH and new_format == BoundingBoxFormat.XYWH:
+        return _cxcywh_to_xywh(bounding_boxes, inplace)
+
+    # For other conversions, use XYXY/XYWHR as intermediate format
     if old_format == BoundingBoxFormat.XYWH:
         bounding_boxes = _xywh_to_xyxy(bounding_boxes, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:
