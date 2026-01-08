@@ -22,6 +22,7 @@ USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
+USE_ROCJPEG = os.getenv("TORCHVISION_USE_ROCJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 # Note: the GPU video decoding stuff used to be called "video codec", which
 # isn't an accurate or descriptive name considering there are at least 2 other
@@ -52,6 +53,7 @@ print(f"{USE_PNG = }")
 print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
 print(f"{USE_NVJPEG = }")
+print(f"{USE_ROCJPEG = }")
 print(f"{NVCC_FLAGS = }")
 print(f"{USE_CPU_VIDEO_DECODER = }")
 print(f"{USE_GPU_VIDEO_DECODER = }")
@@ -350,18 +352,23 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without WEBP support")
 
-    if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
+    if (USE_NVJPEG or USE_ROCJPEG) and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
-
+        rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
         if nvjpeg_found:
             print("Building torchvision with NVJPEG image support")
             libraries.append("nvjpeg")
             define_macros += [("NVJPEG_FOUND", 1)]
             Extension = CUDAExtension
+        elif rocjpeg_found:
+            print("Building torchvision with ROCJPEG image support")
+            libraries.append("rocjpeg")
+            define_macros += [("ROCJPEG_FOUND", 1)]
+            Extension = CUDAExtension
         else:
-            warnings.warn("Building torchvision without NVJPEG support")
-    elif USE_NVJPEG:
-        warnings.warn("Building torchvision without NVJPEG support")
+            warnings.warn("Building torchvision without NVJPEG or ROCJPEG support")
+    elif (USE_NVJPEG or USE_ROCJPEG):
+        warnings.warn("Building torchvision without NVJPEG or ROCJPEG support")
 
     return Extension(
         name="torchvision.image",
