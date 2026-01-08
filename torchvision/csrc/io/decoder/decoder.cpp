@@ -4,6 +4,7 @@
 #include <future>
 #include <iostream>
 #include <mutex>
+#include <thread>
 #include "audio_stream.h"
 #include "cc_stream.h"
 #include "subtitle_stream.h"
