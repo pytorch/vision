@@ -838,7 +838,6 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       uint32_t roi_width = decode_params_batch[index].crop_rectangle.right - decode_params_batch[index].crop_rectangle.left;
       uint32_t roi_height = decode_params_batch[index].crop_rectangle.bottom - decode_params_batch[index].crop_rectangle.top;
       bool is_roi_valid = (roi_width > 0 && roi_height > 0 && roi_width <= temp_widths[0] && roi_height <= temp_heights[0]) ? true : false;
-      std::cout << "is_roi_valid: " << is_roi_valid << "\n";
       uint32_t width = is_roi_valid ? align(roi_width, 16) : align(temp_widths[0], 16);
       uint32_t height = is_roi_valid ? align(roi_height, 16) : align(temp_heights[0], 16);
       auto output_tensor = torch::zeros(
