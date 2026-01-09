@@ -16,7 +16,7 @@ from .vision import VisionDataset
 
 DATASET_YEAR_DICT = {
     "2012": {
-        "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar",
+        "url": "http://d2l-data.s3-accelerate.amazonaws.com/VOCtrainval_11-May-2012.tar",
         "filename": "VOCtrainval_11-May-2012.tar",
         "md5": "6cd6e144f989b92b3379bac3b3de84fd",
         "base_dir": os.path.join("VOCdevkit", "VOC2012"),
@@ -41,7 +41,7 @@ DATASET_YEAR_DICT = {
     },
     "2008": {
         "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2008/VOCtrainval_14-Jul-2008.tar",
-        "filename": "VOCtrainval_11-May-2012.tar",
+        "filename": "VOCtrainval_14-Jul-2008.tar",
         "md5": "2629fa636546599198acfcfbfcf1904a",
         "base_dir": os.path.join("VOCdevkit", "VOC2008"),
     },
@@ -52,7 +52,7 @@ DATASET_YEAR_DICT = {
         "base_dir": os.path.join("VOCdevkit", "VOC2007"),
     },
     "2007-test": {
-        "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar",
+        "url": "https://data.brainchip.com/dataset-mirror/voc/VOCtest_06-Nov-2007.tar",
         "filename": "VOCtest_06-Nov-2007.tar",
         "md5": "b6e924de25625d8de591ea690078ad9f",
         "base_dir": os.path.join("VOCdevkit", "VOC2007"),
