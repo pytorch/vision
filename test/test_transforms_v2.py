@@ -4044,7 +4044,7 @@ class TestGaussianBlur:
         if dtype is torch.float16 and device == "cpu":
             pytest.skip("The CPU implementation of float16 on CPU differs from opencv")
         if not (dtype == torch.float32 or dtype == torch.uint8) and input_type == "cvcuda.Tensor":
-            pytest.skip("CV-CUDA only supports float32 and uint8 dtypes for gaussian blur")
+            pytest.xfail("CV-CUDA only supports float32 and uint8 dtypes for gaussian blur")
 
         num_channels, height, width = dimensions
 
