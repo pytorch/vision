@@ -24,7 +24,7 @@ from .._internally_replaced_utils import _download_file_from_remote_location, _i
 USER_AGENT = "pytorch/vision"
 
 
-def _urlretrieve(url: str, filename: Union[str, pathlib.Path], chunk_size: int = 1024 * 32) -> None:
+def _urlretrieve(url: str, filename: Union[str, os.PathLike], chunk_size: int = 1024 * 32) -> None:
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT})) as response:
         with open(filename, "wb") as fh, tqdm(total=response.length, unit="B", unit_scale=True) as pbar:
             while chunk := response.read(chunk_size):
@@ -32,7 +32,7 @@ def _urlretrieve(url: str, filename: Union[str, pathlib.Path], chunk_size: int =
                 pbar.update(len(chunk))
 
 
-def calculate_md5(fpath: Union[str, pathlib.Path], chunk_size: int = 1024 * 1024) -> str:
+def calculate_md5(fpath: Union[str, os.PathLike], chunk_size: int = 1024 * 1024) -> str:
     # Setting the `usedforsecurity` flag does not change anything about the functionality, but indicates that we are
     # not using the MD5 checksum for cryptography. This enables its usage in restricted environments like FIPS. Without
     # it torchvision.datasets is unusable in these environments since we perform a MD5 check everywhere.
@@ -43,11 +43,11 @@ def calculate_md5(fpath: Union[str, pathlib.Path], chunk_size: int = 1024 * 1024
     return md5.hexdigest()
 
 
-def check_md5(fpath: Union[str, pathlib.Path], md5: str, **kwargs: Any) -> bool:
+def check_md5(fpath: Union[str, os.PathLike], md5: str, **kwargs: Any) -> bool:
     return md5 == calculate_md5(fpath, **kwargs)
 
 
-def check_integrity(fpath: Union[str, pathlib.Path], md5: Optional[str] = None) -> bool:
+def check_integrity(fpath: Union[str, os.PathLike], md5: Optional[str] = None) -> bool:
     if not os.path.isfile(fpath):
         return False
     if md5 is None:
@@ -86,8 +86,8 @@ def _get_google_drive_file_id(url: str) -> Optional[str]:
 
 def download_url(
     url: str,
-    root: Union[str, pathlib.Path],
-    filename: Optional[Union[str, pathlib.Path]] = None,
+    root: Union[str, os.PathLike],
+    filename: Optional[Union[str, os.PathLike]] = None,
     md5: Optional[str] = None,
     max_redirect_hops: int = 3,
 ) -> None:
@@ -137,7 +137,7 @@ def download_url(
         raise RuntimeError("File not found or corrupted.")
 
 
-def list_dir(root: Union[str, pathlib.Path], prefix: bool = False) -> list[str]:
+def list_dir(root: Union[str, os.PathLike], prefix: bool = False) -> list[str]:
     """List all directories at a given root
 
     Args:
@@ -152,7 +152,7 @@ def list_dir(root: Union[str, pathlib.Path], prefix: bool = False) -> list[str]:
     return directories
 
 
-def list_files(root: Union[str, pathlib.Path], suffix: str, prefix: bool = False) -> list[str]:
+def list_files(root: Union[str, os.PathLike], suffix: str, prefix: bool = False) -> list[str]:
     """List all files ending with a suffix at a given root
 
     Args:
@@ -171,8 +171,8 @@ def list_files(root: Union[str, pathlib.Path], suffix: str, prefix: bool = False
 
 def download_file_from_google_drive(
     file_id: str,
-    root: Union[str, pathlib.Path],
-    filename: Optional[Union[str, pathlib.Path]] = None,
+    root: Union[str, os.PathLike],
+    filename: Optional[Union[str, os.PathLike]] = None,
     md5: Optional[str] = None,
 ):
     """Download a Google Drive file from  and place it in root.
@@ -207,7 +207,7 @@ def download_file_from_google_drive(
 
 
 def _extract_tar(
-    from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
+    from_path: Union[str, os.PathLike], to_path: Union[str, os.PathLike], compression: Optional[str]
 ) -> None:
     with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
         tar.extractall(to_path)
@@ -220,7 +220,7 @@ _ZIP_COMPRESSION_MAP: dict[str, int] = {
 
 
 def _extract_zip(
-    from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
+    from_path: Union[str, os.PathLike], to_path: Union[str, os.PathLike], compression: Optional[str]
 ) -> None:
     with zipfile.ZipFile(
         from_path, "r", compression=_ZIP_COMPRESSION_MAP[compression] if compression else zipfile.ZIP_STORED
@@ -228,7 +228,7 @@ def _extract_zip(
         zip.extractall(to_path)
 
 
-_ARCHIVE_EXTRACTORS: dict[str, Callable[[Union[str, pathlib.Path], Union[str, pathlib.Path], Optional[str]], None]] = {
+_ARCHIVE_EXTRACTORS: dict[str, Callable[[Union[str, os.PathLike], Union[str, os.PathLike], Optional[str]], None]] = {
     ".tar": _extract_tar,
     ".zip": _extract_zip,
 }
@@ -244,7 +244,7 @@ _FILE_TYPE_ALIASES: dict[str, tuple[Optional[str], Optional[str]]] = {
 }
 
 
-def _detect_file_type(file: Union[str, pathlib.Path]) -> tuple[str, Optional[str], Optional[str]]:
+def _detect_file_type(file: Union[str, os.PathLike]) -> tuple[str, Optional[str], Optional[str]]:
     """Detect the archive type and/or compression of a file.
 
     Args:
@@ -288,8 +288,8 @@ def _detect_file_type(file: Union[str, pathlib.Path]) -> tuple[str, Optional[str
 
 
 def _decompress(
-    from_path: Union[str, pathlib.Path],
-    to_path: Optional[Union[str, pathlib.Path]] = None,
+    from_path: Union[str, os.PathLike],
+    to_path: Optional[Union[str, os.PathLike]] = None,
     remove_finished: bool = False,
 ) -> pathlib.Path:
     r"""Decompress a file.
@@ -324,10 +324,10 @@ def _decompress(
 
 
 def extract_archive(
-    from_path: Union[str, pathlib.Path],
-    to_path: Optional[Union[str, pathlib.Path]] = None,
+    from_path: Union[str, os.PathLike],
+    to_path: Optional[Union[str, os.PathLike]] = None,
     remove_finished: bool = False,
-) -> Union[str, pathlib.Path]:
+) -> Union[str, os.PathLike]:
     """Extract an archive.
 
     The archive type and a possible compression is automatically detected from the file name. If the file is compressed
@@ -343,7 +343,7 @@ def extract_archive(
         (str): Path to the directory the file was extracted to.
     """
 
-    def path_or_str(ret_path: pathlib.Path) -> Union[str, pathlib.Path]:
+    def path_or_str(ret_path: pathlib.Path) -> Union[str, os.PathLike]:
         if isinstance(from_path, str):
             return os.fspath(ret_path)
         else:
@@ -373,9 +373,9 @@ def extract_archive(
 
 def download_and_extract_archive(
     url: str,
-    download_root: Union[str, pathlib.Path],
-    extract_root: Optional[Union[str, pathlib.Path]] = None,
-    filename: Optional[Union[str, pathlib.Path]] = None,
+    download_root: Union[str, os.PathLike],
+    extract_root: Optional[Union[str, os.PathLike]] = None,
+    filename: Optional[Union[str, os.PathLike]] = None,
     md5: Optional[str] = None,
     remove_finished: bool = False,
 ) -> None:
@@ -426,7 +426,7 @@ def verify_str_arg(
     return value
 
 
-def _read_pfm(file_name: Union[str, pathlib.Path], slice_channels: int = 2) -> np.ndarray:
+def _read_pfm(file_name: Union[str, os.PathLike], slice_channels: int = 2) -> np.ndarray:
     """Read file in .pfm format. Might contain either 1 or 3 channels of data.
 
     Args:
