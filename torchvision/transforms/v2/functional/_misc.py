@@ -93,18 +93,18 @@ def _normalize_image_cvcuda(
     if not (image.dtype == cvcuda.Type.F32):
         raise ValueError(f"Input tensor should be a float tensor. Got {image.dtype}.")
 
-    channels = image.shape[3]
+    num_channels = image.shape[3]
     if isinstance(mean, float | int):
-        mean = [mean] * channels
-    elif len(mean) != channels:
-        raise ValueError(f"Mean should have {channels} elements. Got {len(mean)}.")
+        mean = [mean] * num_channels
+    elif len(mean) != num_channels:
+        raise ValueError(f"Mean should have {num_channels} elements. Got {len(mean)}.")
     if isinstance(std, float | int):
-        std = [std] * channels
-    elif len(std) != channels:
-        raise ValueError(f"Std should have {channels} elements. Got {len(std)}.")
+        std = [std] * num_channels
+    elif len(std) != num_channels:
+        raise ValueError(f"Std should have {num_channels} elements. Got {len(std)}.")
 
-    mt = torch.as_tensor(mean, dtype=torch.float32).reshape(1, 1, 1, channels).cuda()
-    st = torch.as_tensor(std, dtype=torch.float32).reshape(1, 1, 1, channels).cuda()
+    mt = torch.as_tensor(mean, dtype=torch.float32).reshape(1, 1, 1, num_channels).cuda()
+    st = torch.as_tensor(std, dtype=torch.float32).reshape(1, 1, 1, num_channels).cuda()
     mean_cv = cvcuda.as_tensor(mt, cvcuda.TensorLayout.NHWC)
     std_cv = cvcuda.as_tensor(st, cvcuda.TensorLayout.NHWC)
 

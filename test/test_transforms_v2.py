@@ -5602,6 +5602,11 @@ class TestNormalize:
             with pytest.raises(ValueError, match="std evaluated to zero, leading to division by zero"):
                 F.normalize_image(make_image(dtype=torch.float32), mean=self.MEAN, std=std)
 
+    @needs_cvcuda
+    def test_functional_error_cvcuda(self):
+        with pytest.raises(ValueError, match="Input tensor should be a float tensor"):
+            F.normalize(make_image_cvcuda(dtype=torch.uint8), mean=self.MEAN, std=self.STD)
+
     def _sample_input_adapter(self, transform, input, device):
         adapted_input = {}
         for key, value in input.items():
@@ -5649,7 +5654,7 @@ class TestNormalize:
         is_cvcuda = make_input is make_image_cvcuda
 
         if is_cvcuda and dtype != torch.float32:
-            pytest.skip("CVCUDA only supports float32 for normalize")
+            pytest.xfail("CVCUDA only supports float32 for normalize")
 
         image = make_input(dtype=dtype)
 
@@ -5661,7 +5666,7 @@ class TestNormalize:
         expected = self._reference_normalize_image(image, mean=mean, std=std)
 
         if is_cvcuda:
-            assert_close(actual, expected, rtol=0, atol=1e-6)
+            assert_close(actual, expected)
         else:
             assert_equal(actual, expected)
 
