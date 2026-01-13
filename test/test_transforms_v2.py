@@ -4071,8 +4071,7 @@ class TestGaussianBlur:
         actual = F.gaussian_blur(image, kernel_size=kernel_size, sigma=sigma)
 
         if input_type == "cvcuda.Tensor":
-            actual = F.cvcuda_to_tensor(actual)
-            actual = actual[0].to(device=device)
+            actual = F.cvcuda_to_tensor(actual)[0].to(device)
 
         assert_close(actual, expected, rtol=0, atol=1)
 
