@@ -3926,6 +3926,11 @@ class TestGaussianBlur:
     def test_kernel_video(self):
         check_kernel(F.gaussian_blur_video, make_video(), kernel_size=(3, 3))
 
+    @needs_cvcuda
+    def test_functional_error_cvcuda(self):
+        with pytest.raises(RuntimeError, match="INVALID_DATA_TYPE"):
+            F.gaussian_blur(make_image_cvcuda(dtype=torch.float64), kernel_size=(3, 3), sigma=0.8)
+
     @pytest.mark.parametrize(
         "make_input",
         [
