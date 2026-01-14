@@ -3928,7 +3928,7 @@ class TestGaussianBlur:
 
     @needs_cvcuda
     def test_functional_error_cvcuda(self):
-        with pytest.raises(RuntimeError, match="INVALID_DATA_TYPE"):
+        with pytest.raises(ValueError, match="CV-CUDA's GaussianBlur only supports float32 and uint8 dtype"):
             F.gaussian_blur(make_image_cvcuda(dtype=torch.float64), kernel_size=(3, 3), sigma=0.8)
 
     @pytest.mark.parametrize(

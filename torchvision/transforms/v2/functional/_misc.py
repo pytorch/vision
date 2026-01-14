@@ -200,6 +200,9 @@ def _gaussian_blur_image_cvcuda(
 ) -> "cvcuda.Tensor":
     cvcuda = _import_cvcuda()
 
+    if image.dtype not in (cvcuda.Type.U8, cvcuda.Type.F32):
+        raise ValueError(f"CV-CUDA's GaussianBlur only supports float32 and uint8 dtype, got {image.dtype}")
+
     kernel_size, sigma = _validate_kernel_size_and_sigma(kernel_size, sigma)
 
     return cvcuda.gaussian(
