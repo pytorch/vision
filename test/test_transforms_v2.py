@@ -4412,6 +4412,46 @@ class TestConvertBoundingBoxFormat:
                 input_tv_tensor, old_format=input_tv_tensor.format, new_format=input_tv_tensor.format
             )
 
+    @pytest.mark.parametrize(
+        ("old_format", "new_format"),
+        [
+            (tv_tensors.BoundingBoxFormat.XYWH, tv_tensors.BoundingBoxFormat.CXCYWH),
+            (tv_tensors.BoundingBoxFormat.CXCYWH, tv_tensors.BoundingBoxFormat.XYWH),
+        ],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.int32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_xywh_cxcywh_direct_conversion_parity(self, old_format, new_format, dtype, device):
+        """Test that direct XYWH<->CXCYWH conversion matches the two-step conversion via XYXY.
+
+        This is a parity test for direct conversion functions (_xywh_to_cxcywh, _cxcywh_to_xywh)
+        against the reference two-step path (XYWH -> XYXY -> CXCYWH and vice versa).
+        """
+        from torchvision.transforms.v2.functional._meta import (
+            _cxcywh_to_xywh,
+            _cxcywh_to_xyxy,
+            _xywh_to_cxcywh,
+            _xywh_to_xyxy,
+            _xyxy_to_cxcywh,
+            _xyxy_to_xywh,
+        )
+
+        bounding_boxes = make_bounding_boxes(format=old_format, dtype=dtype, device=device)
+        input_tensor = bounding_boxes.as_subclass(torch.Tensor).clone()
+
+        if old_format == tv_tensors.BoundingBoxFormat.XYWH:
+            # Direct: XYWH -> CXCYWH
+            actual = _xywh_to_cxcywh(input_tensor.clone(), inplace=False)
+            # Reference (two-step): XYWH -> XYXY -> CXCYWH
+            expected = _xyxy_to_cxcywh(_xywh_to_xyxy(input_tensor.clone(), inplace=False), inplace=False)
+        else:
+            # Direct: CXCYWH -> XYWH
+            actual = _cxcywh_to_xywh(input_tensor.clone(), inplace=False)
+            # Reference (two-step): CXCYWH -> XYXY -> XYWH
+            expected = _xyxy_to_xywh(_cxcywh_to_xyxy(input_tensor.clone(), inplace=False), inplace=False)
+
+        torch.testing.assert_close(actual, expected)
+
 
 class TestResizedCrop:
     INPUT_SIZE = (17, 11)
