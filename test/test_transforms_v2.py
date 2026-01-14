@@ -1051,7 +1051,7 @@ class TestResize:
             transforms.InterpolationMode.BOX,
             transforms.InterpolationMode.LANCZOS,
         }:
-            pytest.skip("CV-CUDA may support box and lanczos for certain configurations of resize")
+            pytest.xfail("CV-CUDA may support box and lanczos for certain configurations of resize")
 
         with (
             contextlib.nullcontext()
