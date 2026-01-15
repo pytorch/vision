@@ -186,7 +186,7 @@ _pad_mode_to_cvcuda_border: dict[str, "cvcuda.Border"] = {}
 
 
 def _get_cvcuda_border_from_pad_mode(pad_mode: str) -> "cvcuda.Border":
-    if len(_pad_mode_to_cvcuda_border) == 0:
+    if not _pad_mode_to_cvcuda_border:
         cvcuda = _import_cvcuda()
         _pad_mode_to_cvcuda_border["constant"] = cvcuda.Border.CONSTANT
         _pad_mode_to_cvcuda_border["reflect"] = cvcuda.Border.REFLECT101

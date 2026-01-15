@@ -4802,7 +4802,7 @@ class TestPad:
     )
     @pytest.mark.parametrize("fn", [F.pad, transform_cls_to_functional(transforms.Pad)])
     def test_image_correctness(self, make_input, padding, padding_mode, fill, fn):
-        image = make_input(dtype=torch.uint8, device="cpu")
+        image = make_input(dtype=torch.uint8)
 
         fill = adapt_fill(fill, dtype=torch.uint8)
 
