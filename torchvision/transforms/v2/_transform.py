@@ -178,7 +178,8 @@ class _RandomApplyTransform(Transform):
 
         self.check_inputs(flat_inputs)
 
-        if torch.rand(1) >= self.p:
+        g = torch.thread_safe_generator()
+        if torch.rand(1, generator=g) >= self.p:
             return inputs
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
