@@ -406,10 +406,8 @@ def test_read_interlaced_png():
 
 
 @needs_cuda
-# @pytest.mark.parametrize("mode", [ImageReadMode.UNCHANGED, ImageReadMode.GRAY, ImageReadMode.RGB])
-@pytest.mark.parametrize("mode", [ImageReadMode.RGB])
-# @pytest.mark.parametrize("scripted", (False, True))
-@pytest.mark.parametrize("scripted", (False, ))
+@pytest.mark.parametrize("mode", [ImageReadMode.UNCHANGED, ImageReadMode.GRAY, ImageReadMode.RGB])
+@pytest.mark.parametrize("scripted", (False, True))
 def test_decode_jpegs_cuda(mode, scripted):
     encoded_images = []
     for jpeg_path in get_images(IMAGE_ROOT, ".jpg"):
@@ -417,17 +415,15 @@ def test_decode_jpegs_cuda(mode, scripted):
             continue
         encoded_image = read_file(jpeg_path)
         encoded_images.append(encoded_image)
-    encoded_images = encoded_images[:3]
-    # encoded_images = [encoded_images[0], encoded_images[2], encoded_images[1]]
     decoded_images_cpu = decode_jpeg(encoded_images, mode=mode)
     decode_fn = torch.jit.script(decode_jpeg) if scripted else decode_jpeg
 
     # test multithreaded decoding
     # in the current version we prevent this by using a lock but we still want to test it
-    num_workers = 1
+    num_workers = 10
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-        futures = [executor.submit(decode_fn, encoded_images, mode, "cuda:0") for _ in range(num_workers)]
+        futures = [executor.submit(decode_fn, encoded_images, mode, "cuda") for _ in range(num_workers)]
     decoded_images_threaded = [future.result() for future in futures]
     assert len(decoded_images_threaded) == num_workers
     for decoded_images in decoded_images_threaded:
@@ -435,9 +431,7 @@ def test_decode_jpegs_cuda(mode, scripted):
         for decoded_image_cuda, decoded_image_cpu in zip(decoded_images, decoded_images_cpu):
             assert decoded_image_cuda.shape == decoded_image_cpu.shape
             assert decoded_image_cuda.dtype == decoded_image_cpu.dtype == torch.uint8
-            print(decoded_image_cuda.contiguous())
-            print(decoded_image_cpu.contiguous().cpu())
-            assert (decoded_image_cuda.contiguous().cpu().float() - decoded_image_cpu.cpu().float()).abs().mean() < 5
+            assert (decoded_image_cuda.cpu().float() - decoded_image_cpu.cpu().float()).abs().mean() < 2
 
 
 @needs_cuda

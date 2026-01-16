@@ -22,7 +22,7 @@ USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
-USE_ROCJPEG = os.getenv("TORCHVISION_USE_ROCJPEG", "1") == "1"
+USE_ROCJPEG = os.getenv("TORCHVISION_USE_ROCJPEG", "0") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 # Note: the GPU video decoding stuff used to be called "video codec", which
 # isn't an accurate or descriptive name considering there are at least 2 other

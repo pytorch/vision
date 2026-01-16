@@ -671,18 +671,13 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
   RocJpegOutputFormat output_format;
 
   switch (mode) {
-    case vision::image::IMAGE_READ_MODE_UNCHANGED:
-      output_format = ROCJPEG_OUTPUT_NATIVE;
-      break;
-    case vision::image::IMAGE_READ_MODE_GRAY:
-      output_format = ROCJPEG_OUTPUT_Y;
-      break;
     case vision::image::IMAGE_READ_MODE_RGB:
       output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
       break;
     default:
       TORCH_CHECK(
-          false, "The provided mode is not supported for JPEG decoding on GPU");
+          false,
+          "The provided mode is not supported for ROCJPEG decoding on GPU");
   }
 
   try {
@@ -736,8 +731,184 @@ RocJpegDecoder::~RocJpegDecoder() {
   rocJpegStreamDestroy(rocjpeg_stream_handles[1]);
 }
 
+static constexpr int mem_alignment = 16;
+
 static inline int align(int value, int alignment) {
-   return (value + alignment - 1) & ~(alignment - 1);
+  return (value + alignment - 1) & ~(alignment - 1);
+}
+
+void getChromaSubsamplingStr(
+    RocJpegChromaSubsampling subsampling,
+    std::string& chroma_sub_sampling) {
+  switch (subsampling) {
+    case ROCJPEG_CSS_444:
+      chroma_sub_sampling = "YUV 4:4:4";
+      break;
+    case ROCJPEG_CSS_440:
+      chroma_sub_sampling = "YUV 4:4:0";
+      break;
+    case ROCJPEG_CSS_422:
+      chroma_sub_sampling = "YUV 4:2:2";
+      break;
+    case ROCJPEG_CSS_420:
+      chroma_sub_sampling = "YUV 4:2:0";
+      break;
+    case ROCJPEG_CSS_411:
+      chroma_sub_sampling = "YUV 4:1:1";
+      break;
+    case ROCJPEG_CSS_400:
+      chroma_sub_sampling = "YUV 4:0:0";
+      break;
+    case ROCJPEG_CSS_UNKNOWN:
+      chroma_sub_sampling = "UNKNOWN";
+      break;
+    default:
+      chroma_sub_sampling = "";
+      break;
+  }
+}
+
+int getChannelPitchAndSizes(
+    RocJpegDecodeParams decode_params,
+    RocJpegChromaSubsampling subsampling,
+    uint32_t* widths,
+    uint32_t* heights,
+    uint32_t& num_channels,
+    RocJpegImage& output_image,
+    uint32_t* channel_sizes) {
+  bool is_roi_valid = false;
+  uint32_t roi_width;
+  uint32_t roi_height;
+  roi_width =
+      decode_params.crop_rectangle.right - decode_params.crop_rectangle.left;
+  roi_height =
+      decode_params.crop_rectangle.bottom - decode_params.crop_rectangle.top;
+  if (roi_width > 0 && roi_height > 0 && roi_width <= widths[0] &&
+      roi_height <= heights[0]) {
+    is_roi_valid = true;
+  }
+  switch (decode_params.output_format) {
+    case ROCJPEG_OUTPUT_NATIVE:
+      switch (subsampling) {
+        case ROCJPEG_CSS_444:
+          num_channels = 3;
+          output_image.pitch[2] = output_image.pitch[1] =
+              output_image.pitch[0] =
+                  is_roi_valid ? align(roi_width, mem_alignment)
+                               : align(widths[0], mem_alignment);
+          channel_sizes[2] = channel_sizes[1] = channel_sizes[0] =
+              output_image.pitch[0] *
+              (is_roi_valid ? align(roi_height, mem_alignment)
+                            : align(heights[0], mem_alignment));
+          break;
+        case ROCJPEG_CSS_440:
+          num_channels = 3;
+          output_image.pitch[2] = output_image.pitch[1] =
+              output_image.pitch[0] =
+                  is_roi_valid ? align(roi_width, mem_alignment)
+                               : align(widths[0], mem_alignment);
+          channel_sizes[0] = output_image.pitch[0] *
+              (is_roi_valid ? align(roi_height, mem_alignment)
+                            : align(heights[0], mem_alignment));
+          channel_sizes[2] = channel_sizes[1] = output_image.pitch[0] *
+              (is_roi_valid ? align(roi_height >> 1, mem_alignment)
+                            : align(heights[0] >> 1, mem_alignment));
+          break;
+        case ROCJPEG_CSS_422:
+          num_channels = 1;
+          output_image.pitch[0] =
+              (is_roi_valid ? align(roi_width, mem_alignment)
+                            : align(widths[0], mem_alignment)) *
+              2;
+          channel_sizes[0] = output_image.pitch[0] *
+              (is_roi_valid ? align(roi_height, mem_alignment)
+                            : align(heights[0], mem_alignment));
+          break;
+        case ROCJPEG_CSS_420:
+          num_channels = 2;
+          output_image.pitch[1] = output_image.pitch[0] = is_roi_valid
+              ? align(roi_width, mem_alignment)
+              : align(widths[0], mem_alignment);
+          channel_sizes[0] = output_image.pitch[0] *
+              (is_roi_valid ? align(roi_height, mem_alignment)
+                            : align(heights[0], mem_alignment));
+          channel_sizes[1] = output_image.pitch[1] *
+              (is_roi_valid ? align(roi_height >> 1, mem_alignment)
+                            : align(heights[0] >> 1, mem_alignment));
+          break;
+        case ROCJPEG_CSS_400:
+          num_channels = 1;
+          output_image.pitch[0] = is_roi_valid
+              ? align(roi_width, mem_alignment)
+              : align(widths[0], mem_alignment);
+          channel_sizes[0] = output_image.pitch[0] *
+              (is_roi_valid ? align(roi_height, mem_alignment)
+                            : align(heights[0], mem_alignment));
+          break;
+        default:
+          std::cout << "Unknown chroma subsampling!" << std::endl;
+          return EXIT_FAILURE;
+      }
+      break;
+    case ROCJPEG_OUTPUT_YUV_PLANAR:
+      if (subsampling == ROCJPEG_CSS_400) {
+        num_channels = 1;
+        output_image.pitch[0] = is_roi_valid ? align(roi_width, mem_alignment)
+                                             : align(widths[0], mem_alignment);
+        channel_sizes[0] = output_image.pitch[0] *
+            (is_roi_valid ? align(roi_height, mem_alignment)
+                          : align(heights[0], mem_alignment));
+      } else {
+        num_channels = 3;
+        output_image.pitch[0] = is_roi_valid ? align(roi_width, mem_alignment)
+                                             : align(widths[0], mem_alignment);
+        output_image.pitch[1] = is_roi_valid ? align(roi_width, mem_alignment)
+                                             : align(widths[1], mem_alignment);
+        output_image.pitch[2] = is_roi_valid ? align(roi_width, mem_alignment)
+                                             : align(widths[2], mem_alignment);
+        channel_sizes[0] = output_image.pitch[0] *
+            (is_roi_valid ? align(roi_height, mem_alignment)
+                          : align(heights[0], mem_alignment));
+        channel_sizes[1] = output_image.pitch[1] *
+            (is_roi_valid ? align(roi_height, mem_alignment)
+                          : align(heights[1], mem_alignment));
+        channel_sizes[2] = output_image.pitch[2] *
+            (is_roi_valid ? align(roi_height, mem_alignment)
+                          : align(heights[2], mem_alignment));
+      }
+      break;
+    case ROCJPEG_OUTPUT_Y:
+      num_channels = 1;
+      output_image.pitch[0] = is_roi_valid ? align(roi_width, mem_alignment)
+                                           : align(widths[0], mem_alignment);
+      channel_sizes[0] = output_image.pitch[0] *
+          (is_roi_valid ? align(roi_height, mem_alignment)
+                        : align(heights[0], mem_alignment));
+      break;
+    case ROCJPEG_OUTPUT_RGB:
+      num_channels = 1;
+      output_image.pitch[0] = (is_roi_valid ? align(roi_width, mem_alignment)
+                                            : align(widths[0], mem_alignment)) *
+          3;
+      channel_sizes[0] = output_image.pitch[0] *
+          (is_roi_valid ? align(roi_height, mem_alignment)
+                        : align(heights[0], mem_alignment));
+      break;
+    case ROCJPEG_OUTPUT_RGB_PLANAR:
+      num_channels = 3;
+      output_image.pitch[2] = output_image.pitch[1] = output_image.pitch[0] =
+          is_roi_valid ? align(roi_width, mem_alignment)
+                       : align(widths[0], mem_alignment);
+      channel_sizes[2] = channel_sizes[1] = channel_sizes[0] =
+          output_image.pitch[0] *
+          (is_roi_valid ? align(roi_height, mem_alignment)
+                        : align(heights[0], mem_alignment));
+      break;
+    default:
+      std::cout << "Unknown output format!" << std::endl;
+      return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
 }
 
 std::vector<torch::Tensor> RocJpegDecoder::decode_images(
@@ -757,7 +928,7 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     - output_tensors (std::vector<torch::Tensor>): a vector of Tensors
     containing the decoded images
   */
-  
+
   int num_images = encoded_images.size();
   std::vector<torch::Tensor> output_tensors{num_images};
   RocJpegStatus rocjpeg_status;
@@ -773,7 +944,6 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       cudaStatus);
 
   constexpr int batch_size = 2;
-  RocJpegUtils rocjpeg_utils;
   std::string chroma_sub_sampling = "";
   uint8_t num_components;
   RocJpegChromaSubsampling temp_subsampling;
@@ -797,9 +967,9 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     for (int j = i; j < batch_end; j++) {
       int index = j - i;
       rocjpeg_status = rocJpegStreamParse(
-        (unsigned char*)encoded_images[j].data_ptr(),
-        encoded_images[j].numel(),
-        rocjpeg_stream_handles[index]);
+          (unsigned char*)encoded_images[j].data_ptr(),
+          encoded_images[j].numel(),
+          rocjpeg_stream_handles[index]);
       if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {
         TORCH_CHECK(
             false,
@@ -813,8 +983,7 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
           &temp_subsampling,
           temp_widths.data(),
           temp_heights.data()));
-      rocjpeg_utils.GetChromaSubsamplingStr(
-          temp_subsampling, chroma_sub_sampling);
+      getChromaSubsamplingStr(temp_subsampling, chroma_sub_sampling);
       if (temp_widths[0] < 64 || temp_heights[0] < 64) {
         TORCH_CHECK(
             false, "The image resolution is not supported by VCN Hardware");
@@ -824,7 +993,7 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
         TORCH_CHECK(
             false, "The chroma sub-sampling is not supported by VCN Hardware");
       }
-      if (rocjpeg_utils.GetChannelPitchAndSizes(
+      if (getChannelPitchAndSizes(
               decode_params_batch[index],
               temp_subsampling,
               temp_widths.data(),
@@ -835,15 +1004,21 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
         TORCH_CHECK(false, "ERROR: Failed to get the channel pitch and sizes");
       }
 
-      uint32_t roi_width = decode_params_batch[index].crop_rectangle.right - decode_params_batch[index].crop_rectangle.left;
-      uint32_t roi_height = decode_params_batch[index].crop_rectangle.bottom - decode_params_batch[index].crop_rectangle.top;
-      bool is_roi_valid = (roi_width > 0 && roi_height > 0 && roi_width <= temp_widths[0] && roi_height <= temp_heights[0]) ? true : false;
-      uint32_t width = is_roi_valid ? align(roi_width, 16) : align(temp_widths[0], 16);
-      uint32_t height = is_roi_valid ? align(roi_height, 16) : align(temp_heights[0], 16);
+      uint32_t roi_width = decode_params_batch[index].crop_rectangle.right -
+          decode_params_batch[index].crop_rectangle.left;
+      uint32_t roi_height = decode_params_batch[index].crop_rectangle.bottom -
+          decode_params_batch[index].crop_rectangle.top;
+      bool is_roi_valid =
+          (roi_width > 0 && roi_height > 0 && roi_width <= temp_widths[0] &&
+           roi_height <= temp_heights[0])
+          ? true
+          : false;
+      uint32_t width = is_roi_valid ? align(roi_width, mem_alignment)
+                                    : align(temp_widths[0], mem_alignment);
+      uint32_t height = is_roi_valid ? align(roi_height, mem_alignment)
+                                     : align(temp_heights[0], mem_alignment);
       auto output_tensor = torch::zeros(
-          {int64_t(num_channels),
-           int64_t(height),
-           int64_t(width)},
+          {int64_t(num_channels), int64_t(height), int64_t(width)},
           torch::dtype(torch::kU8).device(target_device));
       channels[j] = num_channels;
 
@@ -855,15 +1030,17 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       // allocate memory for each channel and reuse them if the sizes remain
       // unchanged for a new image.
       for (int c = 0; c < (int)num_channels; c++) {
-          output_images[index].channel[c] = output_tensor[c].data_ptr<uint8_t>();
+        output_images[index].channel[c] = output_tensor[c].data_ptr<uint8_t>();
       }
       // for (int c = (int)num_channels; c < ROCJPEG_MAX_COMPONENT; c++) {
       //   output_images[index].channel[c] = NULL;
       //   output_images[index].pitch[c] = 0;
       // }
-      // output_tensors[j] = output_tensor; // output_tensor.narrow(1, 0, temp_heights[0]).narrow(2, 0, temp_widths[0]);
+      // output_tensors[j] = output_tensor; // output_tensor.narrow(1, 0,
+      // temp_heights[0]).narrow(2, 0, temp_widths[0]);
       current_batch_size++;
-      output_tensors[j] = output_tensor.narrow(1, 0, temp_heights[0]).narrow(2, 0, temp_widths[0]);
+      output_tensors[j] = output_tensor.narrow(1, 0, temp_heights[0])
+                              .narrow(2, 0, temp_widths[0]);
     }
 
     // if (current_batch_size == 2) {
@@ -874,7 +1051,7 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
           current_batch_size,
           decode_params_batch.data(),
           output_images.data()));
-      }
+    }
 
     current_batch_size = 0;
   }

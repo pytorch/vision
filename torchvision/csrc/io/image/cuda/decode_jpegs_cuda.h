@@ -50,7 +50,6 @@ class CUDAJpegDecoder {
 
 #include <c10/cuda/CUDAStream.h>
 #include <rocjpeg/rocjpeg.h>
-#include "rocjpeg_samples_utils.h"
 
 namespace vision {
 namespace image {
@@ -73,5 +72,26 @@ class RocJpegDecoder {
 };
 } // namespace image
 } // namespace vision
+
+#define CHECK_ROCJPEG(call)                                                  \
+  {                                                                          \
+    RocJpegStatus rocjpeg_status = (call);                                   \
+    if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {                          \
+      std::cerr << #call << " returned "                                     \
+                << rocJpegGetErrorName(rocjpeg_status) << " at " << __FILE__ \
+                << ":" << __LINE__ << std::endl;                             \
+      exit(1);                                                               \
+    }                                                                        \
+  }
+
+#define CHECK_HIP(call)                                                    \
+  {                                                                        \
+    hipError_t hip_status = (call);                                        \
+    if (hip_status != hipSuccess) {                                        \
+      std::cout << "HIP failure: 'status: " << hipGetErrorName(hip_status) \
+                << "' at " << __FILE__ << ":" << __LINE__ << std::endl;    \
+      exit(1);                                                             \
+    }                                                                      \
+  }
 
 #endif
