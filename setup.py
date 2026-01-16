@@ -22,7 +22,7 @@ USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
-USE_ROCJPEG = os.getenv("TORCHVISION_USE_ROCJPEG", "0") == "1"
+USE_ROCJPEG = os.getenv("TORCHVISION_USE_ROCJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 # Note: the GPU video decoding stuff used to be called "video codec", which
 # isn't an accurate or descriptive name considering there are at least 2 other
@@ -355,12 +355,12 @@ def make_image_extension():
     if (USE_NVJPEG or USE_ROCJPEG) and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
         rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
-        if nvjpeg_found:
+        if nvjpeg_found and USE_NVJPEG:
             print("Building torchvision with NVJPEG image support")
             libraries.append("nvjpeg")
             define_macros += [("NVJPEG_FOUND", 1)]
             Extension = CUDAExtension
-        elif rocjpeg_found:
+        elif rocjpeg_found and USE_ROCJPEG:
             print("Building torchvision with ROCJPEG image support")
             libraries.append("rocjpeg")
             define_macros += [("ROCJPEG_FOUND", 1)]

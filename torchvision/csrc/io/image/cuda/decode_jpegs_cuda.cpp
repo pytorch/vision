@@ -920,8 +920,7 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     Args:
     - encoded_images (std::vector<torch::Tensor>): a vector of tensors
     containing the jpeg bitstreams to be decoded
-    - output_format (RocJpegOutputFormat): ROCJPEG_OUTPUT_RGB, ROCJPEG_OUTPUT_Y
-    or ROCJPEG_OUTPUT_NATIVE
+    - output_format (RocJpegOutputFormat): ROCJPEG_OUTPUT_RGB
     - device (torch::Device): The desired CUDA device for the returned Tensors
 
     Returns:
@@ -1017,27 +1016,16 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
                                     : align(temp_widths[0], mem_alignment);
       uint32_t height = is_roi_valid ? align(roi_height, mem_alignment)
                                      : align(temp_heights[0], mem_alignment);
-      auto output_tensor = torch::zeros(
+      auto output_tensor = torch::empty(
           {int64_t(num_channels), int64_t(height), int64_t(width)},
           torch::dtype(torch::kU8).device(target_device));
       channels[j] = num_channels;
-
-      // for (int n = 0; n < (int)num_channels; n++) {
-      //   output_images[current_batch_size].channel[n] =
-      //       output_tensor[n].data_ptr<uint8_t>();
-      // }
 
       // allocate memory for each channel and reuse them if the sizes remain
       // unchanged for a new image.
       for (int c = 0; c < (int)num_channels; c++) {
         output_images[index].channel[c] = output_tensor[c].data_ptr<uint8_t>();
       }
-      // for (int c = (int)num_channels; c < ROCJPEG_MAX_COMPONENT; c++) {
-      //   output_images[index].channel[c] = NULL;
-      //   output_images[index].pitch[c] = 0;
-      // }
-      // output_tensors[j] = output_tensor; // output_tensor.narrow(1, 0,
-      // temp_heights[0]).narrow(2, 0, temp_widths[0]);
       current_batch_size++;
       output_tensors[j] = output_tensor.narrow(1, 0, temp_heights[0])
                               .narrow(2, 0, temp_widths[0]);
@@ -1062,17 +1050,6 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       "Failed to synchronize CUDA stream: ",
       cudaStatus);
 
-  // prune extraneous channels from single channel images
-  if (output_format == ROCJPEG_OUTPUT_NATIVE) {
-    for (std::vector<at::Tensor>::size_type i = 0; i < output_tensors.size();
-         ++i) {
-      if (channels[i] == 1) {
-        output_tensors[i] = output_tensors[i][0].unsqueeze(0).clone();
-      }
-    }
-  }
-
-  cudaDeviceSynchronize();
   return output_tensors;
 }
 
