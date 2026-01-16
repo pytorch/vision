@@ -281,13 +281,16 @@ class RandomResizedCrop(Transform):
         height, width = query_size(flat_inputs)
         area = height * width
 
+        g = torch.thread_safe_generator()
+
         log_ratio = self._log_ratio
         for _ in range(10):
-            target_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
+            target_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1], generator=g).item()
             aspect_ratio = torch.exp(
                 torch.empty(1).uniform_(
                     log_ratio[0],  # type: ignore[arg-type]
                     log_ratio[1],  # type: ignore[arg-type]
+                    generator=g,
                 )
             ).item()
 
@@ -295,8 +298,8 @@ class RandomResizedCrop(Transform):
             h = int(round(math.sqrt(target_area / aspect_ratio)))
 
             if 0 < w <= width and 0 < h <= height:
-                i = torch.randint(0, height - h + 1, size=(1,)).item()
-                j = torch.randint(0, width - w + 1, size=(1,)).item()
+                i = torch.randint(0, height - h + 1, size=(1,), generator=g).item()
+                j = torch.randint(0, width - w + 1, size=(1,), generator=g).item()
                 break
         else:
             # Fallback to central crop
@@ -547,11 +550,13 @@ class RandomZoomOut(_RandomApplyTransform):
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         orig_h, orig_w = query_size(flat_inputs)
 
-        r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
+        g = torch.thread_safe_generator()
+
+        r = self.side_range[0] + torch.rand(1, generator=g) * (self.side_range[1] - self.side_range[0])
         canvas_width = int(orig_w * r)
         canvas_height = int(orig_h * r)
 
-        r = torch.rand(2)
+        r = torch.rand(2, generator=g)
         left = int((canvas_width - orig_w) * r[0])
         top = int((canvas_height - orig_h) * r[1])
         right = canvas_width - (left + orig_w)
@@ -628,7 +633,8 @@ class RandomRotation(Transform):
         self.center = center
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
-        angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
+        g = torch.thread_safe_generator()
+        angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1], generator=g).item()
         return dict(angle=angle)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
@@ -728,26 +734,28 @@ class RandomAffine(Transform):
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         height, width = query_size(flat_inputs)
 
-        angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
+        g = torch.thread_safe_generator()
+
+        angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1], generator=g).item()
         if self.translate is not None:
             max_dx = float(self.translate[0] * width)
             max_dy = float(self.translate[1] * height)
-            tx = int(round(torch.empty(1).uniform_(-max_dx, max_dx).item()))
-            ty = int(round(torch.empty(1).uniform_(-max_dy, max_dy).item()))
+            tx = int(round(torch.empty(1).uniform_(-max_dx, max_dx, generator=g).item()))
+            ty = int(round(torch.empty(1).uniform_(-max_dy, max_dy, generator=g).item()))
             translate = (tx, ty)
         else:
             translate = (0, 0)
 
         if self.scale is not None:
-            scale = torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
+            scale = torch.empty(1).uniform_(self.scale[0], self.scale[1], generator=g).item()
         else:
             scale = 1.0
 
         shear_x = shear_y = 0.0
         if self.shear is not None:
-            shear_x = torch.empty(1).uniform_(self.shear[0], self.shear[1]).item()
+            shear_x = torch.empty(1).uniform_(self.shear[0], self.shear[1], generator=g).item()
             if len(self.shear) == 4:
-                shear_y = torch.empty(1).uniform_(self.shear[2], self.shear[3]).item()
+                shear_y = torch.empty(1).uniform_(self.shear[2], self.shear[3], generator=g).item()
 
         shear = (shear_x, shear_y)
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
@@ -885,13 +893,15 @@ class RandomCrop(Transform):
         padding = [pad_left, pad_top, pad_right, pad_bottom]
         needs_pad = any(padding)
 
+        g = torch.thread_safe_generator()
+
         needs_vert_crop, top = (
-            (True, int(torch.randint(0, padded_height - cropped_height + 1, size=())))
+            (True, int(torch.randint(0, padded_height - cropped_height + 1, size=(), generator=g)))
             if padded_height > cropped_height
             else (False, 0)
         )
         needs_horz_crop, left = (
-            (True, int(torch.randint(0, padded_width - cropped_width + 1, size=())))
+            (True, int(torch.randint(0, padded_width - cropped_width + 1, size=(), generator=g)))
             if padded_width > cropped_width
             else (False, 0)
         )
@@ -970,21 +980,24 @@ class RandomPerspective(_RandomApplyTransform):
         half_width = width // 2
         bound_height = int(distortion_scale * half_height) + 1
         bound_width = int(distortion_scale * half_width) + 1
+
+        g = torch.thread_safe_generator()
+
         topleft = [
-            int(torch.randint(0, bound_width, size=(1,))),
-            int(torch.randint(0, bound_height, size=(1,))),
+            int(torch.randint(0, bound_width, size=(1,), generator=g)),
+            int(torch.randint(0, bound_height, size=(1,), generator=g)),
         ]
         topright = [
-            int(torch.randint(width - bound_width, width, size=(1,))),
-            int(torch.randint(0, bound_height, size=(1,))),
+            int(torch.randint(width - bound_width, width, size=(1,), generator=g)),
+            int(torch.randint(0, bound_height, size=(1,), generator=g)),
         ]
         botright = [
-            int(torch.randint(width - bound_width, width, size=(1,))),
-            int(torch.randint(height - bound_height, height, size=(1,))),
+            int(torch.randint(width - bound_width, width, size=(1,), generator=g)),
+            int(torch.randint(height - bound_height, height, size=(1,), generator=g)),
         ]
         botleft = [
-            int(torch.randint(0, bound_width, size=(1,))),
-            int(torch.randint(height - bound_height, height, size=(1,))),
+            int(torch.randint(0, bound_width, size=(1,), generator=g)),
+            int(torch.randint(height - bound_height, height, size=(1,), generator=g)),
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
@@ -1065,7 +1078,9 @@ class ElasticTransform(Transform):
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         height, width = query_size(flat_inputs)
 
-        dx = torch.rand(1, 1, height, width) * 2 - 1
+        g = torch.thread_safe_generator()
+
+        dx = torch.rand(1, 1, height, width, generator=g) * 2 - 1
         if self.sigma[0] > 0.0:
             kx = int(8 * self.sigma[0] + 1)
             # if kernel size is even we have to make it odd
@@ -1074,7 +1089,7 @@ class ElasticTransform(Transform):
             dx = self._call_kernel(F.gaussian_blur, dx, [kx, kx], list(self.sigma))
         dx = dx * self.alpha[0] / width
 
-        dy = torch.rand(1, 1, height, width) * 2 - 1
+        dy = torch.rand(1, 1, height, width, generator=g) * 2 - 1
         if self.sigma[1] > 0.0:
             ky = int(8 * self.sigma[1] + 1)
             # if kernel size is even we have to make it odd
@@ -1157,16 +1172,18 @@ class RandomIoUCrop(Transform):
         orig_h, orig_w = query_size(flat_inputs)
         bboxes = get_bounding_boxes(flat_inputs)
 
+        g = torch.thread_safe_generator()
+
         while True:
             # sample an option
-            idx = int(torch.randint(low=0, high=len(self.options), size=(1,)))
+            idx = int(torch.randint(low=0, high=len(self.options), size=(1,), generator=g))
             min_jaccard_overlap = self.options[idx]
             if min_jaccard_overlap >= 1.0:  # a value larger than 1 encodes the leave as-is option
                 return dict()
 
             for _ in range(self.trials):
                 # check the aspect ratio limitations
-                r = self.min_scale + (self.max_scale - self.min_scale) * torch.rand(2)
+                r = self.min_scale + (self.max_scale - self.min_scale) * torch.rand(2, generator=g)
                 new_w = int(orig_w * r[0])
                 new_h = int(orig_h * r[1])
                 aspect_ratio = new_w / new_h
@@ -1174,7 +1191,7 @@ class RandomIoUCrop(Transform):
                     continue
 
                 # check for 0 area crops
-                r = torch.rand(2)
+                r = torch.rand(2, generator=g)
                 left = int((orig_w - new_w) * r[0])
                 top = int((orig_h - new_h) * r[1])
                 right = left + new_w
@@ -1206,7 +1223,6 @@ class RandomIoUCrop(Transform):
                 return dict(top=top, left=left, height=new_h, width=new_w, is_within_crop_area=is_within_crop_area)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
-
         if len(params) < 1:
             return inpt
 
@@ -1276,7 +1292,9 @@ class ScaleJitter(Transform):
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         orig_height, orig_width = query_size(flat_inputs)
 
-        scale = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
+        g = torch.thread_safe_generator()
+
+        scale = self.scale_range[0] + torch.rand(1, generator=g) * (self.scale_range[1] - self.scale_range[0])
         r = min(self.target_size[1] / orig_height, self.target_size[0] / orig_width) * scale
         new_width = int(orig_width * r)
         new_height = int(orig_height * r)
@@ -1341,7 +1359,9 @@ class RandomShortestSize(Transform):
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         orig_height, orig_width = query_size(flat_inputs)
 
-        min_size = self.min_size[int(torch.randint(len(self.min_size), ()))]
+        g = torch.thread_safe_generator()
+
+        min_size = self.min_size[int(torch.randint(len(self.min_size), (), generator=g))]
         r = min_size / min(orig_height, orig_width)
         if self.max_size is not None:
             r = min(r, self.max_size / max(orig_height, orig_width))
@@ -1418,7 +1438,8 @@ class RandomResize(Transform):
         self.antialias = antialias
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
-        size = int(torch.randint(self.min_size, self.max_size, ()))
+        g = torch.thread_safe_generator()
+        size = int(torch.randint(self.min_size, self.max_size, (), generator=g))
         return dict(size=[size])
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
