@@ -631,13 +631,12 @@ class RandomCrop(torch.nn.Module):
     """
 
     @staticmethod
-    def get_params(img: Tensor, output_size: tuple[int, int], generator: Optional[torch.Generator] = None) -> tuple[int, int, int, int]:
+    def get_params(img: Tensor, output_size: tuple[int, int]) -> tuple[int, int, int, int]:
         """Get parameters for ``crop`` for a random crop.
 
         Args:
             img (PIL Image or Tensor): Image to be cropped.
             output_size (tuple): Expected output size of the crop.
-            generator (torch.Generator, optional): Random number generator.
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
@@ -651,11 +650,11 @@ class RandomCrop(torch.nn.Module):
         if w == tw and h == th:
             return 0, 0, h, w
 
-        i = torch.randint(0, h - th + 1, size=(1,), generator=generator).item()
-        j = torch.randint(0, w - tw + 1, size=(1,), generator=generator).item()
+        i = torch.randint(0, h - th + 1, size=(1,)).item()
+        j = torch.randint(0, w - tw + 1, size=(1,)).item()
         return i, j, th, tw
 
-    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant", generator=None):
+    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
         super().__init__()
         _log_api_usage_once(self)
 
@@ -665,7 +664,6 @@ class RandomCrop(torch.nn.Module):
         self.pad_if_needed = pad_if_needed
         self.fill = fill
         self.padding_mode = padding_mode
-        self.generator = generator
 
     def forward(self, img):
         """
@@ -688,7 +686,7 @@ class RandomCrop(torch.nn.Module):
             padding = [0, self.size[0] - height]
             img = F.pad(img, padding, self.fill, self.padding_mode)
 
-        i, j, h, w = self.get_params(img, self.size, self.generator)
+        i, j, h, w = self.get_params(img, self.size)
 
         return F.crop(img, i, j, h, w)
 
