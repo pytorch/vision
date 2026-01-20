@@ -27,9 +27,17 @@ class CelebA(VisionDataset):
                 - ``attr`` (Tensor shape=(40,) dtype=int): binary (0, 1) labels for attributes
                 - ``identity`` (int): label for each person (data points with the same identity are the same person)
                 - ``bbox`` (Tensor shape=(4,) dtype=int): bounding box (x, y, width, height)
-                    Until [Issue 9008](https://github.com/pytorch/vision/issues/9008) is fixed: the bbox data is for
-                    the "in-the-wild" CelebA dataset, but this is the cropped and rescalled CelebA dataset, and these
-                    can not be converted between trivially.
+
+                  .. warning::
+
+                      These bounding box coordinates correspond to the original uncropped
+                      CelebA images, not the cropped and aligned images returned by this
+                      dataset. As a result, the coordinates will not match and may fall
+                      outside the image boundaries.
+
+                      See `Issue #9008 <https://github.com/pytorch/vision/issues/9008>`_ for
+                      details and potential workarounds.
+
                 - ``landmarks`` (Tensor shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
                   righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)
 
