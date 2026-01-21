@@ -1966,6 +1966,29 @@ class TestMasksToBoxes:
             masks = _create_masks(image, masks)
             masks_box_check(masks, expected)
 
+    def test_empty_masks(self):
+        # All-zero masks should return [0, 0, 0, 0] boxes
+        masks = torch.zeros((3, 64, 64))
+        boxes = ops.masks_to_boxes(masks)
+        expected = torch.zeros((3, 4))
+        torch.testing.assert_close(boxes, expected, rtol=0.0, atol=0.0)
+
+    def test_mixed_empty_and_non_empty_masks(self):
+        # Batch with some empty and some non-empty masks
+        masks = torch.zeros((3, 10, 10))
+        masks[1, 2:5, 3:7] = 1  # Only second mask has content
+
+        boxes = ops.masks_to_boxes(masks)
+
+        expected = torch.tensor(
+            [
+                [0.0, 0.0, 0.0, 0.0],  # empty
+                [3.0, 2.0, 6.0, 4.0],  # non-empty: x1=3, y1=2, x2=6, y2=4
+                [0.0, 0.0, 0.0, 0.0],  # empty
+            ]
+        )
+        torch.testing.assert_close(boxes, expected, rtol=0.0, atol=0.0)
+
 
 class TestStochasticDepth:
     @pytest.mark.parametrize("seed", range(10))
