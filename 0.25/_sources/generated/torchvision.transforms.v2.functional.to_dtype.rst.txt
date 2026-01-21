@@ -1,0 +1,6 @@
+﻿torchvision.transforms.v2.functional.to\_dtype
+==============================================
+
+.. currentmodule:: torchvision.transforms.v2.functional
+
+.. autofunction:: to_dtype

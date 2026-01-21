@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+HMDB51
+======
+
+.. autoclass:: HMDB51
+    :members:
+        __getitem__,
+        
+    :special-members:
