@@ -82,6 +82,12 @@ echo '::group::Install TorchVision'
 pip install -e . -v --no-build-isolation
 echo '::endgroup::'
 
+if [[ "${CVCUDA:-}" == "1" ]]; then
+  echo '::group::Install CV-CUDA'
+  pip install --progress-bar=off cvcuda-cu12
+  echo '::endgroup::'
+fi
+
 echo '::group::Install torchvision-extra-decoders'
 # This can be done after torchvision was built
 if [[ "$(uname)" == "Linux" && "$(uname -m)" != "aarch64" ]]; then
