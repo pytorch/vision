@@ -503,8 +503,8 @@ def _read_flo(file_name: str) -> np.ndarray:
         if magic != b"PIEH":
             raise ValueError("Magic number incorrect. Invalid .flo file")
 
-        w = int(np.fromfile(f, "<i4", count=1))
-        h = int(np.fromfile(f, "<i4", count=1))
+        w = np.fromfile(f, "<i4", count=1).item()
+        h = np.fromfile(f, "<i4", count=1).item()
         data = np.fromfile(f, "<f4", count=2 * w * h)
         return data.reshape(h, w, 2).transpose(2, 0, 1)
 
