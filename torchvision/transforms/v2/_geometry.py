@@ -1053,25 +1053,25 @@ class ElasticTransform(Transform):
         self._fill = _setup_fill_arg(fill)
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
-        size = list(query_size(flat_inputs))
+        height, width = query_size(flat_inputs)
 
-        dx = torch.rand([1, 1] + size) * 2 - 1
+        dx = torch.rand(1, 1, height, width) * 2 - 1
         if self.sigma[0] > 0.0:
             kx = int(8 * self.sigma[0] + 1)
             # if kernel size is even we have to make it odd
             if kx % 2 == 0:
                 kx += 1
             dx = self._call_kernel(F.gaussian_blur, dx, [kx, kx], list(self.sigma))
-        dx = dx * self.alpha[0] / size[1]
+        dx = dx * self.alpha[0] / width
 
-        dy = torch.rand([1, 1] + size) * 2 - 1
+        dy = torch.rand(1, 1, height, width) * 2 - 1
         if self.sigma[1] > 0.0:
             ky = int(8 * self.sigma[1] + 1)
             # if kernel size is even we have to make it odd
             if ky % 2 == 0:
                 ky += 1
             dy = self._call_kernel(F.gaussian_blur, dy, [ky, ky], list(self.sigma))
-        dy = dy * self.alpha[1] / size[0]
+        dy = dy * self.alpha[1] / height
         displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
         return dict(displacement=displacement)
 
