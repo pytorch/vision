@@ -4413,15 +4413,12 @@ class TestConvertBoundingBoxFormat:
             )
 
     @pytest.mark.parametrize(
-        ("old_format", "new_format"),
-        [
-            (tv_tensors.BoundingBoxFormat.XYWH, tv_tensors.BoundingBoxFormat.CXCYWH),
-            (tv_tensors.BoundingBoxFormat.CXCYWH, tv_tensors.BoundingBoxFormat.XYWH),
-        ],
+        "old_format",
+        [tv_tensors.BoundingBoxFormat.XYWH, tv_tensors.BoundingBoxFormat.CXCYWH],
     )
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.int32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_xywh_cxcywh_direct_conversion_parity(self, old_format, new_format, dtype, device):
+    def test_xywh_cxcywh_direct_conversion_parity(self, old_format, dtype, device):
         """Test that direct XYWH<->CXCYWH conversion matches the two-step conversion via XYXY.
 
         This is a parity test for direct conversion functions (_xywh_to_cxcywh, _cxcywh_to_xywh)
