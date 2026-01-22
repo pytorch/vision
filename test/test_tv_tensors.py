@@ -334,7 +334,7 @@ def test_wrap(make_input):
 
 
 def test_wrap_preserves_subclass():
-    # Regression test for https://github.com/pytorch/vision/issues/9328
+    # Non regression test for https://github.com/pytorch/vision/issues/9328
     class MyBoundingBoxes(tv_tensors.BoundingBoxes):
         pass
 
