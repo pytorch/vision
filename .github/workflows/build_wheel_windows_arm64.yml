@@ -1,11 +1,12 @@
-name: Build Linux Conda
+name: Build Windows ARM64 Wheels
 
 on:
   pull_request:
+    paths:
+      - .github/workflows/build_wheel_windows_arm64.yml
   push:
     branches:
       - nightly
-      - main
       - release/*
     tags:
         # NOTE: Binary build pipelines should only get triggered on release candidate builds
@@ -13,14 +14,20 @@ on:
         - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   generate-matrix:
     uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
     with:
-      package-type: conda
-      os: linux
+      package-type: wheel
+      os: windows-arm64
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
+      with-cuda: disable
+
   build:
     needs: generate-matrix
     strategy:
@@ -28,25 +35,20 @@ jobs:
       matrix:
         include:
           - repository: pytorch/vision
-            pre-script: ""
-            post-script: ""
-            conda-package-directory: packaging/torchvision
             smoke-test-script: test/smoke_test.py
+            pre-script: packaging/pre_build_script_arm64.sh
             package-name: torchvision
+            architecture: "arm64"
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_conda_linux.yml@main
+    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@main
     with:
-      conda-package-directory: ${{ matrix.conda-package-directory }}
       repository: ${{ matrix.repository }}
       ref: ""
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
-      build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
-      post-script: ${{ matrix.post-script }}
+      build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       package-name: ${{ matrix.package-name }}
       smoke-test-script: ${{ matrix.smoke-test-script }}
       trigger-event: ${{ github.event_name }}
-    secrets:
-      CONDA_PYTORCHBOT_TOKEN: ${{ secrets.CONDA_PYTORCHBOT_TOKEN }}
-      CONDA_PYTORCHBOT_TOKEN_TEST: ${{ secrets.CONDA_PYTORCHBOT_TOKEN_TEST }}
+      architecture: ${{ matrix.architecture }}

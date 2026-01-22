@@ -4,14 +4,14 @@ import pathlib
 import warnings
 from itertools import repeat
 from types import FunctionType
-from typing import Any, BinaryIO, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, Optional, Union
 
 import numpy as np
 import torch
-from PIL import Image, ImageColor, ImageDraw, ImageFont
-
+from PIL import __version__ as PILLOW_VERSION_STRING, Image, ImageColor, ImageDraw, ImageFont
 
 __all__ = [
+    "_Image_fromarray",
     "make_grid",
     "save_image",
     "draw_bounding_boxes",
@@ -23,11 +23,11 @@ __all__ = [
 
 @torch.no_grad()
 def make_grid(
-    tensor: Union[torch.Tensor, List[torch.Tensor]],
+    tensor: Union[torch.Tensor, list[torch.Tensor]],
     nrow: int = 8,
     padding: int = 2,
     normalize: bool = False,
-    value_range: Optional[Tuple[int, int]] = None,
+    value_range: Optional[tuple[int, int]] = None,
     scale_each: bool = False,
     pad_value: float = 0.0,
 ) -> torch.Tensor:
@@ -123,9 +123,139 @@ def make_grid(
     return grid
 
 
+class _ImageDrawTV(ImageDraw.ImageDraw):
+    """
+    A wrapper around PIL.ImageDraw to add functionalities for drawing rotated bounding boxes.
+    """
+
+    def oriented_rectangle(self, xy, fill=None, outline=None, width=1):
+        self.dashed_line(((xy[0], xy[1]), (xy[2], xy[3])), width=width, fill=outline)
+        for i in range(2, len(xy), 2):
+            self.line(
+                ((xy[i], xy[i + 1]), (xy[(i + 2) % len(xy)], xy[(i + 3) % len(xy)])),
+                width=width,
+                fill=outline,
+            )
+        self.polygon(xy, fill=fill, outline=None, width=0)
+
+    def dashed_line(self, xy, fill=None, width=0, joint=None, dash_length=5, space_length=5):
+        # Calculate the total length of the line
+        total_length = 0
+        for i in range(1, len(xy)):
+            x1, y1 = xy[i - 1]
+            x2, y2 = xy[i]
+            total_length += ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+        # Initialize the current position and the current dash
+        current_position = 0
+        current_dash = True
+        # Iterate over the coordinates of the line
+        for i in range(1, len(xy)):
+            x1, y1 = xy[i - 1]
+            x2, y2 = xy[i]
+            # Calculate the length of this segment
+            segment_length = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+            # While there are still dashes to draw on this segment
+            while segment_length > 0:
+                # Calculate the length of this dash
+                dash_length_to_draw = min(segment_length, dash_length if current_dash else space_length)
+                # Calculate the end point of this dash
+                dx = x2 - x1
+                dy = y2 - y1
+                angle = math.atan2(dy, dx)
+                end_x = x1 + math.cos(angle) * dash_length_to_draw
+                end_y = y1 + math.sin(angle) * dash_length_to_draw
+                # If this is a dash, draw it
+                if current_dash:
+                    self.line([(x1, y1), (end_x, end_y)], fill, width, joint)
+                # Update the current position and the current dash
+                current_position += dash_length_to_draw
+                segment_length -= dash_length_to_draw
+                x1, y1 = end_x, end_y
+                current_dash = not current_dash
+
+
+def _Image_fromarray(
+    obj: np.ndarray,
+    mode: str,
+) -> Image.Image:
+    """
+    A wrapper around PIL.Image.fromarray to mitigate the deprecation of the
+    mode paramter. See:
+      https://pillow.readthedocs.io/en/stable/releasenotes/11.3.0.html#image-fromarray-mode-parameter
+    """
+
+    # This may throw if the version string is from an install that comes from a
+    # non-stable or development version. We'll fall back to the old behavior in
+    # such cases.
+    try:
+        PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION_STRING.split("."))
+    except Exception:
+        PILLOW_VERSION = None
+
+    if PILLOW_VERSION is not None and PILLOW_VERSION >= (11, 3):
+        # The actual PR that implements the deprecation has more context for why
+        # it was done, and also points out some problems:
+        #
+        #    https://github.com/python-pillow/Pillow/pull/9018
+        #
+        # Our use case falls into those problems. We actually rely on the old
+        # behavior of Image.fromarray():
+        #
+        #    new behavior: PIL will infer the image mode from the data passed
+        #                  in. That is, the type and shape determines the mode.
+        #
+        #    old behiavor: The mode will change how PIL reads the image,
+        #                  regardless of the data. That is, it will make the
+        #                  data work with the mode.
+        #
+        # Our uses of Image.fromarray() are effectively a "turn into PIL image
+        # AND convert the kind" operation. In particular, in
+        # functional.to_pil_image() and transforms.ToPILImage.
+        #
+        # However, Image.frombuffer() still performs this conversion. The code
+        # below is lifted from the new implementation of Image.fromarray(). We
+        # omit the code that infers the mode, and use the code that figures out
+        # from the data passed in (obj) what the correct parameters are to
+        # Image.frombuffer().
+        #
+        # Note that the alternate solution below does not work:
+        #
+        #    img = Image.fromarray(obj)
+        #    img = img.convert(mode)
+        #
+        # The resulting image has very different actual pixel values than before.
+        #
+        # TODO: Issue #9151. Pillow has an open PR to restore the functionality
+        #       we rely on:
+        #
+        #       https://github.com/python-pillow/Pillow/pull/9063
+        #
+        #       When that is part of a release, we can revisit this hack below.
+        arr = obj.__array_interface__
+        shape = arr["shape"]
+        ndim = len(shape)
+        size = 1 if ndim == 1 else shape[1], shape[0]
+
+        strides = arr.get("strides", None)
+        contiguous_obj: Union[np.ndarray, bytes] = obj
+        if strides is not None:
+            # We require that the data is contiguous; if it is not, we need to
+            # convert it into a contiguous format.
+            if hasattr(obj, "tobytes"):
+                contiguous_obj = obj.tobytes()
+            elif hasattr(obj, "tostring"):
+                contiguous_obj = obj.tostring()
+            else:
+                raise ValueError("Unable to convert obj into contiguous format")
+
+        return Image.frombuffer(mode, size, contiguous_obj, "raw", mode, 0, 1)
+    else:
+        return Image.fromarray(obj, mode)
+
+
 @torch.no_grad()
 def save_image(
-    tensor: Union[torch.Tensor, List[torch.Tensor]],
+    tensor: Union[torch.Tensor, list[torch.Tensor]],
     fp: Union[str, pathlib.Path, BinaryIO],
     format: Optional[str] = None,
     **kwargs,
@@ -155,14 +285,16 @@ def save_image(
 def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
-    labels: Optional[List[str]] = None,
-    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+    labels: Optional[list[str]] = None,
+    colors: Optional[Union[list[Union[str, tuple[int, int, int]]], str, tuple[int, int, int]]] = None,
     fill: Optional[bool] = False,
     width: int = 1,
     font: Optional[str] = None,
     font_size: Optional[int] = None,
+    label_colors: Optional[Union[list[Union[str, tuple[int, int, int]]], str, tuple[int, int, int]]] = None,
+    label_background_colors: Optional[Union[list[Union[str, tuple[int, int, int]]], str, tuple[int, int, int]]] = None,
+    fill_labels: bool = False,
 ) -> torch.Tensor:
-
     """
     Draws bounding boxes on given RGB image.
     The image values should be uint8 in [0, 255] or float in [0, 1].
@@ -170,9 +302,11 @@ def draw_bounding_boxes(
 
     Args:
         image (Tensor): Tensor of shape (C, H, W) and dtype uint8 or float.
-        boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
-            the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
-            `0 <= ymin < ymax < H`.
+        boxes (Tensor): Tensor of size (N, 4) or (N, 8) containing bounding boxes.
+            For (N, 4), the format is (xmin, ymin, xmax, ymax) and the boxes are absolute coordinates with respect to the image.
+            In other words: `0 <= xmin < xmax < W` and `0 <= ymin < ymax < H`.
+            For (N, 8), the format is (x1, y1, x2, y2, x3, y3, x4, y4) and the boxes are absolute coordinates with respect to the underlying
+            object, so no need to verify the latter inequalities.
         labels (List[str]): List containing the labels of bounding boxes.
         colors (color or list of colors, optional): List containing the colors
             of the boxes or single color for all boxes. The color can be represented as
@@ -184,9 +318,16 @@ def draw_bounding_boxes(
             also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
             `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
         font_size (int): The requested font size in points.
+        label_colors (color or list of colors, optional): Colors for the label text.  See the description of the
+            `colors` argument for details.  Defaults to the same colors used for the boxes, or to black if ``fill_labels`` is True.
+        label_background_colors (color or list of colors, optional): Colors for the label text box fill. Defaults to the
+            same colors used for the boxes. Ignored when ``fill_labels`` is False.
+        fill_labels (bool): If `True` fills the label background with specified color (from the ``label_background_colors`` parameter,
+            or from the ``colors`` parameter if not specified). Default: False.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
+
     """
     import torchvision.transforms.v2.functional as F  # noqa
 
@@ -200,7 +341,7 @@ def draw_bounding_boxes(
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
-    elif (boxes[:, 0] > boxes[:, 2]).any() or (boxes[:, 1] > boxes[:, 3]).any():
+    elif boxes.shape[-1] == 4 and ((boxes[:, 0] > boxes[:, 2]).any() or (boxes[:, 1] > boxes[:, 3]).any()):
         raise ValueError(
             "Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to convert them"
         )
@@ -212,13 +353,22 @@ def draw_bounding_boxes(
         return image
 
     if labels is None:
-        labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
+        labels: Union[list[str], list[None]] = [None] * num_boxes  # type: ignore[no-redef]
     elif len(labels) != num_boxes:
         raise ValueError(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
         )
 
-    colors = _parse_colors(colors, num_objects=num_boxes)
+    colors = _parse_colors(colors, num_objects=num_boxes)  # type: ignore[assignment]
+    if label_colors or fill_labels:
+        label_colors = _parse_colors(label_colors if label_colors else "black", num_objects=num_boxes)  # type: ignore[assignment]
+    else:
+        label_colors = colors.copy()  # type: ignore[assignment]
+
+    if fill_labels and label_background_colors:
+        label_background_colors = _parse_colors(label_background_colors, num_objects=num_boxes)  # type: ignore[assignment]
+    else:
+        label_background_colors = colors.copy()  # type: ignore[assignment]
 
     if font is None:
         if font_size is not None:
@@ -239,20 +389,24 @@ def draw_bounding_boxes(
     img_boxes = boxes.to(torch.int64).tolist()
 
     if fill:
-        draw = ImageDraw.Draw(img_to_draw, "RGBA")
+        draw = _ImageDrawTV(img_to_draw, "RGBA")
     else:
-        draw = ImageDraw.Draw(img_to_draw)
+        draw = _ImageDrawTV(img_to_draw)
 
-    for bbox, color, label in zip(img_boxes, colors, labels):  # type: ignore[arg-type]
-        if fill:
-            fill_color = color + (100,)
-            draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
-        else:
-            draw.rectangle(bbox, width=width, outline=color)
+    for bbox, color, label, label_color, label_bg_color in zip(img_boxes, colors, labels, label_colors, label_background_colors):  # type: ignore[arg-type]
+        draw_method = draw.oriented_rectangle if len(bbox) > 4 else draw.rectangle
+        fill_color = color + (100,) if fill else None
+        draw_method(bbox, width=width, outline=color, fill=fill_color)
 
         if label is not None:
-            margin = width + 1
-            draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=color, font=txt_font)
+            box_margin = 1
+            margin = width + box_margin
+            if fill_labels:
+                left, top, right, bottom = draw.textbbox((bbox[0] + margin, bbox[1] + margin), label, font=txt_font)
+                draw.rectangle(
+                    (left - box_margin, top - box_margin, right + box_margin, bottom + box_margin), fill=label_bg_color  # type: ignore[arg-type]
+                )
+            draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=label_color, font=txt_font)  # type: ignore[arg-type]
 
     out = F.pil_to_tensor(img_to_draw)
     if original_dtype.is_floating_point:
@@ -265,9 +419,8 @@ def draw_segmentation_masks(
     image: torch.Tensor,
     masks: torch.Tensor,
     alpha: float = 0.8,
-    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+    colors: Optional[Union[list[Union[str, tuple[int, int, int]]], str, tuple[int, int, int]]] = None,
 ) -> torch.Tensor:
-
     """
     Draws segmentation masks on given RGB image.
     The image values should be uint8 in [0, 255] or float in [0, 1].
@@ -334,13 +487,12 @@ def draw_segmentation_masks(
 def draw_keypoints(
     image: torch.Tensor,
     keypoints: torch.Tensor,
-    connectivity: Optional[List[Tuple[int, int]]] = None,
-    colors: Optional[Union[str, Tuple[int, int, int]]] = None,
+    connectivity: Optional[list[tuple[int, int]]] = None,
+    colors: Optional[Union[str, tuple[int, int, int]]] = None,
     radius: int = 2,
     width: int = 3,
     visibility: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
-
     """
     Draws Keypoints on given RGB image.
     The image values should be uint8 in [0, 255] or float in [0, 1].
@@ -401,7 +553,7 @@ def draw_keypoints(
     if visibility.shape != keypoints.shape[:-1]:
         raise ValueError(
             "keypoints and visibility must have the same dimensionality for num_instances and K. "
-            f"Got {visibility.shape = } and {keypoints.shape = }"
+            f"Got {visibility.shape=} and {keypoints.shape=}"
         )
 
     original_dtype = image.dtype
@@ -450,7 +602,6 @@ def draw_keypoints(
 # Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
 @torch.no_grad()
 def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
-
     """
     Converts a flow to an RGB image.
 
@@ -484,7 +635,6 @@ def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
 
 @torch.no_grad()
 def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
-
     """
     Converts a batch of normalized flow to an RGB image.
 
@@ -570,11 +720,11 @@ def _generate_color_palette(num_objects: int):
 
 
 def _parse_colors(
-    colors: Union[None, str, Tuple[int, int, int], List[Union[str, Tuple[int, int, int]]]],
+    colors: Union[None, str, tuple[int, int, int], list[Union[str, tuple[int, int, int]]]],
     *,
     num_objects: int,
     dtype: torch.dtype = torch.uint8,
-) -> List[Tuple[int, int, int]]:
+) -> list[tuple[int, int, int]]:
     """
     Parses a specification of colors for a set of objects.
 
@@ -604,9 +754,9 @@ def _parse_colors(
                 f"Number of colors must be equal or larger than the number of objects, but got {len(colors)} < {num_objects}."
             )
     elif not isinstance(colors, (tuple, str)):
-        raise ValueError("`colors` must be a tuple or a string, or a list thereof, but got {colors}.")
+        raise ValueError(f"colors must be a tuple or a string, or a list thereof, but got {colors}.")
     elif isinstance(colors, tuple) and len(colors) != 3:
-        raise ValueError("If passed as tuple, colors should be an RGB triplet, but got {colors}.")
+        raise ValueError(f"If passed as tuple, colors should be an RGB triplet, but got {colors}.")
     else:  # colors specifies a single color for all objects
         colors = [colors] * num_objects
 
@@ -617,7 +767,6 @@ def _parse_colors(
 
 
 def _log_api_usage_once(obj: Any) -> None:
-
     """
     Logs API usage(module and name) within an organization.
     In a large ecosystem, it's often useful to track the PyTorch and
@@ -643,7 +792,7 @@ def _log_api_usage_once(obj: Any) -> None:
     torch._C._log_api_usage_once(f"{module}.{name}")
 
 
-def _make_ntuple(x: Any, n: int) -> Tuple[Any, ...]:
+def _make_ntuple(x: Any, n: int) -> tuple[Any, ...]:
     """
     Make n-tuple from input x. If x is an iterable, then we just convert it to tuple.
     Otherwise, we will make a tuple of length n, all with value of x.

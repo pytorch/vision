@@ -1,7 +1,7 @@
 import pathlib
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
-from PIL import Image
+from .folder import default_loader
 
 from .utils import verify_str_arg
 from .vision import VisionDataset
@@ -14,7 +14,8 @@ class StanfordCars(VisionDataset):
     split into 8,144 training images and 8,041 testing images, where each class
     has been split roughly in a 50-50 split
 
-    The original URL is https://ai.stanford.edu/~jkrause/cars/car_dataset.html, but it is broken.
+    The original URL is https://ai.stanford.edu/~jkrause/cars/car_dataset.html,
+    the dataset isn't available online anymore.
 
     .. note::
 
@@ -23,14 +24,15 @@ class StanfordCars(VisionDataset):
     Args:
         root (str or ``pathlib.Path``): Root directory of dataset
         split (string, optional): The dataset split, supports ``"train"`` (default) or ``"test"``.
-        transform (callable, optional): A function/transform that takes in a PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): This parameter exists for backward compatibility but it does not
-            download the dataset, since the original URL is not available anymore. The dataset
-            seems to be available on Kaggle so you can try to manually download it using
-            `these instructions <https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616>`_.
+            download the dataset, since the original URL is not available anymore.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     def __init__(
@@ -40,6 +42,7 @@ class StanfordCars(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
 
         try:
@@ -64,10 +67,7 @@ class StanfordCars(VisionDataset):
             self.download()
 
         if not self._check_exists():
-            raise RuntimeError(
-                "Dataset not found. Try to manually download following the instructions in "
-                "https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616."
-            )
+            raise RuntimeError("Dataset not found.")
 
         self._samples = [
             (
@@ -79,20 +79,21 @@ class StanfordCars(VisionDataset):
 
         self.classes = sio.loadmat(str(devkit / "cars_meta.mat"), squeeze_me=True)["class_names"].tolist()
         self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
+        self.loader = loader
 
     def __len__(self) -> int:
         return len(self._samples)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         """Returns pil_image and class_id for given index"""
         image_path, target = self._samples[idx]
-        pil_image = Image.open(image_path).convert("RGB")
+        image = self.loader(image_path)
 
         if self.transform is not None:
-            pil_image = self.transform(pil_image)
+            image = self.transform(image)
         if self.target_transform is not None:
             target = self.target_transform(target)
-        return pil_image, target
+        return image, target
 
     def _check_exists(self) -> bool:
         if not (self._base_folder / "devkit").is_dir():
@@ -101,9 +102,4 @@ class StanfordCars(VisionDataset):
         return self._annotations_mat_path.exists() and self._images_base_path.is_dir()
 
     def download(self):
-        raise ValueError(
-            "The original URL is broken so the StanfordCars dataset is not available for automatic "
-            "download anymore. You can try to download it manually following "
-            "https://github.com/pytorch/vision/issues/7545#issuecomment-1631441616, "
-            "and set download=False to avoid this error."
-        )
+        raise ValueError("The original URL is broken so the StanfordCars dataset cannot be downloaded anymore.")

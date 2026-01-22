@@ -1,6 +1,6 @@
 import math
 from functools import partial
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 import torch
 import torch.nn.functional as F
@@ -47,7 +47,7 @@ torch.fx.wrap("_patch_merging_pad")
 
 
 def _get_relative_position_bias(
-    relative_position_bias_table: torch.Tensor, relative_position_index: torch.Tensor, window_size: List[int]
+    relative_position_bias_table: torch.Tensor, relative_position_index: torch.Tensor, window_size: list[int]
 ) -> torch.Tensor:
     N = window_size[0] * window_size[1]
     relative_position_bias = relative_position_bias_table[relative_position_index]  # type: ignore[index]
@@ -118,9 +118,9 @@ def shifted_window_attention(
     qkv_weight: Tensor,
     proj_weight: Tensor,
     relative_position_bias: Tensor,
-    window_size: List[int],
+    window_size: list[int],
     num_heads: int,
-    shift_size: List[int],
+    shift_size: list[int],
     attention_dropout: float = 0.0,
     dropout: float = 0.0,
     qkv_bias: Optional[Tensor] = None,
@@ -239,8 +239,8 @@ class ShiftedWindowAttention(nn.Module):
     def __init__(
         self,
         dim: int,
-        window_size: List[int],
-        shift_size: List[int],
+        window_size: list[int],
+        shift_size: list[int],
         num_heads: int,
         qkv_bias: bool = True,
         proj_bias: bool = True,
@@ -320,8 +320,8 @@ class ShiftedWindowAttentionV2(ShiftedWindowAttention):
     def __init__(
         self,
         dim: int,
-        window_size: List[int],
-        shift_size: List[int],
+        window_size: list[int],
+        shift_size: list[int],
         num_heads: int,
         qkv_bias: bool = True,
         proj_bias: bool = True,
@@ -418,8 +418,8 @@ class SwinTransformerBlock(nn.Module):
         self,
         dim: int,
         num_heads: int,
-        window_size: List[int],
-        shift_size: List[int],
+        window_size: list[int],
+        shift_size: list[int],
         mlp_ratio: float = 4.0,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
@@ -475,8 +475,8 @@ class SwinTransformerBlockV2(SwinTransformerBlock):
         self,
         dim: int,
         num_heads: int,
-        window_size: List[int],
-        shift_size: List[int],
+        window_size: list[int],
+        shift_size: list[int],
         mlp_ratio: float = 4.0,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
@@ -527,11 +527,11 @@ class SwinTransformer(nn.Module):
 
     def __init__(
         self,
-        patch_size: List[int],
+        patch_size: list[int],
         embed_dim: int,
-        depths: List[int],
-        num_heads: List[int],
-        window_size: List[int],
+        depths: list[int],
+        num_heads: list[int],
+        window_size: list[int],
         mlp_ratio: float = 4.0,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
@@ -550,7 +550,7 @@ class SwinTransformer(nn.Module):
         if norm_layer is None:
             norm_layer = partial(nn.LayerNorm, eps=1e-5)
 
-        layers: List[nn.Module] = []
+        layers: list[nn.Module] = []
         # split image into non-overlapping patches
         layers.append(
             nn.Sequential(
@@ -566,7 +566,7 @@ class SwinTransformer(nn.Module):
         stage_block_id = 0
         # build SwinTransformer blocks
         for i_stage in range(len(depths)):
-            stage: List[nn.Module] = []
+            stage: list[nn.Module] = []
             dim = embed_dim * 2**i_stage
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
@@ -615,11 +615,11 @@ class SwinTransformer(nn.Module):
 
 
 def _swin_transformer(
-    patch_size: List[int],
+    patch_size: list[int],
     embed_dim: int,
-    depths: List[int],
-    num_heads: List[int],
-    window_size: List[int],
+    depths: list[int],
+    num_heads: list[int],
+    window_size: list[int],
     stochastic_depth_prob: float,
     weights: Optional[WeightsEnum],
     progress: bool,

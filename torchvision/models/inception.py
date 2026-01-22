@@ -1,7 +1,7 @@
 import warnings
 from collections import namedtuple
 from functools import partial
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import torch
 import torch.nn.functional as F
@@ -31,7 +31,7 @@ class Inception3(nn.Module):
         num_classes: int = 1000,
         aux_logits: bool = True,
         transform_input: bool = False,
-        inception_blocks: Optional[List[Callable[..., nn.Module]]] = None,
+        inception_blocks: Optional[list[Callable[..., nn.Module]]] = None,
         init_weights: Optional[bool] = None,
         dropout: float = 0.5,
     ) -> None:
@@ -100,7 +100,7 @@ class Inception3(nn.Module):
             x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
         return x
 
-    def _forward(self, x: Tensor) -> Tuple[Tensor, Optional[Tensor]]:
+    def _forward(self, x: Tensor) -> tuple[Tensor, Optional[Tensor]]:
         # N x 3 x 299 x 299
         x = self.Conv2d_1a_3x3(x)
         # N x 32 x 149 x 149
@@ -191,7 +191,7 @@ class InceptionA(nn.Module):
 
         self.branch_pool = conv_block(in_channels, pool_features, kernel_size=1)
 
-    def _forward(self, x: Tensor) -> List[Tensor]:
+    def _forward(self, x: Tensor) -> list[Tensor]:
         branch1x1 = self.branch1x1(x)
 
         branch5x5 = self.branch5x5_1(x)
@@ -223,7 +223,7 @@ class InceptionB(nn.Module):
         self.branch3x3dbl_2 = conv_block(64, 96, kernel_size=3, padding=1)
         self.branch3x3dbl_3 = conv_block(96, 96, kernel_size=3, stride=2)
 
-    def _forward(self, x: Tensor) -> List[Tensor]:
+    def _forward(self, x: Tensor) -> list[Tensor]:
         branch3x3 = self.branch3x3(x)
 
         branch3x3dbl = self.branch3x3dbl_1(x)
@@ -262,7 +262,7 @@ class InceptionC(nn.Module):
 
         self.branch_pool = conv_block(in_channels, 192, kernel_size=1)
 
-    def _forward(self, x: Tensor) -> List[Tensor]:
+    def _forward(self, x: Tensor) -> list[Tensor]:
         branch1x1 = self.branch1x1(x)
 
         branch7x7 = self.branch7x7_1(x)
@@ -299,7 +299,7 @@ class InceptionD(nn.Module):
         self.branch7x7x3_3 = conv_block(192, 192, kernel_size=(7, 1), padding=(3, 0))
         self.branch7x7x3_4 = conv_block(192, 192, kernel_size=3, stride=2)
 
-    def _forward(self, x: Tensor) -> List[Tensor]:
+    def _forward(self, x: Tensor) -> list[Tensor]:
         branch3x3 = self.branch3x3_1(x)
         branch3x3 = self.branch3x3_2(branch3x3)
 
@@ -335,7 +335,7 @@ class InceptionE(nn.Module):
 
         self.branch_pool = conv_block(in_channels, 192, kernel_size=1)
 
-    def _forward(self, x: Tensor) -> List[Tensor]:
+    def _forward(self, x: Tensor) -> list[Tensor]:
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)

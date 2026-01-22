@@ -2,7 +2,8 @@
 This file is part of the private API. Please do not use directly these classes as they will be modified on
 future versions without warning. The classes should be accessed only via the transforms argument of Weights.
 """
-from typing import Optional, Tuple, Union
+
+from typing import Optional, Union
 
 import torch
 from torch import nn, Tensor
@@ -41,8 +42,8 @@ class ImageClassification(nn.Module):
         *,
         crop_size: int,
         resize_size: int = 256,
-        mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
-        std: Tuple[float, ...] = (0.229, 0.224, 0.225),
+        mean: tuple[float, ...] = (0.485, 0.456, 0.406),
+        std: tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: Optional[bool] = True,
     ) -> None:
@@ -86,10 +87,10 @@ class VideoClassification(nn.Module):
     def __init__(
         self,
         *,
-        crop_size: Tuple[int, int],
-        resize_size: Union[Tuple[int], Tuple[int, int]],
-        mean: Tuple[float, ...] = (0.43216, 0.394666, 0.37645),
-        std: Tuple[float, ...] = (0.22803, 0.22145, 0.216989),
+        crop_size: tuple[int, int],
+        resize_size: Union[tuple[int], tuple[int, int]],
+        mean: tuple[float, ...] = (0.43216, 0.394666, 0.37645),
+        std: tuple[float, ...] = (0.22803, 0.22145, 0.216989),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
@@ -148,8 +149,8 @@ class SemanticSegmentation(nn.Module):
         self,
         *,
         resize_size: Optional[int],
-        mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
-        std: Tuple[float, ...] = (0.229, 0.224, 0.225),
+        mean: tuple[float, ...] = (0.485, 0.456, 0.406),
+        std: tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         antialias: Optional[bool] = True,
     ) -> None:
@@ -188,7 +189,7 @@ class SemanticSegmentation(nn.Module):
 
 
 class OpticalFlow(nn.Module):
-    def forward(self, img1: Tensor, img2: Tensor) -> Tuple[Tensor, Tensor]:
+    def forward(self, img1: Tensor, img2: Tensor) -> tuple[Tensor, Tensor]:
         if not isinstance(img1, Tensor):
             img1 = F.pil_to_tensor(img1)
         if not isinstance(img2, Tensor):

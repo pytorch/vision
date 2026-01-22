@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -349,7 +349,7 @@ class CorrBlock(nn.Module):
         self.num_levels = num_levels
         self.radius = radius
 
-        self.corr_pyramid: List[Tensor] = [torch.tensor(0)]  # useless, but torchscript is otherwise confused :')
+        self.corr_pyramid: list[Tensor] = [torch.tensor(0)]  # useless, but torchscript is otherwise confused :')
 
         # The neighborhood of a centroid pixel x' is {x' + delta, ||delta||_inf <= radius}
         # so it's a square surrounding x', and its sides have a length of 2 * radius + 1
@@ -486,7 +486,7 @@ class RAFT(nn.Module):
         batch_size, _, h, w = image1.shape
         if (h, w) != image2.shape[-2:]:
             raise ValueError(f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}")
-        if not (h % 8 == 0) and (w % 8 == 0):
+        if not ((h % 8 == 0) and (w % 8 == 0)):
             raise ValueError(f"input image H and W should be divisible by 8, instead got {h} (h) and {w} (w)")
 
         fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))

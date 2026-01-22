@@ -1,7 +1,8 @@
 import os
 import os.path
 import pathlib
-from typing import Any, Callable, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
@@ -27,6 +28,8 @@ class OxfordIIITPet(VisionDataset):
         transform (callable, optional): A function/transform that takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
+        transforms (callable, optional): A function/transform that takes input sample
+            and its target as entry and returns a transformed version.
         download (bool, optional): If True, downloads the dataset from the internet and puts it into
             ``root/oxford-iiit-pet``. If dataset is already downloaded, it is not downloaded again.
     """
@@ -93,7 +96,7 @@ class OxfordIIITPet(VisionDataset):
     def __len__(self) -> int:
         return len(self._images)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         image = Image.open(self._images[idx]).convert("RGB")
 
         target: Any = []

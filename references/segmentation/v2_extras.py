@@ -10,13 +10,13 @@ class PadIfSmaller(v2.Transform):
         self.size = size
         self.fill = v2._utils._setup_fill_arg(fill)
 
-    def _get_params(self, sample):
+    def make_params(self, sample):
         _, height, width = v2._utils.query_chw(sample)
         padding = [0, 0, max(self.size - width, 0), max(self.size - height, 0)]
         needs_padding = any(padding)
         return dict(padding=padding, needs_padding=needs_padding)
 
-    def _transform(self, inpt, params):
+    def transform(self, inpt, params):
         if not params["needs_padding"]:
             return inpt
 

@@ -1,9 +1,10 @@
 import os
 import shutil
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import torch
 
@@ -31,11 +32,13 @@ class ImageNet(ImageFolder):
     Args:
         root (str or ``pathlib.Path``): Root directory of the ImageNet Dataset.
         split (string, optional): The dataset split, supports ``train``, or ``val``.
-        transform (callable, optional): A function/transform that takes in a PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
 
      Attributes:
         classes (list): List of the class name tuples.
@@ -79,7 +82,7 @@ class ImageNet(ImageFolder):
         return "Split: {split}".format(**self.__dict__)
 
 
-def load_meta_file(root: Union[str, Path], file: Optional[str] = None) -> Tuple[Dict[str, str], List[str]]:
+def load_meta_file(root: Union[str, Path], file: Optional[str] = None) -> tuple[dict[str, str], list[str]]:
     if file is None:
         file = META_FILE
     file = os.path.join(root, file)
@@ -114,7 +117,7 @@ def parse_devkit_archive(root: Union[str, Path], file: Optional[str] = None) -> 
     """
     import scipy.io as sio
 
-    def parse_meta_mat(devkit_root: str) -> Tuple[Dict[int, str], Dict[str, Tuple[str, ...]]]:
+    def parse_meta_mat(devkit_root: str) -> tuple[dict[int, str], dict[str, tuple[str, ...]]]:
         metafile = os.path.join(devkit_root, "data", "meta.mat")
         meta = sio.loadmat(metafile, squeeze_me=True)["synsets"]
         nums_children = list(zip(*meta))[4]
@@ -125,7 +128,7 @@ def parse_devkit_archive(root: Union[str, Path], file: Optional[str] = None) -> 
         wnid_to_classes = {wnid: clss for wnid, clss in zip(wnids, classes)}
         return idx_to_wnid, wnid_to_classes
 
-    def parse_val_groundtruth_txt(devkit_root: str) -> List[int]:
+    def parse_val_groundtruth_txt(devkit_root: str) -> list[int]:
         file = os.path.join(devkit_root, "data", "ILSVRC2012_validation_ground_truth.txt")
         with open(file) as txtfh:
             val_idcs = txtfh.readlines()
@@ -184,7 +187,7 @@ def parse_train_archive(root: Union[str, Path], file: Optional[str] = None, fold
 
 
 def parse_val_archive(
-    root: Union[str, Path], file: Optional[str] = None, wnids: Optional[List[str]] = None, folder: str = "val"
+    root: Union[str, Path], file: Optional[str] = None, wnids: Optional[list[str]] = None, folder: str = "val"
 ) -> None:
     """Parse the validation images archive of the ImageNet2012 classification dataset
     and prepare it for usage with the ImageNet dataset.

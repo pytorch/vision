@@ -1,11 +1,12 @@
 import matplotlib.pyplot as plt
 import torch
-from torchvision.utils import draw_bounding_boxes, draw_segmentation_masks
+from torchvision.utils import draw_bounding_boxes, draw_keypoints, draw_segmentation_masks
 from torchvision import tv_tensors
+from torchvision.transforms import v2
 from torchvision.transforms.v2 import functional as F
 
 
-def plot(imgs, row_title=None, **imshow_kwargs):
+def plot(imgs, row_title=None, bbox_width=3, **imshow_kwargs):
     if not isinstance(imgs[0], list):
         # Make a 2d grid even if there's just 1 row
         imgs = [imgs]
@@ -17,6 +18,7 @@ def plot(imgs, row_title=None, **imshow_kwargs):
         for col_idx, img in enumerate(row):
             boxes = None
             masks = None
+            points = None
             if isinstance(img, tuple):
                 img, target = img
                 if isinstance(target, dict):
@@ -24,6 +26,13 @@ def plot(imgs, row_title=None, **imshow_kwargs):
                     masks = target.get("masks")
                 elif isinstance(target, tv_tensors.BoundingBoxes):
                     boxes = target
+
+                    # Conversion necessary because draw_bounding_boxes() only
+                    # work with this specific format.
+                    if tv_tensors.is_rotated_bounding_format(boxes.format):
+                        boxes = v2.ConvertBoundingBoxFormat("xyxyxyxy")(boxes)
+                elif isinstance(target, tv_tensors.KeyPoints):
+                    points = target
                 else:
                     raise ValueError(f"Unexpected target type: {type(target)}")
             img = F.to_image(img)
@@ -35,9 +44,11 @@ def plot(imgs, row_title=None, **imshow_kwargs):
 
             img = F.to_dtype(img, torch.uint8, scale=True)
             if boxes is not None:
-                img = draw_bounding_boxes(img, boxes, colors="yellow", width=3)
+                img = draw_bounding_boxes(img, boxes, colors="yellow", width=bbox_width)
             if masks is not None:
                 img = draw_segmentation_masks(img, masks.to(torch.bool), colors=["green"] * masks.shape[0], alpha=.65)
+            if points is not None:
+                img = draw_keypoints(img, points, colors="red", radius=10)
 
             ax = axs[row_idx, col_idx]
             ax.imshow(img.permute(1, 2, 0).numpy(), **imshow_kwargs)

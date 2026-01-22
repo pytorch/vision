@@ -1,12 +1,11 @@
 import csv
 import os
-import time
 import urllib
 from functools import partial
 from multiprocessing import Pool
 from os import path
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from torch import Tensor
 
@@ -98,11 +97,11 @@ class Kinetics(VisionDataset):
         frame_rate: Optional[int] = None,
         step_between_clips: int = 1,
         transform: Optional[Callable] = None,
-        extensions: Tuple[str, ...] = ("avi", "mp4"),
+        extensions: tuple[str, ...] = ("avi", "mp4"),
         download: bool = False,
         num_download_workers: int = 1,
         num_workers: int = 1,
-        _precomputed_metadata: Optional[Dict[str, Any]] = None,
+        _precomputed_metadata: Optional[dict[str, Any]] = None,
         _video_width: int = 0,
         _video_height: int = 0,
         _video_min_dimension: int = 0,
@@ -121,7 +120,6 @@ class Kinetics(VisionDataset):
         self._legacy = _legacy
 
         if _legacy:
-            print("Using legacy structure")
             self.split_folder = root
             self.split = "unknown"
             output_format = "THWC"
@@ -157,14 +155,8 @@ class Kinetics(VisionDataset):
 
     def download_and_process_videos(self) -> None:
         """Downloads all the videos to the _root_ folder in the expected format."""
-        tic = time.time()
         self._download_videos()
-        toc = time.time()
-        print("Elapsed time for downloading in mins ", (toc - tic) / 60)
         self._make_ds_structure()
-        toc2 = time.time()
-        print("Elapsed time for processing in mins ", (toc2 - toc) / 60)
-        print("Elapsed time overall in mins ", (toc2 - tic) / 60)
 
     def _download_videos(self) -> None:
         """download tarballs containing the video to "tars" folder and extract them into the _split_ folder where
@@ -174,10 +166,7 @@ class Kinetics(VisionDataset):
             RuntimeError: if download folder exists, break to prevent downloading entire dataset again.
         """
         if path.exists(self.split_folder):
-            raise RuntimeError(
-                f"The directory {self.split_folder} already exists. "
-                f"If you want to re-download or re-extract the images, delete the directory."
-            )
+            return
         tar_path = path.join(self.root, "tars")
         file_list_path = path.join(self.root, "files")
 
@@ -232,13 +221,13 @@ class Kinetics(VisionDataset):
                     )
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> dict[str, Any]:
         return self.video_clips.metadata
 
     def __len__(self) -> int:
         return self.video_clips.num_clips()
 
-    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor, int]:
+    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, int]:
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
         label = self.samples[video_idx][1]
 

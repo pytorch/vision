@@ -6,13 +6,13 @@ import string
 import sys
 import warnings
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 from urllib.error import URLError
 
 import numpy as np
 import torch
-from PIL import Image
 
+from ..utils import _Image_fromarray
 from .utils import _flip_byte_order, check_integrity, download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
@@ -25,18 +25,18 @@ class MNIST(VisionDataset):
             and  ``MNIST/raw/t10k-images-idx3-ubyte`` exist.
         train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
             otherwise from ``t10k-images-idx3-ubyte``.
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
         transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        download (bool, optional): If True, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
     """
 
     mirrors = [
-        "http://yann.lecun.com/exdb/mnist/",
         "https://ossci-datasets.s3.amazonaws.com/mnist/",
+        "http://yann.lecun.com/exdb/mnist/",
     ]
 
     resources = [
@@ -128,7 +128,7 @@ class MNIST(VisionDataset):
 
         return data, targets
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -140,7 +140,7 @@ class MNIST(VisionDataset):
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        img = Image.fromarray(img.numpy(), mode="L")
+        img = _Image_fromarray(img.numpy(), mode="L")
 
         if self.transform is not None:
             img = self.transform(img)
@@ -162,7 +162,7 @@ class MNIST(VisionDataset):
         return os.path.join(self.root, self.__class__.__name__, "processed")
 
     @property
-    def class_to_idx(self) -> Dict[str, int]:
+    def class_to_idx(self) -> dict[str, int]:
         return {_class: i for i, _class in enumerate(self.classes)}
 
     def _check_exists(self) -> bool:
@@ -181,19 +181,20 @@ class MNIST(VisionDataset):
 
         # download files
         for filename, md5 in self.resources:
+            errors = []
             for mirror in self.mirrors:
                 url = f"{mirror}{filename}"
                 try:
-                    print(f"Downloading {url}")
                     download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
-                except URLError as error:
-                    print(f"Failed to download (trying next):\n{error}")
+                except URLError as e:
+                    errors.append(e)
                     continue
-                finally:
-                    print()
                 break
             else:
-                raise RuntimeError(f"Error downloading {filename}")
+                s = f"Error downloading {filename}:\n"
+                for mirror, err in zip(self.mirrors, errors):
+                    s += f"Tried {mirror}, got:\n{str(err)}\n"
+                raise RuntimeError(s)
 
     def extra_repr(self) -> str:
         split = "Train" if self.train is True else "Test"
@@ -208,13 +209,13 @@ class FashionMNIST(MNIST):
             and  ``FashionMNIST/raw/t10k-images-idx3-ubyte`` exist.
         train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
             otherwise from ``t10k-images-idx3-ubyte``.
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
         transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        download (bool, optional): If True, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
     """
 
     mirrors = ["http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"]
@@ -236,13 +237,13 @@ class KMNIST(MNIST):
             and  ``KMNIST/raw/t10k-images-idx3-ubyte`` exist.
         train (bool, optional): If True, creates dataset from ``train-images-idx3-ubyte``,
             otherwise from ``t10k-images-idx3-ubyte``.
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
         transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        download (bool, optional): If True, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
     """
 
     mirrors = ["http://codh.rois.ac.jp/kmnist/dataset/kmnist/"]
@@ -357,6 +358,9 @@ class QMNIST(MNIST):
             for each example is class number (for compatibility with
             the MNIST dataloader) or a torch vector containing the
             full qmnist information. Default=True.
+        train (bool,optional,compatibility): When argument 'what' is
+            not specified, this boolean decides whether to load the
+            training set or the testing set.  Default: True.
         download (bool, optional): If True, downloads the dataset from
             the internet and puts it in root directory. If dataset is
             already downloaded, it is not downloaded again.
@@ -365,13 +369,10 @@ class QMNIST(MNIST):
             version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform
             that takes in the target and transforms it.
-        train (bool,optional,compatibility): When argument 'what' is
-            not specified, this boolean decides whether to load the
-            training set or the testing set.  Default: True.
     """
 
     subsets = {"train": "train", "test": "test", "test10k": "test", "test50k": "test", "nist": "nist"}
-    resources: Dict[str, List[Tuple[str, str]]] = {  # type: ignore[assignment]
+    resources: dict[str, list[tuple[str, str]]] = {  # type: ignore[assignment]
         "train": [
             (
                 "https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz",
@@ -474,10 +475,10 @@ class QMNIST(MNIST):
         for url, md5 in split:
             download_and_extract_archive(url, self.raw_folder, md5=md5)
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         # redefined to handle the compat flag
         img, target = self.data[index], self.targets[index]
-        img = Image.fromarray(img.numpy(), mode="L")
+        img = _Image_fromarray(img.numpy(), mode="L")
         if self.transform is not None:
             img = self.transform(img)
         if self.compat:
@@ -513,7 +514,7 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
         data = f.read()
 
     # parse
-    if sys.byteorder == "little":
+    if sys.byteorder == "little" or sys.platform == "aix":
         magic = get_int(data[0:4])
         nd = magic % 256
         ty = magic // 256
@@ -526,7 +527,7 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
     torch_type = SN3_PASCALVINCENT_TYPEMAP[ty]
     s = [get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd)]
 
-    if sys.byteorder == "big":
+    if sys.byteorder == "big" and not sys.platform == "aix":
         for i in range(len(s)):
             s[i] = int.from_bytes(s[i].to_bytes(4, byteorder="little"), byteorder="big", signed=False)
 

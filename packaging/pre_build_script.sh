@@ -9,15 +9,15 @@ if [[ "$(uname)" == Darwin ]]; then
     brew uninstall --ignore-dependencies --force $pkg || true
   done
 
-  conda install -yq wget
+  conda install -y wget
 fi
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
-  conda install libpng libwebp -yq
+  conda install libpng libwebp -y
   # Installing webp also installs a non-turbo jpeg, so we uninstall jpeg stuff
   # before re-installing them
   conda uninstall libjpeg-turbo libjpeg -y
-  conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch
+  conda install -y libjpeg-turbo -c pytorch
 
   # Copy binaries to be included in the wheel distribution
   if [[ "$OSTYPE" == "msys" ]]; then
@@ -28,12 +28,14 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
 else
 
   if [[ "$ARCH" == "aarch64" ]]; then
-    conda install libpng -yq
-    conda install -yq ffmpeg=4.2 libjpeg-turbo -c pytorch-nightly
+    conda install libpng -y
+    conda install -y libjpeg-turbo -c pytorch-nightly
   fi
 
-  yum install -y libjpeg-turbo-devel libwebp-devel freetype gnutls
-  pip install auditwheel
+  conda install libwebp -y
+  conda install libjpeg-turbo -c pytorch
+  yum install -y freetype gnutls
+  pip install "auditwheel<6.3.0"
 fi
 
 pip install numpy pyyaml future ninja

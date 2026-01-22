@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import torch
@@ -114,7 +114,7 @@ class PhotoTour(VisionDataset):
         # load the serialized data
         self.data, self.labels, self.matches = torch.load(self.data_file, weights_only=True)
 
-    def __getitem__(self, index: int) -> Union[torch.Tensor, Tuple[Any, Any, torch.Tensor]]:
+    def __getitem__(self, index: int) -> Union[torch.Tensor, tuple[Any, Any, torch.Tensor]]:
         """
         Args:
             index (int): Index
@@ -145,7 +145,6 @@ class PhotoTour(VisionDataset):
 
     def download(self) -> None:
         if self._check_datafile_exists():
-            print(f"# Found cached data {self.data_file}")
             return
 
         if not self._check_downloaded():
@@ -157,8 +156,6 @@ class PhotoTour(VisionDataset):
 
             download_url(url, self.root, filename, md5)
 
-            print(f"# Extracting data {self.data_down}\n")
-
             import zipfile
 
             with zipfile.ZipFile(fpath, "r") as z:
@@ -168,7 +165,6 @@ class PhotoTour(VisionDataset):
 
     def cache(self) -> None:
         # process and save as torch files
-        print(f"# Caching data {self.data_file}")
 
         dataset = (
             read_image_file(self.data_dir, self.image_ext, self.lens[self.name]),
@@ -191,7 +187,7 @@ def read_image_file(data_dir: str, image_ext: str, n: int) -> torch.Tensor:
         """Convert PIL image type to numpy 2D array"""
         return np.array(_img.getdata(), dtype=np.uint8).reshape(64, 64)
 
-    def find_files(_data_dir: str, _image_ext: str) -> List[str]:
+    def find_files(_data_dir: str, _image_ext: str) -> list[str]:
         """Return a list with the file names of the images containing the patches"""
         files = []
         # find those files with the specified extension

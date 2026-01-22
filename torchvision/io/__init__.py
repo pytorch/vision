@@ -1,9 +1,3 @@
-from typing import Any, Dict, Iterator
-
-import torch
-
-from ..utils import _log_api_usage_once
-
 try:
     from ._load_gpu_decoder import _HAS_GPU_VIDEO_DECODER
 except ModuleNotFoundError:
@@ -22,7 +16,9 @@ from ._video_opt import (
     VideoMetaData,
 )
 from .image import (
+    decode_avif,
     decode_gif,
+    decode_heic,
     decode_image,
     decode_jpeg,
     decode_png,
@@ -61,6 +57,7 @@ __all__ = [
     "decode_image",
     "decode_jpeg",
     "decode_png",
+    "decode_avif",
     "decode_heic",
     "decode_webp",
     "decode_gif",

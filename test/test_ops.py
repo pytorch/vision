@@ -1,9 +1,9 @@
 import math
 import os
 from abc import ABC, abstractmethod
-from functools import lru_cache
+from functools import lru_cache, partial
 from itertools import product
-from typing import Callable, List, Tuple
+from typing import Callable
 
 import numpy as np
 import pytest
@@ -100,7 +100,7 @@ class PoolWrapper(nn.Module):
         super().__init__()
         self.pool = pool
 
-    def forward(self, imgs: Tensor, boxes: List[Tensor]) -> Tensor:
+    def forward(self, imgs: Tensor, boxes: list[Tensor]) -> Tensor:
         return self.pool(imgs, boxes)
 
 
@@ -242,7 +242,7 @@ class RoIOpTester(ABC):
             boxes = torch.tensor([[0, 0, 3, 3]], dtype=a.dtype)
             func(a, boxes, output_size=(2, 2))
 
-        # test boxes as List[Tensor[N, 4]]
+        # test boxes as list[Tensor[N, 4]]
         with pytest.raises(AssertionError):
             a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
@@ -929,6 +929,7 @@ optests.generate_opcheck_tests(
 
 class TestDeformConv:
     dtype = torch.float64
+    mps_dtype = torch.float32
 
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
         stride_h, stride_w = _pair(stride)
@@ -1050,12 +1051,11 @@ class TestDeformConv:
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
-    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.parametrize("batch_sz", (0, 33))
-    @pytest.mark.opcheck_only_one()
     def test_forward(self, device, contiguous, batch_sz, dtype=None):
-        dtype = dtype or self.dtype
+        dtype = self.mps_dtype if device == "mps" else dtype or self.dtype
         x, _, offset, mask, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz, dtype)
         in_channels = 6
         out_channels = 2
@@ -1073,7 +1073,7 @@ class TestDeformConv:
         expected = self.expected_fn(x, weight, offset, mask, bias, stride=stride, padding=padding, dilation=dilation)
 
         torch.testing.assert_close(
-            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres:\n{res}\nexpected:\n{expected}"
+            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres: \n{res}\nexpected: \n{expected}"
         )
 
         # no modulation test
@@ -1081,7 +1081,7 @@ class TestDeformConv:
         expected = self.expected_fn(x, weight, offset, None, bias, stride=stride, padding=padding, dilation=dilation)
 
         torch.testing.assert_close(
-            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres:\n{res}\nexpected:\n{expected}"
+            res.to(expected), expected, rtol=tol, atol=tol, msg=f"\nres: \n{res}\nexpected: \n{expected}"
         )
 
     def test_wrong_sizes(self):
@@ -1201,11 +1201,30 @@ class TestDeformConv:
         torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
 
 
+# NS: Remove me once backward is implemented for MPS
+def xfail_if_mps(x):
+    mps_xfail_param = pytest.param("mps", marks=(pytest.mark.needs_mps, pytest.mark.xfail))
+    new_pytestmark = []
+    for mark in x.pytestmark:
+        if isinstance(mark, pytest.Mark) and mark.name == "parametrize":
+            if mark.args[0] == "device":
+                params = cpu_and_cuda() + (mps_xfail_param,)
+                new_pytestmark.append(pytest.mark.parametrize("device", params))
+                continue
+        new_pytestmark.append(mark)
+    x.__dict__["pytestmark"] = new_pytestmark
+    return x
+
+
 optests.generate_opcheck_tests(
     testcase=TestDeformConv,
     namespaces=["torchvision"],
     failures_dict_path=os.path.join(os.path.dirname(__file__), "optests_failures_dict.json"),
-    additional_decorators=[],
+    # Skip tests due to unimplemented backward
+    additional_decorators={
+        "test_aot_dispatch_dynamic__test_forward": [xfail_if_mps],
+        "test_autograd_registration__test_forward": [xfail_if_mps],
+    },
     test_utils=OPTESTS,
 )
 
@@ -1339,8 +1358,69 @@ class TestBoxConvert:
         box_xywh = ops.box_convert(box_cxcywh, in_fmt="cxcywh", out_fmt="xywh")
         assert_equal(box_xywh, box_tensor)
 
-    @pytest.mark.parametrize("inv_infmt", ["xwyh", "cxwyh"])
-    @pytest.mark.parametrize("inv_outfmt", ["xwcx", "xhwcy"])
+    def test_bbox_xywhr_cxcywhr(self):
+        box_tensor = torch.tensor(
+            [
+                [0, 0, 100, 100, 0],
+                [0, 0, 0, 0, 0],
+                [10, 15, 20, 20, 0],
+                [23, 35, 70, 60, 0],
+                [4, 2, 4, 2, 0],
+                [5, 5, 4, 2, 90],
+                [8, 4, 4, 2, 180],
+                [7, 1, 4, 2, -90],
+            ],
+            dtype=torch.float,
+        )
+
+        exp_cxcywhr = torch.tensor(
+            [
+                [50, 50, 100, 100, 0],
+                [0, 0, 0, 0, 0],
+                [20, 25, 20, 20, 0],
+                [58, 65, 70, 60, 0],
+                [6, 3, 4, 2, 0],
+                [6, 3, 4, 2, 90],
+                [6, 3, 4, 2, 180],
+                [6, 3, 4, 2, -90],
+            ],
+            dtype=torch.float,
+        )
+
+        assert exp_cxcywhr.size() == torch.Size([8, 5])
+        box_cxcywhr = ops.box_convert(box_tensor, in_fmt="xywhr", out_fmt="cxcywhr")
+        torch.testing.assert_close(box_cxcywhr, exp_cxcywhr)
+
+        # Reverse conversion
+        box_xywhr = ops.box_convert(box_cxcywhr, in_fmt="cxcywhr", out_fmt="xywhr")
+        torch.testing.assert_close(box_xywhr, box_tensor)
+
+    def test_bbox_cxcywhr_to_xyxyxyxy(self):
+        box_tensor = torch.tensor([[5, 3, 4, 2, 90]], dtype=torch.float)
+        exp_xyxyxyxy = torch.tensor([[4, 5, 4, 1, 6, 1, 6, 5]], dtype=torch.float)
+
+        assert exp_xyxyxyxy.size() == torch.Size([1, 8])
+        box_xyxyxyxy = ops.box_convert(box_tensor, in_fmt="cxcywhr", out_fmt="xyxyxyxy")
+        torch.testing.assert_close(box_xyxyxyxy, exp_xyxyxyxy)
+
+        # Reverse conversion
+        box_cxcywhr = ops.box_convert(box_xyxyxyxy, in_fmt="xyxyxyxy", out_fmt="cxcywhr")
+        torch.testing.assert_close(box_cxcywhr, box_tensor)
+
+    def test_bbox_xywhr_to_xyxyxyxy(self):
+        box_tensor = torch.tensor([[4, 5, 4, 2, 90]], dtype=torch.float)
+        exp_xyxyxyxy = torch.tensor([[4, 5, 4, 1, 6, 1, 6, 5]], dtype=torch.float)
+
+        assert exp_xyxyxyxy.size() == torch.Size([1, 8])
+        box_xyxyxyxy = ops.box_convert(box_tensor, in_fmt="xywhr", out_fmt="xyxyxyxy")
+        torch.testing.assert_close(box_xyxyxyxy, exp_xyxyxyxy)
+
+        # Reverse conversion
+        box_xywhr = ops.box_convert(box_xyxyxyxy, in_fmt="xyxyxyxy", out_fmt="xywhr")
+        torch.testing.assert_close(box_xywhr, box_tensor)
+
+    @pytest.mark.parametrize("inv_infmt", ["xwyh", "cxwyh", "xwyhr", "cxwyhr", "xxxxyyyy"])
+    @pytest.mark.parametrize("inv_outfmt", ["xwcx", "xhwcy", "xwcxr", "xhwcyr", "xyxyxxyy"])
     def test_bbox_invalid(self, inv_infmt, inv_outfmt):
         box_tensor = torch.tensor(
             [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float
@@ -1366,34 +1446,60 @@ class TestBoxConvert:
 
 
 class TestBoxArea:
-    def area_check(self, box, expected, atol=1e-4):
-        out = ops.box_area(box)
+    def area_check(self, box, expected, fmt="xyxy", atol=1e-4):
+        out = ops.box_area(box, fmt=fmt)
         torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=atol)
 
     @pytest.mark.parametrize("dtype", [torch.int8, torch.int16, torch.int32, torch.int64])
-    def test_int_boxes(self, dtype):
-        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype)
+    @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
+    def test_int_boxes(self, dtype, fmt):
+        box_tensor = ops.box_convert(
+            torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype), in_fmt="xyxy", out_fmt=fmt
+        )
         expected = torch.tensor([10000, 0], dtype=torch.int32)
-        self.area_check(box_tensor, expected)
+        self.area_check(box_tensor, expected, fmt)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-    def test_float_boxes(self, dtype):
-        box_tensor = torch.tensor(FLOAT_BOXES, dtype=dtype)
+    @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
+    def test_float_boxes(self, dtype, fmt):
+        box_tensor = ops.box_convert(torch.tensor(FLOAT_BOXES, dtype=dtype), in_fmt="xyxy", out_fmt=fmt)
         expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=dtype)
-        self.area_check(box_tensor, expected)
+        self.area_check(box_tensor, expected, fmt)
 
-    def test_float16_box(self):
-        box_tensor = torch.tensor(
-            [[2.825, 1.8625, 3.90, 4.85], [2.825, 4.875, 19.20, 5.10], [2.925, 1.80, 8.90, 4.90]], dtype=torch.float16
+    @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
+    def test_float16_box(self, fmt):
+        box_tensor = ops.box_convert(
+            torch.tensor(
+                [[2.825, 1.8625, 3.90, 4.85], [2.825, 4.875, 19.20, 5.10], [2.925, 1.80, 8.90, 4.90]],
+                dtype=torch.float16,
+            ),
+            in_fmt="xyxy",
+            out_fmt=fmt,
         )
 
         expected = torch.tensor([3.2170, 3.7108, 18.5071], dtype=torch.float16)
-        self.area_check(box_tensor, expected, atol=0.01)
+        self.area_check(box_tensor, expected, fmt, atol=0.01)
 
-    def test_box_area_jit(self):
-        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
-        expected = ops.box_area(box_tensor)
-        scripted_fn = torch.jit.script(ops.box_area)
+    @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
+    def test_box_area_jit(self, fmt):
+        box_tensor = ops.box_convert(
+            torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float), in_fmt="xyxy", out_fmt=fmt
+        )
+        expected = ops.box_area(box_tensor, fmt)
+
+        class BoxArea(torch.nn.Module):
+            # We are using this intermediate class
+            # since torchscript does not support
+            # neither partial nor lambda functions for this test.
+            def __init__(self, fmt):
+                super().__init__()
+                self.area = ops.box_area
+                self.fmt = fmt
+
+            def forward(self, boxes):
+                return self.area(boxes, self.fmt)
+
+        scripted_fn = torch.jit.script(BoxArea(fmt))
         scripted_area = scripted_fn(box_tensor)
         torch.testing.assert_close(scripted_area, expected)
 
@@ -1407,25 +1513,28 @@ FLOAT_BOXES = [
 ]
 
 
-def gen_box(size, dtype=torch.float):
+def gen_box(size, dtype=torch.float, fmt="xyxy") -> Tensor:
     xy1 = torch.rand((size, 2), dtype=dtype)
     xy2 = xy1 + torch.rand((size, 2), dtype=dtype)
-    return torch.cat([xy1, xy2], axis=-1)
+    return ops.box_convert(torch.cat([xy1, xy2], axis=-1), in_fmt="xyxy", out_fmt=fmt)
 
 
 class TestIouBase:
     @staticmethod
-    def _run_test(target_fn: Callable, actual_box1, actual_box2, dtypes, atol, expected):
+    def _run_test(target_fn: Callable, actual_box1, actual_box2, dtypes, atol, expected, fmt="xyxy"):
         for dtype in dtypes:
-            actual_box1 = torch.tensor(actual_box1, dtype=dtype)
-            actual_box2 = torch.tensor(actual_box2, dtype=dtype)
+            _actual_box1 = ops.box_convert(torch.tensor(actual_box1, dtype=dtype), in_fmt="xyxy", out_fmt=fmt)
+            _actual_box2 = ops.box_convert(torch.tensor(actual_box2, dtype=dtype), in_fmt="xyxy", out_fmt=fmt)
             expected_box = torch.tensor(expected)
-            out = target_fn(actual_box1, actual_box2)
+            out = target_fn(
+                _actual_box1,
+                _actual_box2,
+            )
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
-    def _run_jit_test(target_fn: Callable, actual_box: List):
-        box_tensor = torch.tensor(actual_box, dtype=torch.float)
+    def _run_jit_test(target_fn: Callable, actual_box: list, fmt="xyxy"):
+        box_tensor = ops.box_convert(torch.tensor(actual_box, dtype=torch.float), in_fmt="xyxy", out_fmt=fmt)
         expected = target_fn(box_tensor, box_tensor)
         scripted_fn = torch.jit.script(target_fn)
         scripted_out = scripted_fn(box_tensor, box_tensor)
@@ -1442,12 +1551,20 @@ class TestIouBase:
         return result
 
     @staticmethod
-    def _run_cartesian_test(target_fn: Callable):
-        boxes1 = gen_box(5)
-        boxes2 = gen_box(7)
+    def _run_cartesian_test(target_fn: Callable, fmt: str = "xyxy"):
+        boxes1 = gen_box(5, fmt=fmt)
+        boxes2 = gen_box(7, fmt=fmt)
         a = TestIouBase._cartesian_product(boxes1, boxes2, target_fn)
         b = target_fn(boxes1, boxes2)
         torch.testing.assert_close(a, b)
+
+    @staticmethod
+    def _run_batch_test(target_fn: Callable, fmt: str = "xyxy"):
+        boxes1 = torch.stack([gen_box(5, fmt=fmt) for _ in range(3)], dim=0)
+        boxes2 = torch.stack([gen_box(5, fmt=fmt) for _ in range(3)], dim=0)
+        native: Tensor = target_fn(boxes1, boxes2)
+        iterative: Tensor = torch.stack([target_fn(*pairs) for pairs in zip(boxes1, boxes2)], dim=0)
+        torch.testing.assert_close(native, iterative)
 
 
 class TestBoxIou(TestIouBase):
@@ -1462,14 +1579,33 @@ class TestBoxIou(TestIouBase):
             pytest.param(FLOAT_BOXES, FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
-        self._run_test(ops.box_iou, actual_box1, actual_box2, dtypes, atol, expected)
+    @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
+    def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected, fmt):
+        self._run_test(partial(ops.box_iou, fmt=fmt), actual_box1, actual_box2, dtypes, atol, expected, fmt)
 
-    def test_iou_jit(self):
-        self._run_jit_test(ops.box_iou, INT_BOXES)
+    @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
+    def test_iou_jit(self, fmt):
+        class IoUJit(torch.nn.Module):
+            # We are using this intermediate class
+            # since torchscript does not support
+            # neither partial nor lambda functions for this test.
+            def __init__(self, fmt):
+                super().__init__()
+                self.iou = ops.box_iou
+                self.fmt = fmt
 
-    def test_iou_cartesian(self):
-        self._run_cartesian_test(ops.box_iou)
+            def forward(self, boxes1, boxes2):
+                return self.iou(boxes1, boxes2, fmt=self.fmt)
+
+        self._run_jit_test(IoUJit(fmt=fmt), INT_BOXES, fmt)
+
+    @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
+    def test_iou_cartesian(self, fmt):
+        self._run_cartesian_test(partial(ops.box_iou, fmt=fmt))
+
+    @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
+    def test_iou_batch(self, fmt):
+        self._run_batch_test(partial(ops.box_iou, fmt=fmt))
 
 
 class TestGeneralizedBoxIou(TestIouBase):
@@ -1492,6 +1628,9 @@ class TestGeneralizedBoxIou(TestIouBase):
 
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.generalized_box_iou)
+
+    def test_iou_batch(self):
+        self._run_batch_test(ops.generalized_box_iou)
 
 
 class TestDistanceBoxIoU(TestIouBase):
@@ -1520,6 +1659,9 @@ class TestDistanceBoxIoU(TestIouBase):
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.distance_box_iou)
 
+    def test_iou_batch(self):
+        self._run_batch_test(ops.distance_box_iou)
+
 
 class TestCompleteBoxIou(TestIouBase):
     int_expected = [
@@ -1546,6 +1688,9 @@ class TestCompleteBoxIou(TestIouBase):
 
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.complete_box_iou)
+
+    def test_iou_batch(self):
+        self._run_batch_test(ops.complete_box_iou)
 
 
 def get_boxes(dtype, device):

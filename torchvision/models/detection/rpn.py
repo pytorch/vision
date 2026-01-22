@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import torch
 from torch import nn, Tensor
@@ -68,7 +68,7 @@ class RPNHead(nn.Module):
             error_msgs,
         )
 
-    def forward(self, x: List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]:
+    def forward(self, x: list[Tensor]) -> tuple[list[Tensor], list[Tensor]]:
         logits = []
         bbox_reg = []
         for feature in x:
@@ -85,7 +85,7 @@ def permute_and_flatten(layer: Tensor, N: int, A: int, C: int, H: int, W: int) -
     return layer
 
 
-def concat_box_prediction_layers(box_cls: List[Tensor], box_regression: List[Tensor]) -> Tuple[Tensor, Tensor]:
+def concat_box_prediction_layers(box_cls: list[Tensor], box_regression: list[Tensor]) -> tuple[Tensor, Tensor]:
     box_cls_flattened = []
     box_regression_flattened = []
     # for each feature level, permute the outputs to make them be in the
@@ -153,8 +153,8 @@ class RegionProposalNetwork(torch.nn.Module):
         batch_size_per_image: int,
         positive_fraction: float,
         # Faster-RCNN Inference
-        pre_nms_top_n: Dict[str, int],
-        post_nms_top_n: Dict[str, int],
+        pre_nms_top_n: dict[str, int],
+        post_nms_top_n: dict[str, int],
         nms_thresh: float,
         score_thresh: float = 0.0,
     ) -> None:
@@ -191,8 +191,8 @@ class RegionProposalNetwork(torch.nn.Module):
         return self._post_nms_top_n["testing"]
 
     def assign_targets_to_anchors(
-        self, anchors: List[Tensor], targets: List[Dict[str, Tensor]]
-    ) -> Tuple[List[Tensor], List[Tensor]]:
+        self, anchors: list[Tensor], targets: list[dict[str, Tensor]]
+    ) -> tuple[list[Tensor], list[Tensor]]:
 
         labels = []
         matched_gt_boxes = []
@@ -228,7 +228,7 @@ class RegionProposalNetwork(torch.nn.Module):
             matched_gt_boxes.append(matched_gt_boxes_per_image)
         return labels, matched_gt_boxes
 
-    def _get_top_n_idx(self, objectness: Tensor, num_anchors_per_level: List[int]) -> Tensor:
+    def _get_top_n_idx(self, objectness: Tensor, num_anchors_per_level: list[int]) -> Tensor:
         r = []
         offset = 0
         for ob in objectness.split(num_anchors_per_level, 1):
@@ -243,9 +243,9 @@ class RegionProposalNetwork(torch.nn.Module):
         self,
         proposals: Tensor,
         objectness: Tensor,
-        image_shapes: List[Tuple[int, int]],
-        num_anchors_per_level: List[int],
-    ) -> Tuple[List[Tensor], List[Tensor]]:
+        image_shapes: list[tuple[int, int]],
+        num_anchors_per_level: list[int],
+    ) -> tuple[list[Tensor], list[Tensor]]:
 
         num_images = proposals.shape[0]
         device = proposals.device
@@ -297,8 +297,8 @@ class RegionProposalNetwork(torch.nn.Module):
         return final_boxes, final_scores
 
     def compute_loss(
-        self, objectness: Tensor, pred_bbox_deltas: Tensor, labels: List[Tensor], regression_targets: List[Tensor]
-    ) -> Tuple[Tensor, Tensor]:
+        self, objectness: Tensor, pred_bbox_deltas: Tensor, labels: list[Tensor], regression_targets: list[Tensor]
+    ) -> tuple[Tensor, Tensor]:
         """
         Args:
             objectness (Tensor)
@@ -336,10 +336,9 @@ class RegionProposalNetwork(torch.nn.Module):
     def forward(
         self,
         images: ImageList,
-        features: Dict[str, Tensor],
-        targets: Optional[List[Dict[str, Tensor]]] = None,
-    ) -> Tuple[List[Tensor], Dict[str, Tensor]]:
-
+        features: dict[str, Tensor],
+        targets: Optional[list[dict[str, Tensor]]] = None,
+    ) -> tuple[list[Tensor], dict[str, Tensor]]:
         """
         Args:
             images (ImageList): images for which we want to compute the predictions

@@ -1,6 +1,6 @@
 import os.path
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
@@ -10,7 +10,8 @@ from .vision import VisionDataset
 class CocoDetection(VisionDataset):
     """`MS Coco Detection <https://cocodataset.org/#detection-2016>`_ Dataset.
 
-    It requires the `COCO API to be installed <https://github.com/pdollar/coco/tree/master/PythonAPI>`_.
+    It requires `pycocotools <https://github.com/ppwwyyxx/cocoapi>`_ to be installed,
+    which could be installed via ``pip install pycocotools`` or ``conda install conda-forge::pycocotools``.
 
     Args:
         root (str or ``pathlib.Path``): Root directory where images are downloaded to.
@@ -41,10 +42,10 @@ class CocoDetection(VisionDataset):
         path = self.coco.loadImgs(id)[0]["file_name"]
         return Image.open(os.path.join(self.root, path)).convert("RGB")
 
-    def _load_target(self, id: int) -> List[Any]:
+    def _load_target(self, id: int) -> list[Any]:
         return self.coco.loadAnns(self.coco.getAnnIds(id))
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
 
         if not isinstance(index, int):
             raise ValueError(f"Index must be of type integer, got {type(index)} instead.")
@@ -65,7 +66,8 @@ class CocoDetection(VisionDataset):
 class CocoCaptions(CocoDetection):
     """`MS Coco Captions <https://cocodataset.org/#captions-2015>`_ Dataset.
 
-    It requires the `COCO API to be installed <https://github.com/pdollar/coco/tree/master/PythonAPI>`_.
+    It requires `pycocotools <https://github.com/ppwwyyxx/cocoapi>`_ to be installed,
+    which could be installed via ``pip install pycocotools`` or ``conda install conda-forge::pycocotools``.
 
     Args:
         root (str or ``pathlib.Path``): Root directory where images are downloaded to.
@@ -105,5 +107,5 @@ class CocoCaptions(CocoDetection):
 
     """
 
-    def _load_target(self, id: int) -> List[str]:
+    def _load_target(self, id: int) -> list[str]:
         return [ann["caption"] for ann in super()._load_target(id)]

@@ -23,15 +23,13 @@ case $(uname) in
 esac
 
 echo '::group::Create build environment'
-# See https://github.com/pytorch/vision/issues/7296 for ffmpeg
 conda create \
   --name ci \
   --quiet --yes \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
   libpng \
-  libwebp \
-  'ffmpeg<4.3'
+  libwebp
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools==72.1.0
@@ -45,11 +43,7 @@ echo '::endgroup::'
 
 if [[ "${OS_TYPE}" == windows && "${GPU_ARCH_TYPE}" == cuda ]]; then
   echo '::group::Install VisualStudio CUDA extensions on Windows'
-  if [[ "${VC_YEAR:-}" == "2022" ]]; then
-    TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Microsoft/VC/v170/BuildCustomizations"
-  else
-    TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Microsoft/VC/v160/BuildCustomizations"
-  fi
+  TARGET_DIR="/c/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/MSBuild/Microsoft/VC/v170/BuildCustomizations"
   mkdir -p "${TARGET_DIR}"
   cp -r "${CUDA_HOME}/MSBuildExtensions/"* "${TARGET_DIR}"
   echo '::endgroup::'
@@ -84,22 +78,25 @@ if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
 fi
 echo '::endgroup::'
 
-echo '::group::Install third party dependencies prior to TorchVision install'
-# Installing with `easy_install`, e.g. `python setup.py install` or `python setup.py develop`, has some quirks when
-# when pulling in third-party dependencies. For example:
-# - On Windows, we often hit an SSL error although `pip` can install just fine.
-# - It happily pulls in pre-releases, which can lead to more problems down the line.
-#   `pip` does not unless explicitly told to do so.
-# Thus, we use `easy_install` to extract the third-party dependencies here and install them upfront with `pip`.
-python setup.py egg_info
-# The requires.txt cannot be used with `pip install -r` directly. The requirements are listed at the top and the
-# optional dependencies come in non-standard syntax after a blank line. Thus, we just extract the header.
-sed -e '/^$/,$d' *.egg-info/requires.txt | tee requirements.txt
-pip install --progress-bar=off -r requirements.txt
+echo '::group::Install TorchVision'
+pip install -e . -v --no-build-isolation
 echo '::endgroup::'
 
-echo '::group::Install TorchVision'
-python setup.py develop
+if [[ "${CVCUDA:-}" == "1" ]]; then
+  echo '::group::Install CV-CUDA'
+  pip install --progress-bar=off cvcuda-cu12
+  echo '::endgroup::'
+fi
+
+echo '::group::Install torchvision-extra-decoders'
+# This can be done after torchvision was built
+if [[ "$(uname)" == "Linux" && "$(uname -m)" != "aarch64" ]]; then
+    extra_decoders_channel="--pre --index-url https://download.pytorch.org/whl/nightly/cpu"
+else
+    extra_decoders_channel=""
+fi
+
+pip install torchvision-extra-decoders $extra_decoders_channel
 echo '::endgroup::'
 
 echo '::group::Collect environment information'

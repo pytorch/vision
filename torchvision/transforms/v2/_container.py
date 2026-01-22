@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 import torch
 
@@ -86,13 +87,15 @@ class RandomApply(Transform):
 
         if not isinstance(transforms, (Sequence, nn.ModuleList)):
             raise TypeError("Argument transforms should be a sequence of callables or a `nn.ModuleList`")
+        elif not transforms:
+            raise ValueError("Pass at least one transform")
         self.transforms = transforms
 
         if not (0.0 <= p <= 1.0):
             raise ValueError("`p` should be a floating point value in the interval [0.0, 1.0].")
         self.p = p
 
-    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+    def _extract_params_for_v1_transform(self) -> dict[str, Any]:
         return {"transforms": self.transforms, "p": self.p}
 
     def forward(self, *inputs: Any) -> Any:
@@ -128,11 +131,12 @@ class RandomChoice(Transform):
     def __init__(
         self,
         transforms: Sequence[Callable],
-        p: Optional[List[float]] = None,
+        p: Optional[list[float]] = None,
     ) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
-
+        elif not transforms:
+            raise ValueError("Pass at least one transform")
         if p is None:
             p = [1] * len(transforms)
         elif len(p) != len(transforms):
@@ -162,6 +166,8 @@ class RandomOrder(Transform):
     def __init__(self, transforms: Sequence[Callable]) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence of callables")
+        elif not transforms:
+            raise ValueError("Pass at least one transform")
         super().__init__()
         self.transforms = transforms
 

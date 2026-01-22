@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
@@ -103,7 +103,7 @@ class PCAM(VisionDataset):
         with self.h5py.File(self._base_folder / images_file) as images_data:
             return images_data["x"].shape[0]
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         images_file = self._FILES[self._split]["images"][0]
         with self.h5py.File(self._base_folder / images_file) as images_data:
             image = Image.fromarray(images_data["x"][idx]).convert("RGB")

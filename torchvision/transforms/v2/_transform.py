@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable
 
 import PIL.Image
 import torch
@@ -15,46 +15,64 @@ from .functional._utils import _get_kernel
 
 
 class Transform(nn.Module):
+    """Base class to implement your own v2 transforms.
+
+    See  :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` for
+    more details.
+    """
 
     # Class attribute defining transformed types. Other types are passed-through without any transformation
     # We support both Types and callables that are able to do further checks on the type of the input.
-    _transformed_types: Tuple[Union[Type, Callable[[Any], bool]], ...] = (torch.Tensor, PIL.Image.Image)
+    _transformed_types: tuple[type | Callable[[Any], bool], ...] = (torch.Tensor, PIL.Image.Image)
 
     def __init__(self) -> None:
         super().__init__()
         _log_api_usage_once(self)
 
-    def _check_inputs(self, flat_inputs: List[Any]) -> None:
+    def check_inputs(self, flat_inputs: list[Any]) -> None:
         pass
 
-    def _get_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    # When v2 was introduced, this method was private and called
+    # `_get_params()`. Now it's publicly exposed as `make_params()`. It cannot
+    # be exposed as `get_params()` because there is already a `get_params()`
+    # methods for v2 transforms: it's the v1's `get_params()` that we have  to
+    # keep in order to guarantee 100% BC with v1. (It's defined in
+    # __init_subclass__ below).
+    def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
+        """Method to override for custom transforms.
+
+        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`"""
         return dict()
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
         kernel = _get_kernel(functional, type(inpt), allow_passthrough=True)
         return kernel(inpt, *args, **kwargs)
 
-    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+        """Method to override for custom transforms.
+
+        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`"""
         raise NotImplementedError
 
     def forward(self, *inputs: Any) -> Any:
+        """Do not override this! Use ``transform()`` instead."""
         flat_inputs, spec = tree_flatten(inputs if len(inputs) > 1 else inputs[0])
 
-        self._check_inputs(flat_inputs)
+        self.check_inputs(flat_inputs)
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
-        params = self._get_params(
+        params = self.make_params(
             [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
         )
 
         flat_outputs = [
-            self._transform(inpt, params) if needs_transform else inpt
+            self.transform(inpt, params) if needs_transform else inpt
             for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
         ]
 
         return tree_unflatten(flat_outputs, spec)
 
-    def _needs_transform_list(self, flat_inputs: List[Any]) -> List[bool]:
+    def _needs_transform_list(self, flat_inputs: list[Any]) -> list[bool]:
         # Below is a heuristic on how to deal with pure tensor inputs:
         # 1. Pure tensors, i.e. tensors that are not a tv_tensor, are passed through if there is an explicit image
         #    (`tv_tensors.Image` or `PIL.Image.Image`) or video (`tv_tensors.Video`) in the sample.
@@ -104,7 +122,7 @@ class Transform(nn.Module):
     #    the v2 transform. See `__init_subclass__` for details.
     # 2. The v2 transform will be JIT scriptable. See `_extract_params_for_v1_transform` and `__prepare_scriptable__`
     #    for details.
-    _v1_transform_cls: Optional[Type[nn.Module]] = None
+    _v1_transform_cls: type[nn.Module] | None = None
 
     def __init_subclass__(cls) -> None:
         # Since `get_params` is a `@staticmethod`, we have to bind it to the class itself rather than to an instance.
@@ -112,7 +130,7 @@ class Transform(nn.Module):
         if cls._v1_transform_cls is not None and hasattr(cls._v1_transform_cls, "get_params"):
             cls.get_params = staticmethod(cls._v1_transform_cls.get_params)  # type: ignore[attr-defined]
 
-    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+    def _extract_params_for_v1_transform(self) -> dict[str, Any]:
         # This method is called by `__prepare_scriptable__` to instantiate the equivalent v1 transform from the current
         # v2 transform instance. It extracts all available public attributes that are specific to that transform and
         # not `nn.Module` in general.
@@ -153,23 +171,23 @@ class _RandomApplyTransform(Transform):
     def forward(self, *inputs: Any) -> Any:
         # We need to almost duplicate `Transform.forward()` here since we always want to check the inputs, but return
         # early afterwards in case the random check triggers. The same result could be achieved by calling
-        # `super().forward()` after the random check, but that would call `self._check_inputs` twice.
+        # `super().forward()` after the random check, but that would call `self.check_inputs` twice.
 
         inputs = inputs if len(inputs) > 1 else inputs[0]
         flat_inputs, spec = tree_flatten(inputs)
 
-        self._check_inputs(flat_inputs)
+        self.check_inputs(flat_inputs)
 
         if torch.rand(1) >= self.p:
             return inputs
 
         needs_transform_list = self._needs_transform_list(flat_inputs)
-        params = self._get_params(
+        params = self.make_params(
             [inpt for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list) if needs_transform]
         )
 
         flat_outputs = [
-            self._transform(inpt, params) if needs_transform else inpt
+            self.transform(inpt, params) if needs_transform else inpt
             for (inpt, needs_transform) in zip(flat_inputs, needs_transform_list)
         ]
 

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Union
+from typing import Union
 from warnings import warn
 
 import torch
@@ -20,19 +20,25 @@ except (ImportError, OSError) as e:
 
 
 class ImageReadMode(Enum):
-    """
-    Support for various modes while reading images.
-
-    Use ``ImageReadMode.UNCHANGED`` for loading the image as-is,
-    ``ImageReadMode.GRAY`` for converting to grayscale,
-    ``ImageReadMode.GRAY_ALPHA`` for grayscale with transparency,
-    ``ImageReadMode.RGB`` for RGB and ``ImageReadMode.RGB_ALPHA`` for
-    RGB with transparency.
+    """Allow automatic conversion to RGB, RGBA, etc while decoding.
 
     .. note::
 
-        Some decoders won't support all possible values, e.g. a decoder may only
-        support "RGB" and "RGBA" mode.
+        You don't need to use this struct, you can just pass strings to all
+        ``mode`` parameters, e.g. ``mode="RGB"``.
+
+    The different available modes are the following.
+
+    - UNCHANGED: loads the image as-is
+    - RGB: converts to RGB
+    - RGBA: converts to RGB with transparency (also aliased as RGB_ALPHA)
+    - GRAY: converts to grayscale
+    - GRAY_ALPHA: converts to grayscale with transparency
+
+    .. note::
+
+        Some decoders won't support all possible values, e.g. GRAY and
+        GRAY_ALPHA are only supported for PNG and JPEG images.
     """
 
     UNCHANGED = 0
@@ -40,12 +46,12 @@ class ImageReadMode(Enum):
     GRAY_ALPHA = 2
     RGB = 3
     RGB_ALPHA = 4
+    RGBA = RGB_ALPHA  # Alias for convenience
 
 
 def read_file(path: str) -> torch.Tensor:
     """
-    Reads and outputs the bytes contents of a file as a uint8 Tensor
-    with one dimension.
+    Return the bytes contents of a file as a uint8 1D Tensor.
 
     Args:
         path (str or ``pathlib.Path``): the path to the file to be read
@@ -61,8 +67,7 @@ def read_file(path: str) -> torch.Tensor:
 
 def write_file(filename: str, data: torch.Tensor) -> None:
     """
-    Writes the contents of an uint8 tensor with one dimension to a
-    file.
+    Write the content of an uint8 1D tensor to a file.
 
     Args:
         filename (str or ``pathlib.Path``): the path to the file to be written
@@ -92,10 +97,9 @@ def decode_png(
     Args:
         input (Tensor[1]): a one dimensional uint8 tensor containing
             the raw bytes of the PNG image.
-        mode (ImageReadMode): the read mode used for optionally
-            converting the image. Default: ``ImageReadMode.UNCHANGED``.
-            See `ImageReadMode` class for more information on various
-            available modes.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
             Default: False.
 
@@ -104,6 +108,8 @@ def decode_png(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_png)
+    if isinstance(mode, str):
+        mode = ImageReadMode[mode.upper()]
     output = torch.ops.image.decode_png(input, mode.value, apply_exif_orientation)
     return output
 
@@ -148,13 +154,12 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
 
 
 def decode_jpeg(
-    input: Union[torch.Tensor, List[torch.Tensor]],
+    input: Union[torch.Tensor, list[torch.Tensor]],
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     device: Union[str, torch.device] = "cpu",
     apply_exif_orientation: bool = False,
-) -> Union[torch.Tensor, List[torch.Tensor]]:
-    """
-    Decode JPEG image(s) into 3 dimensional RGB or grayscale Tensor(s).
+) -> Union[torch.Tensor, list[torch.Tensor]]:
+    """Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.
 
     The values of the output tensor are uint8 between 0 and 255.
 
@@ -168,12 +173,9 @@ def decode_jpeg(
         input (Tensor[1] or list[Tensor[1]]): a (list of) one dimensional uint8 tensor(s) containing
             the raw bytes of the JPEG image. The tensor(s) must be on CPU,
             regardless of the ``device`` parameter.
-        mode (ImageReadMode): the read mode used for optionally
-            converting the image(s). The supported modes are: ``ImageReadMode.UNCHANGED``,
-            ``ImageReadMode.GRAY`` and ``ImageReadMode.RGB``
-            Default: ``ImageReadMode.UNCHANGED``.
-            See ``ImageReadMode`` class for more information on various
-            available modes.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
         device (str or torch.device): The device on which the decoded image will
             be stored. If a cuda device is specified, the image will be decoded
             with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
@@ -198,6 +200,8 @@ def decode_jpeg(
         _log_api_usage_once(decode_jpeg)
     if isinstance(device, str):
         device = torch.device(device)
+    if isinstance(mode, str):
+        mode = ImageReadMode[mode.upper()]
 
     if isinstance(input, list):
         if len(input) == 0:
@@ -221,11 +225,9 @@ def decode_jpeg(
 
 
 def encode_jpeg(
-    input: Union[torch.Tensor, List[torch.Tensor]], quality: int = 75
-) -> Union[torch.Tensor, List[torch.Tensor]]:
-    """
-    Takes a (list of) input tensor(s) in CHW layout and returns a (list of) buffer(s) with the contents
-    of the corresponding JPEG file(s).
+    input: Union[torch.Tensor, list[torch.Tensor]], quality: int = 75
+) -> Union[torch.Tensor, list[torch.Tensor]]:
+    """Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.
 
     .. note::
         Passing a list of CUDA tensors is more efficient than repeated individual calls to ``encode_jpeg``.
@@ -277,13 +279,13 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
 
 
 def decode_image(
-    input: torch.Tensor,
+    input: Union[torch.Tensor, str],
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
-    """
-    Detect whether an image is a JPEG, PNG, WEBP, or GIF and performs the
-    appropriate operation to decode the image into a Tensor.
+    """Decode an image into a uint8 tensor, from a path or from raw encoded bytes.
+
+    Currently supported image formats are jpeg, png, gif and webp.
 
     The values of the output tensor are in uint8 in [0, 255] for most cases.
 
@@ -294,13 +296,19 @@ def decode_image(
     after this function to convert the decoded image into a uint8 or float
     tensor.
 
+    .. note::
+
+        ``decode_image()`` doesn't work yet on AVIF or HEIC images. For these
+        formats, directly call  :func:`~torchvision.io.decode_avif` or
+        :func:`~torchvision.io.decode_heic`.
+
     Args:
-        input (Tensor): a one dimensional uint8 tensor containing the raw bytes of the
-            image.
-        mode (ImageReadMode): the read mode used for optionally converting the image.
-            Default: ``ImageReadMode.UNCHANGED``.
-            See ``ImageReadMode`` class for more information on various
-            available modes. Only applies to JPEG and PNG images.
+        input (Tensor or str or ``pathlib.Path``): The image to decode. If a
+            tensor is passed, it must be one dimensional uint8 tensor containing
+            the raw bytes of the image. Otherwise, this must be a path to the image file.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
            Only applies to JPEG and PNG images. Default: False.
 
@@ -309,6 +317,10 @@ def decode_image(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_image)
+    if not isinstance(input, torch.Tensor):
+        input = read_file(str(input))
+    if isinstance(mode, str):
+        mode = ImageReadMode[mode.upper()]
     output = torch.ops.image.decode_image(input, mode.value, apply_exif_orientation)
     return output
 
@@ -318,30 +330,7 @@ def read_image(
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
-    """
-    Reads a JPEG, PNG, WEBP, or GIF image into a Tensor.
-
-    The values of the output tensor are in uint8 in [0, 255] for most cases.
-
-    If the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
-    (supported from torchvision ``0.21``. Since uint16 support is limited in
-    pytorch, we recommend calling
-    :func:`torchvision.transforms.v2.functional.to_dtype()` with ``scale=True``
-    after this function to convert the decoded image into a uint8 or float
-    tensor.
-
-    Args:
-        path (str or ``pathlib.Path``): path of the image.
-        mode (ImageReadMode): the read mode used for optionally converting the image.
-            Default: ``ImageReadMode.UNCHANGED``.
-            See ``ImageReadMode`` class for more information on various
-            available modes. Only applies to JPEG and PNG images.
-        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
-            Only applies to JPEG and PNG images. Default: False.
-
-    Returns:
-        output (Tensor[image_channels, image_height, image_width])
-    """
+    """[OBSOLETE] Use :func:`~torchvision.io.decode_image` instead."""
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_image)
     data = read_file(path)
@@ -380,24 +369,87 @@ def decode_webp(
     Args:
         input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
             the raw bytes of the WEBP image.
-        mode (ImageReadMode): The read mode used for optionally
-            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.
-            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
 
     Returns:
         Decoded image (Tensor[image_channels, image_height, image_width])
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_webp)
+    if isinstance(mode, str):
+        mode = ImageReadMode[mode.upper()]
     return torch.ops.image.decode_webp(input, mode.value)
 
 
-def _decode_avif(
-    input: torch.Tensor,
-    mode: ImageReadMode = ImageReadMode.UNCHANGED,
-) -> torch.Tensor:
-    """
-    Decode an AVIF image into a 3 dimensional RGB[A] Tensor.
+# TODO_AVIF_HEIC: Better support for torchscript. Scripting decode_avif of
+# decode_heic currently fails, mainly because of the logic
+# _load_extra_decoders_once() (using global variables, try/except statements,
+# etc.).
+# The ops (torch.ops.extra_decoders_ns.decode_*) are otherwise torchscript-able,
+# and users who need torchscript can always just wrap those.
+
+# TODO_AVIF_HEIC: decode_image() should work for those. The key technical issue
+# we have here is that the format detection logic of decode_image() is
+# implemented in torchvision, and torchvision has zero knowledge of
+# torchvision-extra-decoders, so we cannot call the AVIF/HEIC C++ decoders
+# (those in torchvision-extra-decoders) from there.
+# A trivial check that could be done within torchvision would be to check the
+# file extension, if a path was passed. We could also just implement the
+# AVIF/HEIC detection logic in Python as a fallback, if the file detection
+# didn't find any format. In any case: properly determining whether a file is
+# HEIC is far from trivial, and relying on libmagic would probably be best
+
+
+_EXTRA_DECODERS_ALREADY_LOADED = False
+
+
+def _load_extra_decoders_once():
+    global _EXTRA_DECODERS_ALREADY_LOADED
+    if _EXTRA_DECODERS_ALREADY_LOADED:
+        return
+
+    try:
+        import torchvision_extra_decoders
+
+        # torchvision-extra-decoders only supports linux for now. BUT, users on
+        # e.g. MacOS can still install it: they will get the pure-python
+        # 0.0.0.dev version:
+        # https://pypi.org/project/torchvision-extra-decoders/0.0.0.dev0, which
+        # is a dummy version that was created to reserve the namespace on PyPI.
+        # We have to check that expose_extra_decoders() exists for those users,
+        # so we can properly error on non-Linux archs.
+        assert hasattr(torchvision_extra_decoders, "expose_extra_decoders")
+    except (AssertionError, ImportError) as e:
+        raise RuntimeError(
+            "In order to enable the AVIF and HEIC decoding capabilities of "
+            "torchvision, you need to `pip install torchvision-extra-decoders`. "
+            "Just install the package, you don't need to update your code. "
+            "This is only supported on Linux, and this feature is still in BETA stage. "
+            "Please let us know of any issue: https://github.com/pytorch/vision/issues/new/choose. "
+            "Note that `torchvision-extra-decoders` is released under the LGPL license. "
+        ) from e
+
+    # This will expose torch.ops.extra_decoders_ns.decode_avif and torch.ops.extra_decoders_ns.decode_heic
+    torchvision_extra_decoders.expose_extra_decoders()
+
+    _EXTRA_DECODERS_ALREADY_LOADED = True
+
+
+def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+    """Decode an AVIF image into a 3 dimensional RGB[A] Tensor.
+
+    .. warning::
+        In order to enable the AVIF decoding capabilities of torchvision, you
+        first need to run ``pip install torchvision-extra-decoders``. Just
+        install the package, you don't need to update your code. This is only
+        supported on Linux, and this feature is still in BETA stage. Please let
+        us know of any issue:
+        https://github.com/pytorch/vision/issues/new/choose. Note that
+        `torchvision-extra-decoders
+        <https://github.com/meta-pytorch/torchvision-extra-decoders/>`_ is
+        released under the LGPL license.
 
     The values of the output tensor are in uint8 in [0, 255] for most images. If
     the image has a bit-depth of more than 8, then the output tensor is uint16
@@ -409,21 +461,32 @@ def _decode_avif(
     Args:
         input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
             the raw bytes of the AVIF image.
-        mode (ImageReadMode): The read mode used for optionally
-            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.
-            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
 
     Returns:
         Decoded image (Tensor[image_channels, image_height, image_width])
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(_decode_avif)
-    return torch.ops.image.decode_avif(input, mode.value)
+    _load_extra_decoders_once()
+    if input.dtype != torch.uint8:
+        raise RuntimeError(f"Input tensor must have uint8 data type, got {input.dtype}")
+    return torch.ops.extra_decoders_ns.decode_avif(input, mode.value)
 
 
-def _decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
-    """
-    Decode an HEIC image into a 3 dimensional RGB[A] Tensor.
+def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+    """Decode an HEIC image into a 3 dimensional RGB[A] Tensor.
+
+    .. warning::
+        In order to enable the HEIC decoding capabilities of torchvision, you
+        first need to run ``pip install torchvision-extra-decoders``. Just
+        install the package, you don't need to update your code. This is only
+        supported on Linux, and this feature is still in BETA stage. Please let
+        us know of any issue:
+        https://github.com/pytorch/vision/issues/new/choose. Note that
+        `torchvision-extra-decoders
+        <https://github.com/meta-pytorch/torchvision-extra-decoders/>`_ is
+        released under the LGPL license.
 
     The values of the output tensor are in uint8 in [0, 255] for most images. If
     the image has a bit-depth of more than 8, then the output tensor is uint16
@@ -435,13 +498,14 @@ def _decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHAN
     Args:
         input (Tensor[1]): a one dimensional contiguous uint8 tensor containing
             the raw bytes of the HEIC image.
-        mode (ImageReadMode): The read mode used for optionally
-            converting the image color space. Default: ``ImageReadMode.UNCHANGED``.
-            Other supported values are ``ImageReadMode.RGB`` and ``ImageReadMode.RGB_ALPHA``.
+        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".
+            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`
+            for available modes.
 
     Returns:
         Decoded image (Tensor[image_channels, image_height, image_width])
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(_decode_heic)
-    return torch.ops.image.decode_heic(input, mode.value)
+    _load_extra_decoders_once()
+    if input.dtype != torch.uint8:
+        raise RuntimeError(f"Input tensor must have uint8 data type, got {input.dtype}")
+    return torch.ops.extra_decoders_ns.decode_heic(input, mode.value)

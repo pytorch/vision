@@ -1,6 +1,6 @@
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import torch
 import torch.nn.functional as F
@@ -56,12 +56,12 @@ def _xavier_init(conv: nn.Module):
 
 
 class SSDHead(nn.Module):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
+    def __init__(self, in_channels: list[int], num_anchors: list[int], num_classes: int):
         super().__init__()
         self.classification_head = SSDClassificationHead(in_channels, num_anchors, num_classes)
         self.regression_head = SSDRegressionHead(in_channels, num_anchors)
 
-    def forward(self, x: List[Tensor]) -> Dict[str, Tensor]:
+    def forward(self, x: list[Tensor]) -> dict[str, Tensor]:
         return {
             "bbox_regression": self.regression_head(x),
             "cls_logits": self.classification_head(x),
@@ -88,7 +88,7 @@ class SSDScoringHead(nn.Module):
                 out = module(x)
         return out
 
-    def forward(self, x: List[Tensor]) -> Tensor:
+    def forward(self, x: list[Tensor]) -> Tensor:
         all_results = []
 
         for i, features in enumerate(x):
@@ -106,7 +106,7 @@ class SSDScoringHead(nn.Module):
 
 
 class SSDClassificationHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int], num_classes: int):
+    def __init__(self, in_channels: list[int], num_anchors: list[int], num_classes: int):
         cls_logits = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             cls_logits.append(nn.Conv2d(channels, num_classes * anchors, kernel_size=3, padding=1))
@@ -115,7 +115,7 @@ class SSDClassificationHead(SSDScoringHead):
 
 
 class SSDRegressionHead(SSDScoringHead):
-    def __init__(self, in_channels: List[int], num_anchors: List[int]):
+    def __init__(self, in_channels: list[int], num_anchors: list[int]):
         bbox_reg = nn.ModuleList()
         for channels, anchors in zip(in_channels, num_anchors):
             bbox_reg.append(nn.Conv2d(channels, 4 * anchors, kernel_size=3, padding=1))
@@ -187,10 +187,10 @@ class SSD(nn.Module):
         self,
         backbone: nn.Module,
         anchor_generator: DefaultBoxGenerator,
-        size: Tuple[int, int],
+        size: tuple[int, int],
         num_classes: int,
-        image_mean: Optional[List[float]] = None,
-        image_std: Optional[List[float]] = None,
+        image_mean: Optional[list[float]] = None,
+        image_std: Optional[list[float]] = None,
         head: Optional[nn.Module] = None,
         score_thresh: float = 0.01,
         nms_thresh: float = 0.45,
@@ -245,8 +245,8 @@ class SSD(nn.Module):
 
     @torch.jit.unused
     def eager_outputs(
-        self, losses: Dict[str, Tensor], detections: List[Dict[str, Tensor]]
-    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+        self, losses: dict[str, Tensor], detections: list[dict[str, Tensor]]
+    ) -> tuple[dict[str, Tensor], list[dict[str, Tensor]]]:
         if self.training:
             return losses
 
@@ -254,11 +254,11 @@ class SSD(nn.Module):
 
     def compute_loss(
         self,
-        targets: List[Dict[str, Tensor]],
-        head_outputs: Dict[str, Tensor],
-        anchors: List[Tensor],
-        matched_idxs: List[Tensor],
-    ) -> Dict[str, Tensor]:
+        targets: list[dict[str, Tensor]],
+        head_outputs: dict[str, Tensor],
+        anchors: list[Tensor],
+        matched_idxs: list[Tensor],
+    ) -> dict[str, Tensor]:
         bbox_regression = head_outputs["bbox_regression"]
         cls_logits = head_outputs["cls_logits"]
 
@@ -324,8 +324,8 @@ class SSD(nn.Module):
         }
 
     def forward(
-        self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
-    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+        self, images: list[Tensor], targets: Optional[list[dict[str, Tensor]]] = None
+    ) -> tuple[dict[str, Tensor], list[dict[str, Tensor]]]:
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
@@ -341,7 +341,7 @@ class SSD(nn.Module):
                         torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         # get the original image sizes
-        original_image_sizes: List[Tuple[int, int]] = []
+        original_image_sizes: list[tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
             torch._assert(
@@ -360,7 +360,7 @@ class SSD(nn.Module):
                 degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
                 if degenerate_boxes.any():
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
-                    degen_bb: List[float] = boxes[bb_idx].tolist()
+                    degen_bb: list[float] = boxes[bb_idx].tolist()
                     torch._assert(
                         False,
                         "All bounding boxes should have positive height and width."
@@ -381,7 +381,7 @@ class SSD(nn.Module):
         anchors = self.anchor_generator(images, features)
 
         losses = {}
-        detections: List[Dict[str, Tensor]] = []
+        detections: list[dict[str, Tensor]] = []
         if self.training:
             matched_idxs = []
             if targets is None:
@@ -412,15 +412,15 @@ class SSD(nn.Module):
         return self.eager_outputs(losses, detections)
 
     def postprocess_detections(
-        self, head_outputs: Dict[str, Tensor], image_anchors: List[Tensor], image_shapes: List[Tuple[int, int]]
-    ) -> List[Dict[str, Tensor]]:
+        self, head_outputs: dict[str, Tensor], image_anchors: list[Tensor], image_shapes: list[tuple[int, int]]
+    ) -> list[dict[str, Tensor]]:
         bbox_regression = head_outputs["bbox_regression"]
         pred_scores = F.softmax(head_outputs["cls_logits"], dim=-1)
 
         num_classes = pred_scores.size(-1)
         device = pred_scores.device
 
-        detections: List[Dict[str, Tensor]] = []
+        detections: list[dict[str, Tensor]] = []
 
         for boxes, scores, anchors, image_shape in zip(bbox_regression, pred_scores, image_anchors, image_shapes):
             boxes = self.box_coder.decode_single(boxes, anchors)
@@ -536,7 +536,7 @@ class SSDFeatureExtractorVGG(nn.Module):
         )
         self.extra = extra
 
-    def forward(self, x: Tensor) -> Dict[str, Tensor]:
+    def forward(self, x: Tensor) -> dict[str, Tensor]:
         # L2 regularization + Rescaling of 1st block's feature map
         x = self.features(x)
         rescaled = self.scale_weight.view(1, -1, 1, 1) * F.normalize(x)

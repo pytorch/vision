@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, Optional, Union
 
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
@@ -20,7 +20,7 @@ NAME = "food101"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict(categories=read_categories_file(NAME))
 
 
@@ -36,7 +36,7 @@ class Food101(Dataset):
 
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         return [
             HttpResource(
                 url="http://data.vision.ee.ethz.ch/cvl/food-101.tar.gz",
@@ -45,7 +45,7 @@ class Food101(Dataset):
             )
         ]
 
-    def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+    def _classify_archive(self, data: tuple[str, Any]) -> Optional[int]:
         path = Path(data[0])
         if path.parents[1].name == "images":
             return 0
@@ -54,7 +54,7 @@ class Food101(Dataset):
         else:
             return None
 
-    def _prepare_sample(self, data: Tuple[str, Tuple[str, BinaryIO]]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[str, tuple[str, BinaryIO]]) -> dict[str, Any]:
         id, (path, buffer) = data
         return dict(
             label=Label.from_category(id.split("/", 1)[0], categories=self._categories),
@@ -62,11 +62,11 @@ class Food101(Dataset):
             image=EncodedImage.from_file(buffer),
         )
 
-    def _image_key(self, data: Tuple[str, Any]) -> str:
+    def _image_key(self, data: tuple[str, Any]) -> str:
         path = Path(data[0])
         return path.relative_to(path.parents[1]).with_suffix("").as_posix()
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         archive_dp = resource_dps[0]
         images_dp, split_dp = Demultiplexer(
             archive_dp, 2, self._classify_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
@@ -86,7 +86,7 @@ class Food101(Dataset):
 
         return Mapper(dp, self._prepare_sample)
 
-    def _generate_categories(self) -> List[str]:
+    def _generate_categories(self) -> list[str]:
         resources = self._resources()
         dp = resources[0].load(self._root)
         dp = Filter(dp, path_comparator("name", "classes.txt"))

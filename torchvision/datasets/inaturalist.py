@@ -1,7 +1,7 @@
 import os
 import os.path
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
@@ -62,16 +62,20 @@ class INaturalist(VisionDataset):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     def __init__(
         self,
         root: Union[str, Path],
         version: str = "2021_train",
-        target_type: Union[List[str], str] = "full",
+        target_type: Union[list[str], str] = "full",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Optional[Callable[[Union[str, Path]], Any]] = None,
     ) -> None:
         self.version = verify_str_arg(version, "version", DATASET_URLS.keys())
 
@@ -81,16 +85,16 @@ class INaturalist(VisionDataset):
         if download:
             self.download()
 
-        if not self._check_integrity():
+        if not self._check_exists():
             raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
-        self.all_categories: List[str] = []
+        self.all_categories: list[str] = []
 
         # map: category type -> name of category -> index
-        self.categories_index: Dict[str, Dict[str, int]] = {}
+        self.categories_index: dict[str, dict[str, int]] = {}
 
         # list indexed by category id, containing mapping from category type -> index
-        self.categories_map: List[Dict[str, int]] = []
+        self.categories_map: list[dict[str, int]] = []
 
         if not isinstance(target_type, list):
             target_type = [target_type]
@@ -102,12 +106,14 @@ class INaturalist(VisionDataset):
             self._init_pre2021()
 
         # index of all files: (full category id, filename)
-        self.index: List[Tuple[int, str]] = []
+        self.index: list[tuple[int, str]] = []
 
         for dir_index, dir_name in enumerate(self.all_categories):
             files = os.listdir(os.path.join(self.root, dir_name))
             for fname in files:
                 self.index.append((dir_index, fname))
+
+        self.loader = loader
 
     def _init_2021(self) -> None:
         """Initialize based on 2021 layout"""
@@ -168,7 +174,7 @@ class INaturalist(VisionDataset):
             if not c:
                 raise RuntimeError(f"Missing category {cindex}")
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -178,7 +184,8 @@ class INaturalist(VisionDataset):
         """
 
         cat_id, fname = self.index[index]
-        img = Image.open(os.path.join(self.root, self.all_categories[cat_id], fname))
+        image_path = os.path.join(self.root, self.all_categories[cat_id], fname)
+        img = self.loader(image_path) if self.loader is not None else Image.open(image_path)
 
         target: Any = []
         for t in self.target_type:
@@ -219,15 +226,12 @@ class INaturalist(VisionDataset):
                         return name
                 raise ValueError(f"Invalid category id {category_id} for {category_type}")
 
-    def _check_integrity(self) -> bool:
+    def _check_exists(self) -> bool:
         return os.path.exists(self.root) and len(os.listdir(self.root)) > 0
 
     def download(self) -> None:
-        if self._check_integrity():
-            raise RuntimeError(
-                f"The directory {self.root} already exists. "
-                f"If you want to re-download or re-extract the images, delete the directory."
-            )
+        if self._check_exists():
+            return
 
         base_root = os.path.dirname(self.root)
 
@@ -239,4 +243,3 @@ class INaturalist(VisionDataset):
         if not os.path.exists(orig_dir_name):
             raise RuntimeError(f"Unable to find downloaded files at {orig_dir_name}")
         os.rename(orig_dir_name, self.root)
-        print(f"Dataset version '{self.version}' has been downloaded and prepared for use")

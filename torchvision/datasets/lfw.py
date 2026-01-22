@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
-from PIL import Image
-
+from .folder import default_loader
 from .utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
 from .vision import VisionDataset
 
@@ -39,6 +38,7 @@ class _LFW(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         super().__init__(os.path.join(root, self.base_folder), transform=transform, target_transform=target_transform)
 
@@ -48,20 +48,20 @@ class _LFW(VisionDataset):
         self.view = verify_str_arg(view.lower(), "view", ["people", "pairs"])
         self.split = verify_str_arg(split.lower(), "split", ["10fold", "train", "test"])
         self.labels_file = f"{self.view}{self.annot_file[self.split]}.txt"
-        self.data: List[Any] = []
+        self.data: list[Any] = []
 
         if download:
+            raise ValueError(
+                "LFW dataset is no longer available for download."
+                "Please download the dataset manually and place it in the specified directory"
+            )
             self.download()
 
         if not self._check_integrity():
             raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         self.images_dir = os.path.join(self.root, images_dir)
-
-    def _loader(self, path: str) -> Image.Image:
-        with open(path, "rb") as f:
-            img = Image.open(f)
-            return img.convert("RGB")
+        self._loader = loader
 
     def _check_integrity(self) -> bool:
         st1 = check_integrity(os.path.join(self.root, self.filename), self.md5)
@@ -74,7 +74,6 @@ class _LFW(VisionDataset):
 
     def download(self) -> None:
         if self._check_integrity():
-            print("Files already downloaded and verified")
             return
         url = f"{self.download_url_prefix}{self.filename}"
         download_and_extract_archive(url, self.root, filename=self.filename, md5=self.md5)
@@ -95,6 +94,11 @@ class _LFW(VisionDataset):
 class LFWPeople(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
+    .. warning:
+
+        The LFW dataset is no longer available for automatic download. Please
+        download it manually and place it in the specified directory.
+
     Args:
         root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``lfw-py`` exists or will be saved to if download is set to True.
@@ -102,14 +106,14 @@ class LFWPeople(_LFW):
             ``10fold`` (default).
         image_set (str, optional): Type of image funneling to use, ``original``, ``funneled`` or
             ``deepfunneled``. Defaults to ``funneled``.
-        transform (callable, optional): A function/transform that  takes in a PIL image
-            and returns a transformed version. E.g, ``transforms.RandomRotation``
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-        download (bool, optional): If true, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
-
+        download (bool, optional): NOT SUPPORTED ANYMORE, leave to False.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     def __init__(
@@ -120,13 +124,14 @@ class LFWPeople(_LFW):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
-        super().__init__(root, split, image_set, "people", transform, target_transform, download)
+        super().__init__(root, split, image_set, "people", transform, target_transform, download, loader=loader)
 
         self.class_to_idx = self._get_classes()
         self.data, self.targets = self._get_people()
 
-    def _get_people(self) -> Tuple[List[str], List[int]]:
+    def _get_people(self) -> tuple[list[str], list[int]]:
         data, targets = [], []
         with open(os.path.join(self.root, self.labels_file)) as f:
             lines = f.readlines()
@@ -144,14 +149,14 @@ class LFWPeople(_LFW):
 
         return data, targets
 
-    def _get_classes(self) -> Dict[str, int]:
+    def _get_classes(self) -> dict[str, int]:
         with open(os.path.join(self.root, self.names)) as f:
             lines = f.readlines()
             names = [line.strip().split()[0] for line in lines]
         class_to_idx = {name: i for i, name in enumerate(names)}
         return class_to_idx
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -177,6 +182,11 @@ class LFWPeople(_LFW):
 class LFWPairs(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
+    .. warning:
+
+        The LFW dataset is no longer available for automatic download. Please
+        download it manually and place it in the specified directory.
+
     Args:
         root (str or ``pathlib.Path``): Root directory of dataset where directory
             ``lfw-py`` exists or will be saved to if download is set to True.
@@ -188,9 +198,10 @@ class LFWPairs(_LFW):
             and returns a transformed version. E.g, ``transforms.RandomRotation``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-        download (bool, optional): If true, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
+        download (bool, optional): NOT SUPPORTED ANYMORE, leave to False.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
 
     """
 
@@ -202,12 +213,13 @@ class LFWPairs(_LFW):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
-        super().__init__(root, split, image_set, "pairs", transform, target_transform, download)
+        super().__init__(root, split, image_set, "pairs", transform, target_transform, download, loader=loader)
 
         self.pair_names, self.data, self.targets = self._get_pairs(self.images_dir)
 
-    def _get_pairs(self, images_dir: str) -> Tuple[List[Tuple[str, str]], List[Tuple[str, str]], List[int]]:
+    def _get_pairs(self, images_dir: str) -> tuple[list[tuple[str, str]], list[tuple[str, str]], list[int]]:
         pair_names, data, targets = [], [], []
         with open(os.path.join(self.root, self.labels_file)) as f:
             lines = f.readlines()
@@ -235,7 +247,7 @@ class LFWPairs(_LFW):
 
         return pair_names, data, targets
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any, int]:
+    def __getitem__(self, index: int) -> tuple[Any, Any, int]:
         """
         Args:
             index (int): Index

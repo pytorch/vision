@@ -1,14 +1,14 @@
 import os
 import os.path
 from pathlib import Path
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Optional, Union
 
 from PIL import Image
 
 from .vision import VisionDataset
 
 
-def has_file_allowed_extension(filename: str, extensions: Union[str, Tuple[str, ...]]) -> bool:
+def has_file_allowed_extension(filename: str, extensions: Union[str, tuple[str, ...]]) -> bool:
     """Checks if a file is an allowed extension.
 
     Args:
@@ -33,7 +33,7 @@ def is_image_file(filename: str) -> bool:
     return has_file_allowed_extension(filename, IMG_EXTENSIONS)
 
 
-def find_classes(directory: Union[str, Path]) -> Tuple[List[str], Dict[str, int]]:
+def find_classes(directory: Union[str, Path]) -> tuple[list[str], dict[str, int]]:
     """Finds the class folders in a dataset.
 
     See :class:`DatasetFolder` for details.
@@ -48,11 +48,11 @@ def find_classes(directory: Union[str, Path]) -> Tuple[List[str], Dict[str, int]
 
 def make_dataset(
     directory: Union[str, Path],
-    class_to_idx: Optional[Dict[str, int]] = None,
-    extensions: Optional[Union[str, Tuple[str, ...]]] = None,
+    class_to_idx: Optional[dict[str, int]] = None,
+    extensions: Optional[Union[str, tuple[str, ...]]] = None,
     is_valid_file: Optional[Callable[[str], bool]] = None,
     allow_empty: bool = False,
-) -> List[Tuple[str, int]]:
+) -> list[tuple[str, int]]:
     """Generates a list of samples of a form (path_to_sample, class).
 
     See :class:`DatasetFolder` for details.
@@ -139,7 +139,7 @@ class DatasetFolder(VisionDataset):
         self,
         root: Union[str, Path],
         loader: Callable[[str], Any],
-        extensions: Optional[Tuple[str, ...]] = None,
+        extensions: Optional[tuple[str, ...]] = None,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         is_valid_file: Optional[Callable[[str], bool]] = None,
@@ -166,11 +166,11 @@ class DatasetFolder(VisionDataset):
     @staticmethod
     def make_dataset(
         directory: Union[str, Path],
-        class_to_idx: Dict[str, int],
-        extensions: Optional[Tuple[str, ...]] = None,
+        class_to_idx: dict[str, int],
+        extensions: Optional[tuple[str, ...]] = None,
         is_valid_file: Optional[Callable[[str], bool]] = None,
         allow_empty: bool = False,
-    ) -> List[Tuple[str, int]]:
+    ) -> list[tuple[str, int]]:
         """Generates a list of samples of a form (path_to_sample, class).
 
         This can be overridden to e.g. read files from a compressed zip file instead of from the disk.
@@ -204,7 +204,7 @@ class DatasetFolder(VisionDataset):
             directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file, allow_empty=allow_empty
         )
 
-    def find_classes(self, directory: Union[str, Path]) -> Tuple[List[str], Dict[str, int]]:
+    def find_classes(self, directory: Union[str, Path]) -> tuple[list[str], dict[str, int]]:
         """Find the class folders in a dataset structured as follows::
 
             directory/
@@ -233,7 +233,7 @@ class DatasetFolder(VisionDataset):
         """
         return find_classes(directory)
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -257,7 +257,7 @@ class DatasetFolder(VisionDataset):
 IMG_EXTENSIONS = (".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif", ".tiff", ".webp")
 
 
-def pil_loader(path: str) -> Image.Image:
+def pil_loader(path: Union[str, Path]) -> Image.Image:
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
     with open(path, "rb") as f:
         img = Image.open(f)
@@ -265,7 +265,7 @@ def pil_loader(path: str) -> Image.Image:
 
 
 # TODO: specify the return type
-def accimage_loader(path: str) -> Any:
+def accimage_loader(path: Union[str, Path]) -> Any:
     import accimage
 
     try:
@@ -275,7 +275,7 @@ def accimage_loader(path: str) -> Any:
         return pil_loader(path)
 
 
-def default_loader(path: str) -> Any:
+def default_loader(path: Union[str, Path]) -> Any:
     from torchvision import get_image_backend
 
     if get_image_backend() == "accimage":
@@ -300,7 +300,7 @@ class ImageFolder(DatasetFolder):
 
     Args:
         root (str or ``pathlib.Path``): Root directory path.
-        transform (callable, optional): A function/transform that takes in a PIL image
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.

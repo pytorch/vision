@@ -3,10 +3,9 @@ import os
 from collections import defaultdict
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
-from PIL import Image
-
+from .folder import default_loader
 from .vision import VisionDataset
 
 
@@ -19,14 +18,14 @@ class Flickr8kParser(HTMLParser):
         self.root = root
 
         # Data structure to store captions
-        self.annotations: Dict[str, List[str]] = {}
+        self.annotations: dict[str, list[str]] = {}
 
         # State variables
         self.in_table = False
         self.current_tag: Optional[str] = None
         self.current_img: Optional[str] = None
 
-    def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]) -> None:
         self.current_tag = tag
 
         if tag == "table":
@@ -59,10 +58,13 @@ class Flickr8k(VisionDataset):
     Args:
         root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         ann_file (string): Path to annotation file.
-        transform (callable, optional): A function/transform that takes in a PIL image
-            and returns a transformed version. E.g, ``transforms.PILToTensor``
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     def __init__(
@@ -71,6 +73,7 @@ class Flickr8k(VisionDataset):
         ann_file: str,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self.ann_file = os.path.expanduser(ann_file)
@@ -82,8 +85,9 @@ class Flickr8k(VisionDataset):
         self.annotations = parser.annotations
 
         self.ids = list(sorted(self.annotations.keys()))
+        self.loader = loader
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -94,7 +98,7 @@ class Flickr8k(VisionDataset):
         img_id = self.ids[index]
 
         # Image
-        img = Image.open(img_id).convert("RGB")
+        img = self.loader(img_id)
         if self.transform is not None:
             img = self.transform(img)
 
@@ -115,10 +119,13 @@ class Flickr30k(VisionDataset):
     Args:
         root (str or ``pathlib.Path``): Root directory where images are downloaded to.
         ann_file (string): Path to annotation file.
-        transform (callable, optional): A function/transform that takes in a PIL image
-            and returns a transformed version. E.g, ``transforms.PILToTensor``
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     def __init__(
@@ -127,6 +134,7 @@ class Flickr30k(VisionDataset):
         ann_file: str,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self.ann_file = os.path.expanduser(ann_file)
@@ -139,8 +147,9 @@ class Flickr30k(VisionDataset):
                 self.annotations[img_id[:-2]].append(caption)
 
         self.ids = list(sorted(self.annotations.keys()))
+        self.loader = loader
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -152,7 +161,7 @@ class Flickr30k(VisionDataset):
 
         # Image
         filename = os.path.join(self.root, img_id)
-        img = Image.open(filename).convert("RGB")
+        img = self.loader(filename)
         if self.transform is not None:
             img = self.transform(img)
 

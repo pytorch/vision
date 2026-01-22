@@ -1,4 +1,4 @@
-from typing import Any, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, cast, Optional, Union
 
 import PIL.Image
 import torch
@@ -27,14 +27,14 @@ class SimpleCopyPaste(Transform):
     def _copy_paste(
         self,
         image: Union[torch.Tensor, tv_tensors.Image],
-        target: Dict[str, Any],
+        target: dict[str, Any],
         paste_image: Union[torch.Tensor, tv_tensors.Image],
-        paste_target: Dict[str, Any],
+        paste_target: dict[str, Any],
         random_selection: torch.Tensor,
         blending: bool,
         resize_interpolation: F.InterpolationMode,
         antialias: Optional[bool],
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+    ) -> tuple[torch.Tensor, dict[str, Any]]:
 
         paste_masks = tv_tensors.wrap(paste_target["masks"][random_selection], like=paste_target["masks"])
         paste_boxes = tv_tensors.wrap(paste_target["boxes"][random_selection], like=paste_target["boxes"])
@@ -46,7 +46,7 @@ class SimpleCopyPaste(Transform):
         # This is something different to TF implementation we introduced here as
         # originally the algorithm works on equal-sized data
         # (for example, coming from LSJ data augmentations)
-        size1 = cast(List[int], image.shape[-2:])
+        size1 = cast(list[int], image.shape[-2:])
         size2 = paste_image.shape[-2:]
         if size1 != size2:
             paste_image = F.resize(paste_image, size=size1, interpolation=resize_interpolation, antialias=antialias)
@@ -103,8 +103,8 @@ class SimpleCopyPaste(Transform):
         return image, out_target
 
     def _extract_image_targets(
-        self, flat_sample: List[Any]
-    ) -> Tuple[List[Union[torch.Tensor, tv_tensors.Image]], List[Dict[str, Any]]]:
+        self, flat_sample: list[Any]
+    ) -> tuple[list[Union[torch.Tensor, tv_tensors.Image]], list[dict[str, Any]]]:
         # fetch all images, bboxes, masks and labels from unstructured input
         # with List[image], List[BoundingBoxes], List[Mask], List[Label]
         images, bboxes, masks, labels = [], [], [], []
@@ -134,9 +134,9 @@ class SimpleCopyPaste(Transform):
 
     def _insert_outputs(
         self,
-        flat_sample: List[Any],
-        output_images: List[torch.Tensor],
-        output_targets: List[Dict[str, Any]],
+        flat_sample: list[Any],
+        output_images: list[torch.Tensor],
+        output_targets: list[dict[str, Any]],
     ) -> None:
         c0, c1, c2, c3 = 0, 0, 0, 0
         for i, obj in enumerate(flat_sample):

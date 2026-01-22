@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -88,8 +88,8 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
 
 
 def _shufflenetv2(
-    stages_repeats: List[int],
-    stages_out_channels: List[int],
+    stages_repeats: list[int],
+    stages_out_channels: list[int],
     *,
     weights: Optional[WeightsEnum],
     progress: bool,
@@ -215,9 +215,11 @@ class ShuffleNet_V2_X2_0_QuantizedWeights(WeightsEnum):
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1
-        if kwargs.get("quantize", False)
-        else ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+            if kwargs.get("quantize", False)
+            else ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def shufflenet_v2_x0_5(
@@ -269,9 +271,11 @@ def shufflenet_v2_x0_5(
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1
-        if kwargs.get("quantize", False)
-        else ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+            if kwargs.get("quantize", False)
+            else ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def shufflenet_v2_x1_0(
@@ -323,9 +327,11 @@ def shufflenet_v2_x1_0(
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ShuffleNet_V2_X1_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1
-        if kwargs.get("quantize", False)
-        else ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            ShuffleNet_V2_X1_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+            if kwargs.get("quantize", False)
+            else ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def shufflenet_v2_x1_5(
@@ -377,9 +383,11 @@ def shufflenet_v2_x1_5(
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ShuffleNet_V2_X2_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1
-        if kwargs.get("quantize", False)
-        else ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            ShuffleNet_V2_X2_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+            if kwargs.get("quantize", False)
+            else ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def shufflenet_v2_x2_0(

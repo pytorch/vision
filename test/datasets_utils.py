@@ -15,7 +15,8 @@ import unittest
 import unittest.mock
 import zipfile
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from collections.abc import Iterator, Sequence
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 
@@ -63,6 +64,7 @@ class LazyImporter:
     provide modules listed in MODULES as attributes. They are only imported when accessed.
 
     """
+
     MODULES = (
         "av",
         "lmdb",
@@ -280,7 +282,7 @@ class DatasetTestCase(unittest.TestCase):
         "download_and_extract_archive",
     }
 
-    def dataset_args(self, tmpdir: str, config: Dict[str, Any]) -> Sequence[Any]:
+    def dataset_args(self, tmpdir: str, config: dict[str, Any]) -> Sequence[Any]:
         """Define positional arguments passed to the dataset.
 
         .. note::
@@ -299,7 +301,7 @@ class DatasetTestCase(unittest.TestCase):
         """
         return (tmpdir,)
 
-    def inject_fake_data(self, tmpdir: str, config: Dict[str, Any]) -> Union[int, Dict[str, Any]]:
+    def inject_fake_data(self, tmpdir: str, config: dict[str, Any]) -> Union[int, dict[str, Any]]:
         """Inject fake data for dataset into a temporary directory.
 
         During the creation of the dataset the download and extract logic is disabled. Thus, the fake data injected
@@ -323,11 +325,11 @@ class DatasetTestCase(unittest.TestCase):
     @contextlib.contextmanager
     def create_dataset(
         self,
-        config: Optional[Dict[str, Any]] = None,
+        config: Optional[dict[str, Any]] = None,
         inject_fake_data: bool = True,
         patch_checks: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Iterator[Tuple[torchvision.datasets.VisionDataset, Dict[str, Any]]]:
+    ) -> Iterator[tuple[torchvision.datasets.VisionDataset, dict[str, Any]]]:
         r"""Create the dataset in a temporary directory.
 
         The configuration passed to the dataset is populated to contain at least all parameters with default values.
@@ -611,15 +613,16 @@ class ImageDatasetTestCase(DatasetTestCase):
     """
 
     FEATURE_TYPES = (PIL.Image.Image, int)
+    SUPPORT_TV_IMAGE_DECODE: bool = False
 
     @contextlib.contextmanager
     def create_dataset(
         self,
-        config: Optional[Dict[str, Any]] = None,
+        config: Optional[dict[str, Any]] = None,
         inject_fake_data: bool = True,
         patch_checks: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Iterator[Tuple[torchvision.datasets.VisionDataset, Dict[str, Any]]]:
+    ) -> Iterator[tuple[torchvision.datasets.VisionDataset, dict[str, Any]]]:
         with super().create_dataset(
             config=config,
             inject_fake_data=inject_fake_data,
@@ -632,21 +635,33 @@ class ImageDatasetTestCase(DatasetTestCase):
             # This problem only occurs during testing since some tests, e.g. DatasetTestCase.test_feature_types open an
             # image, but never use the underlying data. During normal operation it is reasonable to assume that the
             # user wants to work with the image he just opened rather than deleting the underlying file.
-            with self._force_load_images():
+            with self._force_load_images(loader=(config or {}).get("loader", None)):
                 yield dataset, info
 
     @contextlib.contextmanager
-    def _force_load_images(self):
-        open = PIL.Image.open
+    def _force_load_images(self, loader: Optional[Callable[[str], Any]] = None):
+        open = loader or PIL.Image.open
 
         def new(fp, *args, **kwargs):
             image = open(fp, *args, **kwargs)
-            if isinstance(fp, (str, pathlib.Path)):
+            if isinstance(fp, (str, pathlib.Path)) and isinstance(image, PIL.Image.Image):
                 image.load()
             return image
 
-        with unittest.mock.patch("PIL.Image.open", new=new):
+        with unittest.mock.patch(open.__module__ + "." + open.__qualname__, new=new):
             yield
+
+    def test_tv_decode_image_support(self):
+        if not self.SUPPORT_TV_IMAGE_DECODE:
+            pytest.skip(f"{self.DATASET_CLASS.__name__} does not support torchvision.io.decode_image.")
+
+        with self.create_dataset(
+            config=dict(
+                loader=torchvision.io.decode_image,
+            )
+        ) as (dataset, _):
+            image = dataset[0][0]
+            assert isinstance(image, torch.Tensor)
 
 
 class VideoDatasetTestCase(DatasetTestCase):
@@ -786,7 +801,7 @@ def create_image_folder(
     num_examples: int,
     size: Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]] = None,
     **kwargs: Any,
-) -> List[pathlib.Path]:
+) -> list[pathlib.Path]:
     """Create a folder of random images.
 
     Args:
@@ -808,7 +823,7 @@ def create_image_folder(
     """
     if size is None:
 
-        def size(idx: int) -> Tuple[int, int, int]:
+        def size(idx: int) -> tuple[int, int, int]:
             num_channels = 3
             height, width = torch.randint(3, 11, size=(2,), dtype=torch.int).tolist()
             return (num_channels, height, width)
@@ -900,7 +915,7 @@ def create_video_folder(
     size: Optional[Union[Sequence[int], int, Callable[[int], Union[Sequence[int], int]]]] = None,
     fps=25,
     **kwargs,
-) -> List[pathlib.Path]:
+) -> list[pathlib.Path]:
     """Create a folder of random videos.
 
     Args:
