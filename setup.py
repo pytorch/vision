@@ -293,16 +293,21 @@ def make_image_extension():
 
     libraries = []
     define_macros, extra_compile_args = get_macros_and_flags()
+    # PyTorch Stable ABI target version (2.11) - required for string handling in TORCH_BOX
+    define_macros += [("TORCH_TARGET_VERSION", "0x020b000000000000")]
 
     image_dir = CSRS_DIR / "io/image"
     sources = list(image_dir.glob("*.cpp")) + list(image_dir.glob("cpu/*.cpp")) + list(image_dir.glob("cpu/giflib/*.c"))
 
-    if IS_ROCM:
-        sources += list(image_dir.glob("hip/*.cpp"))
-        # we need to exclude this in favor of the hipified source
-        sources.remove(image_dir / "image.cpp")
-    else:
-        sources += list(image_dir.glob("cuda/*.cpp"))
+    # Note: CUDA sources are excluded when building with stable ABI (TORCH_TARGET_VERSION)
+    # because the stable ABI doesn't expose raw CUDA streams needed by nvJPEG.
+    # When stable ABI CUDA support is added to PyTorch, this can be re-enabled.
+    # if IS_ROCM:
+    #     sources += list(image_dir.glob("hip/*.cpp"))
+    #     # we need to exclude this in favor of the hipified source
+    #     sources.remove(image_dir / "image.cpp")
+    # else:
+    #     sources += list(image_dir.glob("cuda/*.cpp"))
 
     Extension = CppExtension
 
@@ -350,18 +355,20 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without WEBP support")
 
-    if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
-        nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
-
-        if nvjpeg_found:
-            print("Building torchvision with NVJPEG image support")
-            libraries.append("nvjpeg")
-            define_macros += [("NVJPEG_FOUND", 1)]
-            Extension = CUDAExtension
-        else:
-            warnings.warn("Building torchvision without NVJPEG support")
-    elif USE_NVJPEG:
-        warnings.warn("Building torchvision without NVJPEG support")
+    # NVJPEG is disabled when building with stable ABI (TORCH_TARGET_VERSION)
+    # because the stable ABI doesn't expose raw CUDA streams needed by nvJPEG.
+    # if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
+    #     nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
+    #
+    #     if nvjpeg_found:
+    #         print("Building torchvision with NVJPEG image support")
+    #         libraries.append("nvjpeg")
+    #         define_macros += [("NVJPEG_FOUND", 1)]
+    #         Extension = CUDAExtension
+    #     else:
+    #         warnings.warn("Building torchvision without NVJPEG support")
+    # elif USE_NVJPEG:
+    #     warnings.warn("Building torchvision without NVJPEG support")
 
     return Extension(
         name="torchvision.image",

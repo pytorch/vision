@@ -8,4 +8,6 @@
 #include "cpu/encode_jpeg.h"
 #include "cpu/encode_png.h"
 #include "cpu/read_write_file.h"
-#include "cuda/encode_decode_jpegs_cuda.h"
+// CUDA JPEG is disabled when building with stable ABI (TORCH_TARGET_VERSION)
+// because the stable ABI doesn't expose raw CUDA streams needed by nvJPEG.
+// #include "cuda/encode_decode_jpegs_cuda.h"

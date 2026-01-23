@@ -6,14 +6,15 @@
 namespace vision {
 namespace image {
 
+using namespace vision::stable;
 using namespace exif_private;
 
 #if !PNG_FOUND
-torch::Tensor decode_png(
-    const torch::Tensor& data,
+Tensor decode_png(
+    const Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
-  TORCH_CHECK(
+  VISION_CHECK(
       false, "decode_png: torchvision not compiled with libPNG support");
 }
 #else
@@ -23,35 +24,32 @@ bool is_little_endian() {
   return *(uint8_t*)&x;
 }
 
-torch::Tensor decode_png(
-    const torch::Tensor& data,
+Tensor decode_png(
+    const Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
-  C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.decode_png.decode_png");
-
   validate_encoded_data(data);
 
   auto png_ptr =
       png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-  TORCH_CHECK(png_ptr, "libpng read structure allocation failed!")
+  VISION_CHECK(png_ptr, "libpng read structure allocation failed!")
   auto info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {
     png_destroy_read_struct(&png_ptr, nullptr, nullptr);
     // Seems redundant with the if statement. done here to avoid leaking memory.
-    TORCH_CHECK(info_ptr, "libpng info structure allocation failed!")
+    VISION_CHECK(info_ptr, "libpng info structure allocation failed!")
   }
 
-  auto accessor = data.accessor<unsigned char, 1>();
-  auto datap = accessor.data();
-  auto datap_len = accessor.size(0);
+  auto datap = data.const_data_ptr<unsigned char>();
+  auto datap_len = data.numel();
 
   if (setjmp(png_jmpbuf(png_ptr)) != 0) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    TORCH_CHECK(false, "Internal error.");
+    VISION_CHECK(false, "Internal error.");
   }
-  TORCH_CHECK(datap_len >= 8, "Content is too small for png!")
+  VISION_CHECK(datap_len >= 8, "Content is too small for png!")
   auto is_png = !png_sig_cmp(datap, 0, 8);
-  TORCH_CHECK(is_png, "Content is not png!")
+  VISION_CHECK(is_png, "Content is not png!")
 
   struct Reader {
     png_const_bytep ptr;
@@ -64,7 +62,7 @@ torch::Tensor decode_png(
                           png_bytep output,
                           png_size_t bytes) {
     auto reader = static_cast<Reader*>(png_get_io_ptr(png_ptr));
-    TORCH_CHECK(
+    VISION_CHECK(
         reader->count >= bytes,
         "Out of bound read in decode_png. Probably, the input image is corrupted");
     std::copy(reader->ptr, reader->ptr + bytes, output);
@@ -91,12 +89,12 @@ torch::Tensor decode_png(
 
   if (retval != 1) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    TORCH_CHECK(retval == 1, "Could read image metadata from content.")
+    VISION_CHECK(retval == 1, "Could read image metadata from content.")
   }
 
   if (bit_depth > 8 && bit_depth != 16) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    TORCH_CHECK(
+    VISION_CHECK(
         false,
         "bit depth of png image is " + std::to_string(bit_depth) +
             ". Only <=8 and 16 are supported.")
@@ -188,7 +186,7 @@ torch::Tensor decode_png(
         break;
       default:
         png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-        TORCH_CHECK(false, "The provided mode is not supported for PNG files");
+        VISION_CHECK(false, "The provided mode is not supported for PNG files");
     }
 
     png_read_update_info(png_ptr, info_ptr);
@@ -196,19 +194,19 @@ torch::Tensor decode_png(
 
   auto num_pixels_per_row = width * channels;
   auto is_16_bits = bit_depth == 16;
-  auto tensor = torch::empty(
+  auto tensor = emptyCPU(
       {int64_t(height), int64_t(width), channels},
-      is_16_bits ? at::kUInt16 : torch::kU8);
+      is_16_bits ? kUInt16 : kByte);
   if (is_little_endian()) {
     png_set_swap(png_ptr);
   }
-  auto t_ptr = (uint8_t*)tensor.data_ptr();
+  auto t_ptr = (uint8_t*)tensor.mutable_data_ptr<uint8_t>();
   for (int pass = 0; pass < number_of_passes; pass++) {
     for (png_uint_32 i = 0; i < height; ++i) {
       png_read_row(png_ptr, t_ptr, nullptr);
       t_ptr += num_pixels_per_row * (is_16_bits ? 2 : 1);
     }
-    t_ptr = (uint8_t*)tensor.data_ptr();
+    t_ptr = (uint8_t*)tensor.mutable_data_ptr<uint8_t>();
   }
 
   int exif_orientation = -1;
@@ -218,7 +216,7 @@ torch::Tensor decode_png(
 
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
 
-  auto output = tensor.permute({2, 0, 1});
+  auto output = permute(tensor, {2, 0, 1});
   if (apply_exif_orientation) {
     return exif_orientation_transform(output, exif_orientation);
   }

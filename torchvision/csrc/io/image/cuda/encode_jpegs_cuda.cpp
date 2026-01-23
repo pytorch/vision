@@ -2,10 +2,13 @@
 #if !NVJPEG_FOUND
 namespace vision {
 namespace image {
-std::vector<torch::Tensor> encode_jpegs_cuda(
-    const std::vector<torch::Tensor>& decoded_images,
+
+using namespace vision::stable;
+
+std::vector<Tensor> encode_jpegs_cuda(
+    const std::vector<Tensor>& decoded_images,
     const int64_t quality) {
-  TORCH_CHECK(
+  VISION_CHECK(
       false, "encode_jpegs_cuda: torchvision not compiled with nvJPEG support");
 }
 } // namespace image
@@ -17,29 +20,30 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
 #include <iostream>
 #include <memory>
 #include <string>
-#include "c10/core/ScalarType.h"
 
 namespace vision {
 namespace image {
+
+using namespace vision::stable;
 
 // We use global variables to cache the encoder and decoder instances and
 // reuse them across calls to the corresponding pytorch functions
 std::mutex encoderMutex;
 std::unique_ptr<CUDAJpegEncoder> cudaJpegEncoder;
 
-std::vector<torch::Tensor> encode_jpegs_cuda(
-    const std::vector<torch::Tensor>& decoded_images,
+std::vector<Tensor> encode_jpegs_cuda(
+    const std::vector<Tensor>& decoded_images,
     const int64_t quality) {
-  C10_LOG_API_USAGE_ONCE(
-      "torchvision.csrc.io.image.cuda.encode_jpegs_cuda.encode_jpegs_cuda");
+  // Note: C10_LOG_API_USAGE_ONCE is not available in stable ABI
 
   // Some nvjpeg structures are not thread safe so we're keeping it single
   // threaded for now. In the future this may be an opportunity to unlock
   // further speedups
   std::lock_guard<std::mutex> lock(encoderMutex);
-  TORCH_CHECK(decoded_images.size() > 0, "Empty input tensor list");
-  torch::Device device = decoded_images[0].device();
-  at::cuda::CUDAGuard device_guard(device);
+  VISION_CHECK(decoded_images.size() > 0, "Empty input tensor list");
+  Device device = Device(
+      decoded_images[0].device().type(), decoded_images[0].device().index());
+  at::cuda::CUDAGuard device_guard(at::Device(at::kCUDA, device.index()));
 
   // lazy init of the encoder class
   // the encoder object holds on to a lot of state and is expensive to create,
@@ -63,35 +67,36 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
     std::atexit([]() { delete cudaJpegEncoder.release(); });
   }
 
-  std::vector<torch::Tensor> contig_images;
+  std::vector<Tensor> contig_images;
   contig_images.reserve(decoded_images.size());
   for (const auto& image : decoded_images) {
-    TORCH_CHECK(
-        image.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+    VISION_CHECK(
+        image.scalar_type() == kByte, "Input tensor dtype should be uint8");
 
-    TORCH_CHECK(
-        image.device() == device,
+    VISION_CHECK(
+        image.device().type() == device.type() &&
+            image.device().index() == device.index(),
         "All input tensors must be on the same CUDA device when encoding with nvjpeg")
 
-    TORCH_CHECK(
+    VISION_CHECK(
         image.dim() == 3 && image.numel() > 0,
         "Input data should be a 3-dimensional tensor");
 
-    TORCH_CHECK(
+    VISION_CHECK(
         image.size(0) == 3,
         "The number of channels should be 3, got: ",
         image.size(0));
 
     // nvjpeg requires images to be contiguous
-    if (image.is_contiguous()) {
+    if (is_contiguous(image)) {
       contig_images.push_back(image);
     } else {
-      contig_images.push_back(image.contiguous());
+      contig_images.push_back(torch::stable::contiguous(image));
     }
   }
 
   cudaJpegEncoder->set_quality(quality);
-  std::vector<torch::Tensor> encoded_images;
+  std::vector<Tensor> encoded_images;
   for (const auto& image : contig_images) {
     auto encoded_image = cudaJpegEncoder->encode_jpeg(image);
     encoded_images.push_back(encoded_image);
@@ -110,8 +115,8 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
   return encoded_images;
 }
 
-CUDAJpegEncoder::CUDAJpegEncoder(const torch::Device& target_device)
-    : original_device{torch::kCUDA, torch::cuda::current_device()},
+CUDAJpegEncoder::CUDAJpegEncoder(const Device& target_device)
+    : original_device{kCUDA, c10::cuda::current_device()},
       target_device{target_device},
       stream{
           target_device.has_index()
@@ -123,19 +128,19 @@ CUDAJpegEncoder::CUDAJpegEncoder(const torch::Device& target_device)
               : at::cuda::getCurrentCUDAStream()} {
   nvjpegStatus_t status;
   status = nvjpegCreateSimple(&nvjpeg_handle);
-  TORCH_CHECK(
+  VISION_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create nvjpeg handle: ",
       status);
 
   status = nvjpegEncoderStateCreate(nvjpeg_handle, &nv_enc_state, stream);
-  TORCH_CHECK(
+  VISION_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create nvjpeg encoder state: ",
       status);
 
   status = nvjpegEncoderParamsCreate(nvjpeg_handle, &nv_enc_params, stream);
-  TORCH_CHECK(
+  VISION_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create nvjpeg encoder params: ",
       status);
@@ -166,13 +171,13 @@ CUDAJpegEncoder::~CUDAJpegEncoder() {
   // nvjpegStatus_t status;
 
   // status = nvjpegEncoderParamsDestroy(nv_enc_params);
-  // TORCH_CHECK(
+  // VISION_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy nvjpeg encoder params: ",
   //     status);
 
   // status = nvjpegEncoderStateDestroy(nv_enc_state);
-  // TORCH_CHECK(
+  // VISION_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy nvjpeg encoder state: ",
   //     status);
@@ -180,17 +185,17 @@ CUDAJpegEncoder::~CUDAJpegEncoder() {
   // cudaStreamSynchronize(stream);
 
   // status = nvjpegDestroy(nvjpeg_handle);
-  // TORCH_CHECK(
+  // VISION_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
 }
 
-torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
+Tensor CUDAJpegEncoder::encode_jpeg(const Tensor& src_image) {
   nvjpegStatus_t status;
   cudaError_t cudaStatus;
 
   // Ensure that the incoming src_image is safe to use
   cudaStatus = cudaStreamSynchronize(current_stream);
-  TORCH_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
+  VISION_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
 
   int channels = src_image.size(0);
   int height = src_image.size(1);
@@ -198,14 +203,15 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
 
   status = nvjpegEncoderParamsSetSamplingFactors(
       nv_enc_params, NVJPEG_CSS_444, stream);
-  TORCH_CHECK(
+  VISION_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to set nvjpeg encoder params sampling factors: ",
       status);
 
   nvjpegImage_t target_image;
   for (int c = 0; c < channels; c++) {
-    target_image.channel[c] = src_image[c].data_ptr<uint8_t>();
+    target_image.channel[c] =
+        torch::stable::select(src_image, 0, c).mutable_data_ptr<uint8_t>();
     // this is why we need contiguous tensors
     target_image.pitch[c] = width;
   }
@@ -224,39 +230,34 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
       height,
       stream);
 
-  TORCH_CHECK(
+  VISION_CHECK(
       status == NVJPEG_STATUS_SUCCESS, "image encoding failed: ", status);
   // Retrieve length of the encoded image
   size_t length;
   status = nvjpegEncodeRetrieveBitstreamDevice(
       nvjpeg_handle, nv_enc_state, NULL, &length, stream);
-  TORCH_CHECK(
+  VISION_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to retrieve encoded image stream state: ",
       status);
 
   // Synchronize the stream to ensure that the encoded image is ready
   cudaStatus = cudaStreamSynchronize(stream);
-  TORCH_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
+  VISION_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
 
   // Reserve buffer for the encoded image
-  torch::Tensor encoded_image = torch::empty(
-      {static_cast<long>(length)},
-      torch::TensorOptions()
-          .dtype(torch::kByte)
-          .layout(torch::kStrided)
-          .device(target_device)
-          .requires_grad(false));
+  Tensor encoded_image =
+      empty({static_cast<int64_t>(length)}, kByte, target_device);
   cudaStatus = cudaStreamSynchronize(stream);
-  TORCH_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
+  VISION_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
   // Retrieve the encoded image
   status = nvjpegEncodeRetrieveBitstreamDevice(
       nvjpeg_handle,
       nv_enc_state,
-      encoded_image.data_ptr<uint8_t>(),
+      encoded_image.mutable_data_ptr<uint8_t>(),
       &length,
       stream);
-  TORCH_CHECK(
+  VISION_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to retrieve encoded image: ",
       status);
@@ -266,7 +267,7 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
 void CUDAJpegEncoder::set_quality(const int64_t quality) {
   nvjpegStatus_t paramsQualityStatus =
       nvjpegEncoderParamsSetQuality(nv_enc_params, quality, stream);
-  TORCH_CHECK(
+  VISION_CHECK(
       paramsQualityStatus == NVJPEG_STATUS_SUCCESS,
       "Failed to set nvjpeg encoder params quality: ",
       paramsQualityStatus);
