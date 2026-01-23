@@ -181,9 +181,7 @@ def _xywh_to_cxcywh(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
         xywh = xywh.clone()
 
     # cx = x + width / 2, cy = y + height / 2, width and height stay the same
-    xywh[..., :2].add_(
-        xywh[..., 2:].div(2, rounding_mode=None if xywh.is_floating_point() else "floor")
-    )
+    xywh[..., :2].add_(xywh[..., 2:].div(2, rounding_mode=None if xywh.is_floating_point() else "floor"))
 
     return xywh
 
