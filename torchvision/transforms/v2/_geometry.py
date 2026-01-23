@@ -1030,8 +1030,10 @@ class ElasticTransform(Transform):
         see-through-water-like effect.
 
     Args:
-        alpha (float or sequence of floats, optional): Magnitude of displacements. Default is 50.0.
-        sigma (float or sequence of floats, optional): Smoothness of displacements. Default is 5.0.
+        alpha (float or sequence of floats, optional): Magnitude of displacements. 
+            Default is 50.0. A single value is ``[alpha, alpha]``.
+        sigma (float or sequence of floats, optional): Smoothness of displacements. 
+            Default is 5.0. A single value is ``[sigma, sigma]``.
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
