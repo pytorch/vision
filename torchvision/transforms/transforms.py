@@ -2128,7 +2128,8 @@ class ElasticTransform(torch.nn.Module):
             if kx % 2 == 0:
                 kx += 1
             dx = F.gaussian_blur(dx, [kx, kx], sigma)
-        dx = dx * alpha[0] / size[0]
+        # normalize horizontal displacement by width (size[1])
+        dx = dx * alpha[0] / size[1]
 
         dy = torch.rand([1, 1] + size) * 2 - 1
         if sigma[1] > 0.0:
@@ -2137,7 +2138,8 @@ class ElasticTransform(torch.nn.Module):
             if ky % 2 == 0:
                 ky += 1
             dy = F.gaussian_blur(dy, [ky, ky], sigma)
-        dy = dy * alpha[1] / size[1]
+        # normalize vertical displacement by height (size[0])
+        dy = dy * alpha[1] / size[0]
         return torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
 
     def forward(self, tensor: Tensor) -> Tensor:
