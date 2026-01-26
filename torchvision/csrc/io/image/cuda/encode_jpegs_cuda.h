@@ -3,8 +3,7 @@
 #include "../../../StableABICompat.h"
 #if NVJPEG_FOUND
 
-#include <c10/cuda/CUDAGuard.h>
-#include <c10/cuda/CUDAStream.h>
+#include <cuda_runtime.h>
 #include <nvjpeg.h>
 
 namespace vision {
@@ -21,8 +20,8 @@ class CUDAJpegEncoder {
 
   const vision::stable::Device original_device;
   const vision::stable::Device target_device;
-  const c10::cuda::CUDAStream stream;
-  const c10::cuda::CUDAStream current_stream;
+  cudaStream_t stream;
+  cudaStream_t current_stream;
 
  protected:
   nvjpegEncoderState_t nv_enc_state;

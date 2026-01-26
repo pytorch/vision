@@ -15,10 +15,10 @@ std::vector<Tensor> encode_jpegs_cuda(
 } // namespace vision
 #else
 
-#include <ATen/cuda/CUDAContext.h>
-#include <ATen/cuda/CUDAEvent.h>
+#include <cuda_runtime_api.h>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <string>
 
 namespace vision {
@@ -43,18 +43,26 @@ std::vector<Tensor> encode_jpegs_cuda(
   VISION_CHECK(decoded_images.size() > 0, "Empty input tensor list");
   Device device = Device(
       decoded_images[0].device().type(), decoded_images[0].device().index());
-  at::cuda::CUDAGuard device_guard(at::Device(at::kCUDA, device.index()));
+
+  // Set the target CUDA device
+  int prev_device;
+  cudaGetDevice(&prev_device);
+  int target_device_idx = device.has_index() ? device.index() : prev_device;
+  cudaSetDevice(target_device_idx);
+
+  // Create a device with the resolved index for consistency
+  Device resolved_device(kCUDA, static_cast<int16_t>(target_device_idx));
 
   // lazy init of the encoder class
   // the encoder object holds on to a lot of state and is expensive to create,
   // so we reuse it across calls. NB: the cached structures are device specific
   // and cannot be reused across devices
-  if (cudaJpegEncoder == nullptr || device != cudaJpegEncoder->target_device) {
+  if (cudaJpegEncoder == nullptr || resolved_device != cudaJpegEncoder->target_device) {
     if (cudaJpegEncoder != nullptr) {
       delete cudaJpegEncoder.release();
     }
 
-    cudaJpegEncoder = std::make_unique<CUDAJpegEncoder>(device);
+    cudaJpegEncoder = std::make_unique<CUDAJpegEncoder>(resolved_device);
 
     // Unfortunately, we cannot rely on the smart pointer releasing the encoder
     // object correctly upon program exit. This is because, when cudaJpegEncoder
@@ -101,8 +109,6 @@ std::vector<Tensor> encode_jpegs_cuda(
     auto encoded_image = cudaJpegEncoder->encode_jpeg(image);
     encoded_images.push_back(encoded_image);
   }
-  at::cuda::CUDAEvent event;
-  event.record(cudaJpegEncoder->stream);
 
   // We use a dedicated stream to do the encoding and even though the results
   // may be ready on that stream we cannot assume that they are also available
@@ -111,21 +117,31 @@ std::vector<Tensor> encode_jpegs_cuda(
   // do not want to block the host at this particular point
   // (which is what cudaStreamSynchronize would do.) Events allow us to
   // synchronize the streams without blocking the host.
-  event.block(cudaJpegEncoder->current_stream);
+  cudaEvent_t event;
+  cudaEventCreate(&event);
+  cudaEventRecord(event, cudaJpegEncoder->stream);
+  cudaStreamWaitEvent(cudaJpegEncoder->current_stream, event, 0);
+  cudaEventDestroy(event);
+
+  // Restore original device
+  cudaSetDevice(prev_device);
   return encoded_images;
 }
 
 CUDAJpegEncoder::CUDAJpegEncoder(const Device& target_device)
-    : original_device{kCUDA, c10::cuda::current_device()},
+    : original_device{kCUDA, []() {
+                        int dev;
+                        cudaGetDevice(&dev);
+                        return static_cast<int16_t>(dev);
+                      }()},
       target_device{target_device},
-      stream{
-          target_device.has_index()
-              ? at::cuda::getStreamFromPool(false, target_device.index())
-              : at::cuda::getStreamFromPool(false)},
-      current_stream{
-          original_device.has_index()
-              ? at::cuda::getCurrentCUDAStream(original_device.index())
-              : at::cuda::getCurrentCUDAStream()} {
+      stream{nullptr},
+      current_stream{nullptr} {
+  // Create CUDA streams
+  cudaStreamCreate(&stream);
+  // Get the default stream (nullptr represents the default stream)
+  current_stream = nullptr;
+
   nvjpegStatus_t status;
   status = nvjpegCreateSimple(&nvjpeg_handle);
   VISION_CHECK(
@@ -157,36 +173,9 @@ CUDAJpegEncoder::~CUDAJpegEncoder() {
   Please send a PR if you have a solution for this problem.
   */
 
-  // // We run cudaGetDeviceCount as a dummy to test if the CUDA runtime is
-  // still
-  // // initialized. If it is not, we can skip the rest of this function as it
-  // is
-  // // unsafe to execute.
-  // int deviceCount = 0;
-  // cudaError_t error = cudaGetDeviceCount(&deviceCount);
-  // if (error != cudaSuccess)
-  //   return; // CUDA runtime has already shut down. There's nothing we can do
-  //           // now.
-
-  // nvjpegStatus_t status;
-
-  // status = nvjpegEncoderParamsDestroy(nv_enc_params);
-  // VISION_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy nvjpeg encoder params: ",
-  //     status);
-
-  // status = nvjpegEncoderStateDestroy(nv_enc_state);
-  // VISION_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy nvjpeg encoder state: ",
-  //     status);
-
-  // cudaStreamSynchronize(stream);
-
-  // status = nvjpegDestroy(nvjpeg_handle);
-  // VISION_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
+  // if (stream != nullptr) {
+  //   cudaStreamDestroy(stream);
+  // }
 }
 
 Tensor CUDAJpegEncoder::encode_jpeg(const Tensor& src_image) {

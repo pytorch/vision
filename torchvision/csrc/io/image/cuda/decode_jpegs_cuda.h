@@ -4,7 +4,7 @@
 #include "../common.h"
 
 #if NVJPEG_FOUND
-#include <c10/cuda/CUDAStream.h>
+#include <cuda_runtime.h>
 #include <nvjpeg.h>
 
 namespace vision {
@@ -20,7 +20,7 @@ class CUDAJpegDecoder {
 
   const vision::stable::Device original_device;
   const vision::stable::Device target_device;
-  const c10::cuda::CUDAStream stream;
+  cudaStream_t stream;
 
  private:
   std::tuple<

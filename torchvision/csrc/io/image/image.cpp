@@ -19,11 +19,9 @@ STABLE_TORCH_LIBRARY(image, m) {
   m.def("write_file(str filename, Tensor data) -> ()");
   m.def(
       "decode_image(Tensor data, int mode, bool apply_exif_orientation=False) -> Tensor");
-  // CUDA JPEG ops are disabled when building with stable ABI
-  // (TORCH_TARGET_VERSION) because the stable ABI doesn't expose raw CUDA
-  // streams needed by nvJPEG. m.def("decode_jpegs_cuda(Tensor[] encoded_jpegs,
-  // int mode, Device device) -> Tensor[]"); m.def("encode_jpegs_cuda(Tensor[]
-  // decoded_jpegs, int quality) -> Tensor[]");
+  m.def(
+      "decode_jpegs_cuda(Tensor[] encoded_jpegs, int mode, Device device) -> Tensor[]");
+  m.def("encode_jpegs_cuda(Tensor[] decoded_jpegs, int quality) -> Tensor[]");
   m.def("_jpeg_version() -> int");
   m.def("_is_compiled_against_turbo() -> bool");
 }
@@ -38,20 +36,20 @@ STABLE_TORCH_LIBRARY_IMPL(image, CPU, m) {
   m.impl("decode_image", TORCH_BOX(&decode_image));
 }
 
-// Ops without tensor inputs need BackendSelect dispatch
+// Ops without tensor inputs or with cross-device semantics need BackendSelect dispatch
 STABLE_TORCH_LIBRARY_IMPL(image, BackendSelect, m) {
   m.impl("read_file", TORCH_BOX(&read_file));
   m.impl("write_file", TORCH_BOX(&write_file));
   m.impl("_jpeg_version", TORCH_BOX(&_jpeg_version));
   m.impl("_is_compiled_against_turbo", TORCH_BOX(&_is_compiled_against_turbo));
+  // decode_jpegs_cuda takes CPU tensors as input but outputs CUDA tensors
+  m.impl("decode_jpegs_cuda", TORCH_BOX(&decode_jpegs_cuda));
 }
 
-// CUDA JPEG is disabled when building with stable ABI (TORCH_TARGET_VERSION)
-// because the stable ABI doesn't expose raw CUDA streams needed by nvJPEG.
-// STABLE_TORCH_LIBRARY_IMPL(image, CUDA, m) {
-//   m.impl("decode_jpegs_cuda", TORCH_BOX(&decode_jpegs_cuda));
-//   m.impl("encode_jpegs_cuda", TORCH_BOX(&encode_jpegs_cuda));
-// }
+STABLE_TORCH_LIBRARY_IMPL(image, CUDA, m) {
+  // encode_jpegs_cuda takes CUDA tensors as input
+  m.impl("encode_jpegs_cuda", TORCH_BOX(&encode_jpegs_cuda));
+}
 
 } // namespace image
 } // namespace vision

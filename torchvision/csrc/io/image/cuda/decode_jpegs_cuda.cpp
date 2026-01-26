@@ -16,9 +16,6 @@ std::vector<Tensor> decode_jpegs_cuda(
 } // namespace vision
 
 #else
-#include <ATen/cuda/CUDAContext.h>
-#include <ATen/cuda/CUDAEvent.h>
-#include <c10/cuda/CUDAGuard.h>
 #include <cuda_runtime_api.h>
 #include <algorithm>
 #include <fstream>
@@ -87,13 +84,20 @@ std::vector<Tensor> decode_jpegs_cuda(
   // Note: TORCH_WARN_ONCE is not available in stable ABI, so we skip the
   // warning about nvjpeg memory leaks in CUDA versions < 11.6
 
-  at::cuda::CUDAGuard device_guard(at::Device(at::kCUDA, device.index()));
+  // Set the target CUDA device
+  int prev_device;
+  cudaGetDevice(&prev_device);
+  int target_device_idx = device.has_index() ? device.index() : prev_device;
+  cudaSetDevice(target_device_idx);
 
-  if (cudaJpegDecoder == nullptr || device != cudaJpegDecoder->target_device) {
+  // Create a new device with the resolved index for consistency
+  Device resolved_device(kCUDA, static_cast<int16_t>(target_device_idx));
+
+  if (cudaJpegDecoder == nullptr || resolved_device != cudaJpegDecoder->target_device) {
     if (cudaJpegDecoder != nullptr) {
-      cudaJpegDecoder.reset(new CUDAJpegDecoder(device));
+      cudaJpegDecoder.reset(new CUDAJpegDecoder(resolved_device));
     } else {
-      cudaJpegDecoder = std::make_unique<CUDAJpegDecoder>(device);
+      cudaJpegDecoder = std::make_unique<CUDAJpegDecoder>(resolved_device);
       std::atexit([]() { cudaJpegDecoder.reset(); });
     }
   }
@@ -120,16 +124,21 @@ std::vector<Tensor> decode_jpegs_cuda(
   }
 
   try {
-    at::cuda::CUDAEvent event;
     auto result = cudaJpegDecoder->decode_images(contig_images, output_format);
-    auto current_stream{
-        device.has_index() ? at::cuda::getCurrentCUDAStream(
-                                 cudaJpegDecoder->original_device.index())
-                           : at::cuda::getCurrentCUDAStream()};
-    event.record(cudaJpegDecoder->stream);
-    event.block(current_stream);
+
+    // Synchronize the decoder stream with the current stream using events
+    cudaEvent_t event;
+    cudaEventCreate(&event);
+    cudaEventRecord(event, cudaJpegDecoder->stream);
+    // Use the default stream for synchronization
+    cudaStreamWaitEvent(nullptr, event, 0);
+    cudaEventDestroy(event);
+
+    // Restore original device
+    cudaSetDevice(prev_device);
     return result;
   } catch (const std::exception& e) {
+    cudaSetDevice(prev_device);
     if (typeid(e) != typeid(std::runtime_error)) {
       VISION_CHECK(false, "Error while decoding JPEG images: ", e.what());
     } else {
@@ -139,12 +148,16 @@ std::vector<Tensor> decode_jpegs_cuda(
 }
 
 CUDAJpegDecoder::CUDAJpegDecoder(const Device& target_device)
-    : original_device{kCUDA, c10::cuda::current_device()},
+    : original_device{kCUDA, []() {
+                        int dev;
+                        cudaGetDevice(&dev);
+                        return static_cast<int16_t>(dev);
+                      }()},
       target_device{target_device},
-      stream{
-          target_device.has_index()
-              ? at::cuda::getStreamFromPool(false, target_device.index())
-              : at::cuda::getStreamFromPool(false)} {
+      stream{nullptr} {
+  // Create a CUDA stream for this decoder
+  cudaStreamCreate(&stream);
+
   nvjpegStatus_t status;
 
   hw_decode_available = true;
@@ -241,65 +254,9 @@ CUDAJpegDecoder::~CUDAJpegDecoder() {
   Please send a PR if you have a solution for this problem.
   */
 
-  // nvjpegStatus_t status;
-
-  // status = nvjpegDecodeParamsDestroy(nvjpeg_decode_params);
-  // TORCH_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy nvjpeg decode params: ",
-  //     status);
-
-  // status = nvjpegJpegStreamDestroy(jpeg_streams[0]);
-  // TORCH_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy jpeg stream: ",
-  //     status);
-
-  // status = nvjpegJpegStreamDestroy(jpeg_streams[1]);
-  // TORCH_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy jpeg stream: ",
-  //     status);
-
-  // status = nvjpegBufferPinnedDestroy(pinned_buffers[0]);
-  // TORCH_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy pinned buffer[0]: ",
-  //     status);
-
-  // status = nvjpegBufferPinnedDestroy(pinned_buffers[1]);
-  // TORCH_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy pinned buffer[1]: ",
-  //     status);
-
-  // status = nvjpegBufferDeviceDestroy(device_buffer);
-  // TORCH_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy device buffer: ",
-  //     status);
-
-  // status = nvjpegJpegStateDestroy(nvjpeg_decoupled_state);
-  // TORCH_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy nvjpeg decoupled state: ",
-  //     status);
-
-  // status = nvjpegDecoderDestroy(nvjpeg_decoder);
-  // TORCH_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy nvjpeg decoder: ",
-  //     status);
-
-  // status = nvjpegJpegStateDestroy(nvjpeg_state);
-  // TORCH_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS,
-  //     "Failed to destroy nvjpeg state: ",
-  //     status);
-
-  // status = nvjpegDestroy(nvjpeg_handle);
-  // TORCH_CHECK(
-  //     status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
+  // if (stream != nullptr) {
+  //   cudaStreamDestroy(stream);
+  // }
 }
 
 std::tuple<std::vector<nvjpegImage_t>, std::vector<Tensor>, std::vector<int>>
