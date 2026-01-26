@@ -139,11 +139,7 @@ std::vector<Tensor> decode_jpegs_cuda(
     return result;
   } catch (const std::exception& e) {
     cudaSetDevice(prev_device);
-    if (typeid(e) != typeid(std::runtime_error)) {
-      VISION_CHECK(false, "Error while decoding JPEG images: ", e.what());
-    } else {
-      throw;
-    }
+    throw std::runtime_error(std::string("Error while decoding JPEG images: ") + e.what());
   }
 }
 

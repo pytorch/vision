@@ -448,15 +448,13 @@ inline Tensor clone(const Tensor& tensor) {
 
 // Create empty tensor with ChannelsLast memory format
 inline Tensor emptyCPUChannelsLast(const std::vector<int64_t>& sizes, ScalarType dtype) {
-  std::array<StableIValue, 5> stack{
-      torch::stable::detail::from(IntArrayRef(sizes.data(), sizes.size())),
-      torch::stable::detail::from(dtype),
-      torch::stable::detail::from(kStrided),
-      torch::stable::detail::from(Device(kCPU)),
-      torch::stable::detail::from(MemoryFormat::ChannelsLast)};
-  TORCH_ERROR_CODE_CHECK(
-      torch_call_dispatcher("aten::empty", "memory_format", stack.data(), TORCH_ABI_VERSION));
-  return torch::stable::detail::to<Tensor>(stack[0]);
+  return torch::stable::empty(
+      IntArrayRef(sizes.data(), sizes.size()),
+      dtype,
+      kStrided,
+      Device(kCPU),
+      std::nullopt,  // pin_memory
+      MemoryFormat::ChannelsLast);
 }
 
 // ===========================================================================
