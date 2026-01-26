@@ -299,13 +299,13 @@ def make_image_extension():
     image_dir = CSRS_DIR / "io/image"
     sources = list(image_dir.glob("*.cpp")) + list(image_dir.glob("cpu/*.cpp")) + list(image_dir.glob("cpu/giflib/*.c"))
 
-    if BUILD_CUDA_SOURCES:
-        if IS_ROCM:
-            sources += list(image_dir.glob("hip/*.cpp"))
-            # we need to exclude this in favor of the hipified source
-            sources.remove(image_dir / "image.cpp")
-        else:
-            sources += list(image_dir.glob("cuda/*.cpp"))
+    # Always include CUDA sources - they have stubs when NVJPEG_FOUND is not defined
+    if IS_ROCM:
+        sources += list(image_dir.glob("hip/*.cpp"))
+        # we need to exclude this in favor of the hipified source
+        sources.remove(image_dir / "image.cpp")
+    else:
+        sources += list(image_dir.glob("cuda/*.cpp"))
 
     Extension = CppExtension
 
