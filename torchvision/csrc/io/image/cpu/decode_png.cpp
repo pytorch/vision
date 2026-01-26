@@ -200,13 +200,19 @@ Tensor decode_png(
   if (is_little_endian()) {
     png_set_swap(png_ptr);
   }
-  auto t_ptr = (uint8_t*)tensor.mutable_data_ptr<uint8_t>();
+  // Get raw pointer - for 16-bit images we get uint16_t* and cast to uint8_t*
+  auto t_ptr = is_16_bits
+      ? (uint8_t*)tensor.mutable_data_ptr<uint16_t>()
+      : tensor.mutable_data_ptr<uint8_t>();
   for (int pass = 0; pass < number_of_passes; pass++) {
     for (png_uint_32 i = 0; i < height; ++i) {
       png_read_row(png_ptr, t_ptr, nullptr);
       t_ptr += num_pixels_per_row * (is_16_bits ? 2 : 1);
     }
-    t_ptr = (uint8_t*)tensor.mutable_data_ptr<uint8_t>();
+    // Reset pointer - for 16-bit images we get uint16_t* and cast to uint8_t*
+    t_ptr = is_16_bits
+        ? (uint8_t*)tensor.mutable_data_ptr<uint16_t>()
+        : tensor.mutable_data_ptr<uint8_t>();
   }
 
   int exif_orientation = -1;
