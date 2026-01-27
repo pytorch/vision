@@ -3,13 +3,17 @@ import torch
 from ._internally_replaced_utils import _get_extension_path
 
 
+def _load_library(lib_name):
+    lib_path = _get_extension_path(lib_name)
+    torch.ops.load_library(lib_path)
+
+
 def _has_ops():
     return False
 
 
 try:
-    lib_path = _get_extension_path("_C")
-    torch.ops.load_library(lib_path)
+    _load_library("_C")
 
     def _has_ops():  # noqa: F811
         return True
@@ -56,11 +60,6 @@ def _check_cuda_version():
                 "Please reinstall the torchvision that matches your PyTorch install."
             )
     return _version
-
-
-def _load_library(lib_name):
-    lib_path = _get_extension_path(lib_name)
-    torch.ops.load_library(lib_path)
 
 
 _check_cuda_version()
