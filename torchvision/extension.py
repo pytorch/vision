@@ -1,25 +1,35 @@
+import os
+
 import torch
 
 from ._internally_replaced_utils import _get_extension_path
 
 
 def _load_library(lib_name):
-    lib_path = _get_extension_path(lib_name)
-    torch.ops.load_library(lib_path)
+    """Load a library, optionally warning on failure based on env variable.
+
+    Returns True if the library was loaded successfully, False otherwise.
+    """
+    try:
+        lib_path = _get_extension_path(lib_name)
+        torch.ops.load_library(lib_path)
+        return True
+    except (ImportError, OSError) as e:
+        if os.environ.get("TORCHVISION_WARN_WHEN_EXTENSION_LOADING_FAILS"):
+            import warnings
+
+            warnings.warn(f"Failed to load '{lib_name}' extension: {type(e).__name__}: {e}")
+        return False
 
 
 def _has_ops():
     return False
 
 
-try:
-    _load_library("_C")
+if _load_library("_C"):
 
     def _has_ops():  # noqa: F811
         return True
-
-except (ImportError, OSError):
-    pass
 
 
 def _assert_has_ops():
@@ -31,7 +41,8 @@ def _assert_has_ops():
             "https://github.com/pytorch/vision#installation for the compatibility matrix. "
             "Please check your PyTorch version with torch.__version__ and your torchvision "
             "version with torchvision.__version__ and verify if they are compatible, and if not "
-            "please reinstall torchvision so that it matches your PyTorch install."
+            "please reinstall torchvision so that it matches your PyTorch install. "
+            "Set TORCHVISION_WARN_WHEN_EXTENSION_LOADING_FAILS=1 and retry to get more details."
         )
 
 
