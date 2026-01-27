@@ -9,12 +9,7 @@ from ..extension import _load_library
 from ._video_deprecation_warning import _raise_video_deprecation_warning
 
 
-try:
-    _load_library("video_reader")
-    _HAS_CPU_VIDEO_DECODER = True
-except (ImportError, OSError):
-    _HAS_CPU_VIDEO_DECODER = False
-
+_HAS_CPU_VIDEO_DECODER = _load_library("video_reader")
 _HAS_VIDEO_OPT = _HAS_CPU_VIDEO_DECODER  # For BC
 default_timebase = Fraction(0, 1)
 
