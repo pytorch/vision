@@ -1567,7 +1567,7 @@ def _parse_pad_padding(padding: Union[int, list[int]]) -> list[int]:
             pad_bottom = padding[3]
         else:
             raise ValueError(
-                f"Padding must be an int or a 1, 2, or 4 element tuple or list, not a {len(padding)} element tuple"
+                f"Padding must be an int or a 1, 2, or 4 element tuple or list. Found {len(padding) =}"
             )
     else:
         raise TypeError(f"`padding` should be an integer or tuple or list of integers, but got {padding}")
