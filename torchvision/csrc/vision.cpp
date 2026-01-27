@@ -20,6 +20,7 @@ void* PyInit__C(void) {
 namespace vision {
 int64_t cuda_version() {
 #ifdef WITH_CUDA
+  // looks like 12060, 12080, etc.
   return CUDA_VERSION;
 #else
   return -1;
