@@ -6,11 +6,8 @@ import torch
 from ._internally_replaced_utils import _get_extension_path
 
 
-_ops_loaded = False
-
-
 def _has_ops():
-    return _ops_loaded
+    return False
 
 
 try:
@@ -32,7 +29,9 @@ try:
 
     lib_path = _get_extension_path("_C")
     torch.ops.load_library(lib_path)
-    _ops_loaded = True
+
+    def _has_ops():  # noqa: F811
+        return True
 
 except (ImportError, OSError):
     pass
