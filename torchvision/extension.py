@@ -42,12 +42,9 @@ def _check_cuda_version():
     _version = torch.ops.torchvision._cuda_version()
     if _version != -1 and torch_version_cuda is not None:
         tv_version = str(_version)
-        if int(tv_version) < 10000:
-            tv_major = int(tv_version[0])
-            tv_minor = int(tv_version[2])
-        else:
-            tv_major = int(tv_version[0:2])
-            tv_minor = int(tv_version[3])
+        assert int(tv_version) >= 12000, f"Unexpected CUDA version {_version}, please file a bug report."
+        tv_major = int(tv_version[0:2])
+        tv_minor = int(tv_version[3])
         t_version = torch_version_cuda.split(".")
         t_major = int(t_version[0])
         t_minor = int(t_version[1])
