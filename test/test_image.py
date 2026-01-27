@@ -90,9 +90,8 @@ def normalize_dimensions(img_pil):
         ("RGB", ImageReadMode.RGB),
     ],
 )
-@pytest.mark.parametrize("scripted", (False, True))
 @pytest.mark.parametrize("decode_fun", (decode_jpeg, decode_image))
-def test_decode_jpeg(img_path, pil_mode, mode, scripted, decode_fun):
+def test_decode_jpeg(img_path, pil_mode, mode, decode_fun):
 
     with Image.open(img_path) as img:
         is_cmyk = img.mode == "CMYK"
@@ -105,8 +104,6 @@ def test_decode_jpeg(img_path, pil_mode, mode, scripted, decode_fun):
 
     img_pil = normalize_dimensions(img_pil)
     data = read_file(img_path)
-    if scripted:
-        decode_fun = torch.jit.script(decode_fun)
     img_ljpeg = decode_fun(data, mode=mode)
 
     # Permit a small variation on pixel values to account for implementation
@@ -192,12 +189,8 @@ def test_damaged_corrupt_images(img_path):
         ("RGBA", ImageReadMode.RGB_ALPHA),
     ],
 )
-@pytest.mark.parametrize("scripted", (False, True))
 @pytest.mark.parametrize("decode_fun", (decode_png, decode_image))
-def test_decode_png(img_path, pil_mode, mode, scripted, decode_fun):
-
-    if scripted:
-        decode_fun = torch.jit.script(decode_fun)
+def test_decode_png(img_path, pil_mode, mode, decode_fun):
 
     with Image.open(img_path) as img:
         if pil_mode is not None:
@@ -239,13 +232,11 @@ def test_decode_png_errors():
     "img_path",
     [pytest.param(png_path, id=_get_safe_image_name(png_path)) for png_path in get_images(IMAGE_DIR, ".png")],
 )
-@pytest.mark.parametrize("scripted", (True, False))
-def test_encode_png(img_path, scripted):
+def test_encode_png(img_path):
     pil_image = Image.open(img_path)
     img_pil = torch.from_numpy(np.array(pil_image))
     img_pil = img_pil.permute(2, 0, 1)
-    encode = torch.jit.script(encode_png) if scripted else encode_png
-    png_buf = encode(img_pil, compression_level=6)
+    png_buf = encode_png(img_pil, compression_level=6)
 
     rec_img = Image.open(io.BytesIO(bytes(png_buf.tolist())))
     rec_img = torch.from_numpy(np.array(rec_img))
@@ -272,16 +263,14 @@ def test_encode_png_errors():
     "img_path",
     [pytest.param(png_path, id=_get_safe_image_name(png_path)) for png_path in get_images(IMAGE_DIR, ".png")],
 )
-@pytest.mark.parametrize("scripted", (True, False))
-def test_write_png(img_path, tmpdir, scripted):
+def test_write_png(img_path, tmpdir):
     pil_image = Image.open(img_path)
     img_pil = torch.from_numpy(np.array(pil_image))
     img_pil = img_pil.permute(2, 0, 1)
 
     filename, _ = os.path.splitext(os.path.basename(img_path))
     torch_png = os.path.join(tmpdir, f"{filename}_torch.png")
-    write = torch.jit.script(write_png) if scripted else write_png
-    write(img_pil, torch_png, compression_level=6)
+    write_png(img_pil, torch_png, compression_level=6)
     saved_image = torch.from_numpy(np.array(Image.open(torch_png)))
     saved_image = saved_image.permute(2, 0, 1)
 
@@ -289,22 +278,19 @@ def test_write_png(img_path, tmpdir, scripted):
 
 
 def test_read_image():
-    # Just testing torchcsript, the functionality is somewhat tested already in other tests.
     path = next(get_images(IMAGE_ROOT, ".jpg"))
     out = read_image(path)
-    out_scripted = torch.jit.script(read_image)(path)
-    torch.testing.assert_close(out, out_scripted, atol=0, rtol=0)
+    assert out.ndim == 3
+    assert out.dtype == torch.uint8
 
 
-@pytest.mark.parametrize("scripted", (True, False))
-def test_read_file(tmpdir, scripted):
+def test_read_file(tmpdir):
     fname, content = "test1.bin", b"TorchVision\211\n"
     fpath = os.path.join(tmpdir, fname)
     with open(fpath, "wb") as f:
         f.write(content)
 
-    fun = torch.jit.script(read_file) if scripted else read_file
-    data = fun(fpath)
+    data = read_file(fpath)
     expected = torch.tensor(list(content), dtype=torch.uint8)
     os.unlink(fpath)
     assert_equal(data, expected)
@@ -325,13 +311,11 @@ def test_read_file_non_ascii(tmpdir):
     assert_equal(data, expected)
 
 
-@pytest.mark.parametrize("scripted", (True, False))
-def test_write_file(tmpdir, scripted):
+def test_write_file(tmpdir):
     fname, content = "test1.bin", b"TorchVision\211\n"
     fpath = os.path.join(tmpdir, fname)
     content_tensor = torch.tensor(list(content), dtype=torch.uint8)
-    write = torch.jit.script(write_file) if scripted else write_file
-    write(fpath, content_tensor)
+    write_file(fpath, content_tensor)
 
     with open(fpath, "rb") as f:
         saved_content = f.read()
@@ -407,8 +391,7 @@ def test_read_interlaced_png():
 
 @needs_cuda
 @pytest.mark.parametrize("mode", [ImageReadMode.UNCHANGED, ImageReadMode.GRAY, ImageReadMode.RGB])
-@pytest.mark.parametrize("scripted", (False, True))
-def test_decode_jpegs_cuda(mode, scripted):
+def test_decode_jpegs_cuda(mode):
     encoded_images = []
     for jpeg_path in get_images(IMAGE_ROOT, ".jpg"):
         if "cmyk" in jpeg_path:
@@ -416,14 +399,13 @@ def test_decode_jpegs_cuda(mode, scripted):
         encoded_image = read_file(jpeg_path)
         encoded_images.append(encoded_image)
     decoded_images_cpu = decode_jpeg(encoded_images, mode=mode)
-    decode_fn = torch.jit.script(decode_jpeg) if scripted else decode_jpeg
 
     # test multithreaded decoding
     # in the current version we prevent this by using a lock but we still want to test it
     num_workers = 10
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-        futures = [executor.submit(decode_fn, encoded_images, mode, "cuda") for _ in range(num_workers)]
+        futures = [executor.submit(decode_jpeg, encoded_images, mode, "cuda") for _ in range(num_workers)]
     decoded_images_threaded = [future.result() for future in futures]
     assert len(decoded_images_threaded) == num_workers
     for decoded_images in decoded_images_threaded:
@@ -559,8 +541,7 @@ def test_encode_jpeg_errors():
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
 )
-@pytest.mark.parametrize("scripted", (True, False))
-def test_encode_jpeg(img_path, scripted):
+def test_encode_jpeg(img_path):
     img = read_image(img_path)
 
     pil_img = F.to_pil_image(img)
@@ -569,9 +550,8 @@ def test_encode_jpeg(img_path, scripted):
 
     encoded_jpeg_pil = torch.frombuffer(buf.getvalue(), dtype=torch.uint8)
 
-    encode = torch.jit.script(encode_jpeg) if scripted else encode_jpeg
     for src_img in [img, img.contiguous()]:
-        encoded_jpeg_torch = encode(src_img, quality=75)
+        encoded_jpeg_torch = encode_jpeg(src_img, quality=75)
         assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
 
 
@@ -600,11 +580,9 @@ def test_encode_jpeg_cuda_device_param():
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(IMAGE_ROOT, ".jpg")],
 )
-@pytest.mark.parametrize("scripted", (False, True))
 @pytest.mark.parametrize("contiguous", (False, True))
-def test_encode_jpeg_cuda(img_path, scripted, contiguous):
+def test_encode_jpeg_cuda(img_path, contiguous):
     decoded_image_tv = read_image(img_path)
-    encode_fn = torch.jit.script(encode_jpeg) if scripted else encode_jpeg
 
     if "cmyk" in img_path:
         pytest.xfail("Encoding a CMYK jpeg isn't supported")
@@ -615,7 +593,7 @@ def test_encode_jpeg_cuda(img_path, scripted, contiguous):
         decoded_image_tv = decoded_image_tv[None].contiguous(memory_format=torch.contiguous_format)[0]
     else:
         decoded_image_tv = decoded_image_tv[None].contiguous(memory_format=torch.channels_last)[0]
-    encoded_jpeg_cuda_tv = encode_fn(decoded_image_tv.cuda(), quality=75)
+    encoded_jpeg_cuda_tv = encode_jpeg(decoded_image_tv.cuda(), quality=75)
     decoded_jpeg_cuda_tv = decode_jpeg(encoded_jpeg_cuda_tv.cpu())
 
     # the actual encoded bytestreams from libnvjpeg and libjpeg-turbo differ for the same quality
@@ -661,9 +639,8 @@ def test_encode_jpeg_cuda_sync():
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize("scripted", (True, False))
 @pytest.mark.parametrize("contiguous", (True, False))
-def test_encode_jpegs_batch(scripted, contiguous, device):
+def test_encode_jpegs_batch(contiguous, device):
     if device == "cpu" and IS_MACOS:
         pytest.skip("https://github.com/pytorch/vision/issues/8031")
     decoded_images_tv = []
@@ -679,10 +656,8 @@ def test_encode_jpegs_batch(scripted, contiguous, device):
             decoded_image = decoded_image[None].contiguous(memory_format=torch.channels_last)[0]
         decoded_images_tv.append(decoded_image)
 
-    encode_fn = torch.jit.script(encode_jpeg) if scripted else encode_jpeg
-
     decoded_images_tv_device = [img.to(device=device) for img in decoded_images_tv]
-    encoded_jpegs_tv_device = encode_fn(decoded_images_tv_device, quality=75)
+    encoded_jpegs_tv_device = encode_jpeg(decoded_images_tv_device, quality=75)
     encoded_jpegs_tv_device = [decode_jpeg(img.cpu()) for img in encoded_jpegs_tv_device]
 
     for original, encoded_decoded in zip(decoded_images_tv, encoded_jpegs_tv_device):
@@ -694,7 +669,7 @@ def test_encode_jpegs_batch(scripted, contiguous, device):
     # in the current version we prevent this by using a lock but we still want to test it
     num_workers = 10
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-        futures = [executor.submit(encode_fn, decoded_images_tv_device) for _ in range(num_workers)]
+        futures = [executor.submit(encode_jpeg, decoded_images_tv_device) for _ in range(num_workers)]
     encoded_images_threaded = [future.result() for future in futures]
     assert len(encoded_images_threaded) == num_workers
     for encoded_images in encoded_images_threaded:
@@ -808,8 +783,7 @@ def test_batch_encode_jpegs_cuda_errors():
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
 )
-@pytest.mark.parametrize("scripted", (True, False))
-def test_write_jpeg(img_path, tmpdir, scripted):
+def test_write_jpeg(img_path, tmpdir):
     tmpdir = Path(tmpdir)
     img = read_image(img_path)
     pil_img = F.to_pil_image(img)
@@ -817,8 +791,7 @@ def test_write_jpeg(img_path, tmpdir, scripted):
     torch_jpeg = str(tmpdir / "torch.jpg")
     pil_jpeg = str(tmpdir / "pil.jpg")
 
-    write = torch.jit.script(write_jpeg) if scripted else write_jpeg
-    write(img, torch_jpeg, quality=75)
+    write_jpeg(img, torch_jpeg, quality=75)
     pil_img.save(pil_jpeg, quality=75)
 
     with open(torch_jpeg, "rb") as f:
@@ -849,8 +822,7 @@ def test_pathlib_support(tmpdir):
 @pytest.mark.parametrize(
     "name", ("gifgrid", "fire", "porsche", "treescap", "treescap-interlaced", "solid2", "x-trans", "earth")
 )
-@pytest.mark.parametrize("scripted", (True, False))
-def test_decode_gif(tmpdir, name, scripted):
+def test_decode_gif(tmpdir, name):
     # Using test images from GIFLIB
     # https://sourceforge.net/p/giflib/code/ci/master/tree/pic/, we assert PIL
     # and torchvision decoded outputs are equal.
@@ -874,8 +846,7 @@ def test_decode_gif(tmpdir, name, scripted):
         f.write(requests.get(url).content)
 
     encoded_bytes = read_file(path)
-    f = torch.jit.script(decode_gif) if scripted else decode_gif
-    tv_out = f(encoded_bytes)
+    tv_out = decode_gif(encoded_bytes)
     if tv_out.ndim == 3:
         tv_out = tv_out[None]
 
@@ -924,11 +895,8 @@ def test_decode_bad_encoded_data(decode_fun, match):
 
 
 @pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
-@pytest.mark.parametrize("scripted", (False, True))
-def test_decode_webp(decode_fun, scripted):
+def test_decode_webp(decode_fun):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
-    if scripted:
-        decode_fun = torch.jit.script(decode_fun)
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
@@ -966,7 +934,6 @@ def test_decode_webp_grayscale(decode_fun, capfd):
 # different pages of https://developers.google.com/speed/webp/gallery
 @pytest.mark.skipif(not WEBP_TEST_IMAGES_DIR, reason="WEBP_TEST_IMAGES_DIR is not set")
 @pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
-@pytest.mark.parametrize("scripted", (False, True))
 @pytest.mark.parametrize(
     "mode, pil_mode",
     (
@@ -979,10 +946,8 @@ def test_decode_webp_grayscale(decode_fun, capfd):
     ),
 )
 @pytest.mark.parametrize("filename", Path(WEBP_TEST_IMAGES_DIR).glob("*.webp"), ids=lambda p: p.name)
-def test_decode_webp_against_pil(decode_fun, scripted, mode, pil_mode, filename):
+def test_decode_webp_against_pil(decode_fun, mode, pil_mode, filename):
     encoded_bytes = read_file(filename)
-    if scripted:
-        decode_fun = torch.jit.script(decode_fun)
     img = decode_fun(encoded_bytes, mode=mode)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
 
@@ -1095,8 +1060,7 @@ def test_decode_heic(decode_fun):
 
 
 @pytest.mark.parametrize("input_type", ("Path", "str", "tensor"))
-@pytest.mark.parametrize("scripted", (False, True))
-def test_decode_image_path(input_type, scripted):
+def test_decode_image_path(input_type):
     # Check that decode_image can support not just tensors as input
     path = next(get_images(IMAGE_ROOT, ".jpg"))
     if input_type == "Path":
@@ -1108,11 +1072,7 @@ def test_decode_image_path(input_type, scripted):
     else:
         raise ValueError("Oops")
 
-    if scripted and input_type == "Path":
-        pytest.xfail(reason="Can't pass a Path when scripting")
-
-    decode_fun = torch.jit.script(decode_image) if scripted else decode_image
-    decode_fun(input)
+    decode_image(input)
 
 
 def test_mode_str():

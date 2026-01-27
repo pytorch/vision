@@ -59,8 +59,7 @@ def read_file(path: str) -> torch.Tensor:
     Returns:
         data (Tensor)
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(read_file)
+    _log_api_usage_once(read_file)
     data = torch.ops.image.read_file(str(path))
     return data
 
@@ -73,8 +72,7 @@ def write_file(filename: str, data: torch.Tensor) -> None:
         filename (str or ``pathlib.Path``): the path to the file to be written
         data (Tensor): the contents to be written to the output file
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(write_file)
+    _log_api_usage_once(write_file)
     torch.ops.image.write_file(str(filename), data)
 
 
@@ -106,8 +104,7 @@ def decode_png(
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(decode_png)
+    _log_api_usage_once(decode_png)
     if isinstance(mode, str):
         mode = ImageReadMode[mode.upper()]
     output = torch.ops.image.decode_png(input, mode.value, apply_exif_orientation)
@@ -129,8 +126,7 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
         Tensor[1]: A one dimensional int8 tensor that contains the raw bytes of the
             PNG file.
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(encode_png)
+    _log_api_usage_once(encode_png)
     output = torch.ops.image.encode_png(input, compression_level)
     return output
 
@@ -147,8 +143,7 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
         compression_level (int): Compression factor for the resulting file, it must be a number
             between 0 and 9. Default: 6
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(write_png)
+    _log_api_usage_once(write_png)
     output = encode_png(input, compression_level)
     write_file(filename, output)
 
@@ -196,8 +191,7 @@ def decode_jpeg(
 
 
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(decode_jpeg)
+    _log_api_usage_once(decode_jpeg)
     if isinstance(device, str):
         device = torch.device(device)
     if isinstance(mode, str):
@@ -242,8 +236,7 @@ def encode_jpeg(
     Returns:
         output (Tensor[1] or list[Tensor[1]]): A (list of) one dimensional uint8 tensor(s) that contain the raw bytes of the JPEG file.
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(encode_jpeg)
+    _log_api_usage_once(encode_jpeg)
     if quality < 1 or quality > 100:
         raise ValueError("Image quality should be a positive number between 1 and 100")
     if isinstance(input, list):
@@ -271,10 +264,8 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
         quality (int): Quality of the resulting JPEG file, it must be a number
             between 1 and 100. Default: 75
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(write_jpeg)
+    _log_api_usage_once(write_jpeg)
     output = encode_jpeg(input, quality)
-    assert isinstance(output, torch.Tensor)  # Needed for torchscript
     write_file(filename, output)
 
 
@@ -315,8 +306,7 @@ def decode_image(
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(decode_image)
+    _log_api_usage_once(decode_image)
     if not isinstance(input, torch.Tensor):
         input = read_file(str(input))
     if isinstance(mode, str):
@@ -331,8 +321,7 @@ def read_image(
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """[OBSOLETE] Use :func:`~torchvision.io.decode_image` instead."""
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(read_image)
+    _log_api_usage_once(read_image)
     data = read_file(path)
     return decode_image(data, mode, apply_exif_orientation=apply_exif_orientation)
 
@@ -352,8 +341,7 @@ def decode_gif(input: torch.Tensor) -> torch.Tensor:
     Returns:
         output (Tensor[image_channels, image_height, image_width] or Tensor[num_images, image_channels, image_height, image_width])
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(decode_gif)
+    _log_api_usage_once(decode_gif)
     return torch.ops.image.decode_gif(input)
 
 
@@ -376,8 +364,7 @@ def decode_webp(
     Returns:
         Decoded image (Tensor[image_channels, image_height, image_width])
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(decode_webp)
+    _log_api_usage_once(decode_webp)
     if isinstance(mode, str):
         mode = ImageReadMode[mode.upper()]
     return torch.ops.image.decode_webp(input, mode.value)
