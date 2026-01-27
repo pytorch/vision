@@ -50,7 +50,7 @@ class VideoReader:
     """[DEPRECATED] Fine-grained video-reading API.
     Supports frame-by-frame reading of various streams from a single video
     container. Much like previous video_reader API it supports the following
-    backends: video_reader, pyav, and cuda.
+    backends: video_reader and pyav.
     Backends can be set via `torchvision.set_video_backend` function.
 
     .. warning::
@@ -135,11 +135,7 @@ class VideoReader:
             if not src:
                 raise ValueError("src cannot be empty")
         elif isinstance(src, bytes):
-            if self.backend in ["cuda"]:
-                raise RuntimeError(
-                    "VideoReader cannot be initialized from bytes object when using cuda or pyav backend."
-                )
-            elif self.backend == "pyav":
+            if self.backend == "pyav":
                 src = io.BytesIO(src)
             else:
                 with warnings.catch_warnings():
@@ -147,18 +143,14 @@ class VideoReader:
                     warnings.filterwarnings("ignore", message="The given buffer is not writable")
                     src = torch.frombuffer(src, dtype=torch.uint8)
         elif isinstance(src, torch.Tensor):
-            if self.backend in ["cuda", "pyav"]:
+            if self.backend == "pyav":
                 raise RuntimeError(
-                    "VideoReader cannot be initialized from Tensor object when using cuda or pyav backend."
+                    "VideoReader cannot be initialized from Tensor object when using pyav backend."
                 )
         else:
             raise ValueError(f"src must be either string, Tensor or bytes object. Got {type(src)}")
 
-        if self.backend == "cuda":
-            device = torch.device("cuda")
-            self._c = torch.classes.torchvision.GPUDecoder(src, device)
-
-        elif self.backend == "video_reader":
+        if self.backend == "video_reader":
             if isinstance(src, str):
                 self._c = torch.classes.torchvision.Video(src, stream, num_threads)
             elif isinstance(src, torch.Tensor):
@@ -190,12 +182,7 @@ class VideoReader:
             and corresponding timestamp (``pts``) in seconds
 
         """
-        if self.backend == "cuda":
-            frame = self._c.next()
-            if frame.numel() == 0:
-                raise StopIteration
-            return {"data": frame, "pts": None}
-        elif self.backend == "video_reader":
+        if self.backend == "video_reader":
             frame, pts = self._c.next()
         else:
             try:
@@ -231,7 +218,7 @@ class VideoReader:
             frame with the exact timestamp if it exists or
             the first frame with timestamp larger than ``time_s``.
         """
-        if self.backend in ["cuda", "video_reader"]:
+        if self.backend == "video_reader":
             self._c.seek(time_s, keyframes_only)
         else:
             # handle special case as pyav doesn't catch it
@@ -285,8 +272,6 @@ class VideoReader:
         Returns:
             (bool): True on success, False otherwise
         """
-        if self.backend == "cuda":
-            warnings.warn("GPU decoding only works with video stream.")
         if self.backend == "pyav":
             stream_type = stream.split(":")[0]
             stream_id = 0 if len(stream.split(":")) == 1 else int(stream.split(":")[1])

@@ -23,13 +23,7 @@ USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
-# Note: the GPU video decoding stuff used to be called "video codec", which
-# isn't an accurate or descriptive name considering there are at least 2 other
-# video decoding backends in torchvision. I'm renaming this to "gpu video
-# decoder" where possible, keeping user facing names (like the env var below) to
-# the old scheme for BC.
-USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "0") == "1"
-# Same here: "use ffmpeg" was used to denote "use cpu video decoder".
+# "use ffmpeg" was used to denote "use cpu video decoder".
 USE_CPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_FFMPEG", "0") == "1"
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
@@ -54,7 +48,6 @@ print(f"{USE_WEBP = }")
 print(f"{USE_NVJPEG = }")
 print(f"{NVCC_FLAGS = }")
 print(f"{USE_CPU_VIDEO_DECODER = }")
-print(f"{USE_GPU_VIDEO_DECODER = }")
 print(f"{TORCHVISION_INCLUDE = }")
 print(f"{TORCHVISION_LIBRARY = }")
 print(f"{IS_ROCM = }")
@@ -472,54 +465,6 @@ def make_video_decoders_extensions():
                 ],
                 extra_compile_args=["-std=c++17"] if os.name != "nt" else ["/std:c++17", "/MP"],
                 extra_link_args=["-std=c++17" if os.name != "nt" else "/std:c++17"],
-            )
-        )
-
-    if USE_GPU_VIDEO_DECODER:
-        # Locating GPU video decoder headers and libraries
-        # CUDA_HOME should be set to the cuda root directory.
-        # TORCHVISION_INCLUDE and TORCHVISION_LIBRARY should include the locations
-        # to the headers and libraries below
-        if not (
-            BUILD_CUDA_SOURCES
-            and CUDA_HOME is not None
-            and any([os.path.exists(os.path.join(folder, "cuviddec.h")) for folder in TORCHVISION_INCLUDE])
-            and any([os.path.exists(os.path.join(folder, "nvcuvid.h")) for folder in TORCHVISION_INCLUDE])
-            and any([os.path.exists(os.path.join(folder, "libnvcuvid.so")) for folder in TORCHVISION_LIBRARY])
-            and any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
-        ):
-            print("Could not find necessary dependencies. Refer the setup.py to check which ones are needed.")
-            print("Building without GPU video decoder support")
-            return extensions
-        print("Building torchvision with GPU video decoder support")
-
-        gpu_decoder_path = os.path.join(CSRS_DIR, "io", "decoder", "gpu")
-        gpu_decoder_src = glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
-        cuda_libs = os.path.join(CUDA_HOME, "lib64")
-        cuda_inc = os.path.join(CUDA_HOME, "include")
-
-        _, extra_compile_args = get_macros_and_flags()
-        extensions.append(
-            CUDAExtension(
-                "torchvision.gpu_decoder",
-                gpu_decoder_src,
-                include_dirs=[CSRS_DIR] + TORCHVISION_INCLUDE + [gpu_decoder_path] + [cuda_inc] + ffmpeg_include_dir,
-                library_dirs=ffmpeg_library_dir + TORCHVISION_LIBRARY + [cuda_libs],
-                libraries=[
-                    "avcodec",
-                    "avformat",
-                    "avutil",
-                    "swresample",
-                    "swscale",
-                    "nvcuvid",
-                    "cuda",
-                    "cudart",
-                    "z",
-                    "pthread",
-                    "dl",
-                    "nppicc",
-                ],
-                extra_compile_args=extra_compile_args,
             )
         )
 
