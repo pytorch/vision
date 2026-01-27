@@ -6,11 +6,11 @@ import torch
 from ._internally_replaced_utils import _get_extension_path
 
 
-_HAS_OPS = False
+_ops_loaded = False
 
 
 def _has_ops():
-    return False
+    return _ops_loaded
 
 
 try:
@@ -32,10 +32,7 @@ try:
 
     lib_path = _get_extension_path("_C")
     torch.ops.load_library(lib_path)
-    _HAS_OPS = True
-
-    def _has_ops():  # noqa: F811
-        return True
+    _ops_loaded = True
 
 except (ImportError, OSError):
     pass
@@ -58,7 +55,7 @@ def _check_cuda_version():
     """
     Make sure that CUDA versions match between the pytorch install and torchvision install
     """
-    if not _HAS_OPS:
+    if not _has_ops():
         return -1
     from torch.version import cuda as torch_version_cuda
 
