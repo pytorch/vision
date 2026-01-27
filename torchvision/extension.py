@@ -3,9 +3,6 @@ import torch
 from ._internally_replaced_utils import _get_extension_path
 
 
-_HAS_OPS = False
-
-
 def _has_ops():
     return False
 
@@ -13,7 +10,6 @@ def _has_ops():
 try:
     lib_path = _get_extension_path("_C")
     torch.ops.load_library(lib_path)
-    _HAS_OPS = True
 
     def _has_ops():  # noqa: F811
         return True
@@ -39,19 +35,16 @@ def _check_cuda_version():
     """
     Make sure that CUDA versions match between the pytorch install and torchvision install
     """
-    if not _HAS_OPS:
+    if not _has_ops():
         return -1
     from torch.version import cuda as torch_version_cuda
 
     _version = torch.ops.torchvision._cuda_version()
     if _version != -1 and torch_version_cuda is not None:
         tv_version = str(_version)
-        if int(tv_version) < 10000:
-            tv_major = int(tv_version[0])
-            tv_minor = int(tv_version[2])
-        else:
-            tv_major = int(tv_version[0:2])
-            tv_minor = int(tv_version[3])
+        assert int(tv_version) >= 12000, f"Unexpected CUDA version {_version}, please file a bug report."
+        tv_major = int(tv_version[0:2])
+        tv_minor = int(tv_version[3])
         t_version = torch_version_cuda.split(".")
         t_major = int(t_version[0])
         t_minor = int(t_version[1])
