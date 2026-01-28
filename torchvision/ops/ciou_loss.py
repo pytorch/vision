@@ -11,7 +11,6 @@ def complete_box_iou_loss(
     reduction: str = "none",
     eps: float = 1e-7,
 ) -> torch.Tensor:
-
     """
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
     boxes do not overlap. This loss function considers important geometrical

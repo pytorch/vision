@@ -1,5 +1,5 @@
 import math
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import PIL.Image
 import torch
@@ -18,8 +18,8 @@ from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
 
 def normalize(
     inpt: torch.Tensor,
-    mean: List[float],
-    std: List[float],
+    mean: list[float],
+    std: list[float],
     inplace: bool = False,
 ) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.Normalize` for details."""
@@ -34,7 +34,7 @@ def normalize(
 
 @_register_kernel_internal(normalize, torch.Tensor)
 @_register_kernel_internal(normalize, tv_tensors.Image)
-def normalize_image(image: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
+def normalize_image(image: torch.Tensor, mean: list[float], std: list[float], inplace: bool = False) -> torch.Tensor:
     if not image.is_floating_point():
         raise TypeError(f"Input tensor should be a float tensor. Got {image.dtype}.")
 
@@ -68,11 +68,11 @@ def normalize_image(image: torch.Tensor, mean: List[float], std: List[float], in
 
 
 @_register_kernel_internal(normalize, tv_tensors.Video)
-def normalize_video(video: torch.Tensor, mean: List[float], std: List[float], inplace: bool = False) -> torch.Tensor:
+def normalize_video(video: torch.Tensor, mean: list[float], std: list[float], inplace: bool = False) -> torch.Tensor:
     return normalize_image(video, mean, std, inplace=inplace)
 
 
-def gaussian_blur(inpt: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> torch.Tensor:
+def gaussian_blur(inpt: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.GaussianBlur` for details."""
     if torch.jit.is_scripting():
         return gaussian_blur_image(inpt, kernel_size=kernel_size, sigma=sigma)
@@ -91,7 +91,7 @@ def _get_gaussian_kernel1d(kernel_size: int, sigma: float, dtype: torch.dtype, d
 
 
 def _get_gaussian_kernel2d(
-    kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
+    kernel_size: list[int], sigma: list[float], dtype: torch.dtype, device: torch.device
 ) -> torch.Tensor:
     kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0], dtype, device)
     kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1], dtype, device)
@@ -102,7 +102,7 @@ def _get_gaussian_kernel2d(
 @_register_kernel_internal(gaussian_blur, torch.Tensor)
 @_register_kernel_internal(gaussian_blur, tv_tensors.Image)
 def gaussian_blur_image(
-    image: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
+    image: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None
 ) -> torch.Tensor:
     # TODO: consider deprecating integers from sigma on the future
     if isinstance(kernel_size, int):
@@ -167,7 +167,7 @@ def gaussian_blur_image(
 
 @_register_kernel_internal(gaussian_blur, PIL.Image.Image)
 def _gaussian_blur_image_pil(
-    image: PIL.Image.Image, kernel_size: List[int], sigma: Optional[List[float]] = None
+    image: PIL.Image.Image, kernel_size: list[int], sigma: Optional[list[float]] = None
 ) -> PIL.Image.Image:
     t_img = pil_to_tensor(image)
     output = gaussian_blur_image(t_img, kernel_size=kernel_size, sigma=sigma)
@@ -176,7 +176,7 @@ def _gaussian_blur_image_pil(
 
 @_register_kernel_internal(gaussian_blur, tv_tensors.Video)
 def gaussian_blur_video(
-    video: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
+    video: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None
 ) -> torch.Tensor:
     return gaussian_blur_image(video, kernel_size, sigma)
 
@@ -195,16 +195,28 @@ def gaussian_noise(inpt: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, cl
 @_register_kernel_internal(gaussian_noise, torch.Tensor)
 @_register_kernel_internal(gaussian_noise, tv_tensors.Image)
 def gaussian_noise_image(image: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True) -> torch.Tensor:
-    if not image.is_floating_point():
-        raise ValueError(f"Input tensor is expected to be in float dtype, got dtype={image.dtype}")
     if sigma < 0:
         raise ValueError(f"sigma shouldn't be negative. Got {sigma}")
 
-    noise = mean + torch.randn_like(image) * sigma
-    out = image + noise
-    if clip:
-        out = torch.clamp(out, 0, 1)
-    return out
+    if image.is_floating_point():
+        noise = mean + torch.randn_like(image) * sigma
+        out = image + noise
+        if clip:
+            out = torch.clamp(out, 0, 1)
+        return out
+
+    elif image.dtype == torch.uint8:
+        # Convert to intermediate dtype int16 to add to input more efficiently
+        # See https://github.com/pytorch/vision/pull/9169 for alternative implementations and benchmark
+        noise = ((mean * 255) + torch.randn_like(image, dtype=torch.float32) * (sigma * 255)).to(torch.int16)
+        out = image + noise
+
+        if clip:
+            out = torch.clamp(out, 0, 255)
+        return out.to(torch.uint8)
+
+    else:
+        raise ValueError(f"Input tensor is expected to be in uint8 or float dtype, got dtype={image.dtype}")
 
 
 @_register_kernel_internal(gaussian_noise, tv_tensors.Video)
@@ -320,6 +332,7 @@ def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale:
     return to_dtype_image(video, dtype, scale=scale)
 
 
+@_register_kernel_internal(to_dtype, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
 @_register_kernel_internal(to_dtype, tv_tensors.BoundingBoxes, tv_tensor_wrapper=False)
 @_register_kernel_internal(to_dtype, tv_tensors.Mask, tv_tensor_wrapper=False)
 def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
@@ -330,10 +343,10 @@ def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: boo
 def sanitize_bounding_boxes(
     bounding_boxes: torch.Tensor,
     format: Optional[tv_tensors.BoundingBoxFormat] = None,
-    canvas_size: Optional[Tuple[int, int]] = None,
+    canvas_size: Optional[tuple[int, int]] = None,
     min_size: float = 1.0,
     min_area: float = 1.0,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Remove degenerate/invalid bounding boxes and return the corresponding indexing mask.
 
     This removes bounding boxes that:
@@ -400,21 +413,105 @@ def sanitize_bounding_boxes(
 def _get_sanitize_bounding_boxes_mask(
     bounding_boxes: torch.Tensor,
     format: tv_tensors.BoundingBoxFormat,
-    canvas_size: Tuple[int, int],
+    canvas_size: tuple[int, int],
     min_size: float = 1.0,
     min_area: float = 1.0,
 ) -> torch.Tensor:
 
-    bounding_boxes = _convert_bounding_box_format(
-        bounding_boxes, new_format=tv_tensors.BoundingBoxFormat.XYXY, old_format=format
-    )
+    is_rotated = tv_tensors.is_rotated_bounding_format(format)
+    intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
+    bounding_boxes = _convert_bounding_box_format(bounding_boxes, new_format=intermediate_format, old_format=format)
 
     image_h, image_w = canvas_size
-    ws, hs = bounding_boxes[:, 2] - bounding_boxes[:, 0], bounding_boxes[:, 3] - bounding_boxes[:, 1]
+    if is_rotated:
+        dx12 = bounding_boxes[..., 0] - bounding_boxes[..., 2]
+        dy12 = bounding_boxes[..., 1] - bounding_boxes[..., 3]
+        dx23 = bounding_boxes[..., 3] - bounding_boxes[..., 5]
+        dy23 = bounding_boxes[..., 4] - bounding_boxes[..., 6]
+        ws = torch.sqrt(dx12**2 + dy12**2)
+        hs = torch.sqrt(dx23**2 + dy23**2)
+    else:
+        ws, hs = bounding_boxes[:, 2] - bounding_boxes[:, 0], bounding_boxes[:, 3] - bounding_boxes[:, 1]
     valid = (ws >= min_size) & (hs >= min_size) & (bounding_boxes >= 0).all(dim=-1) & (ws * hs >= min_area)
     # TODO: Do we really need to check for out of bounds here? All
     # transforms should be clamping anyway, so this should never happen?
     image_h, image_w = canvas_size
     valid &= (bounding_boxes[:, 0] <= image_w) & (bounding_boxes[:, 2] <= image_w)
     valid &= (bounding_boxes[:, 1] <= image_h) & (bounding_boxes[:, 3] <= image_h)
+    if is_rotated:
+        valid &= (bounding_boxes[..., 4] <= image_w) & (bounding_boxes[..., 5] <= image_h)
+        valid &= (bounding_boxes[..., 6] <= image_w) & (bounding_boxes[..., 7] <= image_h)
+    return valid
+
+
+def sanitize_keypoints(
+    key_points: torch.Tensor,
+    canvas_size: Optional[tuple[int, int]] = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Remove keypoints outside of the image area and their corresponding labels (if any).
+
+    This transform removes keypoints or groups of keypoints and their associated labels that
+    have coordinates outside of their corresponding image.
+    If you would instead like to clamp such keypoints to the image edges, use
+    :class:`~torchvision.transforms.v2.ClampKeyPoints`.
+
+    It is recommended to call it at the end of a pipeline, before passing the
+    input to the models.
+
+    Keypoints can be passed as a set of individual keypoints or as a set of objects
+    (e.g., polygons or polygonal chains) consisting of a fixed number of keypoints of shape ``[..., 2]``.
+    When groups of keypoints are passed (i.e., an at least 3-dimensional tensor),
+    this transform will only remove entire groups, not individual keypoints within a group.
+
+    Args:
+        key_points (Tensor or :class:`~torchvision.tv_tensors.KeyPoints`): The keypoints to be sanitized.
+        canvas_size (tuple of int, optional): The canvas_size of the keypoints
+            (size of the corresponding image/video).
+            Must be left to none if ``key_points`` is a :class:`~torchvision.tv_tensors.KeyPoints` object.
+
+    Returns:
+        out (tuple of Tensors): The subset of valid keypoints, and the corresponding indexing mask.
+        The mask can then be used to subset other tensors (e.g. labels) that are associated with the keypoints.
+    """
+    if torch.jit.is_scripting() or is_pure_tensor(key_points):
+        if canvas_size is None:
+            raise ValueError(
+                "canvas_size cannot be None if key_points is a pure tensor. "
+                "Set it to an appropriate value or pass key_points as a tv_tensors.KeyPoints object."
+            )
+        valid = _get_sanitize_keypoints_mask(
+            key_points,
+            canvas_size=canvas_size,
+        )
+        key_points = key_points[valid]
+    else:
+        if not isinstance(key_points, tv_tensors.KeyPoints):
+            raise ValueError("key_points must be a tv_tensors.KeyPoints instance or a pure tensor.")
+        if canvas_size is not None:
+            raise ValueError(
+                "canvas_size must be None when key_points is a tv_tensors.KeyPoints instance. "
+                f"Got canvas_size={canvas_size}. "
+                "Leave it to None or pass key_points as a pure tensor."
+            )
+        valid = _get_sanitize_keypoints_mask(
+            key_points,
+            canvas_size=key_points.canvas_size,
+        )
+        key_points = tv_tensors.wrap(key_points[valid], like=key_points)
+
+    return key_points, valid
+
+
+def _get_sanitize_keypoints_mask(
+    key_points: torch.Tensor,
+    canvas_size: tuple[int, int],
+) -> torch.Tensor:
+
+    h, w = canvas_size
+
+    x, y = key_points[..., 0], key_points[..., 1]
+    valid = (x >= 0) & (x < w) & (y >= 0) & (y < h)
+
+    valid = valid.flatten(start_dim=1).all(dim=1) if valid.ndim > 1 else valid
+
     return valid

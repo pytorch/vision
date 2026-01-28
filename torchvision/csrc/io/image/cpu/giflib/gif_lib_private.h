@@ -1,3 +1,4 @@
+// @nolint (improperly imported third-party code)
 /****************************************************************************
 
 gif_lib_private.h - internal giflib routines and structures

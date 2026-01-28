@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import torch
 
@@ -11,7 +11,7 @@ class FakeData(VisionDataset):
 
     Args:
         size (int, optional): Size of the dataset. Default: 1000 images
-        image_size(tuple, optional): Size if the returned images. Default: (3, 224, 224)
+        image_size(tuple, optional): Size of the returned images. Default: (3, 224, 224)
         num_classes(int, optional): Number of classes in the dataset. Default: 10
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
@@ -25,7 +25,7 @@ class FakeData(VisionDataset):
     def __init__(
         self,
         size: int = 1000,
-        image_size: Tuple[int, int, int] = (3, 224, 224),
+        image_size: tuple[int, int, int] = (3, 224, 224),
         num_classes: int = 10,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -37,7 +37,7 @@ class FakeData(VisionDataset):
         self.image_size = image_size
         self.random_offset = random_offset
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index

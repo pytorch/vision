@@ -38,13 +38,13 @@ instructions](https://pytorch.org/get-started/locally/). Note that the official
 instructions may ask you to install torchvision itself. If you are doing development
 on torchvision, you should not install prebuilt torchvision packages.
 
-**Optionally**, install `libpng` and `libjpeg-turbo` if you want to enable
+**Optionally**, install `libpng`, `libjpeg-turbo` and `libwebp` if you want to enable
 support for
-native encoding / decoding of PNG and JPEG formats in
+native encoding / decoding of PNG, JPEG and WebP formats in
 [torchvision.io](https://pytorch.org/vision/stable/io.html#image):
 
 ```bash
-conda install libpng libjpeg-turbo -c pytorch
+conda install libpng libjpeg-turbo libwebp -c pytorch
 ```
 
 Note: you can use the `TORCHVISION_INCLUDE` and `TORCHVISION_LIBRARY`
@@ -58,11 +58,11 @@ details.
 ```bash
 git clone https://github.com/pytorch/vision.git
 cd vision
-python setup.py develop  # use install instead of develop if you don't care about development.
+pip install -e . -v --no-build-isolation  # leave out the -e switch if you don't care about development.
 # or, for OSX
-# MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py develop
+# MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ pip install -e . -v --no-build-isolation
 # for C++ debugging, use DEBUG=1
-# DEBUG=1 python setup.py develop
+# DEBUG=1 pip install -e . -v --no-build-isolation
 ```
 
 By default, GPU support is built if CUDA is found and `torch.cuda.is_available()` is true. It's possible to force

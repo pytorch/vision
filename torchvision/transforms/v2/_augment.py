@@ -1,7 +1,8 @@
 import math
 import numbers
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 import PIL.Image
 import torch
@@ -47,7 +48,7 @@ class RandomErasing(_RandomApplyTransform):
 
     _v1_transform_cls = _transforms.RandomErasing
 
-    def _extract_params_for_v1_transform(self) -> Dict[str, Any]:
+    def _extract_params_for_v1_transform(self) -> dict[str, Any]:
         return dict(
             super()._extract_params_for_v1_transform(),
             value="random" if self.value is None else self.value,
@@ -89,17 +90,17 @@ class RandomErasing(_RandomApplyTransform):
         self._log_ratio = torch.log(torch.tensor(self.ratio))
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
-        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask)):
+        if isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.KeyPoints, tv_tensors.Mask)):
             warnings.warn(
                 f"{type(self).__name__}() is currently passing through inputs of type "
                 f"tv_tensors.{type(inpt).__name__}. This will likely change in the future."
             )
         return super()._call_kernel(functional, inpt, *args, **kwargs)
 
-    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         img_c, img_h, img_w = query_chw(flat_inputs)
 
-        if self.value is not None and not (len(self.value) in (1, img_c)):
+        if self.value is not None and len(self.value) not in (1, img_c):
             raise ValueError(
                 f"If value is a sequence, it should have either a single value or {img_c} (number of inpt channels)"
             )
@@ -134,7 +135,7 @@ class RandomErasing(_RandomApplyTransform):
 
         return dict(i=i, j=j, h=h, w=w, v=v)
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         if params["v"] is not None:
             inpt = self._call_kernel(F.erase, inpt, **params, inplace=self.inplace)
 
@@ -156,8 +157,10 @@ class _BaseMixUpCutMix(Transform):
         flat_inputs, spec = tree_flatten(inputs)
         needs_transform_list = self._needs_transform_list(flat_inputs)
 
-        if has_any(flat_inputs, PIL.Image.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask):
-            raise ValueError(f"{type(self).__name__}() does not support PIL images, bounding boxes and masks.")
+        if has_any(flat_inputs, PIL.Image.Image, tv_tensors.BoundingBoxes, tv_tensors.Mask, tv_tensors.KeyPoints):
+            raise ValueError(
+                f"{type(self).__name__}() does not support PIL images, bounding boxes, keypoints and masks."
+            )
 
         labels = self._labels_getter(inputs)
         if not isinstance(labels, torch.Tensor):
@@ -243,10 +246,10 @@ class MixUp(_BaseMixUpCutMix):
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
 
-    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))  # type: ignore[arg-type]
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         lam = params["lam"]
 
         if inpt is params["labels"]:
@@ -292,7 +295,7 @@ class CutMix(_BaseMixUpCutMix):
             It can also be a callable that takes the same input as the transform, and returns the labels.
     """
 
-    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         lam = float(self._dist.sample(()))  # type: ignore[arg-type]
 
         H, W = query_size(flat_inputs)
@@ -314,7 +317,7 @@ class CutMix(_BaseMixUpCutMix):
 
         return dict(box=box, lam_adjusted=lam_adjusted)
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         if inpt is params["labels"]:
             return self._mixup_label(inpt, lam=params["lam_adjusted"])
         elif isinstance(inpt, (tv_tensors.Image, tv_tensors.Video)) or is_pure_tensor(inpt):
@@ -352,6 +355,8 @@ class JPEG(Transform):
     def __init__(self, quality: Union[int, Sequence[int]]):
         super().__init__()
         if isinstance(quality, int):
+            if isinstance(quality, bool):
+                raise TypeError("quality can't be bool")
             quality = [quality, quality]
         else:
             _check_sequence_input(quality, "quality", req_sizes=(2,))
@@ -361,9 +366,9 @@ class JPEG(Transform):
 
         self.quality = quality
 
-    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         quality = torch.randint(self.quality[0], self.quality[1] + 1, ()).item()
         return dict(quality=quality)
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.jpeg, inpt, quality=params["quality"])

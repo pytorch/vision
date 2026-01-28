@@ -6,13 +6,13 @@ import string
 import sys
 import warnings
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 from urllib.error import URLError
 
 import numpy as np
 import torch
-from PIL import Image
 
+from ..utils import _Image_fromarray
 from .utils import _flip_byte_order, check_integrity, download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
@@ -128,7 +128,7 @@ class MNIST(VisionDataset):
 
         return data, targets
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -140,7 +140,7 @@ class MNIST(VisionDataset):
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        img = Image.fromarray(img.numpy(), mode="L")
+        img = _Image_fromarray(img.numpy(), mode="L")
 
         if self.transform is not None:
             img = self.transform(img)
@@ -162,7 +162,7 @@ class MNIST(VisionDataset):
         return os.path.join(self.root, self.__class__.__name__, "processed")
 
     @property
-    def class_to_idx(self) -> Dict[str, int]:
+    def class_to_idx(self) -> dict[str, int]:
         return {_class: i for i, _class in enumerate(self.classes)}
 
     def _check_exists(self) -> bool:
@@ -372,7 +372,7 @@ class QMNIST(MNIST):
     """
 
     subsets = {"train": "train", "test": "test", "test10k": "test", "test50k": "test", "nist": "nist"}
-    resources: Dict[str, List[Tuple[str, str]]] = {  # type: ignore[assignment]
+    resources: dict[str, list[tuple[str, str]]] = {  # type: ignore[assignment]
         "train": [
             (
                 "https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz",
@@ -475,10 +475,10 @@ class QMNIST(MNIST):
         for url, md5 in split:
             download_and_extract_archive(url, self.raw_folder, md5=md5)
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         # redefined to handle the compat flag
         img, target = self.data[index], self.targets[index]
-        img = Image.fromarray(img.numpy(), mode="L")
+        img = _Image_fromarray(img.numpy(), mode="L")
         if self.transform is not None:
             img = self.transform(img)
         if self.compat:

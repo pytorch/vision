@@ -1,6 +1,6 @@
 import math
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import torch
 from torch import Tensor
@@ -11,7 +11,7 @@ __all__ = ["AutoAugmentPolicy", "AutoAugment", "RandAugment", "TrivialAugmentWid
 
 
 def _apply_op(
-    img: Tensor, op_name: str, magnitude: float, interpolation: InterpolationMode, fill: Optional[List[float]]
+    img: Tensor, op_name: str, magnitude: float, interpolation: InterpolationMode, fill: Optional[list[float]]
 ):
     if op_name == "ShearX":
         # magnitude should be arctan(magnitude)
@@ -122,7 +122,7 @@ class AutoAugment(torch.nn.Module):
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Optional[list[float]] = None,
     ) -> None:
         super().__init__()
         self.policy = policy
@@ -132,7 +132,7 @@ class AutoAugment(torch.nn.Module):
 
     def _get_policies(
         self, policy: AutoAugmentPolicy
-    ) -> List[Tuple[Tuple[str, float, Optional[int]], Tuple[str, float, Optional[int]]]]:
+    ) -> list[tuple[tuple[str, float, Optional[int]], tuple[str, float, Optional[int]]]]:
         if policy == AutoAugmentPolicy.IMAGENET:
             return [
                 (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
@@ -220,7 +220,7 @@ class AutoAugment(torch.nn.Module):
         else:
             raise ValueError(f"The provided policy {policy} is not recognized.")
 
-    def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: tuple[int, int]) -> dict[str, tuple[Tensor, bool]]:
         return {
             # op_name: (magnitudes, signed)
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
@@ -240,7 +240,7 @@ class AutoAugment(torch.nn.Module):
         }
 
     @staticmethod
-    def get_params(transform_num: int) -> Tuple[int, Tensor, Tensor]:
+    def get_params(transform_num: int) -> tuple[int, Tensor, Tensor]:
         """Get parameters for autoaugment transformation
 
         Returns:
@@ -309,7 +309,7 @@ class RandAugment(torch.nn.Module):
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Optional[list[float]] = None,
     ) -> None:
         super().__init__()
         self.num_ops = num_ops
@@ -318,7 +318,7 @@ class RandAugment(torch.nn.Module):
         self.interpolation = interpolation
         self.fill = fill
 
-    def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: tuple[int, int]) -> dict[str, tuple[Tensor, bool]]:
         return {
             # op_name: (magnitudes, signed)
             "Identity": (torch.tensor(0.0), False),
@@ -397,14 +397,14 @@ class TrivialAugmentWide(torch.nn.Module):
         self,
         num_magnitude_bins: int = 31,
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        fill: Optional[List[float]] = None,
+        fill: Optional[list[float]] = None,
     ) -> None:
         super().__init__()
         self.num_magnitude_bins = num_magnitude_bins
         self.interpolation = interpolation
         self.fill = fill
 
-    def _augmentation_space(self, num_bins: int) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int) -> dict[str, tuple[Tensor, bool]]:
         return {
             # op_name: (magnitudes, signed)
             "Identity": (torch.tensor(0.0), False),
@@ -492,7 +492,7 @@ class AugMix(torch.nn.Module):
         alpha: float = 1.0,
         all_ops: bool = True,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[List[float]] = None,
+        fill: Optional[list[float]] = None,
     ) -> None:
         super().__init__()
         self._PARAMETER_MAX = 10
@@ -506,7 +506,7 @@ class AugMix(torch.nn.Module):
         self.interpolation = interpolation
         self.fill = fill
 
-    def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: tuple[int, int]) -> dict[str, tuple[Tensor, bool]]:
         s = {
             # op_name: (magnitudes, signed)
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),

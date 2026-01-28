@@ -1,7 +1,8 @@
 import torch
 
-from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat
+from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat, is_rotated_bounding_format
 from ._image import Image
+from ._keypoints import KeyPoints
 from ._mask import Mask
 from ._torch_function_helpers import set_return_type
 from ._tv_tensor import TVTensor
@@ -22,14 +23,17 @@ def wrap(wrappee, *, like, **kwargs):
         wrappee (Tensor): The tensor to convert.
         like (:class:`~torchvision.tv_tensors.TVTensor`): The reference.
             ``wrappee`` will be converted into the same subclass as ``like``.
-        kwargs: Can contain "format" and "canvas_size" if ``like`` is a :class:`~torchvision.tv_tensor.BoundingBoxes`.
+        kwargs: Can contain "format", "canvas_size" and "clamping_mode" if ``like`` is a :class:`~torchvision.tv_tensor.BoundingBoxes`.
             Ignored otherwise.
     """
     if isinstance(like, BoundingBoxes):
-        return BoundingBoxes._wrap(
+        return type(like)._wrap(
             wrappee,
             format=kwargs.get("format", like.format),
             canvas_size=kwargs.get("canvas_size", like.canvas_size),
+            clamping_mode=kwargs.get("clamping_mode", like.clamping_mode),
         )
+    elif isinstance(like, KeyPoints):
+        return type(like)._wrap(wrappee, canvas_size=kwargs.get("canvas_size", like.canvas_size))
     else:
         return wrappee.as_subclass(type(like))

@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from .folder import default_loader
 
@@ -81,7 +81,7 @@ class DTD(VisionDataset):
     def __len__(self) -> int:
         return len(self._image_files)
 
-    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
+    def __getitem__(self, idx: int) -> tuple[Any, Any]:
         image_file, label = self._image_files[idx], self._labels[idx]
         image = self.loader(image_file)
 

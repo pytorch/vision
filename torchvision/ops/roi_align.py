@@ -1,5 +1,5 @@
 import functools
-from typing import List, Union
+from typing import Union
 
 import torch
 import torch.fx
@@ -203,7 +203,7 @@ def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling
 @torch.fx.wrap
 def roi_align(
     input: Tensor,
-    boxes: Union[Tensor, List[Tensor]],
+    boxes: Union[Tensor, list[Tensor]],
     output_size: BroadcastingList2[int],
     spatial_scale: float = 1.0,
     sampling_ratio: int = -1,
@@ -279,7 +279,7 @@ class RoIAlign(nn.Module):
         self.sampling_ratio = sampling_ratio
         self.aligned = aligned
 
-    def forward(self, input: Tensor, rois: Union[Tensor, List[Tensor]]) -> Tensor:
+    def forward(self, input: Tensor, rois: Union[Tensor, list[Tensor]]) -> Tensor:
         return roi_align(input, rois, self.output_size, self.spatial_scale, self.sampling_ratio, self.aligned)
 
     def __repr__(self) -> str:

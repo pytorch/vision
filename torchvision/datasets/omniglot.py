@@ -1,6 +1,6 @@
 from os.path import join
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from PIL import Image
 
@@ -23,6 +23,9 @@ class Omniglot(VisionDataset):
         download (bool, optional): If true, downloads the dataset zip files from the internet and
             puts it in root directory. If the zip files are already downloaded, they are not
             downloaded again.
+        loader (callable, optional): A function to load an image given its path.
+            By default, it uses PIL as its image loader, but users could also pass in
+            ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
     folder = "omniglot-py"
@@ -39,6 +42,7 @@ class Omniglot(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
+        loader: Optional[Callable[[Union[str, Path]], Any]] = None,
     ) -> None:
         super().__init__(join(root, self.folder), transform=transform, target_transform=target_transform)
         self.background = background
@@ -51,19 +55,20 @@ class Omniglot(VisionDataset):
 
         self.target_folder = join(self.root, self._get_target_folder())
         self._alphabets = list_dir(self.target_folder)
-        self._characters: List[str] = sum(
+        self._characters: list[str] = sum(
             ([join(a, c) for c in list_dir(join(self.target_folder, a))] for a in self._alphabets), []
         )
         self._character_images = [
             [(image, idx) for image in list_files(join(self.target_folder, character), ".png")]
             for idx, character in enumerate(self._characters)
         ]
-        self._flat_character_images: List[Tuple[str, int]] = sum(self._character_images, [])
+        self._flat_character_images: list[tuple[str, int]] = sum(self._character_images, [])
+        self.loader = loader
 
     def __len__(self) -> int:
         return len(self._flat_character_images)
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -73,7 +78,7 @@ class Omniglot(VisionDataset):
         """
         image_name, character_class = self._flat_character_images[index]
         image_path = join(self.target_folder, self._characters[character_class], image_name)
-        image = Image.open(image_path, mode="r").convert("L")
+        image = Image.open(image_path, mode="r").convert("L") if self.loader is None else self.loader(image_path)
 
         if self.transform:
             image = self.transform(image)
