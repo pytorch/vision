@@ -1,25 +1,35 @@
+import os
+
 import torch
 
 from ._internally_replaced_utils import _get_extension_path
 
 
-_HAS_OPS = False
+def _load_library(lib_name):
+    """Load a library, optionally warning on failure based on env variable.
+
+    Returns True if the library was loaded successfully, False otherwise.
+    """
+    try:
+        lib_path = _get_extension_path(lib_name)
+        torch.ops.load_library(lib_path)
+        return True
+    except (ImportError, OSError) as e:
+        if os.environ.get("TORCHVISION_WARN_WHEN_EXTENSION_LOADING_FAILS"):
+            import warnings
+
+            warnings.warn(f"Failed to load '{lib_name}' extension: {type(e).__name__}: {e}")
+        return False
 
 
 def _has_ops():
     return False
 
 
-try:
-    lib_path = _get_extension_path("_C")
-    torch.ops.load_library(lib_path)
-    _HAS_OPS = True
+if _load_library("_C"):
 
     def _has_ops():  # noqa: F811
         return True
-
-except (ImportError, OSError):
-    pass
 
 
 def _assert_has_ops():
@@ -31,7 +41,8 @@ def _assert_has_ops():
             "https://github.com/pytorch/vision#installation for the compatibility matrix. "
             "Please check your PyTorch version with torch.__version__ and your torchvision "
             "version with torchvision.__version__ and verify if they are compatible, and if not "
-            "please reinstall torchvision so that it matches your PyTorch install."
+            "please reinstall torchvision so that it matches your PyTorch install. "
+            "Set TORCHVISION_WARN_WHEN_EXTENSION_LOADING_FAILS=1 and retry to get more details."
         )
 
 
@@ -39,19 +50,16 @@ def _check_cuda_version():
     """
     Make sure that CUDA versions match between the pytorch install and torchvision install
     """
-    if not _HAS_OPS:
+    if not _has_ops():
         return -1
     from torch.version import cuda as torch_version_cuda
 
     _version = torch.ops.torchvision._cuda_version()
     if _version != -1 and torch_version_cuda is not None:
         tv_version = str(_version)
-        if int(tv_version) < 10000:
-            tv_major = int(tv_version[0])
-            tv_minor = int(tv_version[2])
-        else:
-            tv_major = int(tv_version[0:2])
-            tv_minor = int(tv_version[3])
+        assert int(tv_version) >= 12000, f"Unexpected CUDA version {_version}, please file a bug report."
+        tv_major = int(tv_version[0:2])
+        tv_minor = int(tv_version[3])
         t_version = torch_version_cuda.split(".")
         t_major = int(t_version[0])
         t_minor = int(t_version[1])
@@ -63,11 +71,6 @@ def _check_cuda_version():
                 "Please reinstall the torchvision that matches your PyTorch install."
             )
     return _version
-
-
-def _load_library(lib_name):
-    lib_path = _get_extension_path(lib_name)
-    torch.ops.load_library(lib_path)
 
 
 _check_cuda_version()
