@@ -93,7 +93,8 @@ std::vector<Tensor> decode_jpegs_cuda(
   // Create a new device with the resolved index for consistency
   Device resolved_device(kCUDA, static_cast<int16_t>(target_device_idx));
 
-  if (cudaJpegDecoder == nullptr || resolved_device != cudaJpegDecoder->target_device) {
+  if (cudaJpegDecoder == nullptr ||
+      resolved_device != cudaJpegDecoder->target_device) {
     if (cudaJpegDecoder != nullptr) {
       cudaJpegDecoder.reset(new CUDAJpegDecoder(resolved_device));
     } else {
@@ -139,7 +140,8 @@ std::vector<Tensor> decode_jpegs_cuda(
     return result;
   } catch (const std::exception& e) {
     cudaSetDevice(prev_device);
-    throw std::runtime_error(std::string("Error while decoding JPEG images: ") + e.what());
+    throw std::runtime_error(
+        std::string("Error while decoding JPEG images: ") + e.what());
   }
 }
 

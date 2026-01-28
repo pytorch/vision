@@ -31,8 +31,13 @@ Tensor decode_webp(const Tensor& encoded_data, ImageReadMode mode) {
   VISION_CHECK(
       !features.has_animation, "Animated webp files are not supported.");
 
-  // Note: TORCH_WARN_ONCE is not available in stable ABI, so we just skip the
-  // warning
+  // TODO_STABLE_ABI: need TORCH_WARN_ONCE
+  //   if (mode == IMAGE_READ_MODE_GRAY || mode == IMAGE_READ_MODE_GRAY_ALPHA) {
+  //     TORCH_WARN_ONCE(
+  //         "Webp does not support grayscale conversions. "
+  //         "The returned tensor will be in the colorspace of the original
+  //         image.");
+  //   }
 
   auto return_rgb =
       should_this_return_rgb_or_rgba_let_me_know_in_the_comments_down_below_guys_see_you_in_the_next_video(

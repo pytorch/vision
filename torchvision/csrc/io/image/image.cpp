@@ -34,9 +34,10 @@ STABLE_TORCH_LIBRARY_IMPL(image, CPU, m) {
   m.impl("decode_image", TORCH_BOX(&decode_image));
 }
 
-// Ops without tensor inputs or with cross-device semantics need BackendSelect dispatch
-// encode_jpeg/encode_png also use BackendSelect so they can give proper error messages
-// when CUDA tensors are passed (instead of "no kernel for CUDA")
+// Ops without tensor inputs or with cross-device semantics need BackendSelect
+// dispatch encode_jpeg/encode_png also use BackendSelect so they can give
+// proper error messages when CUDA tensors are passed (instead of "no kernel for
+// CUDA")
 STABLE_TORCH_LIBRARY_IMPL(image, BackendSelect, m) {
   m.impl("read_file", TORCH_BOX(&read_file));
   m.impl("write_file", TORCH_BOX(&write_file));
@@ -44,7 +45,8 @@ STABLE_TORCH_LIBRARY_IMPL(image, BackendSelect, m) {
   m.impl("_is_compiled_against_turbo", TORCH_BOX(&_is_compiled_against_turbo));
   // decode_jpegs_cuda takes CPU tensors as input but outputs CUDA tensors
   m.impl("decode_jpegs_cuda", TORCH_BOX(&decode_jpegs_cuda));
-  // encode functions need BackendSelect to provide proper error messages for CUDA inputs
+  // encode functions need BackendSelect to provide proper error messages for
+  // CUDA inputs
   m.impl("encode_png", TORCH_BOX(&encode_png));
   m.impl("encode_jpeg", TORCH_BOX(&encode_jpeg));
 }

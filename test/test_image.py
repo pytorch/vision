@@ -929,6 +929,7 @@ def test_decode_webp(decode_fun, scripted):
     img += 123  # make sure image buffer wasn't freed by underlying decoding lib
 
 
+@pytest.mark.skip(reason="TODO_STABLE_ABI: need TORCH_WARN_ONCE")
 @pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
 def test_decode_webp_grayscale(decode_fun, capfd):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))

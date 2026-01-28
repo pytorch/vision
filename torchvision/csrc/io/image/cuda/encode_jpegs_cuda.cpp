@@ -57,7 +57,8 @@ std::vector<Tensor> encode_jpegs_cuda(
   // the encoder object holds on to a lot of state and is expensive to create,
   // so we reuse it across calls. NB: the cached structures are device specific
   // and cannot be reused across devices
-  if (cudaJpegEncoder == nullptr || resolved_device != cudaJpegEncoder->target_device) {
+  if (cudaJpegEncoder == nullptr ||
+      resolved_device != cudaJpegEncoder->target_device) {
     if (cudaJpegEncoder != nullptr) {
       delete cudaJpegEncoder.release();
     }
