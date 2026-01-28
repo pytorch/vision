@@ -23,14 +23,6 @@ USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
-# Note: the GPU video decoding stuff used to be called "video codec", which
-# isn't an accurate or descriptive name considering there are at least 2 other
-# video decoding backends in torchvision. I'm renaming this to "gpu video
-# decoder" where possible, keeping user facing names (like the env var below) to
-# the old scheme for BC.
-USE_GPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_VIDEO_CODEC", "0") == "1"
-# Same here: "use ffmpeg" was used to denote "use cpu video decoder".
-USE_CPU_VIDEO_DECODER = os.getenv("TORCHVISION_USE_FFMPEG", "0") == "1"
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
 TORCHVISION_LIBRARY = os.environ.get("TORCHVISION_LIBRARY", "")
@@ -53,8 +45,6 @@ print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
 print(f"{USE_NVJPEG = }")
 print(f"{NVCC_FLAGS = }")
-print(f"{USE_CPU_VIDEO_DECODER = }")
-print(f"{USE_GPU_VIDEO_DECODER = }")
 print(f"{TORCHVISION_INCLUDE = }")
 print(f"{TORCHVISION_LIBRARY = }")
 print(f"{IS_ROCM = }")
@@ -374,158 +364,6 @@ def make_image_extension():
     )
 
 
-def make_video_decoders_extensions():
-    print("Building video decoder extensions")
-
-    build_without_extensions_msg = "Building without video decoders extensions."
-    if sys.platform != "linux" or (sys.version_info.major == 3 and sys.version_info.minor == 9):
-        # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
-        # FIXME: causes crash. See the following GitHub issues for more details.
-        # FIXME: https://github.com/pytorch/pytorch/issues/65000
-        # FIXME: https://github.com/pytorch/vision/issues/3367
-        print("Can only build video decoder extensions on linux and Python != 3.9")
-        return []
-
-    ffmpeg_exe = shutil.which("ffmpeg")
-    if ffmpeg_exe is None:
-        print(f"{build_without_extensions_msg} Couldn't find ffmpeg binary.")
-        return []
-
-    def find_ffmpeg_libraries():
-        ffmpeg_libraries = {"libavcodec", "libavformat", "libavutil", "libswresample", "libswscale"}
-
-        ffmpeg_bin = os.path.dirname(ffmpeg_exe)
-        ffmpeg_root = os.path.dirname(ffmpeg_bin)
-        ffmpeg_include_dir = os.path.join(ffmpeg_root, "include")
-        ffmpeg_library_dir = os.path.join(ffmpeg_root, "lib")
-
-        gcc = os.environ.get("CC", shutil.which("gcc"))
-        platform_tag = subprocess.run([gcc, "-print-multiarch"], stdout=subprocess.PIPE)
-        platform_tag = platform_tag.stdout.strip().decode("utf-8")
-
-        if platform_tag:
-            # Most probably a Debian-based distribution
-            ffmpeg_include_dir = [ffmpeg_include_dir, os.path.join(ffmpeg_include_dir, platform_tag)]
-            ffmpeg_library_dir = [ffmpeg_library_dir, os.path.join(ffmpeg_library_dir, platform_tag)]
-        else:
-            ffmpeg_include_dir = [ffmpeg_include_dir]
-            ffmpeg_library_dir = [ffmpeg_library_dir]
-
-        for library in ffmpeg_libraries:
-            library_found = False
-            for search_path in ffmpeg_include_dir + TORCHVISION_INCLUDE:
-                full_path = os.path.join(search_path, library, "*.h")
-                library_found |= len(glob.glob(full_path)) > 0
-
-            if not library_found:
-                print(f"{build_without_extensions_msg}")
-                print(f"{library} header files were not found.")
-                return None, None
-
-        return ffmpeg_include_dir, ffmpeg_library_dir
-
-    ffmpeg_include_dir, ffmpeg_library_dir = find_ffmpeg_libraries()
-    if ffmpeg_include_dir is None or ffmpeg_library_dir is None:
-        return []
-
-    print("Found ffmpeg:")
-    print(f"  ffmpeg include path: {ffmpeg_include_dir}")
-    print(f"  ffmpeg library_dir: {ffmpeg_library_dir}")
-
-    extensions = []
-    if USE_CPU_VIDEO_DECODER:
-        print("Building with CPU video decoder support")
-
-        # TorchVision base decoder + video reader
-        video_reader_src_dir = os.path.join(ROOT_DIR, "torchvision", "csrc", "io", "video_reader")
-        video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
-        base_decoder_src_dir = os.path.join(ROOT_DIR, "torchvision", "csrc", "io", "decoder")
-        base_decoder_src = glob.glob(os.path.join(base_decoder_src_dir, "*.cpp"))
-        # Torchvision video API
-        videoapi_src_dir = os.path.join(ROOT_DIR, "torchvision", "csrc", "io", "video")
-        videoapi_src = glob.glob(os.path.join(videoapi_src_dir, "*.cpp"))
-        # exclude tests
-        base_decoder_src = [x for x in base_decoder_src if "_test.cpp" not in x]
-
-        combined_src = video_reader_src + base_decoder_src + videoapi_src
-
-        extensions.append(
-            CppExtension(
-                # This is an awful name. It should be "cpu_video_decoder". Keeping for BC.
-                "torchvision.video_reader",
-                combined_src,
-                include_dirs=[
-                    base_decoder_src_dir,
-                    video_reader_src_dir,
-                    videoapi_src_dir,
-                    str(CSRS_DIR),
-                    *ffmpeg_include_dir,
-                    *TORCHVISION_INCLUDE,
-                ],
-                library_dirs=ffmpeg_library_dir + TORCHVISION_LIBRARY,
-                libraries=[
-                    "avcodec",
-                    "avformat",
-                    "avutil",
-                    "swresample",
-                    "swscale",
-                ],
-                extra_compile_args=["-std=c++17"] if os.name != "nt" else ["/std:c++17", "/MP"],
-                extra_link_args=["-std=c++17" if os.name != "nt" else "/std:c++17"],
-            )
-        )
-
-    if USE_GPU_VIDEO_DECODER:
-        # Locating GPU video decoder headers and libraries
-        # CUDA_HOME should be set to the cuda root directory.
-        # TORCHVISION_INCLUDE and TORCHVISION_LIBRARY should include the locations
-        # to the headers and libraries below
-        if not (
-            BUILD_CUDA_SOURCES
-            and CUDA_HOME is not None
-            and any([os.path.exists(os.path.join(folder, "cuviddec.h")) for folder in TORCHVISION_INCLUDE])
-            and any([os.path.exists(os.path.join(folder, "nvcuvid.h")) for folder in TORCHVISION_INCLUDE])
-            and any([os.path.exists(os.path.join(folder, "libnvcuvid.so")) for folder in TORCHVISION_LIBRARY])
-            and any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
-        ):
-            print("Could not find necessary dependencies. Refer the setup.py to check which ones are needed.")
-            print("Building without GPU video decoder support")
-            return extensions
-        print("Building torchvision with GPU video decoder support")
-
-        gpu_decoder_path = os.path.join(CSRS_DIR, "io", "decoder", "gpu")
-        gpu_decoder_src = glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
-        cuda_libs = os.path.join(CUDA_HOME, "lib64")
-        cuda_inc = os.path.join(CUDA_HOME, "include")
-
-        _, extra_compile_args = get_macros_and_flags()
-        extensions.append(
-            CUDAExtension(
-                "torchvision.gpu_decoder",
-                gpu_decoder_src,
-                include_dirs=[CSRS_DIR] + TORCHVISION_INCLUDE + [gpu_decoder_path] + [cuda_inc] + ffmpeg_include_dir,
-                library_dirs=ffmpeg_library_dir + TORCHVISION_LIBRARY + [cuda_libs],
-                libraries=[
-                    "avcodec",
-                    "avformat",
-                    "avutil",
-                    "swresample",
-                    "swscale",
-                    "nvcuvid",
-                    "cuda",
-                    "cudart",
-                    "z",
-                    "pthread",
-                    "dl",
-                    "nppicc",
-                ],
-                extra_compile_args=extra_compile_args,
-            )
-        )
-
-    return extensions
-
-
 class clean(distutils.command.clean.clean):
     def run(self):
         with open(".gitignore") as f:
@@ -553,7 +391,6 @@ if __name__ == "__main__":
     extensions = [
         make_C_extension(),
         make_image_extension(),
-        *make_video_decoders_extensions(),
     ]
 
     setup(
@@ -575,7 +412,7 @@ if __name__ == "__main__":
             "scipy": ["scipy"],
         },
         ext_modules=extensions,
-        python_requires=">=3.10",
+        python_requires=">=3.10,!=3.14.1",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
             "clean": clean,
