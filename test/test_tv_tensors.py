@@ -333,6 +333,29 @@ def test_wrap(make_input):
     assert dp_new.data_ptr() == output.data_ptr()
 
 
+def test_wrap_preserves_subclass():
+    # Non regression test for https://github.com/pytorch/vision/issues/9328
+    class MyBoundingBoxes(tv_tensors.BoundingBoxes):
+        pass
+
+    class MyKeyPoints(tv_tensors.KeyPoints):
+        pass
+
+    bbox = MyBoundingBoxes(
+        [[0, 0, 10, 10]],
+        format=tv_tensors.BoundingBoxFormat.XYXY,
+        canvas_size=(100, 100),
+    )
+    output = bbox * 2
+    wrapped = tv_tensors.wrap(output, like=bbox)
+    assert type(wrapped) is MyBoundingBoxes
+
+    kp = MyKeyPoints([[5, 5]], canvas_size=(100, 100))
+    output = kp * 2
+    wrapped = tv_tensors.wrap(output, like=kp)
+    assert type(wrapped) is MyKeyPoints
+
+
 @pytest.mark.parametrize(
     "make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints]
 )

@@ -213,12 +213,12 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     x3, y3 bottom right, and x4, y4 bottom left.
 
     Args:
-        boxes (Tensor[N, K]): boxes which will be converted. K is the number of coordinates (4 for unrotated bounding boxes, 5 or 8 for rotated bounding boxes)
+        boxes (Tensor[..., K]): boxes which will be converted. K is the number of coordinates (4 for unrotated bounding boxes, 5 or 8 for rotated bounding boxes). Supports any number of leading batch dimensions.
         in_fmt (str): Input format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh', 'xywhr', 'cxcywhr', 'xyxyxyxy'].
         out_fmt (str): Output format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh', 'xywhr', 'cxcywhr', 'xyxyxyxy']
 
     Returns:
-        Tensor[N, K]: Boxes into converted format.
+        Tensor[..., K]: Boxes into converted format.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(box_convert)
