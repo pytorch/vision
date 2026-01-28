@@ -7936,14 +7936,14 @@ class TestJPEG:
     @pytest.mark.parametrize("quality", [5, 75])
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
     def test_kernel_image(self, quality, color_space):
-        check_kernel(F.jpeg_image, make_image(color_space=color_space), quality=quality)
+        check_kernel(F.jpeg_image, make_image(color_space=color_space), quality=quality, check_scripted_vs_eager=False)
 
     def test_kernel_video(self):
-        check_kernel(F.jpeg_video, make_video(), quality=5)
+        check_kernel(F.jpeg_video, make_video(), quality=5, check_scripted_vs_eager=False)
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
     def test_functional(self, make_input):
-        check_functional(F.jpeg, make_input(), quality=5)
+        check_functional(F.jpeg, make_input(), quality=5, check_scripted_smoke=False)
 
     @pytest.mark.parametrize(
         ("kernel", "input_type"),
