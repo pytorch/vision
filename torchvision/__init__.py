@@ -57,15 +57,11 @@ def set_video_backend(backend):
         backend, please compile torchvision from source.
     """
     global _video_backend
-    if backend not in ["pyav", "video_reader", "cuda"]:
-        raise ValueError("Invalid video backend '%s'. Options are 'pyav', 'video_reader' and 'cuda'" % backend)
+    if backend not in ["pyav", "video_reader"]:
+        raise ValueError("Invalid video backend '%s'. Options are 'pyav' and 'video_reader'" % backend)
     if backend == "video_reader" and not io._HAS_CPU_VIDEO_DECODER:
         # TODO: better messages
         message = "video_reader video backend is not available. Please compile torchvision from source and try again"
-        raise RuntimeError(message)
-    elif backend == "cuda" and not io._HAS_GPU_VIDEO_DECODER:
-        # TODO: better messages
-        message = "cuda video backend is not available."
         raise RuntimeError(message)
     else:
         _video_backend = backend
