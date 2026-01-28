@@ -144,9 +144,7 @@ class VideoReader:
                     src = torch.frombuffer(src, dtype=torch.uint8)
         elif isinstance(src, torch.Tensor):
             if self.backend == "pyav":
-                raise RuntimeError(
-                    "VideoReader cannot be initialized from Tensor object when using pyav backend."
-                )
+                raise RuntimeError("VideoReader cannot be initialized from Tensor object when using pyav backend.")
         else:
             raise ValueError(f"src must be either string, Tensor or bytes object. Got {type(src)}")
 
