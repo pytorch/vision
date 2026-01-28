@@ -24,7 +24,7 @@ jobs:
             gpu-arch-type: cuda
             gpu-arch-version: "12.8"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@atalman-patch-25
     permissions:
       id-token: write
       contents: read
@@ -34,7 +34,7 @@ jobs:
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
-      test-infra-ref: main
+      test-infra-ref: atalman-patch-25
       script: |
         set -euo pipefail
 
@@ -53,7 +53,7 @@ jobs:
         gpu-arch-type: ["cuda"]
         gpu-arch-version: ["12.6"]
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@atalman-patch-25
     permissions:
       id-token: write
       contents: read
@@ -63,7 +63,7 @@ jobs:
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
       timeout: 120
-      test-infra-ref: main
+      test-infra-ref: atalman-patch-25
       script: |
         set -euo pipefail
 
