@@ -3,7 +3,8 @@ import functools
 import operator
 import pathlib
 import string
-from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+from collections.abc import Iterator, Sequence
+from typing import Any, BinaryIO, cast, Optional, Union
 
 import torch
 from torchdata.datapipes.iter import Decompressor, Demultiplexer, IterDataPipe, Mapper, Zipper
@@ -30,7 +31,7 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
     }
 
     def __init__(
-        self, datapipe: IterDataPipe[Tuple[Any, BinaryIO]], *, start: Optional[int], stop: Optional[int]
+        self, datapipe: IterDataPipe[tuple[Any, BinaryIO]], *, start: Optional[int], stop: Optional[int]
     ) -> None:
         self.datapipe = datapipe
         self.start = start
@@ -46,7 +47,7 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
                 ndim = magic % 256 - 1
 
                 num_samples = int(read(dtype=torch.int32, count=1))
-                shape = cast(List[int], read(dtype=torch.int32, count=ndim).tolist()) if ndim else []
+                shape = cast(list[int], read(dtype=torch.int32, count=ndim).tolist()) if ndim else []
                 count = prod(shape) if shape else 1
 
                 start = self.start or 0
@@ -66,10 +67,10 @@ class _MNISTBase(Dataset):
     _URL_BASE: Union[str, Sequence[str]]
 
     @abc.abstractmethod
-    def _files_and_checksums(self) -> Tuple[Tuple[str, str], Tuple[str, str]]:
+    def _files_and_checksums(self) -> tuple[tuple[str, str], tuple[str, str]]:
         pass
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         (images_file, images_sha256), (
             labels_file,
             labels_sha256,
@@ -87,19 +88,19 @@ class _MNISTBase(Dataset):
 
         return [images, labels]
 
-    def start_and_stop(self) -> Tuple[Optional[int], Optional[int]]:
+    def start_and_stop(self) -> tuple[Optional[int], Optional[int]]:
         return None, None
 
-    _categories: List[str]
+    _categories: list[str]
 
-    def _prepare_sample(self, data: Tuple[torch.Tensor, torch.Tensor]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[torch.Tensor, torch.Tensor]) -> dict[str, Any]:
         image, label = data
         return dict(
             image=Image(image),
             label=Label(label, dtype=torch.int64, categories=self._categories),
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         images_dp, labels_dp = resource_dps
         start, stop = self.start_and_stop()
 
@@ -116,7 +117,7 @@ class _MNISTBase(Dataset):
 
 
 @register_info("mnist")
-def _mnist_info() -> Dict[str, Any]:
+def _mnist_info() -> dict[str, Any]:
     return dict(
         categories=[str(label) for label in range(10)],
     )
@@ -149,7 +150,7 @@ class MNIST(_MNISTBase):
         "t10k-labels-idx1-ubyte.gz": "f7ae60f92e00ec6debd23a6088c31dbd2371eca3ffa0defaefb259924204aec6",
     }
 
-    def _files_and_checksums(self) -> Tuple[Tuple[str, str], Tuple[str, str]]:
+    def _files_and_checksums(self) -> tuple[tuple[str, str], tuple[str, str]]:
         prefix = "train" if self._split == "train" else "t10k"
         images_file = f"{prefix}-images-idx3-ubyte.gz"
         labels_file = f"{prefix}-labels-idx1-ubyte.gz"
@@ -165,7 +166,7 @@ class MNIST(_MNISTBase):
 
 
 @register_info("fashionmnist")
-def _fashionmnist_info() -> Dict[str, Any]:
+def _fashionmnist_info() -> dict[str, Any]:
     return dict(
         categories=[
             "T-shirt/top",
@@ -200,7 +201,7 @@ class FashionMNIST(MNIST):
 
 
 @register_info("kmnist")
-def _kmnist_info() -> Dict[str, Any]:
+def _kmnist_info() -> dict[str, Any]:
     return dict(
         categories=["o", "ki", "su", "tsu", "na", "ha", "ma", "ya", "re", "wo"],
     )
@@ -224,7 +225,7 @@ class KMNIST(MNIST):
 
 
 @register_info("emnist")
-def _emnist_info() -> Dict[str, Any]:
+def _emnist_info() -> dict[str, Any]:
     return dict(
         categories=list(string.digits + string.ascii_uppercase + string.ascii_lowercase),
     )
@@ -252,14 +253,14 @@ class EMNIST(_MNISTBase):
 
     _URL_BASE = "https://rds.westernsydney.edu.au/Institutes/MARCS/BENS/EMNIST"
 
-    def _files_and_checksums(self) -> Tuple[Tuple[str, str], Tuple[str, str]]:
+    def _files_and_checksums(self) -> tuple[tuple[str, str], tuple[str, str]]:
         prefix = f"emnist-{self._image_set.replace('_', '').lower()}-{self._split}"
         images_file = f"{prefix}-images-idx3-ubyte.gz"
         labels_file = f"{prefix}-labels-idx1-ubyte.gz"
         # Since EMNIST provides the data files inside an archive, we don't need to provide checksums for them
         return (images_file, ""), (labels_file, "")
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         return [
             HttpResource(
                 f"{self._URL_BASE}/emnist-gzip.zip",
@@ -267,7 +268,7 @@ class EMNIST(_MNISTBase):
             )
         ]
 
-    def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+    def _classify_archive(self, data: tuple[str, Any]) -> Optional[int]:
         path = pathlib.Path(data[0])
         (images_file, _), (labels_file, _) = self._files_and_checksums()
         if path.name == images_file:
@@ -291,7 +292,7 @@ class EMNIST(_MNISTBase):
         46: 9,
     }
 
-    def _prepare_sample(self, data: Tuple[torch.Tensor, torch.Tensor]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[torch.Tensor, torch.Tensor]) -> dict[str, Any]:
         # In these two splits, some lowercase letters are merged into their uppercase ones (see Fig 2. in the paper).
         # That means for example that there is 'D', 'd', and 'C', but not 'c'. Since the labels are nevertheless dense,
         # i.e. no gaps between 0 and 46 for 47 total classes, we need to add an offset to create these gaps. For
@@ -306,7 +307,7 @@ class EMNIST(_MNISTBase):
             data = (image, label)
         return super()._prepare_sample(data)
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         archive_dp = resource_dps[0]
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
@@ -335,7 +336,7 @@ class EMNIST(_MNISTBase):
 
 
 @register_info("qmnist")
-def _qmnist_info() -> Dict[str, Any]:
+def _qmnist_info() -> dict[str, Any]:
     return dict(
         categories=[str(label) for label in range(10)],
     )
@@ -367,7 +368,7 @@ class QMNIST(_MNISTBase):
         "xnist-labels-idx2-int.xz": "db042968723ec2b7aed5f1beac25d2b6e983b9286d4f4bf725f1086e5ae55c4f",
     }
 
-    def _files_and_checksums(self) -> Tuple[Tuple[str, str], Tuple[str, str]]:
+    def _files_and_checksums(self) -> tuple[tuple[str, str], tuple[str, str]]:
         prefix = "xnist" if self._split == "nist" else f"qmnist-{'train' if self._split == 'train' else 'test'}"
         suffix = "xz" if self._split == "nist" else "gz"
         images_file = f"{prefix}-images-idx3-ubyte.{suffix}"
@@ -377,7 +378,7 @@ class QMNIST(_MNISTBase):
             self._CHECKSUMS[labels_file],
         )
 
-    def start_and_stop(self) -> Tuple[Optional[int], Optional[int]]:
+    def start_and_stop(self) -> tuple[Optional[int], Optional[int]]:
         start: Optional[int]
         stop: Optional[int]
         if self._split == "test10k":
@@ -393,7 +394,7 @@ class QMNIST(_MNISTBase):
 
     _categories = _emnist_info()["categories"]
 
-    def _prepare_sample(self, data: Tuple[torch.Tensor, torch.Tensor]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[torch.Tensor, torch.Tensor]) -> dict[str, Any]:
         image, ann = data
         label, *extra_anns = ann
         sample = super()._prepare_sample((image, label))

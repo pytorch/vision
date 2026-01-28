@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, Optional, Union
 
 from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, JsonParser, Mapper, UnBatcher
 from torchvision.prototype.datasets.utils import Dataset, EncodedImage, HttpResource, OnlineResource
@@ -19,7 +19,7 @@ NAME = "clevr"
 
 
 @register_info(NAME)
-def _info() -> Dict[str, Any]:
+def _info() -> dict[str, Any]:
     return dict()
 
 
@@ -36,14 +36,14 @@ class CLEVR(Dataset):
 
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
-    def _resources(self) -> List[OnlineResource]:
+    def _resources(self) -> list[OnlineResource]:
         archive = HttpResource(
             "https://dl.fbaipublicfiles.com/clevr/CLEVR_v1.0.zip",
             sha256="5cd61cf1096ed20944df93c9adb31e74d189b8459a94f54ba00090e5c59936d1",
         )
         return [archive]
 
-    def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+    def _classify_archive(self, data: tuple[str, Any]) -> Optional[int]:
         path = pathlib.Path(data[0])
         if path.parents[1].name == "images":
             return 0
@@ -52,14 +52,14 @@ class CLEVR(Dataset):
         else:
             return None
 
-    def _filter_scene_anns(self, data: Tuple[str, Any]) -> bool:
+    def _filter_scene_anns(self, data: tuple[str, Any]) -> bool:
         key, _ = data
         return key == "scenes"
 
-    def _add_empty_anns(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[str, BinaryIO], None]:
+    def _add_empty_anns(self, data: tuple[str, BinaryIO]) -> tuple[tuple[str, BinaryIO], None]:
         return data, None
 
-    def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Optional[Dict[str, Any]]]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: tuple[tuple[str, BinaryIO], Optional[dict[str, Any]]]) -> dict[str, Any]:
         image_data, scenes_data = data
         path, buffer = image_data
 
@@ -69,7 +69,7 @@ class CLEVR(Dataset):
             label=Label(len(scenes_data["objects"])) if scenes_data else None,
         )
 
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: list[IterDataPipe]) -> IterDataPipe[dict[str, Any]]:
         archive_dp = resource_dps[0]
         images_dp, scenes_dp = Demultiplexer(
             archive_dp,

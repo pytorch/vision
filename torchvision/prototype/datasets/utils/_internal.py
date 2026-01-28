@@ -2,7 +2,8 @@ import csv
 import functools
 import pathlib
 import pickle
-from typing import Any, BinaryIO, Callable, Dict, IO, Iterator, List, Sequence, Sized, Tuple, TypeVar, Union
+from collections.abc import Iterator, Sequence, Sized
+from typing import Any, BinaryIO, Callable, IO, TypeVar, Union
 
 import torch
 import torch.distributed as dist
@@ -44,12 +45,12 @@ def read_mat(buffer: BinaryIO, **kwargs: Any) -> Any:
     return data
 
 
-class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
-    def __init__(self, datapipe: IterDataPipe[Dict[K, D]], *, drop_key: bool = False) -> None:
+class MappingIterator(IterDataPipe[Union[tuple[K, D], D]]):
+    def __init__(self, datapipe: IterDataPipe[dict[K, D]], *, drop_key: bool = False) -> None:
         self.datapipe = datapipe
         self.drop_key = drop_key
 
-    def __iter__(self) -> Iterator[Union[Tuple[K, D], D]]:
+    def __iter__(self) -> Iterator[Union[tuple[K, D], D]]:
         for mapping in self.datapipe:
             yield from iter(mapping.values() if self.drop_key else mapping.items())
 
@@ -74,27 +75,27 @@ def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> Any:
     return _getattr_closure(path, attrs=name.split("."))
 
 
-def _path_accessor_closure(data: Tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:
+def _path_accessor_closure(data: tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:
     return getter(pathlib.Path(data[0]))
 
 
-def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[Tuple[str, Any]], D]:
+def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[tuple[str, Any]], D]:
     if isinstance(getter, str):
         getter = functools.partial(_path_attribute_accessor, name=getter)
 
     return functools.partial(_path_accessor_closure, getter=getter)
 
 
-def _path_comparator_closure(data: Tuple[str, Any], *, accessor: Callable[[Tuple[str, Any]], D], value: D) -> bool:
+def _path_comparator_closure(data: tuple[str, Any], *, accessor: Callable[[tuple[str, Any]], D], value: D) -> bool:
     return accessor(data) == value
 
 
-def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
+def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[tuple[str, Any]], bool]:
     return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value)
 
 
 class PicklerDataPipe(IterDataPipe):
-    def __init__(self, source_datapipe: IterDataPipe[Tuple[str, IO[bytes]]]) -> None:
+    def __init__(self, source_datapipe: IterDataPipe[tuple[str, IO[bytes]]]) -> None:
         self.source_datapipe = source_datapipe
 
     def __iter__(self) -> Iterator[Any]:
@@ -158,7 +159,7 @@ class TakerDataPipe(IterDataPipe):
         return num_take
 
 
-def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe[Dict[str, Any]]:
+def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe[dict[str, Any]]:
     dp = IoPathFileLister(root=root)
     dp = SharderDataPipe(dp)
     dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE)
@@ -186,7 +187,7 @@ def hint_shuffling(datapipe: IterDataPipe[D]) -> Shuffler[D]:
     return Shuffler(datapipe, buffer_size=INFINITE_BUFFER_SIZE).set_shuffle(False)
 
 
-def read_categories_file(name: str) -> List[Union[str, Sequence[str]]]:
+def read_categories_file(name: str) -> list[Union[str, Sequence[str]]]:
     path = BUILTIN_DIR / f"{name}.categories"
     with open(path, newline="") as file:
         rows = list(csv.reader(file))

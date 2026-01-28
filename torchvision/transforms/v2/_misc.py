@@ -1,5 +1,6 @@
 import warnings
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Optional, Union
 
 import PIL.Image
 
@@ -9,12 +10,20 @@ from torch.utils._pytree import tree_flatten, tree_unflatten
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
-from ._utils import _parse_labels_getter, _setup_number_or_seq, _setup_size, get_bounding_boxes, has_any, is_pure_tensor
+from ._utils import (
+    _parse_labels_getter,
+    _setup_number_or_seq,
+    _setup_size,
+    get_bounding_boxes,
+    get_keypoints,
+    has_any,
+    is_pure_tensor,
+)
 
 
 # TODO: do we want/need to expose this?
 class Identity(Transform):
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return inpt
 
 
@@ -29,12 +38,12 @@ class Lambda(Transform):
 
     _transformed_types = (object,)
 
-    def __init__(self, lambd: Callable[[Any], Any], *types: Type):
+    def __init__(self, lambd: Callable[[Any], Any], *types: type):
         super().__init__()
         self.lambd = lambd
         self.types = types or self._transformed_types
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         if isinstance(inpt, self.types):
             return self.lambd(inpt)
         else:
@@ -103,7 +112,7 @@ class LinearTransformation(Transform):
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         shape = inpt.shape
         n = shape[-3] * shape[-2] * shape[-1]
         if n != self.transformation_matrix.shape[0]:
@@ -161,7 +170,7 @@ class Normalize(Transform):
         if has_any(sample, PIL.Image.Image):
             raise TypeError(f"{type(self).__name__}() does not support PIL images.")
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.normalize, inpt, mean=self.mean, std=self.std, inplace=self.inplace)
 
 
@@ -197,11 +206,11 @@ class GaussianBlur(Transform):
         if not 0.0 < self.sigma[0] <= self.sigma[1]:
             raise ValueError(f"sigma values should be positive and of the form (min, max). Got {self.sigma}")
 
-    def make_params(self, flat_inputs: List[Any]) -> Dict[str, Any]:
+    def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
         return dict(sigma=[sigma, sigma])
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.gaussian_blur, inpt, self.kernel_size, **params)
 
 
@@ -213,13 +222,22 @@ class GaussianNoise(Transform):
     Each image or frame in a batch will be transformed independently i.e. the
     noise added to each image will be different.
 
-    The input tensor is also expected to be of float dtype in ``[0, 1]``.
-    This transform does not support PIL images.
+    The input tensor is also expected to be of float dtype in ``[0, 1]``,
+    or of ``uint8`` dtype in ``[0, 255]``. This transform does not support PIL
+    images.
+
+    Regardless of the dtype used, the parameters of the function use the same
+    scale, so a ``mean`` parameter of 0.5 will result in an average value
+    increase of 0.5 units for float images, and an average increase of 127.5
+    units for ``uint8`` images.
 
     Args:
         mean (float): Mean of the sampled normal distribution. Default is 0.
         sigma (float): Standard deviation of the sampled normal distribution. Default is 0.1.
-        clip (bool, optional): Whether to clip the values in ``[0, 1]`` after adding noise. Default is True.
+        clip (bool, optional): Whether to clip the values after adding noise, be it to
+            ``[0, 1]`` for floats or to ``[0, 255]`` for ``uint8``. Setting this parameter to
+            ``False`` may cause unsigned integer overflows with uint8 inputs.
+            Default is True.
     """
 
     def __init__(self, mean: float = 0.0, sigma: float = 0.1, clip=True) -> None:
@@ -228,7 +246,7 @@ class GaussianNoise(Transform):
         self.sigma = sigma
         self.clip = clip
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.gaussian_noise, inpt, mean=self.mean, sigma=self.sigma, clip=self.clip)
 
 
@@ -252,7 +270,7 @@ class ToDtype(Transform):
     _transformed_types = (torch.Tensor,)
 
     def __init__(
-        self, dtype: Union[torch.dtype, Dict[Union[Type, str], Optional[torch.dtype]]], scale: bool = False
+        self, dtype: Union[torch.dtype, dict[Union[type, str], Optional[torch.dtype]]], scale: bool = False
     ) -> None:
         super().__init__()
 
@@ -272,7 +290,7 @@ class ToDtype(Transform):
         self.dtype = dtype
         self.scale = scale
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         if isinstance(self.dtype, torch.dtype):
             # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
             # is a simple torch.dtype
@@ -335,7 +353,7 @@ class ConvertImageDtype(Transform):
         super().__init__()
         self.dtype = dtype
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.to_dtype, inpt, dtype=self.dtype, scale=True)
 
 
@@ -350,6 +368,12 @@ class SanitizeBoundingBoxes(Transform):
 
     It can also sanitize other tensors like the "iscrowd" or "area" properties from COCO
     (see ``labels_getter`` parameter).
+
+    .. note::
+        **Mask handling**: This transform automatically detects and sanitizes per-instance masks
+        (shape ``[N, H, W]`` where N matches the number of bounding boxes). Semantic segmentation masks
+        (shape ``[H, W]``) or masks with mismatched dimensions are passed through unchanged.
+        You do not need to add masks to ``labels_getter`` for them to be sanitized.
 
     It is recommended to call it at the end of a pipeline, before passing the
     input to the models. It is critical to call this transform if
@@ -436,11 +460,106 @@ class SanitizeBoundingBoxes(Transform):
 
         return tree_unflatten(flat_outputs, spec)
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         is_label = params["labels"] is not None and any(inpt is label for label in params["labels"])
-        is_bounding_boxes_or_mask = isinstance(inpt, (tv_tensors.BoundingBoxes, tv_tensors.Mask))
+        is_bounding_boxes = isinstance(inpt, tv_tensors.BoundingBoxes)
+        is_mask = isinstance(inpt, tv_tensors.Mask)
 
-        if not (is_label or is_bounding_boxes_or_mask):
+        if not (is_label or is_bounding_boxes or is_mask):
+            return inpt
+
+        try:
+            output = inpt[params["valid"]]
+        except (IndexError):
+            # If indexing fails (e.g., shape mismatch), pass through unchanged
+            return inpt
+
+        if is_label:
+            return output
+        else:
+            return tv_tensors.wrap(output, like=inpt)
+
+
+class SanitizeKeyPoints(Transform):
+    """Remove keypoints outside of the image area and their corresponding labels (if any).
+
+    This transform removes keypoints or groups of keypoints and their associated labels that
+    have coordinates outside of their corresponding image.
+    If you would instead like to clamp such keypoints to the image edges, use
+    :class:`~torchvision.transforms.v2.ClampKeyPoints`.
+
+    It is recommended to call it at the end of a pipeline, before passing the
+    input to the models.
+
+    Keypoints can be passed as a set of individual keypoints or as a set of objects
+    (e.g., polygons or polygonal chains) consisting of a fixed number of keypoints of shape ``[..., 2]``.
+    When groups of keypoints are passed (i.e., an at least 3-dimensional tensor), this transform
+    will only remove entire groups, not individual keypoints within a group.
+
+    Args:
+        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input
+            (or anything else that needs to be sanitized along with the keypoints).
+            If set to the string ``"default"``, this will try to find a "labels" key in the input (case-insensitive), if
+            the input is a dict or it is a tuple whose second element is a dict.
+
+            It can also be a callable that takes the same input as the transform, and returns either:
+
+            - A single tensor (the labels)
+            - A tuple/list of tensors, each of which will be subject to the same sanitization as the keypoints.
+
+            If ``labels_getter`` is None (the default), then only keypoints are sanitized.
+    """
+
+    def __init__(
+        self,
+        labels_getter: Union[Callable[[Any], Any], str, None] = None,
+    ) -> None:
+        super().__init__()
+        self.labels_getter = labels_getter
+        self._labels_getter = _parse_labels_getter(labels_getter)
+
+    def forward(self, *inputs: Any) -> Any:
+        inputs = inputs if len(inputs) > 1 else inputs[0]
+
+        labels = self._labels_getter(inputs)
+        if labels is not None:
+            msg = "The labels in the input to forward() must be a tensor or None, got {type} instead."
+            if isinstance(labels, torch.Tensor):
+                labels = (labels,)
+            elif isinstance(labels, (tuple, list)):
+                for entry in labels:
+                    if not isinstance(entry, torch.Tensor):
+                        # TODO: we don't need to enforce tensors, just that entries are indexable as t[bool_mask]
+                        raise ValueError(msg.format(type=type(entry)))
+            else:
+                raise ValueError(msg.format(type=type(labels)))
+
+        flat_inputs, spec = tree_flatten(inputs)
+        points = get_keypoints(flat_inputs)
+
+        if labels is not None:
+            for label in labels:
+                if points.shape[0] != label.shape[0]:
+                    raise ValueError(
+                        f"Number of kepyoints (shape={points.shape}) must match the number of labels."
+                        f"Found labels with shape={label.shape})."
+                    )
+
+        valid = F._misc._get_sanitize_keypoints_mask(
+            points,
+            canvas_size=points.canvas_size,
+        )
+
+        params = dict(valid=valid, labels=labels)
+        flat_outputs = [self.transform(inpt, params) for inpt in flat_inputs]
+
+        return tree_unflatten(flat_outputs, spec)
+
+    def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
+        is_label = params["labels"] is not None and any(inpt is label for label in params["labels"])
+        is_keypoints = isinstance(inpt, tv_tensors.KeyPoints)
+
+        if not (is_label or is_keypoints):
             return inpt
 
         output = inpt[params["valid"]]

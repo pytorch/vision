@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 import numpy as np
 import PIL.Image
@@ -6,8 +6,11 @@ import torch
 
 from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
-
 from torchvision.transforms.v2._utils import is_pure_tensor
+from torchvision.transforms.v2.functional._utils import _import_cvcuda
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 
 class PILToTensor(Transform):
@@ -15,12 +18,20 @@ class PILToTensor(Transform):
 
     This transform does not support torchscript.
 
-    Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
+    Convert a PIL Image with H height, W width, and C channels to a Tensor of shape (C x H x W).
+
+    Example:
+        >>> from PIL import Image
+        >>> from torchvision.transforms import v2
+        >>> img = Image.new("RGB", (320, 240))  # size (W=320, H=240)
+        >>> tensor = v2.PILToTensor()(img)
+        >>> print(tensor.shape)
+        torch.Size([3, 240, 320])
     """
 
     _transformed_types = (PIL.Image.Image,)
 
-    def transform(self, inpt: PIL.Image.Image, params: Dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: PIL.Image.Image, params: dict[str, Any]) -> torch.Tensor:
         return F.pil_to_tensor(inpt)
 
 
@@ -34,7 +45,7 @@ class ToImage(Transform):
     _transformed_types = (is_pure_tensor, PIL.Image.Image, np.ndarray)
 
     def transform(
-        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
+        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: dict[str, Any]
     ) -> tv_tensors.Image:
         return F.to_image(inpt)
 
@@ -67,7 +78,7 @@ class ToPILImage(Transform):
         self.mode = mode
 
     def transform(
-        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: Dict[str, Any]
+        self, inpt: Union[torch.Tensor, PIL.Image.Image, np.ndarray], params: dict[str, Any]
     ) -> PIL.Image.Image:
         return F.to_pil_image(inpt, mode=self.mode)
 
@@ -80,5 +91,33 @@ class ToPureTensor(Transform):
 
     _transformed_types = (tv_tensors.TVTensor,)
 
-    def transform(self, inpt: Any, params: Dict[str, Any]) -> torch.Tensor:
+    def transform(self, inpt: Any, params: dict[str, Any]) -> torch.Tensor:
         return inpt.as_subclass(torch.Tensor)
+
+
+class ToCVCUDATensor(Transform):
+    """Convert a ``torch.Tensor`` with NCHW shape to a ``cvcuda.Tensor``.
+    If the input tensor is on CPU, it will automatically be transferred to GPU.
+    Only 1-channel and 3-channel images are supported.
+
+    This transform does not support torchscript.
+    """
+
+    def transform(self, inpt: torch.Tensor, params: dict[str, Any]) -> "cvcuda.Tensor":
+        return F.to_cvcuda_tensor(inpt)
+
+
+class CVCUDAToTensor(Transform):
+    """Convert a ``cvcuda.Tensor`` to a ``torch.Tensor`` with NCHW shape.
+
+    This function does not support torchscript.
+    """
+
+    try:
+        cvcuda = _import_cvcuda()
+        _transformed_types = (cvcuda.Tensor,)
+    except ImportError:
+        pass
+
+    def transform(self, inpt: Any, params: dict[str, Any]) -> torch.Tensor:
+        return F.cvcuda_to_tensor(inpt)

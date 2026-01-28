@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from functools import partial
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 import torch
 from torch import nn

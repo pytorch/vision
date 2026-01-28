@@ -41,7 +41,7 @@ from ._geometry import (
     ScaleJitter,
     TenCrop,
 )
-from ._meta import ClampBoundingBoxes, ConvertBoundingBoxFormat
+from ._meta import ClampBoundingBoxes, ClampKeyPoints, ConvertBoundingBoxFormat, SetClampingMode
 from ._misc import (
     ConvertImageDtype,
     GaussianBlur,
@@ -51,10 +51,11 @@ from ._misc import (
     LinearTransformation,
     Normalize,
     SanitizeBoundingBoxes,
+    SanitizeKeyPoints,
     ToDtype,
 )
 from ._temporal import UniformTemporalSubsample
-from ._type_conversion import PILToTensor, ToImage, ToPILImage, ToPureTensor
-from ._utils import check_type, get_bounding_boxes, has_all, has_any, query_chw, query_size
+from ._type_conversion import CVCUDAToTensor, PILToTensor, ToCVCUDATensor, ToImage, ToPILImage, ToPureTensor
+from ._utils import check_type, get_bounding_boxes, get_keypoints, has_all, has_any, query_chw, query_size
 
 from ._deprecated import ToTensor  # usort: skip

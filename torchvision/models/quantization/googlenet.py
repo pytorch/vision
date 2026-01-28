@@ -138,9 +138,11 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: GoogLeNet_QuantizedWeights.IMAGENET1K_FBGEMM_V1
-        if kwargs.get("quantize", False)
-        else GoogLeNet_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            GoogLeNet_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+            if kwargs.get("quantize", False)
+            else GoogLeNet_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def googlenet(

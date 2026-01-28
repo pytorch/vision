@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, List, Optional, Type, Union
+from typing import Any, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -125,8 +125,8 @@ class QuantizableResNet(ResNet):
 
 
 def _resnet(
-    block: Type[Union[QuantizableBasicBlock, QuantizableBottleneck]],
-    layers: List[int],
+    block: type[Union[QuantizableBasicBlock, QuantizableBottleneck]],
+    layers: list[int],
     weights: Optional[WeightsEnum],
     progress: bool,
     quantize: bool,
@@ -284,9 +284,11 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ResNet18_QuantizedWeights.IMAGENET1K_FBGEMM_V1
-        if kwargs.get("quantize", False)
-        else ResNet18_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            ResNet18_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+            if kwargs.get("quantize", False)
+            else ResNet18_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def resnet18(
@@ -334,9 +336,11 @@ def resnet18(
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1
-        if kwargs.get("quantize", False)
-        else ResNet50_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+            if kwargs.get("quantize", False)
+            else ResNet50_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def resnet50(
@@ -384,9 +388,11 @@ def resnet50(
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ResNeXt101_32X8D_QuantizedWeights.IMAGENET1K_FBGEMM_V1
-        if kwargs.get("quantize", False)
-        else ResNeXt101_32X8D_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            ResNeXt101_32X8D_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+            if kwargs.get("quantize", False)
+            else ResNeXt101_32X8D_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def resnext101_32x8d(
@@ -436,9 +442,11 @@ def resnext101_32x8d(
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ResNeXt101_64X4D_QuantizedWeights.IMAGENET1K_FBGEMM_V1
-        if kwargs.get("quantize", False)
-        else ResNeXt101_64X4D_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            ResNeXt101_64X4D_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+            if kwargs.get("quantize", False)
+            else ResNeXt101_64X4D_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def resnext101_64x4d(

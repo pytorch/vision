@@ -95,9 +95,11 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1
-        if kwargs.get("quantize", False)
-        else MobileNet_V2_Weights.IMAGENET1K_V1,
+        lambda kwargs: (
+            MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1
+            if kwargs.get("quantize", False)
+            else MobileNet_V2_Weights.IMAGENET1K_V1
+        ),
     )
 )
 def mobilenet_v2(

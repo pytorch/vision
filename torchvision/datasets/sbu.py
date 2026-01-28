@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 from .folder import default_loader
 
@@ -63,7 +63,7 @@ class SBU(VisionDataset):
                 self.photos.append(photo)
                 self.captions.append(caption)
 
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+    def __getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
