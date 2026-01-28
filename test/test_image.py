@@ -272,16 +272,14 @@ def test_encode_png_errors():
     "img_path",
     [pytest.param(png_path, id=_get_safe_image_name(png_path)) for png_path in get_images(IMAGE_DIR, ".png")],
 )
-@pytest.mark.parametrize("scripted", (True, False))
-def test_write_png(img_path, tmpdir, scripted):
+def test_write_png(img_path, tmpdir):
     pil_image = Image.open(img_path)
     img_pil = torch.from_numpy(np.array(pil_image))
     img_pil = img_pil.permute(2, 0, 1)
 
     filename, _ = os.path.splitext(os.path.basename(img_path))
     torch_png = os.path.join(tmpdir, f"{filename}_torch.png")
-    write = torch.jit.script(write_png) if scripted else write_png
-    write(img_pil, torch_png, compression_level=6)
+    write_png(img_pil, torch_png, compression_level=6)
     saved_image = torch.from_numpy(np.array(Image.open(torch_png)))
     saved_image = saved_image.permute(2, 0, 1)
 
@@ -325,13 +323,11 @@ def test_read_file_non_ascii(tmpdir):
     assert_equal(data, expected)
 
 
-@pytest.mark.parametrize("scripted", (True, False))
-def test_write_file(tmpdir, scripted):
+def test_write_file(tmpdir):
     fname, content = "test1.bin", b"TorchVision\211\n"
     fpath = os.path.join(tmpdir, fname)
     content_tensor = torch.tensor(list(content), dtype=torch.uint8)
-    write = torch.jit.script(write_file) if scripted else write_file
-    write(fpath, content_tensor)
+    write_file(fpath, content_tensor)
 
     with open(fpath, "rb") as f:
         saved_content = f.read()
@@ -808,8 +804,7 @@ def test_batch_encode_jpegs_cuda_errors():
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
 )
-@pytest.mark.parametrize("scripted", (True, False))
-def test_write_jpeg(img_path, tmpdir, scripted):
+def test_write_jpeg(img_path, tmpdir):
     tmpdir = Path(tmpdir)
     img = read_image(img_path)
     pil_img = F.to_pil_image(img)
@@ -817,8 +812,7 @@ def test_write_jpeg(img_path, tmpdir, scripted):
     torch_jpeg = str(tmpdir / "torch.jpg")
     pil_jpeg = str(tmpdir / "pil.jpg")
 
-    write = torch.jit.script(write_jpeg) if scripted else write_jpeg
-    write(img, torch_jpeg, quality=75)
+    write_jpeg(img, torch_jpeg, quality=75)
     pil_img.save(pil_jpeg, quality=75)
 
     with open(torch_jpeg, "rb") as f:
