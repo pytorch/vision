@@ -1,12 +1,10 @@
-import os
-import warnings
 from modulefinder import Module
 
 import torch
 
 # Don't re-order these, we need to load the _C extension (done when importing
-# .extensions) before entering _meta_registrations.
-from .extension import _HAS_OPS  # usort:skip
+# .extension) before entering _meta_registrations.
+from . import extension  # usort:skip  # noqa: F401
 from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils  # usort:skip
 
 try:
@@ -14,17 +12,6 @@ try:
 except ImportError:
     pass
 
-
-# Check if torchvision is being imported within the root folder
-if not _HAS_OPS and os.path.dirname(os.path.realpath(__file__)) == os.path.join(
-    os.path.realpath(os.getcwd()), "torchvision"
-):
-    message = (
-        "You are importing torchvision within its own root folder ({}). "
-        "This is not expected to work and may give errors. Please exit the "
-        "torchvision project source and relaunch your python interpreter."
-    )
-    warnings.warn(message.format(os.getcwd()))
 
 _image_backend = "PIL"
 
@@ -70,15 +57,11 @@ def set_video_backend(backend):
         backend, please compile torchvision from source.
     """
     global _video_backend
-    if backend not in ["pyav", "video_reader", "cuda"]:
-        raise ValueError("Invalid video backend '%s'. Options are 'pyav', 'video_reader' and 'cuda'" % backend)
+    if backend not in ["pyav", "video_reader"]:
+        raise ValueError("Invalid video backend '%s'. Options are 'pyav' and 'video_reader'" % backend)
     if backend == "video_reader" and not io._HAS_CPU_VIDEO_DECODER:
         # TODO: better messages
         message = "video_reader video backend is not available. Please compile torchvision from source and try again"
-        raise RuntimeError(message)
-    elif backend == "cuda" and not io._HAS_GPU_VIDEO_DECODER:
-        # TODO: better messages
-        message = "cuda video backend is not available."
         raise RuntimeError(message)
     else:
         _video_backend = backend
