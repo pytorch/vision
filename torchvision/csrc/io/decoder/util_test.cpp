@@ -25,10 +25,11 @@ TEST(Util, TestSetFormatDimensions) {
   // clang-format on
 
   for (const auto& tc : test_cases) {
-      size_t destW = 0;
-      size_t destH = 0;
-      ffmpeg::Util::setFormatDimensions(destW, destH, tc[0], tc[1], tc[2], tc[3], tc[4], tc[5], tc[6]);
-      CHECK(destW == tc[7]);
-      CHECK(destH == tc[8]);
+    size_t destW = 0;
+    size_t destH = 0;
+    ffmpeg::Util::setFormatDimensions(
+        destW, destH, tc[0], tc[1], tc[2], tc[3], tc[4], tc[5], tc[6]);
+    CHECK(destW == tc[7]);
+    CHECK(destH == tc[8]);
   }
 }
