@@ -1047,7 +1047,7 @@ def _apply_affine_expand(
     new_corners = torch.matmul(canvas_corners, transposed_affine_matrix)
     translation = torch.amin(new_corners, dim=0, keepdim=True)
 
-    affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
+    affine_vector = _get_inverse_affine_matrix(center, float(angle), translate, scale, shear)
     new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
 
     return translation, (new_height, new_width)
