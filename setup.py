@@ -117,7 +117,7 @@ def get_macros_and_flags():
             define_macros += [("WITH_HIP", None)]
             nvcc_flags = []
         else:
-            define_macros += [("WITH_CUDA", None)]
+            define_macros += [("WITH_CUDA", None), ("USE_CUDA", None)]
             if NVCC_FLAGS is None:
                 nvcc_flags = []
             else:

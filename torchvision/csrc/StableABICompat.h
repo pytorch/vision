@@ -25,12 +25,16 @@
 #include <torch/csrc/stable/accelerator.h>
 #include <torch/csrc/stable/device.h>
 #include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/macros.h>
 #include <torch/csrc/stable/ops.h>
 #include <torch/csrc/stable/tensor.h>
 #include <torch/headeronly/core/DeviceType.h>
 #include <torch/headeronly/core/Dispatch.h>
 #include <torch/headeronly/core/Dispatch_v2.h>
 #include <torch/headeronly/core/ScalarType.h>
+
+// Include AOTI headers for CUDA support
+#include <torch/csrc/inductor/aoti_torch/c/shim.h>
 
 #include <array>
 #include <vector>
@@ -164,19 +168,15 @@ inline Tensor to(const Tensor& tensor, const Device& device) {
   return torch::stable::to(tensor, device);
 }
 
-// Stable version of tensor.narrow(dim, start, length)
-inline Tensor narrow(Tensor tensor, int64_t dim, int64_t start, int64_t length) {
-  return torch::stable::narrow(tensor, dim, start, length);
-}
+// Note: narrow() is provided by torch::stable::narrow() directly
+// Do NOT define a vision::stable::narrow wrapper as it conflicts with torch::stable::narrow
 
 // Note: contiguous() is provided by torch::stable::contiguous() directly
 // Do NOT define a vision::stable::contiguous wrapper as it conflicts with the
 // default parameter in torch::stable::contiguous(tensor, memory_format = Contiguous)
 
-// Stable version of tensor.select(dim, index) - from torch::stable::select
-inline Tensor select(const Tensor& tensor, int64_t dim, int64_t index) {
-  return torch::stable::select(tensor, dim, index);
-}
+// Note: select() is provided by torch::stable::select() directly
+// Do NOT define a vision::stable::select wrapper as it conflicts with torch::stable::select
 
 // Helper for tensor.is_contiguous()
 inline bool is_contiguous(const Tensor& tensor) {
@@ -188,18 +188,17 @@ inline bool is_contiguous(const Tensor& tensor) {
 // ===========================================================================
 
 // Stable version of tensor.sort() - returns (values, indices)
-// Uses dispatcher to call aten::sort.stable
+// Uses dispatcher to call aten::sort.default
 inline std::pair<Tensor, Tensor> sort(
     const Tensor& tensor,
     int64_t dim,
     bool descending) {
-  std::array<StableIValue, 4> stack{
+  std::array<StableIValue, 3> stack{
       torch::stable::detail::from(tensor),
-      torch::stable::detail::from(true),  // stable sort
       torch::stable::detail::from(dim),
       torch::stable::detail::from(descending)};
   TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
-      "aten::sort", "stable", stack.data(), TORCH_ABI_VERSION));
+      "aten::sort", "", stack.data(), TORCH_ABI_VERSION));
   return std::make_pair(
       torch::stable::detail::to<Tensor>(stack[0]),
       torch::stable::detail::to<Tensor>(stack[1]));
@@ -250,7 +249,8 @@ inline Tensor clamp(
 }
 
 // Stable version of at::floor()
-inline Tensor floor(const Tensor& tensor) {
+// Named tensor_floor to avoid conflicts with std::floor in CUDA device code
+inline Tensor tensor_floor(const Tensor& tensor) {
   std::array<StableIValue, 1> stack{torch::stable::detail::from(tensor)};
   TORCH_ERROR_CODE_CHECK(
       torch_call_dispatcher("aten::floor", "", stack.data(), TORCH_ABI_VERSION));
@@ -258,7 +258,8 @@ inline Tensor floor(const Tensor& tensor) {
 }
 
 // Stable version of at::ceil()
-inline Tensor ceil(const Tensor& tensor) {
+// Named tensor_ceil to avoid conflicts with std::ceil in CUDA device code
+inline Tensor tensor_ceil(const Tensor& tensor) {
   std::array<StableIValue, 1> stack{torch::stable::detail::from(tensor)};
   TORCH_ERROR_CODE_CHECK(
       torch_call_dispatcher("aten::ceil", "", stack.data(), TORCH_ABI_VERSION));

@@ -88,8 +88,8 @@ scalar_t bilinear_interpolate(
     return 0;
   }
 
-  int h_low = floor(h);
-  int w_low = floor(w);
+  int h_low = std::floor(h);
+  int w_low = std::floor(w);
   int h_high = h_low + 1;
   int w_high = w_low + 1;
 
@@ -389,8 +389,8 @@ scalar_t get_coordinate_weight(
     scalar_t y,
     scalar_t x,
     bool is_y_direction) {
-  int y_l = floor(y);
-  int x_l = floor(x);
+  int y_l = std::floor(y);
+  int x_l = std::floor(x);
   int y_h = y_l + 1;
   int x_h = x_l + 1;
 
