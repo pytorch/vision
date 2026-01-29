@@ -300,7 +300,9 @@ def make_image_extension():
             # Only remove image.cpp if we have a hipified replacement
             if (image_dir / "image.cpp") in sources:
                 sources.remove(image_dir / "image.cpp")
-        # Note: if hip/ directory doesn't exist, we just use the regular sources
+        else:
+            # No hip/ directory - use cuda sources (they have stubs for non-NVJPEG builds)
+            sources += list(image_dir.glob("cuda/*.cpp"))
     else:
         sources += list(image_dir.glob("cuda/*.cpp"))
 
