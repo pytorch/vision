@@ -1,15 +1,78 @@
-from ._video_opt import (
-    _HAS_CPU_VIDEO_DECODER,
-    _HAS_VIDEO_OPT,
-    _probe_video_from_file,
-    _probe_video_from_memory,
-    _read_video_from_file,
-    _read_video_from_memory,
-    _read_video_timestamps_from_file,
-    _read_video_timestamps_from_memory,
-    Timebase,
-    VideoMetaData,
-)
+# In fbcode, import from the fb-only location
+# For OSS, these imports would fail (video_reader not available)
+try:
+    from pytorch.vision.fb.io import (
+        _HAS_CPU_VIDEO_DECODER,
+        _HAS_VIDEO_OPT,
+        _probe_video_from_file,
+        _probe_video_from_memory,
+        _read_video_from_file,
+        _read_video_from_memory,
+        _read_video_timestamps_from_file,
+        _read_video_timestamps_from_memory,
+        Timebase,
+        VideoMetaData,
+    )
+    from pytorch.vision.fb.io import VideoReader
+    from pytorch.vision.fb.io import _video_opt
+except ImportError:
+    # OSS fallback - video_reader backend not available
+    _HAS_CPU_VIDEO_DECODER = False
+    _HAS_VIDEO_OPT = False
+
+    def _stub_not_available(*args, **kwargs):
+        raise RuntimeError(
+            "video_reader backend is not available in open-source torchvision. "
+            "Use PyAV or TorchCodec instead."
+        )
+
+    _probe_video_from_file = _stub_not_available
+    _probe_video_from_memory = _stub_not_available
+    _read_video_from_file = _stub_not_available
+    _read_video_from_memory = _stub_not_available
+    _read_video_timestamps_from_file = _stub_not_available
+    _read_video_timestamps_from_memory = _stub_not_available
+
+    class Timebase:
+        __annotations__ = {"numerator": int, "denominator": int}
+        __slots__ = ["numerator", "denominator"]
+
+        def __init__(self, numerator: int = 0, denominator: int = 1) -> None:
+            self.numerator = numerator
+            self.denominator = denominator
+
+    class VideoMetaData:
+        pass
+
+    class VideoReader:
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError(
+                "VideoReader with video_reader backend is not available. "
+                "Use backend='pyav' or migrate to TorchCodec."
+            )
+
+    # Stub module for _video_opt to prevent circular import issues
+    # This module is imported by video.py
+    import types
+    from fractions import Fraction
+
+    _video_opt = types.ModuleType("_video_opt")
+    _video_opt._HAS_VIDEO_OPT = False
+    _video_opt.default_timebase = Fraction(0, 1)
+
+    def _read_video_stub(filename, start_pts, end_pts, pts_unit):
+        raise RuntimeError(
+            "video_reader backend is not available. Use backend='pyav'."
+        )
+
+    def _read_video_timestamps_stub(filename, pts_unit):
+        raise RuntimeError(
+            "video_reader backend is not available. Use backend='pyav'."
+        )
+
+    _video_opt._read_video = _read_video_stub
+    _video_opt._read_video_timestamps = _read_video_timestamps_stub
+
 from .image import (
     decode_avif,
     decode_gif,
@@ -28,7 +91,6 @@ from .image import (
     write_png,
 )
 from .video import read_video, read_video_timestamps, write_video
-from .video_reader import VideoReader
 
 
 __all__ = [
