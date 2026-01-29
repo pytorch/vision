@@ -480,6 +480,384 @@ def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> tuple[Te
     return iou - (centers_distance_squared / diagonal_distance_squared), iou
 
 
+# =====================================================
+# Rotated Box IoU Implementation
+# Algorithm ported from Detectron2's box_iou_rotated_utils.h
+# https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/csrc/box_iou_rotated/box_iou_rotated_utils.h
+# =====================================================
+
+
+def _rotated_box_to_corners(boxes: Tensor) -> Tensor:
+    """
+    Convert rotated boxes in (x_ctr, y_ctr, w, h, angle) format to corner vertices.
+
+    Args:
+        boxes (Tensor[..., 5]): Rotated boxes in (x_ctr, y_ctr, w, h, angle) format.
+            Angle is in degrees, counter-clockwise positive.
+
+    Returns:
+        Tensor[..., 4, 2]: Corner vertices for each box, in order:
+            top-right, top-left, bottom-left, bottom-right
+    """
+    x_ctr, y_ctr, w, h, angle = boxes.unbind(dim=-1)
+
+    # Convert angle from degrees to radians
+    theta = angle * (torch.pi / 180.0)
+    cos_theta = torch.cos(theta) * 0.5
+    sin_theta = torch.sin(theta) * 0.5
+
+    # Compute the four corners
+    # Following Detectron2's convention
+    corners = torch.stack(
+        [
+            # Corner 0: top-right
+            x_ctr + sin_theta * h + cos_theta * w,
+            y_ctr + cos_theta * h - sin_theta * w,
+            # Corner 1: top-left
+            x_ctr - sin_theta * h + cos_theta * w,
+            y_ctr - cos_theta * h - sin_theta * w,
+            # Corner 2: bottom-left (opposite of corner 0)
+            x_ctr - sin_theta * h - cos_theta * w,
+            y_ctr - cos_theta * h + sin_theta * w,
+            # Corner 3: bottom-right (opposite of corner 1)
+            x_ctr + sin_theta * h - cos_theta * w,
+            y_ctr + cos_theta * h + sin_theta * w,
+        ],
+        dim=-1,
+    )
+
+    # Reshape to [..., 4, 2] (4 corners, each with x,y coordinates)
+    shape = boxes.shape[:-1] + (4, 2)
+    return corners.reshape(shape)
+
+
+def _cross_2d(a: Tensor, b: Tensor) -> Tensor:
+    """
+    Compute 2D cross product: a.x * b.y - a.y * b.x
+
+    Args:
+        a (Tensor[..., 2]): First 2D vector
+        b (Tensor[..., 2]): Second 2D vector
+
+    Returns:
+        Tensor[...]: Cross product values
+    """
+    return a[..., 0] * b[..., 1] - a[..., 1] * b[..., 0]
+
+
+def _dot_2d(a: Tensor, b: Tensor) -> Tensor:
+    """
+    Compute 2D dot product: a.x * b.x + a.y * b.y
+
+    Args:
+        a (Tensor[..., 2]): First 2D vector
+        b (Tensor[..., 2]): Second 2D vector
+
+    Returns:
+        Tensor[...]: Dot product values
+    """
+    return a[..., 0] * b[..., 0] + a[..., 1] * b[..., 1]
+
+
+def _get_intersection_points(pts1: Tensor, pts2: Tensor, eps: float = 1e-5) -> tuple[Tensor, Tensor]:
+    """
+    Find all intersection points between two rotated rectangles.
+
+    This includes:
+    1. Edge-edge intersections (up to 16)
+    2. Vertices of rect1 inside rect2 (up to 4)
+    3. Vertices of rect2 inside rect1 (up to 4)
+
+    Total: up to 24 points (including duplicates)
+
+    Args:
+        pts1 (Tensor[4, 2]): Corner vertices of first rectangle
+        pts2 (Tensor[4, 2]): Corner vertices of second rectangle
+        eps (float): Epsilon for numerical comparisons
+
+    Returns:
+        tuple[Tensor, int]: (intersection_points [24, 2], num_valid_points)
+    """
+    # Initialize output array for up to 24 intersection points
+    intersections = torch.zeros(24, 2, dtype=pts1.dtype, device=pts1.device)
+    num = 0
+
+    # Compute edge vectors for both rectangles
+    # vec1[i] = pts1[(i+1)%4] - pts1[i]
+    vec1 = torch.stack([pts1[(i + 1) % 4] - pts1[i] for i in range(4)])  # [4, 2]
+    vec2 = torch.stack([pts2[(i + 1) % 4] - pts2[i] for i in range(4)])  # [4, 2]
+
+    # Part 1: Find edge-edge intersections (16 pairs)
+    for i in range(4):
+        for j in range(4):
+            # Solve for intersection using cross product method
+            det = _cross_2d(vec2[j], vec1[i])
+
+            # Skip parallel lines
+            if torch.abs(det) <= 1e-14:
+                continue
+
+            vec12 = pts2[j] - pts1[i]
+            t1 = _cross_2d(vec2[j], vec12) / det
+            t2 = _cross_2d(vec1[i], vec12) / det
+
+            # Check if intersection is within both line segments
+            if t1 > -eps and t1 < 1.0 + eps and t2 > -eps and t2 < 1.0 + eps:
+                intersection = pts1[i] + vec1[i] * t1
+                intersections[num] = intersection
+                num += 1
+
+    # Part 2: Check vertices of rect1 inside rect2
+    AB = vec2[0]  # Edge from pts2[0] to pts2[1]
+    DA = vec2[3]  # Edge from pts2[3] to pts2[0]
+    ABdotAB = _dot_2d(AB, AB)
+    ADdotAD = _dot_2d(DA, DA)
+
+    for i in range(4):
+        AP = pts1[i] - pts2[0]
+        APdotAB = _dot_2d(AP, AB)
+        APdotAD = -_dot_2d(AP, DA)
+
+        if APdotAB > -eps and APdotAD > -eps and APdotAB < ABdotAB + eps and APdotAD < ADdotAD + eps:
+            intersections[num] = pts1[i]
+            num += 1
+
+    # Part 3: Check vertices of rect2 inside rect1
+    AB = vec1[0]
+    DA = vec1[3]
+    ABdotAB = _dot_2d(AB, AB)
+    ADdotAD = _dot_2d(DA, DA)
+
+    for i in range(4):
+        AP = pts2[i] - pts1[0]
+        APdotAB = _dot_2d(AP, AB)
+        APdotAD = -_dot_2d(AP, DA)
+
+        if APdotAB > -eps and APdotAD > -eps and APdotAB < ABdotAB + eps and APdotAD < ADdotAD + eps:
+            intersections[num] = pts2[i]
+            num += 1
+
+    return intersections, num
+
+
+def _convex_hull_graham(points: Tensor, num_in: int, shift_to_zero: bool = False) -> tuple[Tensor, int]:
+    """
+    Compute the convex hull of a set of 2D points using Graham scan algorithm.
+
+    Args:
+        points (Tensor[24, 2]): Input points (only first num_in are valid)
+        num_in (int): Number of valid input points
+        shift_to_zero (bool): If True, return hull centered at origin
+
+    Returns:
+        tuple[Tensor, int]: (hull_points [24, 2], num_hull_points)
+    """
+    if num_in < 2:
+        return points.clone(), num_in
+
+    # Output array
+    q = torch.zeros_like(points)
+
+    # Step 1: Find point with minimum y (and minimum x if tied)
+    t = 0
+    for i in range(1, num_in):
+        if points[i, 1] < points[t, 1] or (points[i, 1] == points[t, 1] and points[i, 0] < points[t, 0]):
+            t = i
+
+    start = points[t].clone()
+
+    # Step 2: Subtract starting point from all points
+    for i in range(num_in):
+        q[i] = points[i] - start
+
+    # Swap starting point to position 0
+    tmp = q[0].clone()
+    q[0] = q[t].clone()
+    q[t] = tmp
+
+    # Step 3: Sort points by angle (using cross product for comparison)
+    # Compute distances for tie-breaking
+    dist = torch.zeros(num_in, dtype=points.dtype, device=points.device)
+    for i in range(num_in):
+        dist[i] = _dot_2d(q[i], q[i])
+
+    # Bubble sort by angle (simple but works for small num_in <= 24)
+    for i in range(1, num_in - 1):
+        for j in range(i + 1, num_in):
+            cross_product = _cross_2d(q[i], q[j])
+            if cross_product < -1e-6 or (torch.abs(cross_product) < 1e-6 and dist[i] > dist[j]):
+                # Swap q[i] and q[j]
+                q_tmp = q[i].clone()
+                q[i] = q[j].clone()
+                q[j] = q_tmp
+                # Swap dist[i] and dist[j]
+                dist_tmp = dist[i].clone()
+                dist[i] = dist[j].clone()
+                dist[j] = dist_tmp
+
+    # Recompute distances after sort
+    for i in range(num_in):
+        dist[i] = _dot_2d(q[i], q[i])
+
+    # Step 4: Find first non-overlapping point
+    k = 1
+    while k < num_in and dist[k] <= 1e-8:
+        k += 1
+
+    if k == num_in:
+        # All points are the same
+        q[0] = points[t]
+        return q, 1
+
+    q[1] = q[k].clone()
+    m = 2  # Points in stack
+
+    # Step 5: Graham scan
+    for i in range(k + 1, num_in):
+        while m > 1:
+            q1 = q[i] - q[m - 2]
+            q2 = q[m - 1] - q[m - 2]
+            if q1[0] * q2[1] >= q2[0] * q1[1]:
+                m -= 1
+            else:
+                break
+        q[m] = q[i].clone()
+        m += 1
+
+    # Step 6: Shift back if needed
+    if not shift_to_zero:
+        for i in range(m):
+            q[i] = q[i] + start
+
+    return q, m
+
+
+def _polygon_area(vertices: Tensor, num: int) -> Tensor:
+    """
+    Compute the area of a polygon using the triangle fan method.
+
+    Args:
+        vertices (Tensor[24, 2]): Polygon vertices (only first num are valid)
+        num (int): Number of valid vertices
+
+    Returns:
+        Tensor: Polygon area (scalar)
+    """
+    if num <= 2:
+        return torch.tensor(0.0, dtype=vertices.dtype, device=vertices.device)
+
+    area = torch.tensor(0.0, dtype=vertices.dtype, device=vertices.device)
+    for i in range(1, num - 1):
+        area = area + torch.abs(_cross_2d(vertices[i] - vertices[0], vertices[i + 1] - vertices[0]))
+
+    return area / 2.0
+
+
+def _rotated_box_inter_union(boxes1: Tensor, boxes2: Tensor) -> tuple[Tensor, Tensor]:
+    """
+    Compute pairwise intersection and union areas for rotated boxes.
+
+    Args:
+        boxes1 (Tensor[N, 5]): First set of rotated boxes (x_ctr, y_ctr, w, h, angle)
+        boxes2 (Tensor[M, 5]): Second set of rotated boxes (x_ctr, y_ctr, w, h, angle)
+
+    Returns:
+        tuple[Tensor, Tensor]: (intersection [N, M], union [N, M])
+    """
+    N = boxes1.shape[0]
+    M = boxes2.shape[0]
+
+    area1 = boxes1[:, 2] * boxes1[:, 3]  # [N]
+    area2 = boxes2[:, 2] * boxes2[:, 3]  # [M]
+
+    inter = torch.zeros(N, M, dtype=boxes1.dtype, device=boxes1.device)
+
+    for i in range(N):
+        for j in range(M):
+            # Shift centers for numerical precision
+            center_shift_x = (boxes1[i, 0] + boxes2[j, 0]) / 2.0
+            center_shift_y = (boxes1[i, 1] + boxes2[j, 1]) / 2.0
+
+            box1_shifted = boxes1[i].clone()
+            box1_shifted[0] = boxes1[i, 0] - center_shift_x
+            box1_shifted[1] = boxes1[i, 1] - center_shift_y
+
+            box2_shifted = boxes2[j].clone()
+            box2_shifted[0] = boxes2[j, 0] - center_shift_x
+            box2_shifted[1] = boxes2[j, 1] - center_shift_y
+
+            # Skip if either box has zero area
+            if area1[i] < 1e-14 or area2[j] < 1e-14:
+                continue
+
+            # Convert to corners
+            pts1 = _rotated_box_to_corners(box1_shifted)  # [4, 2]
+            pts2 = _rotated_box_to_corners(box2_shifted)  # [4, 2]
+
+            # Find intersection points
+            intersections, num = _get_intersection_points(pts1, pts2)
+
+            if num <= 2:
+                continue
+
+            # Compute convex hull
+            hull, num_hull = _convex_hull_graham(intersections, num, shift_to_zero=True)
+
+            # Compute intersection area
+            inter[i, j] = _polygon_area(hull, num_hull)
+
+    union = area1[:, None] + area2[None, :] - inter
+
+    return inter, union
+
+
+def rotated_box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "cxcywhr") -> Tensor:
+    """
+    Return intersection-over-union (Jaccard index) between two sets of rotated boxes.
+
+    Args:
+        boxes1 (Tensor[N, K]): First set of rotated boxes
+        boxes2 (Tensor[M, K]): Second set of rotated boxes
+        fmt (str): Format of the input boxes. Supported formats are:
+
+            - ``'cxcywhr'`` (default): boxes are represented via center, width, height, and rotation angle.
+              (cx, cy) is the center, (w, h) is width and height, r is rotation angle in degrees
+              (counter-clockwise positive).
+
+            - ``'xywhr'``: boxes are represented via corner, width, height, and rotation angle.
+              (x1, y1) is the top-left corner, (w, h) is width and height, r is rotation angle in degrees.
+
+            - ``'xyxyxyxy'``: boxes are represented via 4 corner coordinates.
+              (x1, y1) is top-left, (x2, y2) is top-right, (x3, y3) is bottom-right, (x4, y4) is bottom-left.
+
+    Returns:
+        Tensor[N, M]: the NxM matrix containing the pairwise IoU values
+            for every element in boxes1 and boxes2
+
+    Example:
+        >>> boxes1 = torch.tensor([[100, 100, 50, 30, 0], [200, 200, 60, 40, 45]], dtype=torch.float32)
+        >>> boxes2 = torch.tensor([[100, 100, 50, 30, 0], [150, 150, 50, 30, 30]], dtype=torch.float32)
+        >>> iou = rotated_box_iou(boxes1, boxes2)
+        >>> iou.shape
+        torch.Size([2, 2])
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(rotated_box_iou)
+
+    allowed_fmts = ("cxcywhr", "xywhr", "xyxyxyxy")
+    if fmt not in allowed_fmts:
+        raise ValueError(f"Unsupported format '{fmt}'. Supported formats are {allowed_fmts}")
+
+    # Convert to cxcywhr format for internal computation
+    if fmt != "cxcywhr":
+        boxes1 = box_convert(boxes1, in_fmt=fmt, out_fmt="cxcywhr")
+        boxes2 = box_convert(boxes2, in_fmt=fmt, out_fmt="cxcywhr")
+
+    inter, union = _rotated_box_inter_union(boxes1, boxes2)
+    iou = inter / union
+    return iou
+
+
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     """
     Compute the bounding boxes around the provided masks.
