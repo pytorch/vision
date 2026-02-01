@@ -1,5 +1,6 @@
 import math
 import os
+import time
 from abc import ABC, abstractmethod
 from functools import lru_cache, partial
 from itertools import product
@@ -7,7 +8,6 @@ from typing import Callable
 
 import numpy as np
 import pytest
-import time
 import torch
 import torch.fx
 import torch.nn.functional as F
@@ -619,7 +619,7 @@ class TestRoIAlign(RoIOpTester):
     @needs_mps
     def test_performance_mps(self):
         # Regression test for https://github.com/pytorch/pytorch/issues/124850
-        execution_time_ms_threshold = 1000 # ms = 1 second
+        execution_time_ms_threshold = 1000  # ms = 1 second
 
         num_imgs, n_channels, img_size, img_size = 1, 256, 200, 200
         spatial_scale = 0.25
@@ -641,6 +641,7 @@ class TestRoIAlign(RoIOpTester):
         assert (
             execution_time_ms < execution_time_ms_threshold
         ), f"Expected execution to take < {execution_time_ms_threshold} ms, actually took {execution_time_ms} ms"
+
 
 class TestPSRoIAlign(RoIOpTester):
     mps_backward_atol = 5e-2
