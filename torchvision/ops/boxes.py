@@ -1,7 +1,7 @@
 import torch
 import torchvision
 from torch import Tensor
-from torchvision.extension import _assert_has_ops
+from torchvision.extension import _assert_has_ops, _has_ops
 
 from ..utils import _log_api_usage_once
 from ._box_convert import (
@@ -869,6 +869,21 @@ def rotated_box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "cxcywhr") -> Ten
         boxes1 = box_convert(boxes1, in_fmt=fmt, out_fmt="cxcywhr")
         boxes2 = box_convert(boxes2, in_fmt=fmt, out_fmt="cxcywhr")
 
+    # Try to use the optimized C++/CUDA implementation
+    if _has_ops():
+        _assert_has_ops()
+        # C++ implementation only supports float32, so convert if needed
+        original_dtype = boxes1.dtype
+        if original_dtype != torch.float32:
+            boxes1 = boxes1.float()
+            boxes2 = boxes2.float()
+        result = torch.ops.torchvision.box_iou_rotated(boxes1, boxes2)
+        # Convert back to original dtype
+        if original_dtype != torch.float32:
+            result = result.to(original_dtype)
+        return result
+
+    # Fallback to batched tensor implementation
     inter, union = _rotated_box_inter_union(boxes1, boxes2)
     iou = inter / union
     return iou
