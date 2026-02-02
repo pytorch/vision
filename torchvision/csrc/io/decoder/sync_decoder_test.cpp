@@ -96,7 +96,7 @@ size_t measurePerformanceUs(
     fclose(f);
 
     for (size_t i = 0; i < rounds; ++i) {
-      // randomy select clip
+      // randomly select clip
       size_t rOffset = std::rand();
       size_t fOffset = rOffset % item.durationPts;
       size_t clipFrames = num + (num - 1) * stride;

@@ -416,7 +416,7 @@ bool Decoder::init(
 // variable `streams_` and make sure it is in range for decoding
 bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
   for (unsigned int i = 0; i < inputCtx_->nb_streams; i++) {
-    // - find the corespondent format at params_.formats set
+    // - find the correspondent format at params_.formats set
     MediaFormat format;
 #if LIBAVUTIL_VERSION_MAJOR < 56 // Before FFMPEG 4.0
     const auto media = inputCtx_->streams[i]->codec->codec_type;
