@@ -169,7 +169,7 @@ Tests that require internet access should be in
 Torchvision uses [Google style](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
 for formatting docstrings. Length of line inside docstrings block must be limited to 120 characters.
 
-Please, follow the instructions to build and deploy the documentation locally.
+All documentation is built for each PR and contains a preview on the PR. However, this takes a while (~8 minutes) and you should first build docs from your local machine. Please, follow the instructions to build and deploy the documentation locally.
 
 #### Install requirements
 
@@ -208,6 +208,27 @@ You can also choose to only build a subset of the examples by using the
 ``EXAMPLES_PATTERN`` env variable, which accepts a regular expression. For
 example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
 with "transforms" in their name.
+
+#### Serving docs locally (if building from a GPU env)
+
+If you're developing locally, you can just open the generated `index.html` file in your browser.
+
+If instead you're using a remote machine, you can use a combination of a simple python HTTP server and port forwarding to serve the docs locally. This allows you to iterate on the documentation much more quickly than relying on PR previews.
+
+To do so, after following the above doc build steps, run the following from the `docs/build/html` folder:
+
+```
+python -m http.server 8000 # or any free port
+```
+
+This will open up a simple HTTP server serving the files in the build directory. If this is done on a remote machine, you can set up port forwarding from your local machine to access the server, for example:
+
+```
+ssh -L 9000:localhost:8000 $REMOTE_DEV_HOST
+```
+
+Now, you can navigate to `localhost:9000` on your local machine to view the rendered documentation.
+
 
 ### New architecture or improved model weights
 
