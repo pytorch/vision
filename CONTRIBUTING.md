@@ -211,23 +211,31 @@ with "transforms" in their name.
 
 #### Serving docs locally (if building from a GPU env)
 
-If you're developing locally, you can just open the generated `index.html` file in your browser.
+If you're developing locally, you can just open the generated `index.html` file
+in your browser.
 
-If instead you're using a remote machine, you can use a combination of a simple python HTTP server and port forwarding to serve the docs locally. This allows you to iterate on the documentation much more quickly than relying on PR previews.
+If instead you're using a remote machine, you can use a combination of a simple
+python HTTP server and port forwarding to serve the docs locally. This allows
+you to iterate on the documentation much more quickly than relying on PR
+previews.
 
-To do so, after following the above doc build steps, run the following from the `docs/build/html` folder:
+To do so, after following the above doc build steps, run the following from the
+`docs/build/html` folder:
 
 ```
 python -m http.server 8000 # or any free port
 ```
 
-This will open up a simple HTTP server serving the files in the build directory. If this is done on a remote machine, you can set up port forwarding from your local machine to access the server, for example:
+This will open up a simple HTTP server serving the files in the build directory.
+If this is done on a remote machine, you can set up port forwarding from your
+local machine to access the server, for example:
 
 ```
 ssh -L 9000:localhost:8000 $REMOTE_DEV_HOST
 ```
 
-Now, you can navigate to `localhost:9000` on your local machine to view the rendered documentation.
+Now, you can navigate to `localhost:9000` on your local machine to view
+the rendered documentation.
 
 
 ### New architecture or improved model weights
