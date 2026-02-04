@@ -169,7 +169,10 @@ Tests that require internet access should be in
 Torchvision uses [Google style](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
 for formatting docstrings. Length of line inside docstrings block must be limited to 120 characters.
 
-All documentation is built for each PR and contains a preview on the PR. However, this takes a while (~8 minutes) and you should first build docs from your local machine. Please, follow the instructions to build and deploy the documentation locally.
+All documentation is built for each PR and contains a preview on the PR.
+However, it is often useful to build the docs locally when making a lot of
+documentation changes. Please, follow the instructions to build and deploy the
+documentation locally.
 
 #### Install requirements
 
