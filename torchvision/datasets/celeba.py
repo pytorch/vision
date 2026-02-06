@@ -27,6 +27,7 @@ class CelebA(VisionDataset):
                 - ``attr`` (Tensor shape=(40,) dtype=int): binary (0, 1) labels for attributes
                 - ``identity`` (int): label for each person (data points with the same identity are the same person)
                 - ``bbox`` (Tensor shape=(4,) dtype=int): bounding box (x, y, width, height).
+
                   .. warning::
 
                       These bounding box coordinates correspond to the original uncropped
