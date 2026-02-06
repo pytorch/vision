@@ -1,8 +1,6 @@
-#include <ATen/ATen.h>
-#include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDAGuard.h>
-#include <torch/library.h>
-#include <ATen/native/cuda/KernelUtils.cuh>
+#include "../../StableABICompat.h"
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/macros.h>
 
 #include "cuda_helpers.h"
 
@@ -10,6 +8,8 @@ namespace vision {
 namespace ops {
 
 namespace {
+
+using namespace vision::stable;
 
 template <typename T>
 __device__ T bilinear_interpolate(
@@ -212,8 +212,7 @@ __global__ void ps_roi_align_backward_kernel_impl(
     int sampling_ratio,
     int channels_out,
     T* grad_input,
-    const T* rois,
-    const int memory_span) {
+    const T* rois) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, *, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -286,112 +285,117 @@ __global__ void ps_roi_align_backward_kernel_impl(
         T g4 = grad_output_this_bin * w4 / count;
 
         if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0) {
-          at::native::fastAtomicAdd(
-              grad_input,
-              offset + y_low * width + x_low,
-              memory_span,
-              static_cast<T>(g1),
-              true);
-          at::native::fastAtomicAdd(
-              grad_input,
-              offset + y_low * width + x_high,
-              memory_span,
-              static_cast<T>(g2),
-              true);
-          at::native::fastAtomicAdd(
-              grad_input,
-              offset + y_high * width + x_low,
-              memory_span,
-              static_cast<T>(g3),
-              true);
-          at::native::fastAtomicAdd(
-              grad_input,
-              offset + y_high * width + x_high,
-              memory_span,
-              static_cast<T>(g4),
-              true);
+          atomicAdd(grad_input + offset + y_low * width + x_low, g1);
+          atomicAdd(grad_input + offset + y_low * width + x_high, g2);
+          atomicAdd(grad_input + offset + y_high * width + x_low, g3);
+          atomicAdd(grad_input + offset + y_high * width + x_high, g4);
         } // if
       } // ix
     } // iy
   }
 }
 
-std::tuple<at::Tensor, at::Tensor> ps_roi_align_forward_kernel(
-    const at::Tensor& input,
-    const at::Tensor& rois,
+std::tuple<Tensor, Tensor> ps_roi_align_forward_kernel(
+    const Tensor& input,
+    const Tensor& rois,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width,
     int64_t sampling_ratio) {
   // Check if input tensors are CUDA tensors
-  TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
-  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
-  TORCH_CHECK(
+  VISION_CHECK(input.is_cuda(), "input must be a CUDA tensor");
+  VISION_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  VISION_CHECK(
       rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
+  VISION_CHECK(
+      input.scalar_type() == rois.scalar_type(),
+      "input and rois must have the same dtype");
 
-  at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
-
-  at::CheckedFrom c = "ps_roi_align_forward_kernel";
-  at::checkAllSameGPU(c, {input_t, rois_t});
-  at::checkAllSameType(c, {input_t, rois_t});
-
-  at::cuda::CUDAGuard device_guard(input.device());
+  DeviceGuard device_guard(input.get_device_index());
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
   auto height = input.size(2);
   auto width = input.size(3);
 
-  TORCH_CHECK(
+  VISION_CHECK(
       channels % (pooled_height * pooled_width) == 0,
       "input channels must be a multiple of pooling height * pooling width");
   int channels_out = channels / (pooled_height * pooled_width);
 
-  auto output = at::zeros(
-      {num_rois, channels_out, pooled_height, pooled_width}, input.options());
-  auto channel_mapping =
-      at::zeros(output.sizes(), input.options().dtype(at::kInt));
+  Tensor output = zeros(
+      {num_rois, channels_out, pooled_height, pooled_width},
+      input.scalar_type(),
+      Device(kCUDA, input.get_device_index()));
+  Tensor channel_mapping = zeros(
+      {num_rois, channels_out, pooled_height, pooled_width},
+      kInt,
+      Device(kCUDA, input.get_device_index()));
 
   auto output_size = output.numel();
   if (output_size == 0) {
-    AT_CUDA_CHECK(cudaGetLastError());
+    STD_CUDA_KERNEL_LAUNCH_CHECK();
     return std::make_tuple(output, channel_mapping);
   }
 
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+  // Get CUDA stream
+  void* stream_ptr;
+  TORCH_ERROR_CODE_CHECK(aoti_torch_get_current_cuda_stream(
+      input.get_device_index(), &stream_ptr));
+  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
 
   dim3 grid(std::min(
       ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
-  auto input_ = input.contiguous(), rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "ps_roi_align_forward_kernel", [&] {
-        ps_roi_align_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
-            output_size,
-            input_.data_ptr<scalar_t>(),
-            spatial_scale,
-            channels,
-            height,
-            width,
-            pooled_height,
-            pooled_width,
-            sampling_ratio,
-            rois_.data_ptr<scalar_t>(),
-            channels_out,
-            output.data_ptr<scalar_t>(),
-            channel_mapping.data_ptr<int>());
-      });
-  AT_CUDA_CHECK(cudaGetLastError());
-  cudaDeviceSynchronize();
+  auto input_ = torch::stable::contiguous(input);
+  auto rois_ = torch::stable::contiguous(rois);
+
+  auto dtype = input.scalar_type();
+  if (dtype == kFloat) {
+    ps_roi_align_forward_kernel_impl<float><<<grid, block, 0, stream>>>(
+        output_size,
+        input_.const_data_ptr<float>(),
+        spatial_scale,
+        channels,
+        height,
+        width,
+        pooled_height,
+        pooled_width,
+        sampling_ratio,
+        rois_.const_data_ptr<float>(),
+        channels_out,
+        output.mutable_data_ptr<float>(),
+        channel_mapping.mutable_data_ptr<int>());
+  } else if (dtype == kDouble) {
+    ps_roi_align_forward_kernel_impl<double><<<grid, block, 0, stream>>>(
+        output_size,
+        input_.const_data_ptr<double>(),
+        spatial_scale,
+        channels,
+        height,
+        width,
+        pooled_height,
+        pooled_width,
+        sampling_ratio,
+        rois_.const_data_ptr<double>(),
+        channels_out,
+        output.mutable_data_ptr<double>(),
+        channel_mapping.mutable_data_ptr<int>());
+  } else {
+    VISION_CHECK(
+        false, "ps_roi_align only supports float and double types");
+  }
+
+  STD_CUDA_KERNEL_LAUNCH_CHECK();
   return std::make_tuple(output, channel_mapping);
 }
 
-at::Tensor ps_roi_align_backward_kernel(
-    const at::Tensor& grad,
-    const at::Tensor& rois,
-    const at::Tensor& channel_mapping,
+Tensor ps_roi_align_backward_kernel(
+    const Tensor& grad,
+    const Tensor& rois,
+    const Tensor& channel_mapping,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width,
@@ -401,24 +405,27 @@ at::Tensor ps_roi_align_backward_kernel(
     int64_t height,
     int64_t width) {
   // Check if input tensors are CUDA tensors
-  TORCH_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
-  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
-  TORCH_CHECK(
+  VISION_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
+  VISION_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  VISION_CHECK(
       channel_mapping.is_cuda(), "channel_mapping must be a CUDA tensor");
+  VISION_CHECK(
+      grad.scalar_type() == rois.scalar_type(),
+      "grad and rois must have the same dtype");
 
-  at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},
-      channel_mapping_t{channel_mapping, "channel_mapping", 3};
+  DeviceGuard device_guard(grad.get_device_index());
 
-  at::CheckedFrom c = "ps_roi_align_backward_kernel";
-  at::checkAllSameGPU(c, {grad_t, rois_t, channel_mapping_t});
-  at::checkAllSameType(c, {grad_t, rois_t});
+  auto num_rois = rois.size(0);
+  Tensor grad_input = zeros(
+      {batch_size, channels, height, width},
+      grad.scalar_type(),
+      Device(kCUDA, grad.get_device_index()));
 
-  at::cuda::CUDAGuard device_guard(grad.device());
-
-  auto grad_input =
-      at::zeros({batch_size, channels, height, width}, grad.options());
-
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+  // Get CUDA stream
+  void* stream_ptr;
+  TORCH_ERROR_CODE_CHECK(aoti_torch_get_current_cuda_stream(
+      grad.get_device_index(), &stream_ptr));
+  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
 
   dim3 grid(std::min(
       ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
@@ -427,46 +434,60 @@ at::Tensor ps_roi_align_backward_kernel(
 
   // handle possibly empty gradients
   if (grad.numel() == 0) {
-    AT_CUDA_CHECK(cudaGetLastError());
+    STD_CUDA_KERNEL_LAUNCH_CHECK();
     return grad_input;
   }
 
   int channels_out = channels / (pooled_height * pooled_width);
 
-  at::globalContext().alertNotDeterministic("ps_roi_align_backward_kernel");
+  auto grad_ = torch::stable::contiguous(grad);
+  auto rois_ = torch::stable::contiguous(rois);
 
-  auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "ps_roi_align_backward_kernel", [&] {
-        ps_roi_align_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
-            grad.numel(),
-            grad_.data_ptr<scalar_t>(),
-            channel_mapping.data_ptr<int>(),
-            spatial_scale,
-            channels,
-            height,
-            width,
-            pooled_height,
-            pooled_width,
-            sampling_ratio,
-            channels_out,
-            grad_input.data_ptr<scalar_t>(),
-            rois_.data_ptr<scalar_t>(),
-            grad_input.numel());
-      });
-  AT_CUDA_CHECK(cudaGetLastError());
+  auto dtype = grad.scalar_type();
+  if (dtype == kFloat) {
+    ps_roi_align_backward_kernel_impl<float><<<grid, block, 0, stream>>>(
+        grad.numel(),
+        grad_.const_data_ptr<float>(),
+        channel_mapping.const_data_ptr<int>(),
+        spatial_scale,
+        channels,
+        height,
+        width,
+        pooled_height,
+        pooled_width,
+        sampling_ratio,
+        channels_out,
+        grad_input.mutable_data_ptr<float>(),
+        rois_.const_data_ptr<float>());
+  } else if (dtype == kDouble) {
+    ps_roi_align_backward_kernel_impl<double><<<grid, block, 0, stream>>>(
+        grad.numel(),
+        grad_.const_data_ptr<double>(),
+        channel_mapping.const_data_ptr<int>(),
+        spatial_scale,
+        channels,
+        height,
+        width,
+        pooled_height,
+        pooled_width,
+        sampling_ratio,
+        channels_out,
+        grad_input.mutable_data_ptr<double>(),
+        rois_.const_data_ptr<double>());
+  } else {
+    VISION_CHECK(
+        false, "ps_roi_align backward only supports float and double types");
+  }
+
+  STD_CUDA_KERNEL_LAUNCH_CHECK();
   return grad_input;
 }
 
 } // namespace
 
-TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
-  m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::ps_roi_align"),
-      TORCH_FN(ps_roi_align_forward_kernel));
-  m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::_ps_roi_align_backward"),
-      TORCH_FN(ps_roi_align_backward_kernel));
+STABLE_TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("ps_roi_align", TORCH_BOX(&ps_roi_align_forward_kernel));
+  m.impl("_ps_roi_align_backward", TORCH_BOX(&ps_roi_align_backward_kernel));
 }
 
 } // namespace ops

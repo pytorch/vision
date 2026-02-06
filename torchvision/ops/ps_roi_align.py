@@ -8,6 +8,61 @@ from ..utils import _log_api_usage_once
 from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
 
 
+class _PSRoIAlignFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx,
+        input: Tensor,
+        rois: Tensor,
+        spatial_scale: float,
+        pooled_height: int,
+        pooled_width: int,
+        sampling_ratio: int,
+    ) -> Tensor:
+        ctx.spatial_scale = spatial_scale
+        ctx.pooled_height = pooled_height
+        ctx.pooled_width = pooled_width
+        ctx.sampling_ratio = sampling_ratio
+        ctx.input_shape = input.shape
+        output, channel_mapping = torch.ops.torchvision.ps_roi_align(
+            input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio
+        )
+        ctx.save_for_backward(rois, channel_mapping)
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output: Tensor):
+        rois, channel_mapping = ctx.saved_tensors
+        batch_size, channels, height, width = ctx.input_shape
+        grad_input = torch.ops.torchvision._ps_roi_align_backward(
+            grad_output,
+            rois,
+            channel_mapping,
+            ctx.spatial_scale,
+            ctx.pooled_height,
+            ctx.pooled_width,
+            ctx.sampling_ratio,
+            batch_size,
+            channels,
+            height,
+            width,
+        )
+        return grad_input, None, None, None, None, None
+
+
+def _ps_roi_align_autograd(
+    input: Tensor,
+    rois: Tensor,
+    spatial_scale: float,
+    pooled_height: int,
+    pooled_width: int,
+    sampling_ratio: int,
+) -> Tensor:
+    return _PSRoIAlignFunction.apply(
+        input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio
+    )
+
+
 @torch.fx.wrap
 def ps_roi_align(
     input: Tensor,
@@ -53,10 +108,9 @@ def ps_roi_align(
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
-    output, _ = torch.ops.torchvision.ps_roi_align(
+    return _ps_roi_align_autograd(
         input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio
     )
-    return output
 
 
 class PSRoIAlign(nn.Module):

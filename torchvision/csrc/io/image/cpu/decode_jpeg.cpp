@@ -6,12 +6,14 @@
 namespace vision {
 namespace image {
 
+using namespace vision::stable;
+
 #if !JPEG_FOUND
-torch::Tensor decode_jpeg(
-    const torch::Tensor& data,
+Tensor decode_jpeg(
+    const Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
-  TORCH_CHECK(
+  VISION_CHECK(
       false, "decode_jpeg: torchvision not compiled with libjpeg support");
 }
 #else
@@ -129,19 +131,16 @@ void convert_line_cmyk_to_gray(
 
 } // namespace
 
-torch::Tensor decode_jpeg(
-    const torch::Tensor& data,
+Tensor decode_jpeg(
+    const Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
-  C10_LOG_API_USAGE_ONCE(
-      "torchvision.csrc.io.image.cpu.decode_jpeg.decode_jpeg");
-
   validate_encoded_data(data);
 
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
 
-  auto datap = data.data_ptr<uint8_t>();
+  auto datap = data.const_data_ptr<uint8_t>();
   // Setup decompression structure
   cinfo.err = jpeg_std_error(&jerr.pub);
   jerr.pub.error_exit = torch_jpeg_error_exit;
@@ -151,7 +150,7 @@ torch::Tensor decode_jpeg(
      * We need to clean up the JPEG object.
      */
     jpeg_destroy_decompress(&cinfo);
-    TORCH_CHECK(false, jerr.jpegLastErrorMsg);
+    VISION_CHECK(false, jerr.jpegLastErrorMsg);
   }
 
   jpeg_create_decompress(&cinfo);
@@ -192,7 +191,8 @@ torch::Tensor decode_jpeg(
        */
       default:
         jpeg_destroy_decompress(&cinfo);
-        TORCH_CHECK(false, "The provided mode is not supported for JPEG files");
+        VISION_CHECK(
+            false, "The provided mode is not supported for JPEG files");
     }
 
     jpeg_calc_output_dimensions(&cinfo);
@@ -209,12 +209,11 @@ torch::Tensor decode_jpeg(
   int width = cinfo.output_width;
 
   int stride = width * channels;
-  auto tensor =
-      torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
-  auto ptr = tensor.data_ptr<uint8_t>();
-  torch::Tensor cmyk_line_tensor;
+  auto tensor = emptyCPU({int64_t(height), int64_t(width), channels}, kByte);
+  auto ptr = tensor.mutable_data_ptr<uint8_t>();
+  Tensor cmyk_line_tensor;
   if (cmyk_to_rgb_or_gray) {
-    cmyk_line_tensor = torch::empty({int64_t(width), 4}, torch::kU8);
+    cmyk_line_tensor = emptyCPU({int64_t(width), 4}, kByte);
   }
 
   while (cinfo.output_scanline < cinfo.output_height) {
@@ -223,7 +222,7 @@ torch::Tensor decode_jpeg(
      * more than one scanline at a time if that's more convenient.
      */
     if (cmyk_to_rgb_or_gray) {
-      auto cmyk_line_ptr = cmyk_line_tensor.data_ptr<uint8_t>();
+      auto cmyk_line_ptr = cmyk_line_tensor.mutable_data_ptr<uint8_t>();
       jpeg_read_scanlines(&cinfo, &cmyk_line_ptr, 1);
 
       if (channels == 3) {
@@ -239,7 +238,7 @@ torch::Tensor decode_jpeg(
 
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
-  auto output = tensor.permute({2, 0, 1});
+  auto output = permute(tensor, {2, 0, 1});
 
   if (apply_exif_orientation) {
     return exif_orientation_transform(output, exif_orientation);

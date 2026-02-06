@@ -1,13 +1,13 @@
 #pragma once
 
-#include <torch/types.h>
+#include "../../../StableABICompat.h"
 #include "../common.h"
 
 namespace vision {
 namespace image {
 
-C10_EXPORT torch::Tensor decode_png(
-    const torch::Tensor& data,
+vision::stable::Tensor decode_png(
+    const vision::stable::Tensor& data,
     ImageReadMode mode = IMAGE_READ_MODE_UNCHANGED,
     bool apply_exif_orientation = false);
 

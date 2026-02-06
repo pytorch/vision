@@ -200,6 +200,64 @@ def _roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling
     return output
 
 
+class _RoIAlignFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx,
+        input: Tensor,
+        rois: Tensor,
+        spatial_scale: float,
+        pooled_height: int,
+        pooled_width: int,
+        sampling_ratio: int,
+        aligned: bool,
+    ) -> Tensor:
+        ctx.save_for_backward(rois)
+        ctx.spatial_scale = spatial_scale
+        ctx.pooled_height = pooled_height
+        ctx.pooled_width = pooled_width
+        ctx.sampling_ratio = sampling_ratio
+        ctx.aligned = aligned
+        ctx.input_shape = input.shape
+        output = torch.ops.torchvision.roi_align(
+            input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned
+        )
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output: Tensor):
+        (rois,) = ctx.saved_tensors
+        batch_size, channels, height, width = ctx.input_shape
+        grad_input = torch.ops.torchvision._roi_align_backward(
+            grad_output,
+            rois,
+            ctx.spatial_scale,
+            ctx.pooled_height,
+            ctx.pooled_width,
+            batch_size,
+            channels,
+            height,
+            width,
+            ctx.sampling_ratio,
+            ctx.aligned,
+        )
+        return grad_input, None, None, None, None, None, None
+
+
+def _roi_align_autograd(
+    input: Tensor,
+    rois: Tensor,
+    spatial_scale: float,
+    pooled_height: int,
+    pooled_width: int,
+    sampling_ratio: int,
+    aligned: bool,
+) -> Tensor:
+    return _RoIAlignFunction.apply(
+        input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned
+    )
+
+
 @torch.fx.wrap
 def roi_align(
     input: Tensor,
@@ -255,7 +313,7 @@ def roi_align(
         ) and is_compile_supported(input.device.type):
             return _roi_align(input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned)
     _assert_has_ops()
-    return torch.ops.torchvision.roi_align(
+    return _roi_align_autograd(
         input, rois, spatial_scale, output_size[0], output_size[1], sampling_ratio, aligned
     )
 

@@ -1,8 +1,6 @@
-#include <ATen/ATen.h>
-#include <ATen/AccumulateType.h>
-#include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDAGuard.h>
-#include <torch/library.h>
+#include "../../StableABICompat.h"
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/macros.h>
 
 #include "cuda_helpers.h"
 
@@ -11,6 +9,8 @@ namespace ops {
 
 namespace {
 
+using namespace vision::stable;
+
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
 
 template <typename T>
@@ -18,13 +18,52 @@ __device__ inline bool devIoU(
     T const* const a,
     T const* const b,
     const float threshold) {
-  T left = max(a[0], b[0]), right = min(a[2], b[2]);
-  T top = max(a[1], b[1]), bottom = min(a[3], b[3]);
-  T width = max(right - left, (T)0), height = max(bottom - top, (T)0);
-  using acc_T = at::acc_type<T, /*is_cuda=*/true>;
-  acc_T interS = (acc_T)width * height;
-  acc_T Sa = ((acc_T)a[2] - a[0]) * (a[3] - a[1]);
-  acc_T Sb = ((acc_T)b[2] - b[0]) * (b[3] - b[1]);
+  // Use float for all arithmetic to avoid issues with half operators being disabled
+  float a0 = __half2float(a[0]);
+  float a1 = __half2float(a[1]);
+  float a2 = __half2float(a[2]);
+  float a3 = __half2float(a[3]);
+  float b0 = __half2float(b[0]);
+  float b1 = __half2float(b[1]);
+  float b2 = __half2float(b[2]);
+  float b3 = __half2float(b[3]);
+
+  float left = max(a0, b0), right = min(a2, b2);
+  float top = max(a1, b1), bottom = min(a3, b3);
+  float width = max(right - left, 0.0f), height = max(bottom - top, 0.0f);
+  float interS = width * height;
+  float Sa = (a2 - a0) * (a3 - a1);
+  float Sb = (b2 - b0) * (b3 - b1);
+  return (interS / (Sa + Sb - interS)) > threshold;
+}
+
+// Specialization for float - just use values directly
+template <>
+__device__ inline bool devIoU<float>(
+    float const* const a,
+    float const* const b,
+    const float threshold) {
+  float left = max(a[0], b[0]), right = min(a[2], b[2]);
+  float top = max(a[1], b[1]), bottom = min(a[3], b[3]);
+  float width = max(right - left, 0.0f), height = max(bottom - top, 0.0f);
+  float interS = width * height;
+  float Sa = (a[2] - a[0]) * (a[3] - a[1]);
+  float Sb = (b[2] - b[0]) * (b[3] - b[1]);
+  return (interS / (Sa + Sb - interS)) > threshold;
+}
+
+// Specialization for double
+template <>
+__device__ inline bool devIoU<double>(
+    double const* const a,
+    double const* const b,
+    const float threshold) {
+  double left = max(a[0], b[0]), right = min(a[2], b[2]);
+  double top = max(a[1], b[1]), bottom = min(a[3], b[3]);
+  double width = max(right - left, 0.0), height = max(bottom - top, 0.0);
+  double interS = width * height;
+  double Sa = (a[2] - a[0]) * (a[3] - a[1]);
+  double Sb = (b[2] - b[0]) * (b[3] - b[1]);
   return (interS / (Sa + Sb - interS)) > threshold;
 }
 
@@ -122,25 +161,25 @@ __global__ static void gather_keep_from_mask(
   }
 }
 
-at::Tensor nms_kernel(
-    const at::Tensor& dets,
-    const at::Tensor& scores,
+Tensor nms_kernel(
+    const Tensor& dets,
+    const Tensor& scores,
     double iou_threshold) {
-  TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
-  TORCH_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
+  VISION_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
+  VISION_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
 
-  TORCH_CHECK(
+  VISION_CHECK(
       dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
-  TORCH_CHECK(
+  VISION_CHECK(
       dets.size(1) == 4,
       "boxes should have 4 elements in dimension 1, got ",
       dets.size(1));
-  TORCH_CHECK(
+  VISION_CHECK(
       scores.dim() == 1,
       "scores should be a 1d tensor, got ",
       scores.dim(),
       "D");
-  TORCH_CHECK(
+  VISION_CHECK(
       dets.size(0) == scores.size(0),
       "boxes and scores should have same number of elements in ",
       "dimension 0, got ",
@@ -148,38 +187,49 @@ at::Tensor nms_kernel(
       " and ",
       scores.size(0))
 
-  at::cuda::CUDAGuard device_guard(dets.device());
+  DeviceGuard device_guard(dets.get_device_index());
 
   if (dets.numel() == 0) {
-    return at::empty({0}, dets.options().dtype(at::kLong));
+    return empty({0}, kLong, Device(kCUDA, dets.get_device_index()));
   }
 
-  auto order_t = std::get<1>(
-      scores.sort(/*stable=*/true, /*dim=*/0, /* descending=*/true));
-  auto dets_sorted = dets.index_select(0, order_t).contiguous();
+  // Sort scores descending and get indices
+  auto [sorted_scores, order_t] = sort(scores, /*dim=*/0, /*descending=*/true);
+  auto dets_sorted = torch::stable::contiguous(index_select(dets, 0, order_t));
 
   int dets_num = dets.size(0);
 
   const int col_blocks = ceil_div(dets_num, threadsPerBlock);
 
-  at::Tensor mask =
-      at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));
+  Tensor mask = empty({dets_num * col_blocks}, kLong, Device(kCUDA, dets.get_device_index()));
 
   dim3 blocks(col_blocks, col_blocks);
   dim3 threads(threadsPerBlock);
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.scalar_type(), "nms_kernel", [&] {
-        nms_kernel_impl<scalar_t><<<blocks, threads, 0, stream>>>(
-            dets_num,
-            iou_threshold,
-            dets_sorted.data_ptr<scalar_t>(),
-            (unsigned long long*)mask.data_ptr<int64_t>());
-      });
+  // Get CUDA stream
+  void* stream_ptr;
+  TORCH_ERROR_CODE_CHECK(aoti_torch_get_current_cuda_stream(
+      dets.get_device_index(), &stream_ptr));
+  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
 
-  at::Tensor keep =
-      at::zeros({dets_num}, dets.options().dtype(at::kBool).device(at::kCUDA));
+  auto dtype = dets_sorted.scalar_type();
+  if (dtype == kFloat) {
+    nms_kernel_impl<float><<<blocks, threads, 0, stream>>>(
+        dets_num,
+        iou_threshold,
+        dets_sorted.const_data_ptr<float>(),
+        (unsigned long long*)mask.mutable_data_ptr<int64_t>());
+  } else if (dtype == kDouble) {
+    nms_kernel_impl<double><<<blocks, threads, 0, stream>>>(
+        dets_num,
+        iou_threshold,
+        dets_sorted.const_data_ptr<double>(),
+        (unsigned long long*)mask.mutable_data_ptr<int64_t>());
+  } else {
+    VISION_CHECK(false, "nms only supports float and double types");
+  }
+
+  Tensor keep = zeros({dets_num}, kBool, Device(kCUDA, dets.get_device_index()));
 
   // Unwrap the mask to fill keep with proper values
   // Keeping the unwrap on device instead of applying iterative for loops on cpu
@@ -191,18 +241,18 @@ at::Tensor nms_kernel(
       min(col_blocks, threadsPerBlock),
       col_blocks * sizeof(unsigned long long),
       stream>>>(
-      keep.data_ptr<bool>(),
-      (unsigned long long*)mask.data_ptr<int64_t>(),
+      keep.mutable_data_ptr<bool>(),
+      (unsigned long long*)mask.const_data_ptr<int64_t>(),
       dets_num);
 
-  AT_CUDA_CHECK(cudaGetLastError());
-  return order_t.masked_select(keep);
+  STD_CUDA_KERNEL_LAUNCH_CHECK();
+  return masked_select(order_t, keep);
 }
 
 } // namespace
 
-TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
-  m.impl(TORCH_SELECTIVE_NAME("torchvision::nms"), TORCH_FN(nms_kernel));
+STABLE_TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("nms", TORCH_BOX(&nms_kernel));
 }
 
 } // namespace ops

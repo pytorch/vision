@@ -1,12 +1,12 @@
 #pragma once
 
-#include <torch/types.h>
+#include "../../../StableABICompat.h"
 
 namespace vision {
 namespace image {
 
-C10_EXPORT torch::Tensor encode_jpeg(
-    const torch::Tensor& data,
+vision::stable::Tensor encode_jpeg(
+    const vision::stable::Tensor& data,
     int64_t quality);
 
 } // namespace image
