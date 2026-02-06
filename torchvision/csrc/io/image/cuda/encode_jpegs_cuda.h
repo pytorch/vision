@@ -1,10 +1,9 @@
 #pragma once
-#include <torch/types.h>
 #include <vector>
+#include "../../../StableABICompat.h"
 #if NVJPEG_FOUND
 
-#include <c10/cuda/CUDAGuard.h>
-#include <c10/cuda/CUDAStream.h>
+#include <cuda_runtime.h>
 #include <nvjpeg.h>
 
 namespace vision {
@@ -12,17 +11,17 @@ namespace image {
 
 class CUDAJpegEncoder {
  public:
-  CUDAJpegEncoder(const torch::Device& device);
+  CUDAJpegEncoder(const vision::stable::Device& device);
   ~CUDAJpegEncoder();
 
-  torch::Tensor encode_jpeg(const torch::Tensor& src_image);
+  vision::stable::Tensor encode_jpeg(const vision::stable::Tensor& src_image);
 
   void set_quality(const int64_t quality);
 
-  const torch::Device original_device;
-  const torch::Device target_device;
-  const c10::cuda::CUDAStream stream;
-  const c10::cuda::CUDAStream current_stream;
+  const vision::stable::Device original_device;
+  const vision::stable::Device target_device;
+  cudaStream_t stream;
+  cudaStream_t current_stream;
 
  protected:
   nvjpegEncoderState_t nv_enc_state;

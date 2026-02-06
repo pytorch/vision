@@ -1,14 +1,17 @@
 #include "encode_jpeg.h"
+#include "../common.h"
 
 #include "common_jpeg.h"
 
 namespace vision {
 namespace image {
 
+using namespace vision::stable;
+
 #if !JPEG_FOUND
 
-torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
-  TORCH_CHECK(
+Tensor encode_jpeg(const Tensor& data, int64_t quality) {
+  VISION_CHECK(
       false, "encode_jpeg: torchvision not compiled with libjpeg support");
 }
 
@@ -24,10 +27,9 @@ using JpegSizeType = size_t;
 
 using namespace detail;
 
-torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
-  C10_LOG_API_USAGE_ONCE(
-      "torchvision.csrc.io.image.cpu.encode_jpeg.encode_jpeg");
-  // Define compression structures and error handling
+Tensor encode_jpeg(const Tensor& data, int64_t quality) {
+  // Note: C10_LOG_API_USAGE_ONCE is not available in stable ABI, so we just
+  // skip the logging Define compression structures and error handling
   struct jpeg_compress_struct cinfo {};
   struct torch_jpeg_error_mgr jerr {};
 
@@ -48,25 +50,26 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
       free(jpegBuf);
     }
 
-    TORCH_CHECK(false, (const char*)jerr.jpegLastErrorMsg);
+    VISION_CHECK(false, (const char*)jerr.jpegLastErrorMsg);
   }
 
   // Check that the input tensor is on CPU
-  TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
+  VISION_CHECK(data.device() == Device(kCPU), "Input tensor should be on CPU");
 
   // Check that the input tensor dtype is uint8
-  TORCH_CHECK(data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+  VISION_CHECK(
+      data.scalar_type() == kByte, "Input tensor dtype should be uint8");
 
   // Check that the input tensor is 3-dimensional
-  TORCH_CHECK(data.dim() == 3, "Input data should be a 3-dimensional tensor");
+  VISION_CHECK(data.dim() == 3, "Input data should be a 3-dimensional tensor");
 
   // Get image info
   int channels = data.size(0);
   int height = data.size(1);
   int width = data.size(2);
-  auto input = data.permute({1, 2, 0}).contiguous();
+  auto input = torch::stable::contiguous(permute(data, {1, 2, 0}));
 
-  TORCH_CHECK(
+  VISION_CHECK(
       channels == 1 || channels == 3,
       "The number of channels should be 1 or 3, got: ",
       channels);
@@ -90,21 +93,24 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   jpeg_start_compress(&cinfo, TRUE);
 
   auto stride = width * channels;
-  auto ptr = input.data_ptr<uint8_t>();
+  auto ptr = input.const_data_ptr<uint8_t>();
 
   // Encode JPEG file
   while (cinfo.next_scanline < cinfo.image_height) {
-    jpeg_write_scanlines(&cinfo, &ptr, 1);
+    jpeg_write_scanlines(&cinfo, const_cast<uint8_t**>(&ptr), 1);
     ptr += stride;
   }
 
   jpeg_finish_compress(&cinfo);
   jpeg_destroy_compress(&cinfo);
 
-  torch::TensorOptions options = torch::TensorOptions{torch::kU8};
-  auto out_tensor =
-      torch::from_blob(jpegBuf, {(long)jpegSize}, ::free, options);
-  jpegBuf = nullptr;
+  // Create tensor and copy data (from_blob with deleter not available in stable
+  // ABI)
+  auto out_tensor = emptyCPU({(int64_t)jpegSize}, kByte);
+  auto out_ptr = out_tensor.mutable_data_ptr<uint8_t>();
+  std::memcpy(out_ptr, jpegBuf, jpegSize);
+  free(jpegBuf);
+
   return out_tensor;
 }
 #endif
