@@ -179,9 +179,10 @@ def _xyxy_to_xywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
 def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
     # For integer tensors, use float arithmetic to match the behavior of
     # `torchvision.ops._box_convert._box_cxcywh_to_xyxy`.
+    original = cxcywh
     dtype = cxcywh.dtype
     need_cast = not cxcywh.is_floating_point()
-    # Float conversion creates a copy, so we only need to clone for floating point when not inplace
+
     if need_cast:
         cxcywh = cxcywh.float()
     elif not inplace:
@@ -195,6 +196,9 @@ def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
 
     if need_cast:
         cxcywh = cxcywh.to(dtype)
+        if inplace:
+            original[:] = cxcywh
+            return original
 
     return cxcywh
 
