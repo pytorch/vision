@@ -4,6 +4,7 @@ import warnings
 from collections.abc import Sequence
 from typing import Any, Optional, TYPE_CHECKING, Union
 
+import numpy as np
 import PIL.Image
 import torch
 from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
@@ -28,6 +29,7 @@ from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_b
 
 from ._utils import (
     _FillTypeJIT,
+    _get_cvcuda_interp,
     _get_kernel,
     _import_cvcuda,
     _is_cvcuda_available,
@@ -2525,6 +2527,82 @@ def elastic_video(
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
     return elastic_image(video, displacement, interpolation=interpolation, fill=fill)
+
+
+def _elastic_image_cvcuda(
+    image: "cvcuda.Tensor",
+    displacement: torch.Tensor,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    fill: _FillTypeJIT = None,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if not isinstance(displacement, torch.Tensor):
+        raise TypeError("Argument displacement should be a Tensor")
+
+    batch_size, height, width, num_channels = image.shape
+    device = torch.device("cuda")
+    dtype = torch.float32
+
+    expected_shape = (1, height, width, 2)
+    if expected_shape != displacement.shape:
+        raise ValueError(f"Argument displacement shape should be {expected_shape}, but given {displacement.shape}")
+
+    # cvcuda.remap only supports uint8 for 3-channel images, float32 for 1-channel
+    input_dtype = image.dtype
+    if num_channels == 3 and input_dtype != cvcuda.Type.U8:
+        raise ValueError(f"cvcuda.remap requires uint8 dtype for 3-channel images, but got {input_dtype}")
+    elif num_channels == 1 and input_dtype != cvcuda.Type.F32:
+        raise ValueError(f"cvcuda.remap requires float32 dtype for 1-channel images, but got {input_dtype}")
+
+    interp = _get_cvcuda_interp(interpolation)
+
+    # Build normalized grid: identity + displacement
+    # _create_identity_grid returns (1, H, W, 2) with values in [-1, 1]
+    identity_grid = _create_identity_grid((height, width), device=device, dtype=dtype)
+    grid = identity_grid.add_(displacement.to(dtype=dtype, device=device))
+
+    # Convert normalized grid [-1, 1] to absolute pixel coordinates [0, width-1], [0, height-1]
+    # grid[..., 0] is x (horizontal), grid[..., 1] is y (vertical)
+    map_x = (grid[..., 0] + 1) * (width - 1) / 2.0
+    map_y = (grid[..., 1] + 1) * (height - 1) / 2.0
+
+    # Stack into (1, H, W, 2) map tensor
+    pixel_map = torch.stack([map_x, map_y], dim=-1)
+
+    # Expand map for batch if needed
+    if batch_size > 1:
+        pixel_map = pixel_map.expand(batch_size, -1, -1, -1)
+
+    # Create cvcuda map tensor (NHWC layout with 2 channels for x,y)
+    cv_map = cvcuda.as_tensor(pixel_map.contiguous(), "NHWC")
+
+    border_mode = cvcuda.Border.CONSTANT
+    if fill is None:
+        border_value = np.array([], dtype=np.float32)
+    elif isinstance(fill, (int, float)):
+        border_value = np.array([fill], dtype=np.float32)
+    elif isinstance(fill, (list, tuple)):
+        border_value = np.array(fill, dtype=np.float32)
+    else:
+        border_value = np.array([], dtype=np.float32)
+
+    output = cvcuda.remap(
+        image,
+        cv_map,
+        src_interp=interp,
+        map_interp=cvcuda.Interp.LINEAR,
+        map_type=cvcuda.Remap.ABSOLUTE,
+        align_corners=False,
+        border=border_mode,
+        border_value=border_value,
+    )
+
+    return output
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(elastic, _import_cvcuda().Tensor)(_elastic_image_cvcuda)
 
 
 def center_crop(inpt: torch.Tensor, output_size: list[int]) -> torch.Tensor:
