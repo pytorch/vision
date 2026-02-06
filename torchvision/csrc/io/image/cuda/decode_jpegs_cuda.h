@@ -4,6 +4,7 @@
 #include "../common.h"
 
 #if NVJPEG_FOUND
+
 #include <c10/cuda/CUDAStream.h>
 #include <nvjpeg.h>
 
@@ -42,4 +43,55 @@ class CUDAJpegDecoder {
 };
 } // namespace image
 } // namespace vision
+
+#endif
+
+#if ROCJPEG_FOUND
+
+#include <c10/cuda/CUDAStream.h>
+#include <rocjpeg/rocjpeg.h>
+
+namespace vision {
+namespace image {
+class RocJpegDecoder {
+ public:
+  RocJpegDecoder(const torch::Device& target_device);
+  ~RocJpegDecoder();
+
+  std::vector<torch::Tensor> decode_images(
+      const std::vector<torch::Tensor>& encoded_images,
+      const RocJpegOutputFormat& output_format);
+
+  const torch::Device original_device;
+  const torch::Device target_device;
+  const c10::cuda::CUDAStream stream;
+
+ private:
+  RocJpegStreamHandle rocjpeg_stream_handles[2];
+  RocJpegHandle rocjpeg_handle;
+};
+} // namespace image
+} // namespace vision
+
+#define CHECK_ROCJPEG(call)                                                  \
+  {                                                                          \
+    RocJpegStatus rocjpeg_status = (call);                                   \
+    if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {                          \
+      std::cerr << #call << " returned "                                     \
+                << rocJpegGetErrorName(rocjpeg_status) << " at " << __FILE__ \
+                << ":" << __LINE__ << std::endl;                             \
+      exit(1);                                                               \
+    }                                                                        \
+  }
+
+#define CHECK_HIP(call)                                                    \
+  {                                                                        \
+    hipError_t hip_status = (call);                                        \
+    if (hip_status != hipSuccess) {                                        \
+      std::cout << "HIP failure: 'status: " << hipGetErrorName(hip_status) \
+                << "' at " << __FILE__ << ":" << __LINE__ << std::endl;    \
+      exit(1);                                                             \
+    }                                                                      \
+  }
+
 #endif
