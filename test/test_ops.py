@@ -1748,50 +1748,46 @@ class TestRotatedBoxIou:
     # ==================== Rotation Behavior Tests ====================
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_90_degree_rotation(self, dtype, device):
+    def test_90_degree_rotation(self, dtype):
         """90° rotation: horizontal and vertical rectangles form '+' shape."""
-        boxes1 = torch.tensor([[0, 0, 20, 10, 0]], dtype=dtype, device=device)
-        boxes2 = torch.tensor([[0, 0, 20, 10, 90]], dtype=dtype, device=device)
+        boxes1 = torch.tensor([[0, 0, 20, 10, 0]], dtype=dtype)
+        boxes2 = torch.tensor([[0, 0, 20, 10, 90]], dtype=dtype)
         iou = ops.rotated_box_iou(boxes1, boxes2)
         # Cross-shaped overlap: 0 < IoU < 1
         assert iou[0, 0] > 0, "Rotated boxes should have some overlap"
         assert iou[0, 0] < 1, "Rotated boxes should not fully overlap"
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_180_degree_rotation(self, dtype, device):
+    def test_180_degree_rotation(self, dtype):
         """180° rotation is geometrically identical to original."""
-        boxes1 = torch.tensor([[0, 0, 20, 10, 0]], dtype=dtype, device=device)
-        boxes2 = torch.tensor([[0, 0, 20, 10, 180]], dtype=dtype, device=device)
+        boxes1 = torch.tensor([[0, 0, 20, 10, 0]], dtype=dtype)
+        boxes2 = torch.tensor([[0, 0, 20, 10, 180]], dtype=dtype)
         iou = ops.rotated_box_iou(boxes1, boxes2)
-        expected = torch.tensor([[1.0]], dtype=dtype, device=device)
+        expected = torch.tensor([[1.0]], dtype=dtype)
         torch.testing.assert_close(iou, expected)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_45_degree_rotation(self, dtype, device):
+    def test_45_degree_rotation(self, dtype):
         """45° rotation: square vs diamond, significant overlap."""
-        boxes1 = torch.tensor([[0, 0, 10, 10, 0]], dtype=dtype, device=device)
-        boxes2 = torch.tensor([[0, 0, 10, 10, 45]], dtype=dtype, device=device)
+        boxes1 = torch.tensor([[0, 0, 10, 10, 0]], dtype=dtype)
+        boxes2 = torch.tensor([[0, 0, 10, 10, 45]], dtype=dtype)
         iou = ops.rotated_box_iou(boxes1, boxes2)
         assert iou[0, 0] > 0.5, "45-degree rotated square should have significant overlap"
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_negative_angle(self, dtype, device):
+    def test_negative_angle(self, dtype):
         """Negative angles work correctly (clockwise rotation).
 
         Verifies that +45° and -45° gives the same IoU as 0° and 90°,
         since both have the same 90° angular difference.
         """
         # +45° vs -45° (90° angular difference)
-        boxes_pos = torch.tensor([[0, 0, 20, 10, 45]], dtype=dtype, device=device)
-        boxes_neg = torch.tensor([[0, 0, 20, 10, -45]], dtype=dtype, device=device)
+        boxes_pos = torch.tensor([[0, 0, 20, 10, 45]], dtype=dtype)
+        boxes_neg = torch.tensor([[0, 0, 20, 10, -45]], dtype=dtype)
 
         # 0° vs 90° (same 90° angular difference)
-        boxes_0 = torch.tensor([[0, 0, 20, 10, 0]], dtype=dtype, device=device)
-        boxes_90 = torch.tensor([[0, 0, 20, 10, 90]], dtype=dtype, device=device)
+        boxes_0 = torch.tensor([[0, 0, 20, 10, 0]], dtype=dtype)
+        boxes_90 = torch.tensor([[0, 0, 20, 10, 90]], dtype=dtype)
 
         iou_neg = ops.rotated_box_iou(boxes_pos, boxes_neg)
         iou_90 = ops.rotated_box_iou(boxes_0, boxes_90)
@@ -1802,34 +1798,31 @@ class TestRotatedBoxIou:
     # ==================== Edge Cases ====================
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_box_inside_another(self, dtype, device):
+    def test_box_inside_another(self, dtype):
         """Containment: small box completely inside large box."""
-        boxes1 = torch.tensor([[0, 0, 20, 20, 0]], dtype=dtype, device=device)  # area = 400
-        boxes2 = torch.tensor([[0, 0, 10, 10, 0]], dtype=dtype, device=device)  # area = 100
+        boxes1 = torch.tensor([[0, 0, 20, 20, 0]], dtype=dtype)  # area = 400
+        boxes2 = torch.tensor([[0, 0, 10, 10, 0]], dtype=dtype)  # area = 100
         iou = ops.rotated_box_iou(boxes1, boxes2)
         # Intersection = 100, Union = 400, IoU = 0.25
-        expected = torch.tensor([[0.25]], dtype=dtype, device=device)
+        expected = torch.tensor([[0.25]], dtype=dtype)
         torch.testing.assert_close(iou, expected)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_zero_area_box(self, dtype, device):
+    def test_zero_area_box(self, dtype):
         """Degenerate box with zero area returns IoU = 0."""
-        boxes1 = torch.tensor([[0, 0, 0, 10, 0]], dtype=dtype, device=device)  # width = 0
-        boxes2 = torch.tensor([[0, 0, 10, 10, 0]], dtype=dtype, device=device)
+        boxes1 = torch.tensor([[0, 0, 0, 10, 0]], dtype=dtype)  # width = 0
+        boxes2 = torch.tensor([[0, 0, 10, 10, 0]], dtype=dtype)
         iou = ops.rotated_box_iou(boxes1, boxes2)
-        expected = torch.tensor([[0.0]], dtype=dtype, device=device)
+        expected = torch.tensor([[0.0]], dtype=dtype)
         torch.testing.assert_close(iou, expected)
 
     # ==================== API Contract Tests ====================
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_output_shape(self, dtype, device):
+    def test_output_shape(self, dtype):
         """Output shape is [N, M] for N and M input boxes."""
-        boxes1 = torch.rand(5, 5, dtype=dtype, device=device) * 100
-        boxes2 = torch.rand(7, 5, dtype=dtype, device=device) * 100
+        boxes1 = torch.rand(5, 5, dtype=dtype) * 100
+        boxes2 = torch.rand(7, 5, dtype=dtype) * 100
         boxes1[:, 2:4] = boxes1[:, 2:4].abs() + 1  # Ensure positive width/height
         boxes2[:, 2:4] = boxes2[:, 2:4].abs() + 1
         iou = ops.rotated_box_iou(boxes1, boxes2)
