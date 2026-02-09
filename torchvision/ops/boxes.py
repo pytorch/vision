@@ -487,6 +487,10 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     Returns a [N, 4] tensor containing bounding boxes. The boxes are in ``(x1, y1, x2, y2)`` format with
     ``0 <= x1 <= x2`` and ``0 <= y1 <= y2``.
 
+    .. note::
+
+        Empty masks (all zeros) will return bounding boxes ``[0, 0, 0, 0]``.
+
     .. warning::
 
         In most cases the output will guarantee ``x1 < x2`` and ``y1 < y2``. But
@@ -512,9 +516,10 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     for index, mask in enumerate(masks):
         y, x = torch.where(mask != 0)
 
-        bounding_boxes[index, 0] = torch.min(x)
-        bounding_boxes[index, 1] = torch.min(y)
-        bounding_boxes[index, 2] = torch.max(x)
-        bounding_boxes[index, 3] = torch.max(y)
+        if x.numel() > 0:
+            bounding_boxes[index, 0] = torch.min(x)
+            bounding_boxes[index, 1] = torch.min(y)
+            bounding_boxes[index, 2] = torch.max(x)
+            bounding_boxes[index, 3] = torch.max(y)
 
     return bounding_boxes
