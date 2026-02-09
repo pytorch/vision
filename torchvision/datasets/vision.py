@@ -1,13 +1,14 @@
 import os
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 import torch.utils.data as data
 
 from ..utils import _log_api_usage_once
 
+T_co = TypeVar("T_co", covariant=True)
 
-class VisionDataset(data.Dataset):
+class VisionDataset(data.Dataset[T_co]):
     """
     Base Class For making datasets which are compatible with torchvision.
     It is necessary to override the ``__getitem__`` and ``__len__`` method.
@@ -53,7 +54,7 @@ class VisionDataset(data.Dataset):
             transforms = StandardTransform(transform, target_transform)
         self.transforms = transforms
 
-    def __getitem__(self, index: int) -> Any:
+    def __getitem__(self, index: int) -> T_co:
         """
         Args:
             index (int): Index
