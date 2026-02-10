@@ -14,6 +14,7 @@ from .boxes import (
 )
 from .ciou_loss import complete_box_iou_loss
 from .deform_conv import deform_conv2d, DeformConv2d
+from .dice_loss import dice_loss
 from .diou_loss import distance_box_iou_loss
 from .drop_block import drop_block2d, drop_block3d, DropBlock2d, DropBlock3d
 from .feature_pyramid_network import FeaturePyramidNetwork
