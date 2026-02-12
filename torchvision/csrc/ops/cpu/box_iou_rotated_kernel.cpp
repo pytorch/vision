@@ -44,6 +44,7 @@ inline T dot_2d(const Point<T>& A, const Point<T>& B) {
   return A.x * B.x + A.y * B.y;
 }
 
+// R: result type. can be different from input type
 template <typename T, typename R = T>
 inline R cross_2d(const Point<T>& A, const Point<T>& B) {
   return static_cast<R>(A.x) * static_cast<R>(B.y) -
@@ -52,10 +53,12 @@ inline R cross_2d(const Point<T>& A, const Point<T>& B) {
 
 template <typename T>
 inline void get_rotated_vertices(const RotatedBox<T>& box, Point<T> (&pts)[4]) {
-  double theta = box.a * 0.01745329251; // M_PI / 180
+  // M_PI / 180. == 0.01745329251
+  double theta = box.a * 0.01745329251;
   T cosTheta2 = (T)cos(theta) * 0.5f;
   T sinTheta2 = (T)sin(theta) * 0.5f;
 
+  // y: top --> down; x: left --> right
   pts[0].x = box.x_ctr + sinTheta2 * box.h + cosTheta2 * box.w;
   pts[0].y = box.y_ctr + cosTheta2 * box.h - sinTheta2 * box.w;
   pts[1].x = box.x_ctr - sinTheta2 * box.h + cosTheta2 * box.w;
@@ -71,19 +74,29 @@ inline int get_intersection_points(
     const Point<T> (&pts1)[4],
     const Point<T> (&pts2)[4],
     Point<T> (&intersections)[24]) {
+  // Line vector
+  // A line from p1 to p2 is: p1 + (p2-p1)*t, t=[0,1]
   Point<T> vec1[4], vec2[4];
   for (int i = 0; i < 4; i++) {
     vec1[i] = pts1[(i + 1) % 4] - pts1[i];
     vec2[i] = pts2[(i + 1) % 4] - pts2[i];
   }
 
+  // When computing the intersection area, it doesn't hurt if we have
+  // more (duplicated/approximate) intersections/vertices than needed,
+  // while it can cause drastic difference if we miss an intersection/vertex.
+  // Therefore, we add an epsilon to relax the comparisons between
+  // the float point numbers that decide the intersection points.
   double EPS = 1e-5;
 
-  int num = 0;
+  // Line test - test all line combos for intersection
+  int num = 0; // number of intersections
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++) {
+      // Solve for 2x2 Ax=b
       T det = cross_2d<T>(vec2[j], vec1[i]);
 
+      // This takes care of parallel lines
       if (fabs(det) <= 1e-14) {
         continue;
       }
@@ -99,12 +112,16 @@ inline int get_intersection_points(
     }
   }
 
+  // Check for vertices of rect1 inside rect2
   {
     const auto& AB = vec2[0];
     const auto& DA = vec2[3];
     auto ABdotAB = dot_2d<T>(AB, AB);
     auto ADdotAD = dot_2d<T>(DA, DA);
     for (int i = 0; i < 4; i++) {
+      // assume ABCD is the rectangle, and P is the point to be judged
+      // P is inside ABCD iff. P's projection on AB lies within AB
+      // and P's projection on AD lies within AD
       auto AP = pts1[i] - pts2[0];
 
       auto APdotAB = dot_2d<T>(AP, AB);
@@ -117,6 +134,7 @@ inline int get_intersection_points(
     }
   }
 
+  // Reverse the check - check for vertices of rect2 inside rect1
   {
     const auto& AB = vec1[0];
     const auto& DA = vec1[3];
@@ -146,22 +164,33 @@ inline int convex_hull_graham(
     bool shift_to_zero = false) {
   assert(num_in >= 2);
 
+  // Step 1:
+  // Find point with minimum y
+  // if more than 1 points have the same minimum y,
+  // pick the one with the minimum x.
   int t = 0;
   for (int i = 1; i < num_in; i++) {
     if (p[i].y < p[t].y || (p[i].y == p[t].y && p[i].x < p[t].x)) {
       t = i;
     }
   }
-  auto& start = p[t];
+  auto& start = p[t]; // starting point
 
+  // Step 2:
+  // Subtract starting point from every points (for sorting in the next step)
   for (int i = 0; i < num_in; i++) {
     q[i] = p[i] - start;
   }
 
+  // Swap the starting point to position 0
   auto tmp = q[0];
   q[0] = q[t];
   q[t] = tmp;
 
+  // Step 3:
+  // Sort point 1 ~ num_in according to their relative cross-product values
+  // (essentially sorting according to angles)
+  // If the angles are the same, sort according to their distance to origin
   T dist[24];
   for (int i = 0; i < num_in; i++) {
     dist[i] = dot_2d<T>(q[i], q[i]);
@@ -182,26 +211,42 @@ inline int convex_hull_graham(
     }
   }
 
+  // compute distance to origin after sort, since the points are now different.
   for (int i = 0; i < num_in; i++) {
     dist[i] = dot_2d<T>(q[i], q[i]);
   }
 
-  int k;
+  // Step 4:
+  // Make sure there are at least 2 points (that don't overlap with each other)
+  // in the stack
+  int k; // index of the non-overlapped second point
   for (k = 1; k < num_in; k++) {
     if (dist[k] > 1e-8) {
       break;
     }
   }
   if (k == num_in) {
+    // We reach the end, which means the convex hull is just one point
     q[0] = p[t];
     return 1;
   }
   q[1] = q[k];
-  int m = 2;
+  int m = 2; // 2 points in the stack
 
+  // Step 5:
+  // Finally we can start the scanning process.
+  // When a non-convex relationship between the 3 points is found
+  // (either concave shape or duplicated points),
+  // we pop the previous point from the stack
+  // until the 3-point relationship is convex again, or
+  // until the stack only contains two points
   for (int i = k + 1; i < num_in; i++) {
     while (m > 1) {
       auto q1 = q[i] - q[m - 2], q2 = q[m - 1] - q[m - 2];
+      // cross_2d() uses FMA and therefore computes round(round(q1.x*q2.y) -
+      // q2.x*q1.y) So it may not return 0 even when q1==q2. Therefore we
+      // compare round(q1.x*q2.y) and round(q2.x*q1.y) directly. (round means
+      // round to nearest floating point).
       if (q1.x * q2.y >= q2.x * q1.y) {
         m--;
       } else {
@@ -211,6 +256,11 @@ inline int convex_hull_graham(
     q[m++] = q[i];
   }
 
+  // Step 6 (Optional):
+  // In general sense we need the original coordinates, so we
+  // need to shift the points back (reverting Step 2)
+  // But if we're only interested in getting the area/perimeter of the shape
+  // We can simply return.
   if (!shift_to_zero) {
     for (int i = 0; i < m; i++) {
       q[i] += start;
@@ -238,6 +288,8 @@ template <typename T>
 inline T rotated_boxes_intersection(
     const RotatedBox<T>& box1,
     const RotatedBox<T>& box2) {
+  // There are up to 4 x 4 + 4 + 4 = 24 intersections (including dups) returned
+  // from get_intersection_points
   Point<T> intersectPts[24], orderedPts[24];
 
   Point<T> pts1[4];
@@ -251,6 +303,8 @@ inline T rotated_boxes_intersection(
     return 0.0;
   }
 
+  // Convex Hull to order the intersection points in clockwise order and find
+  // the contour area.
   int num_convex = convex_hull_graham<T>(intersectPts, num, orderedPts, true);
   return polygon_area<T>(orderedPts, num_convex);
 }
@@ -259,6 +313,7 @@ template <typename T>
 inline T single_box_iou_rotated(
     T const* const box1_raw,
     T const* const box2_raw) {
+  // shift center to the middle point to achieve higher precision in result
   RotatedBox<T> box1, box2;
   auto center_shift_x = (box1_raw[0] + box2_raw[0]) / 2.0;
   auto center_shift_y = (box1_raw[1] + box2_raw[1]) / 2.0;
