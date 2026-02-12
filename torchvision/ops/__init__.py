@@ -11,7 +11,6 @@ from .boxes import (
     masks_to_boxes,
     nms,
     remove_small_boxes,
-    rotated_box_iou,
 )
 from .ciou_loss import complete_box_iou_loss
 from .deform_conv import deform_conv2d, DeformConv2d
@@ -42,7 +41,6 @@ __all__ = [
     "box_convert",
     "box_area",
     "box_iou",
-    "rotated_box_iou",
     "generalized_box_iou",
     "distance_box_iou",
     "complete_box_iou",

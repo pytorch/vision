@@ -1757,7 +1757,7 @@ class TestRotatedBoxIou:
 
         # Convert test boxes from cxcywhr to target format
         boxes = ops.box_convert(torch.tensor(boxes_data, dtype=dtype), in_fmt="cxcywhr", out_fmt=fmt)
-        out = ops.rotated_box_iou(boxes, boxes, fmt=fmt)
+        out = ops.box_iou(boxes, boxes, fmt=fmt)
         expected_tensor = torch.tensor(expected)
         torch.testing.assert_close(out, expected_tensor, check_dtype=False, atol=1e-4, rtol=1e-4)
 
@@ -1773,12 +1773,12 @@ class TestRotatedBoxIou:
         box_neg45 = torch.tensor([[0, 0, 10, 10, -45]], dtype=dtype)
 
         # +45° and -45° should produce identical shapes for same-center square
-        iou_45_vs_neg45 = ops.rotated_box_iou(box_45, box_neg45)
+        iou_45_vs_neg45 = ops.box_iou(box_45, box_neg45, fmt="cxcywhr")
         torch.testing.assert_close(iou_45_vs_neg45, torch.tensor([[1.0]], dtype=dtype))
 
         # Symmetry: 0° vs +45° should equal 0° vs -45°
-        iou_0_vs_45 = ops.rotated_box_iou(box_0, box_45)
-        iou_0_vs_neg45 = ops.rotated_box_iou(box_0, box_neg45)
+        iou_0_vs_45 = ops.box_iou(box_0, box_45, fmt="cxcywhr")
+        iou_0_vs_neg45 = ops.box_iou(box_0, box_neg45, fmt="cxcywhr")
         torch.testing.assert_close(iou_0_vs_45, iou_0_vs_neg45)
 
     # ==================== Edge Cases ====================
@@ -1789,7 +1789,7 @@ class TestRotatedBoxIou:
         # Both boxes rotated 45°, same center, different sizes
         boxes1 = torch.tensor([[0, 0, 20, 20, 45]], dtype=dtype)
         boxes2 = torch.tensor([[0, 0, 10, 10, 45]], dtype=dtype)
-        iou = ops.rotated_box_iou(boxes1, boxes2)
+        iou = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         # Intersection = 100, Union = 400, IoU = 0.25
         expected = torch.tensor([[0.25]], dtype=dtype)
         torch.testing.assert_close(iou, expected)
@@ -1799,7 +1799,7 @@ class TestRotatedBoxIou:
         """Degenerate rotated box with zero area returns IoU = 0."""
         boxes1 = torch.tensor([[0, 0, 0, 10, 45]], dtype=dtype)
         boxes2 = torch.tensor([[0, 0, 10, 10, 30]], dtype=dtype)
-        iou = ops.rotated_box_iou(boxes1, boxes2)
+        iou = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         expected = torch.tensor([[0.0]], dtype=dtype)
         torch.testing.assert_close(iou, expected)
 
@@ -1812,18 +1812,18 @@ class TestRotatedBoxIou:
         boxes2 = torch.rand(7, 5, dtype=dtype) * 100
         boxes1[:, 2:4] = boxes1[:, 2:4].abs() + 1  # Ensure positive width/height
         boxes2[:, 2:4] = boxes2[:, 2:4].abs() + 1
-        iou = ops.rotated_box_iou(boxes1, boxes2)
+        iou = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         assert iou.shape == (5, 7), f"Expected shape (5, 7), got {iou.shape}"
 
     def test_invalid_format(self):
         """Invalid format raises ValueError."""
         boxes = torch.tensor([[0, 0, 10, 10, 0]], dtype=torch.float32)
         with pytest.raises(ValueError, match="Unsupported format"):
-            ops.rotated_box_iou(boxes, boxes, fmt="invalid_fmt")
+            ops.box_iou(boxes, boxes, fmt="invalid_fmt")
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
-    def test_consistency_with_box_iou(self, dtype):
-        """rotated_box_iou with angle=0 should match box_iou exactly."""
+    def test_consistency_with_axis_aligned(self, dtype):
+        """box_iou with rotated format (angle=0) should match axis-aligned box_iou."""
 
         torch.manual_seed(42)
         # Create axis-aligned random boxes that are likely to overlap by placing them in a small region
@@ -1833,15 +1833,15 @@ class TestRotatedBoxIou:
         boxes_xyxy[:, 2] = boxes_xyxy[:, 0] + torch.rand(n_boxes, dtype=dtype) * 20 + 5
         boxes_xyxy[:, 3] = boxes_xyxy[:, 1] + torch.rand(n_boxes, dtype=dtype) * 20 + 5
 
-        # Compute IoU using standard box_iou
-        iou_standard = ops.box_iou(boxes_xyxy, boxes_xyxy)
+        # Compute IoU using axis-aligned format
+        iou_standard = ops.box_iou(boxes_xyxy, boxes_xyxy, fmt="xyxy")
 
-        # Convert to cxcywhr format (with angle=0) for rotated_box_iou
+        # Convert to cxcywhr format (with angle=0) for rotated computation
         boxes_cxcywhr = ops.box_convert(boxes_xyxy, in_fmt="xyxy", out_fmt="cxcywh")
         # Add angle=0 column
         boxes_cxcywhr = torch.cat([boxes_cxcywhr, torch.zeros(n_boxes, 1, dtype=dtype)], dim=1)
 
-        iou_rotated = ops.rotated_box_iou(boxes_cxcywhr, boxes_cxcywhr)
+        iou_rotated = ops.box_iou(boxes_cxcywhr, boxes_cxcywhr, fmt="cxcywhr")
         torch.testing.assert_close(iou_rotated, iou_standard)
 
     # ==================== Extra Tests Adapted from Detectron2 ====================
@@ -1852,13 +1852,13 @@ class TestRotatedBoxIou:
         boxes1 = torch.rand(0, 5, dtype=dtype)
         boxes2 = torch.rand(10, 5, dtype=dtype)
         expected_ious = torch.zeros(0, 10, dtype=dtype)
-        ious = ops.rotated_box_iou(boxes1, boxes2)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         torch.testing.assert_close(ious, expected_ious)
 
         boxes1 = torch.rand(10, 5, dtype=dtype)
         boxes2 = torch.rand(0, 5, dtype=dtype)
         expected_ious = torch.zeros(10, 0, dtype=dtype)
-        ious = ops.rotated_box_iou(boxes1, boxes2)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         torch.testing.assert_close(ious, expected_ious)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -1867,7 +1867,7 @@ class TestRotatedBoxIou:
         boxes1 = torch.tensor([[565, 565, 10, 10.0, 0]], dtype=dtype)
         boxes2 = torch.tensor([[565, 565, 10, 8.3, 0]], dtype=dtype)
         expected_iou = 8.3 / 10.0
-        ious = ops.rotated_box_iou(boxes1, boxes2)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         torch.testing.assert_close(ious, torch.tensor([[expected_iou]], dtype=dtype))
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -1878,7 +1878,7 @@ class TestRotatedBoxIou:
             [[-1.117407639806935e17, 1.3858420478349148e18, 1000.0, 1000.0, 1612.0]],
             dtype=dtype,
         )
-        ious = ops.rotated_box_iou(boxes1, boxes2)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         assert ious.min() >= 0, f"IoU should not be negative, got {ious}"
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -1892,7 +1892,7 @@ class TestRotatedBoxIou:
             [[296.66201, 458.73882, 23.51573, 47.67702, 0.087951]],
             dtype=dtype,
         )
-        ious = ops.rotated_box_iou(boxes1, boxes2)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         torch.testing.assert_close(ious, torch.tensor([[1.0]], dtype=dtype), atol=1e-3, rtol=1e-3)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -1902,7 +1902,7 @@ class TestRotatedBoxIou:
         boxes2 = torch.tensor([[5, 5, 10, 6, -35]], dtype=dtype)
         # Intersection is 6x6 square, union = 2 * (10*6) - 36 = 84
         expected_iou = (6.0 * 6.0) / (6.0 * 6.0 + 4.0 * 6.0 + 4.0 * 6.0)
-        ious = ops.rotated_box_iou(boxes1, boxes2)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         torch.testing.assert_close(ious, torch.tensor([[expected_iou]], dtype=dtype), atol=1e-4, rtol=1e-4)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -1921,7 +1921,7 @@ class TestRotatedBoxIou:
         expected_ious = torch.zeros(num_boxes1, num_boxes2, dtype=dtype)
         for i in range(min(num_boxes1, num_boxes2)):
             expected_ious[i][i] = (1 + 9 * i / num_boxes2) / 10.0
-        ious = ops.rotated_box_iou(boxes1, boxes2)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         torch.testing.assert_close(ious, expected_ious, atol=1e-4, rtol=1e-4)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -1951,7 +1951,7 @@ class TestRotatedBoxIou:
             ],
             dtype=dtype,
         )
-        ious = ops.rotated_box_iou(boxes1, boxes2)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         torch.testing.assert_close(ious, torch.tensor([[1.0]], dtype=dtype), atol=1e-3, rtol=1e-3)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -1967,7 +1967,7 @@ class TestRotatedBoxIou:
         )
         # IoU should be ratio of smaller height to larger height (same center, same width, same angle)
         expected_iou = 364.259155 / 364.259186
-        ious = ops.rotated_box_iou(boxes1, boxes2)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         torch.testing.assert_close(ious, torch.tensor([[expected_iou]], dtype=dtype), atol=1e-4, rtol=1e-4)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -1975,7 +1975,7 @@ class TestRotatedBoxIou:
         """Non-overlapping rotated boxes should have IoU = 0."""
         boxes1 = torch.tensor([[3, 3, 8, 2, -45.0]], dtype=dtype)
         boxes2 = torch.tensor([[6, 0, 8, 2, -45.0]], dtype=dtype)
-        ious = ops.rotated_box_iou(boxes1, boxes2)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         torch.testing.assert_close(ious, torch.tensor([[0.0]], dtype=dtype))
 
 

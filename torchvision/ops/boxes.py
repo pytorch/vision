@@ -349,28 +349,77 @@ def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
     Return intersection-over-union (Jaccard index) between two sets of boxes from a given format.
 
     Args:
-        boxes1 (Tensor[..., N, 4]): first set of boxes
-        boxes2 (Tensor[..., M, 4]): second set of boxes
+        boxes1 (Tensor[..., N, K]): first set of boxes
+        boxes2 (Tensor[..., M, K]): second set of boxes
         fmt (str): Format of the input boxes.
             Default is "xyxy" to preserve backward compatibility.
-            Supported formats are "xyxy", "xywh", and "cxcywh".
+
+            Supported axis-aligned formats (K=4):
+
+            - ``'xyxy'``: boxes are represented via (x1, y1, x2, y2) corner coordinates.
+            - ``'xywh'``: boxes are represented via (x1, y1, width, height).
+            - ``'cxcywh'``: boxes are represented via (cx, cy, width, height) center coordinates.
+
+            Supported rotated formats:
+
+            - ``'cxcywhr'`` (K=5): boxes are represented via center, width, height, and rotation angle.
+              (cx, cy) is the center, (w, h) is width and height, r is rotation angle in degrees
+              (counter-clockwise positive).
+            - ``'xywhr'`` (K=5): boxes are represented via corner, width, height, and rotation angle.
+              (x1, y1) is the top-left corner, (w, h) is width and height, r is rotation angle in degrees.
+            - ``'xyxyxyxy'`` (K=8): boxes are represented via 4 corner coordinates.
+              (x1, y1) is top-left, (x2, y2) is top-right, (x3, y3) is bottom-right, (x4, y4) is bottom-left.
 
     Returns:
         Tensor[..., N, M]: the NxM matrix containing the pairwise IoU values for every element
         in boxes1 and boxes2
+
+    Example:
+        >>> # Axis-aligned boxes
+        >>> boxes1 = torch.tensor([[0, 0, 10, 10], [20, 20, 30, 30]], dtype=torch.float32)
+        >>> boxes2 = torch.tensor([[5, 5, 15, 15]], dtype=torch.float32)
+        >>> iou = box_iou(boxes1, boxes2)
+        >>> iou.shape
+        torch.Size([2, 1])
+        >>> # Rotated boxes
+        >>> boxes1 = torch.tensor([[100, 100, 50, 30, 0], [200, 200, 60, 40, 45]], dtype=torch.float32)
+        >>> boxes2 = torch.tensor([[100, 100, 50, 30, 0], [150, 150, 50, 30, 30]], dtype=torch.float32)
+        >>> iou = box_iou(boxes1, boxes2, fmt="cxcywhr")
+        >>> iou.shape
+        torch.Size([2, 2])
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(box_iou)
-    allowed_fmts = (
-        "xyxy",
-        "xywh",
-        "cxcywh",
-    )
-    if fmt not in allowed_fmts:
-        raise ValueError(f"Unsupported Box IoU Calculation for given format {fmt}.")
-    inter, union = _box_inter_union(boxes1, boxes2, fmt=fmt)
-    iou = inter / union
-    return iou
+
+    axis_aligned_fmts = ("xyxy", "xywh", "cxcywh")
+    rotated_fmts = ("cxcywhr", "xywhr", "xyxyxyxy")
+
+    if fmt in axis_aligned_fmts:
+        inter, union = _box_inter_union(boxes1, boxes2, fmt=fmt)
+        iou = inter / union
+        return iou
+    elif fmt in rotated_fmts:
+        # Convert to cxcywhr format for internal computation
+        if fmt != "cxcywhr":
+            boxes1 = box_convert(boxes1, in_fmt=fmt, out_fmt="cxcywhr")
+            boxes2 = box_convert(boxes2, in_fmt=fmt, out_fmt="cxcywhr")
+
+        _assert_has_ops()
+
+        # C++ implementation always returns float32, so we need to convert back if input was float64
+        original_dtype = boxes1.dtype
+        result = torch.ops.torchvision.box_iou_rotated(boxes1, boxes2)
+
+        if original_dtype != torch.float32:
+            result = result.to(original_dtype)
+
+        return result
+    else:
+        raise ValueError(
+            f"Unsupported format '{fmt}'. "
+            f"Supported axis-aligned formats: {axis_aligned_fmts}. "
+            f"Supported rotated formats: {rotated_fmts}."
+        )
 
 
 # Implementation adapted from https://github.com/facebookresearch/detr/blob/master/util/box_ops.py
@@ -481,60 +530,6 @@ def _box_diou_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> tuple[Te
     # The distance IoU is the IoU penalized by a normalized
     # distance between boxes' centers squared.
     return iou - (centers_distance_squared / diagonal_distance_squared), iou
-
-
-def rotated_box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "cxcywhr") -> Tensor:
-    """
-    Return intersection-over-union (Jaccard index) between two sets of rotated boxes.
-
-    Args:
-        boxes1 (Tensor[N, K]): First set of rotated boxes
-        boxes2 (Tensor[M, K]): Second set of rotated boxes
-        fmt (str): Format of the input boxes. Supported formats are:
-
-            - ``'cxcywhr'`` (default): boxes are represented via center, width, height, and rotation angle.
-              (cx, cy) is the center, (w, h) is width and height, r is rotation angle in degrees
-              (counter-clockwise positive).
-
-            - ``'xywhr'``: boxes are represented via corner, width, height, and rotation angle.
-              (x1, y1) is the top-left corner, (w, h) is width and height, r is rotation angle in degrees.
-
-            - ``'xyxyxyxy'``: boxes are represented via 4 corner coordinates.
-              (x1, y1) is top-left, (x2, y2) is top-right, (x3, y3) is bottom-right, (x4, y4) is bottom-left.
-
-    Returns:
-        Tensor[N, M]: the NxM matrix containing the pairwise IoU values
-            for every element in boxes1 and boxes2
-
-    Example:
-        >>> boxes1 = torch.tensor([[100, 100, 50, 30, 0], [200, 200, 60, 40, 45]], dtype=torch.float32)
-        >>> boxes2 = torch.tensor([[100, 100, 50, 30, 0], [150, 150, 50, 30, 30]], dtype=torch.float32)
-        >>> iou = rotated_box_iou(boxes1, boxes2)
-        >>> iou.shape
-        torch.Size([2, 2])
-    """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(rotated_box_iou)
-
-    allowed_fmts = ("cxcywhr", "xywhr", "xyxyxyxy")
-    if fmt not in allowed_fmts:
-        raise ValueError(f"Unsupported format '{fmt}'. Supported formats are {allowed_fmts}")
-
-    # Convert to cxcywhr format for internal computation
-    if fmt != "cxcywhr":
-        boxes1 = box_convert(boxes1, in_fmt=fmt, out_fmt="cxcywhr")
-        boxes2 = box_convert(boxes2, in_fmt=fmt, out_fmt="cxcywhr")
-
-    _assert_has_ops()
-
-    # C++ implementation always returns float32, so we need to convert back if input was float64
-    original_dtype = boxes1.dtype
-    result = torch.ops.torchvision.box_iou_rotated(boxes1, boxes2)
-
-    if original_dtype != torch.float32:
-        result = result.to(original_dtype)
-
-    return result
 
 
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
