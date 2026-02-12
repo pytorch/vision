@@ -1844,6 +1844,140 @@ class TestRotatedBoxIou:
         iou_rotated = ops.rotated_box_iou(boxes_cxcywhr, boxes_cxcywhr)
         torch.testing.assert_close(iou_rotated, iou_standard)
 
+    # ==================== Extra Tests Adapted from Detectron2 ====================
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_empty_boxes(self, dtype):
+        """Empty input should return empty output tensor."""
+        boxes1 = torch.rand(0, 5, dtype=dtype)
+        boxes2 = torch.rand(10, 5, dtype=dtype)
+        expected_ious = torch.zeros(0, 10, dtype=dtype)
+        ious = ops.rotated_box_iou(boxes1, boxes2)
+        torch.testing.assert_close(ious, expected_ious)
+
+        boxes1 = torch.rand(10, 5, dtype=dtype)
+        boxes2 = torch.rand(0, 5, dtype=dtype)
+        expected_ious = torch.zeros(10, 0, dtype=dtype)
+        ious = ops.rotated_box_iou(boxes1, boxes2)
+        torch.testing.assert_close(ious, expected_ious)
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_iou_precision(self, dtype):
+        """IoU precision at large coordinates."""
+        boxes1 = torch.tensor([[565, 565, 10, 10.0, 0]], dtype=dtype)
+        boxes2 = torch.tensor([[565, 565, 10, 8.3, 0]], dtype=dtype)
+        expected_iou = 8.3 / 10.0
+        ious = ops.rotated_box_iou(boxes1, boxes2)
+        torch.testing.assert_close(ious, torch.tensor([[expected_iou]], dtype=dtype))
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_iou_extreme_values(self, dtype):
+        """Extreme values should not produce negative IoU (regression test)."""
+        boxes1 = torch.tensor([[160.0, 153.0, 230.0, 23.0, -37.0]], dtype=dtype)
+        boxes2 = torch.tensor(
+            [[-1.117407639806935e17, 1.3858420478349148e18, 1000.0, 1000.0, 1612.0]],
+            dtype=dtype,
+        )
+        ious = ops.rotated_box_iou(boxes1, boxes2)
+        assert ious.min() >= 0, f"IoU should not be negative, got {ious}"
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_near_identical_boxes(self, dtype):
+        """Nearly identical boxes should have IoU close to 1.0 (numerical precision)."""
+        boxes1 = torch.tensor(
+            [[296.6620178222656, 458.73883056640625, 23.515729904174805, 47.677001953125, 0.08795166015625]],
+            dtype=dtype,
+        )
+        boxes2 = torch.tensor(
+            [[296.66201, 458.73882, 23.51573, 47.67702, 0.087951]],
+            dtype=dtype,
+        )
+        ious = ops.rotated_box_iou(boxes1, boxes2)
+        torch.testing.assert_close(ious, torch.tensor([[1.0]], dtype=dtype), atol=1e-3, rtol=1e-3)
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_orthogonal_rectangles(self, dtype):
+        """Two rectangles with 90 degree angle difference (orthogonal)."""
+        boxes1 = torch.tensor([[5, 5, 10, 6, 55]], dtype=dtype)
+        boxes2 = torch.tensor([[5, 5, 10, 6, -35]], dtype=dtype)
+        # Intersection is 6x6 square, union = 2 * (10*6) - 36 = 84
+        expected_iou = (6.0 * 6.0) / (6.0 * 6.0 + 4.0 * 6.0 + 4.0 * 6.0)
+        ious = ops.rotated_box_iou(boxes1, boxes2)
+        torch.testing.assert_close(ious, torch.tensor([[expected_iou]], dtype=dtype), atol=1e-4, rtol=1e-4)
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_many_boxes(self, dtype):
+        """Scale test with many boxes (100 x 200)."""
+        num_boxes1, num_boxes2 = 100, 200
+        boxes1 = torch.stack(
+            [torch.tensor([5 + 20 * i, 5 + 20 * i, 10, 10, 0], dtype=dtype) for i in range(num_boxes1)]
+        )
+        boxes2 = torch.stack(
+            [
+                torch.tensor([5 + 20 * i, 5 + 20 * i, 10, 1 + 9 * i / num_boxes2, 0], dtype=dtype)
+                for i in range(num_boxes2)
+            ]
+        )
+        expected_ious = torch.zeros(num_boxes1, num_boxes2, dtype=dtype)
+        for i in range(min(num_boxes1, num_boxes2)):
+            expected_ious[i][i] = (1 + 9 * i / num_boxes2) / 10.0
+        ious = ops.rotated_box_iou(boxes1, boxes2)
+        torch.testing.assert_close(ious, expected_ious, atol=1e-4, rtol=1e-4)
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_near_identical_large_boxes(self, dtype):
+        """Nearly identical large boxes should have IoU close to 1.0."""
+        boxes1 = torch.tensor(
+            [
+                [
+                    2563.74462890625,
+                    1436.79016113281250,
+                    2174.70336914062500,
+                    214.09500122070312500,
+                    115.11834716796875,
+                ]
+            ],
+            dtype=dtype,
+        )
+        boxes2 = torch.tensor(
+            [
+                [
+                    2563.74462890625,
+                    1436.79028320312500,
+                    2174.70288085937500,
+                    214.09495544433593750,
+                    115.11835479736328125,
+                ]
+            ],
+            dtype=dtype,
+        )
+        ious = ops.rotated_box_iou(boxes1, boxes2)
+        torch.testing.assert_close(ious, torch.tensor([[1.0]], dtype=dtype), atol=1e-3, rtol=1e-3)
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_large_close_boxes(self, dtype):
+        """Large boxes with tiny height difference should have predictable IoU."""
+        boxes1 = torch.tensor(
+            [[299.500000, 417.370422, 600.000000, 364.259186, 27.1828]],
+            dtype=dtype,
+        )
+        boxes2 = torch.tensor(
+            [[299.500000, 417.370422, 600.000000, 364.259155, 27.1828]],
+            dtype=dtype,
+        )
+        # IoU should be ratio of smaller height to larger height (same center, same width, same angle)
+        expected_iou = 364.259155 / 364.259186
+        ious = ops.rotated_box_iou(boxes1, boxes2)
+        torch.testing.assert_close(ious, torch.tensor([[expected_iou]], dtype=dtype), atol=1e-4, rtol=1e-4)
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_non_overlapping_rotated_boxes(self, dtype):
+        """Non-overlapping rotated boxes should have IoU = 0."""
+        boxes1 = torch.tensor([[3, 3, 8, 2, -45.0]], dtype=dtype)
+        boxes2 = torch.tensor([[6, 0, 8, 2, -45.0]], dtype=dtype)
+        ious = ops.rotated_box_iou(boxes1, boxes2)
+        torch.testing.assert_close(ious, torch.tensor([[0.0]], dtype=dtype))
+
 
 def get_boxes(dtype, device):
     box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
