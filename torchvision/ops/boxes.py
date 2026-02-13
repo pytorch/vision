@@ -374,19 +374,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
         Tensor[..., N, M]: the NxM matrix containing the pairwise IoU values for every element
         in boxes1 and boxes2
 
-    Example:
-        >>> # Axis-aligned boxes
-        >>> boxes1 = torch.tensor([[0, 0, 10, 10], [20, 20, 30, 30]], dtype=torch.float32)
-        >>> boxes2 = torch.tensor([[5, 5, 15, 15]], dtype=torch.float32)
-        >>> iou = box_iou(boxes1, boxes2)
-        >>> iou.shape
-        torch.Size([2, 1])
-        >>> # Rotated boxes
-        >>> boxes1 = torch.tensor([[100, 100, 50, 30, 0], [200, 200, 60, 40, 45]], dtype=torch.float32)
-        >>> boxes2 = torch.tensor([[100, 100, 50, 30, 0], [150, 150, 50, 30, 30]], dtype=torch.float32)
-        >>> iou = box_iou(boxes1, boxes2, fmt="cxcywhr")
-        >>> iou.shape
-        torch.Size([2, 2])
+
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(box_iou)
@@ -405,15 +393,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> Tensor:
             boxes2 = box_convert(boxes2, in_fmt=fmt, out_fmt="cxcywhr")
 
         _assert_has_ops()
-
-        # C++ implementation always returns float32, so we need to convert back if input was float64
-        original_dtype = boxes1.dtype
-        result = torch.ops.torchvision.box_iou_rotated(boxes1, boxes2)
-
-        if original_dtype != torch.float32:
-            result = result.to(original_dtype)
-
-        return result
+        return torch.ops.torchvision.box_iou_rotated(boxes1, boxes2)
     else:
         raise ValueError(
             f"Unsupported format '{fmt}'. "

@@ -44,11 +44,9 @@ inline T dot_2d(const Point<T>& A, const Point<T>& B) {
   return A.x * B.x + A.y * B.y;
 }
 
-// R: result type. can be different from input type
-template <typename T, typename R = T>
-inline R cross_2d(const Point<T>& A, const Point<T>& B) {
-  return static_cast<R>(A.x) * static_cast<R>(B.y) -
-      static_cast<R>(B.x) * static_cast<R>(A.y);
+template <typename T>
+inline T cross_2d(const Point<T>& A, const Point<T>& B) {
+  return A.x * B.y - B.x * A.y;
 }
 
 template <typename T>
