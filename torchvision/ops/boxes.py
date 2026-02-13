@@ -509,17 +509,25 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     if masks.numel() == 0:
         return torch.zeros((0, 4), device=masks.device, dtype=torch.float)
 
-    n = masks.shape[0]
+    n, h, w = masks.shape
 
-    bounding_boxes = torch.zeros((n, 4), device=masks.device, dtype=torch.float)
+    masks_bool = masks.bool()
 
-    for index, mask in enumerate(masks):
-        y, x = torch.where(mask != 0)
+    non_zero_rows = torch.any(masks_bool, dim=2)
+    non_zero_cols = torch.any(masks_bool, dim=1)
 
-        if x.numel() > 0:
-            bounding_boxes[index, 0] = torch.min(x)
-            bounding_boxes[index, 1] = torch.min(y)
-            bounding_boxes[index, 2] = torch.max(x)
-            bounding_boxes[index, 3] = torch.max(y)
+    empty_masks = ~torch.any(non_zero_rows, dim=1)
+
+    non_zero_rows_f = non_zero_rows.float()
+    non_zero_cols_f = non_zero_cols.float()
+
+    y1 = non_zero_rows_f.argmax(dim=1)
+    x1 = non_zero_cols_f.argmax(dim=1)
+    y2 = (h - 1) - non_zero_rows_f.flip(dims=[1]).argmax(dim=1)
+    x2 = (w - 1) - non_zero_cols_f.flip(dims=[1]).argmax(dim=1)
+
+    bounding_boxes = torch.stack([x1, y1, x2, y2], dim=1).float()
+
+    bounding_boxes[empty_masks] = 0
 
     return bounding_boxes
