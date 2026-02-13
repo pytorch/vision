@@ -187,14 +187,31 @@ def _xywh_to_cxcywh(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
 
 
 def _cxcywh_to_xywh(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
-    if not inplace:
+    # For integer tensors, use float arithmetic to match the behavior of the
+    # two-step conversion CXCYWH -> XYXY -> XYWH (where _cxcywh_to_xyxy uses
+    # float arithmetic, see PR #9322).
+    original = cxcywh
+    dtype = cxcywh.dtype
+    need_cast = not cxcywh.is_floating_point()
+
+    if need_cast:
+        cxcywh = cxcywh.float()
+    elif not inplace:
         cxcywh = cxcywh.clone()
 
-    # x = cx - ceil(width / 2), y = cy - ceil(height / 2), width and height stay the same
-    # Use ceil (via div(-2).abs_() trick) to match the two-step conversion CXCYWH -> XYXY -> XYWH,
-    # where _cxcywh_to_xyxy uses ceil for computing x1, y1
-    half_wh = cxcywh[..., 2:].div(-2, rounding_mode=None if cxcywh.is_floating_point() else "floor").abs_()
+    half_wh = cxcywh[..., 2:] / 2
+    # x = cx - w/2, y = cy - h/2
     cxcywh[..., :2].sub_(half_wh)
+
+    if need_cast:
+        # For integer types, truncation of x1/y1 and x2/y2 (= x1 + w, y1 + h) can change
+        # the effective width/height. Recompute w/h to match the two-step path.
+        x2y2 = (cxcywh[..., :2] + cxcywh[..., 2:]).to(dtype)
+        cxcywh = cxcywh.to(dtype)
+        cxcywh[..., 2:] = x2y2 - cxcywh[..., :2]
+        if inplace:
+            original[:] = cxcywh
+            return original
 
     return cxcywh
 
