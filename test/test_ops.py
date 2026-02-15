@@ -1899,7 +1899,13 @@ class TestRotatedBoxIou:
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
     def test_near_identical_large_boxes(self, dtype):
-        """Nearly identical large boxes should have IoU close to 1.0."""
+        """Nearly identical large boxes should have IoU close to 1.0.
+
+        Adapted from Detectron2:
+        https://github.com/facebookresearch/detectron2/blob/main/tests/structures/test_rotated_boxes.py#L119-L147
+
+        Regression test for: https://github.com/facebookresearch/detectron2/issues/2167
+        """
         boxes1 = torch.tensor(
             [
                 [
