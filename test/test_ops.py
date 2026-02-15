@@ -1805,9 +1805,8 @@ class TestRotatedBoxIou:
         ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
         torch.testing.assert_close(ious, expected_ious)
         # Test the reverse: boxes2 (non-empty) vs boxes1 (empty)
-        expected_ious_reverse = torch.zeros(10, 0, dtype=torch.float32)
         ious_reverse = ops.box_iou(boxes2, boxes1, fmt="cxcywhr")
-        torch.testing.assert_close(ious_reverse, expected_ious_reverse)
+        torch.testing.assert_close(ious_reverse, expected_ious.T)
 
     # ==================== API Contract Tests ====================
 

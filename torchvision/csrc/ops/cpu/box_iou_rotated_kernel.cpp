@@ -345,10 +345,15 @@ void box_iou_rotated_cpu_kernel(
   auto num_boxes1 = boxes1.size(0);
   auto num_boxes2 = boxes2.size(0);
 
+  // Use accessors for efficient element access
+  auto boxes1_a = boxes1.accessor<T, 2>();
+  auto boxes2_a = boxes2.accessor<T, 2>();
+  auto ious_a = ious.accessor<float, 1>();
+
   for (int64_t i = 0; i < num_boxes1; i++) {
     for (int64_t j = 0; j < num_boxes2; j++) {
-      ious[i * num_boxes2 + j] = single_box_iou_rotated<T>(
-          boxes1[i].data_ptr<T>(), boxes2[j].data_ptr<T>());
+      ious_a[i * num_boxes2 + j] =
+          single_box_iou_rotated<T>(&boxes1_a[i][0], &boxes2_a[j][0]);
     }
   }
 }
