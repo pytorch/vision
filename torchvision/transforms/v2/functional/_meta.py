@@ -217,16 +217,28 @@ def _cxcywh_to_xywh(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
 
 
 def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
-    if not inplace:
+    # For integer tensors, use float arithmetic to match the behavior of
+    # `torchvision.ops._box_convert._box_cxcywh_to_xyxy`.
+    original = cxcywh
+    dtype = cxcywh.dtype
+    need_cast = not cxcywh.is_floating_point()
+
+    if need_cast:
+        cxcywh = cxcywh.float()
+    elif not inplace:
         cxcywh = cxcywh.clone()
 
-    # Trick to do fast division by 2 and ceil, without casting. It produces the same result as
-    # `torchvision.ops._box_convert._box_cxcywh_to_xyxy`.
-    half_wh = cxcywh[..., 2:].div(-2, rounding_mode=None if cxcywh.is_floating_point() else "floor").abs_()
+    half_wh = cxcywh[..., 2:] / 2
     # (cx - width / 2) = x1, same for y1
     cxcywh[..., :2].sub_(half_wh)
     # (x1 + width) = x2, same for y2
     cxcywh[..., 2:].add_(cxcywh[..., :2])
+
+    if need_cast:
+        cxcywh = cxcywh.to(dtype)
+        if inplace:
+            original[:] = cxcywh
+            return original
 
     return cxcywh
 

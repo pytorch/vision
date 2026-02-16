@@ -51,13 +51,13 @@ at::Tensor roi_align_forward_kernel(const at::Tensor& input,
   dispatch_sync(mpsStream->queue(), ^() {
     @autoreleasepool {
       id<MTLComputeCommandEncoder> computeEncoder = mpsStream->commandEncoder();
-      MTLSize threadgroupsPerGrid = MTLSizeMake(
-          std::min(ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)), static_cast<int64_t>(4096)),
-          1,
-          1);
 
       const std::string kernel = "roi_align_" + scalarToMetalTypeString(input.scalar_type());
       id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
+
+      auto threadsPerGrid = MTLSizeMake(output_size, 1, 1);
+      auto threadsPerThreadgroup =
+          MTLSizeMake(std::min(static_cast<int64_t>(visionPSO.maxTotalThreadsPerThreadgroup), output_size), 1, 1);
 
       // this function call is a no-op if MPS Profiler is not enabled
       getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input_, rois_});
@@ -68,7 +68,7 @@ at::Tensor roi_align_forward_kernel(const at::Tensor& input,
       [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
       [computeEncoder setBuffer:outputBuffer offset:output.storage_offset() * output.element_size() atIndex:2];
 
-      [computeEncoder setBytes:&output_size length:sizeof(int64_t) atIndex:3];
+      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:3];
       [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:4];
       [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:5];
       [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:6];
@@ -76,16 +76,8 @@ at::Tensor roi_align_forward_kernel(const at::Tensor& input,
       [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:8];
       [computeEncoder setBytes:&sampling_ratio length:sizeof(int64_t) atIndex:9];
       [computeEncoder setBytes:&aligned length:sizeof(bool) atIndex:10];
-      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:11];
 
-      // A threadGroup is equivalent to a cuda's block.
-      NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
-      if (tgSize > threadsPerBlock) {
-        tgSize = threadsPerBlock;
-      }
-
-      MTLSize threadGroupSize = MTLSizeMake(tgSize, 1, 1);
-      [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
+      [computeEncoder dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadsPerThreadgroup];
 
       getMPSProfiler().endProfileKernel(visionPSO);
     }
