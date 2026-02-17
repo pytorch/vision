@@ -6846,7 +6846,7 @@ class TestCVDUDAToTensor:
         assert F.get_size(output) == F.get_size(input_tensor)
 
     def test_functional_error(self):
-        with pytest.raises(TypeError, match=r"cvcuda_img should be ``cvcuda\.Tensor``\. Got .+\."):
+        with pytest.raises(TypeError, match="cvcuda_img should be `cvcuda.Tensor`"):
             F.cvcuda_to_tensor(object())
 
 
