@@ -1,4 +1,4 @@
-from typing import Any, Optional, TYPE_CHECKING, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 import PIL.Image
@@ -6,11 +6,8 @@ import torch
 
 from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
-from torchvision.transforms.v2._utils import is_pure_tensor
-from torchvision.transforms.v2.functional._utils import _import_cvcuda
 
-if TYPE_CHECKING:
-    import cvcuda  # type: ignore[import-not-found]
+from torchvision.transforms.v2._utils import is_pure_tensor
 
 
 class PILToTensor(Transform):
@@ -93,31 +90,3 @@ class ToPureTensor(Transform):
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> torch.Tensor:
         return inpt.as_subclass(torch.Tensor)
-
-
-class ToCVCUDATensor(Transform):
-    """Convert a ``torch.Tensor`` with NCHW shape to a ``cvcuda.Tensor``.
-    If the input tensor is on CPU, it will automatically be transferred to GPU.
-    Only 1-channel and 3-channel images are supported.
-
-    This transform does not support torchscript.
-    """
-
-    def transform(self, inpt: torch.Tensor, params: dict[str, Any]) -> "cvcuda.Tensor":
-        return F.to_cvcuda_tensor(inpt)
-
-
-class CVCUDAToTensor(Transform):
-    """Convert a ``cvcuda.Tensor`` to a ``torch.Tensor`` with NCHW shape.
-
-    This function does not support torchscript.
-    """
-
-    try:
-        cvcuda = _import_cvcuda()
-        _transformed_types = (cvcuda.Tensor,)
-    except ImportError:
-        pass
-
-    def transform(self, inpt: Any, params: dict[str, Any]) -> torch.Tensor:
-        return F.cvcuda_to_tensor(inpt)
