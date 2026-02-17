@@ -32,7 +32,7 @@ else
     conda install -y libjpeg-turbo -c pytorch-nightly
   fi
 
-  conda install libwebp -y
+  conda install libwebp -y c conda-forge
   conda install libjpeg-turbo -c pytorch
   yum install -y freetype gnutls
   pip install "auditwheel<6.3.0"
