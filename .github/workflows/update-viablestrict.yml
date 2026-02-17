@@ -17,7 +17,7 @@ jobs:
     environment: ${{ (github.event_name == 'schedule') && 'update-viable-strict' || '' }}
     steps:
       - name: Update viable/strict
-        uses: pytorch/test-infra/.github/actions/update-viablestrict@main
+        uses: pytorch/test-infra/.github/actions/update-viablestrict@release/2.11
         with:
           repository: pytorch/vision
           stable-branch: viable/strict
