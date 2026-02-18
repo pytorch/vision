@@ -4,7 +4,10 @@
 // This source code is licensed under the BSD-style license found in the
 // LICENSE file in the root directory of this source tree.
 //
-// Adapted from Detectron2's box_iou_rotated implementation.
+// This file contains code adapted from Detectron2's box_iou_rotated
+// implementation, which is licensed under the Apache License, Version 2.0.
+// Original source: https://github.com/facebookresearch/detectron2
+// License: https://github.com/facebookresearch/detectron2/blob/main/LICENSE
 
 #include <ATen/ATen.h>
 #include <torch/library.h>
