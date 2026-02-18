@@ -12,7 +12,10 @@ if [[ "$(uname)" == Darwin ]]; then
   conda install -y wget
 fi
 
-conda update -n base -c defaults conda
+if [[ "${PYTHON_VERSION:-}" == *t || "${PYTHON_VERSION:-}" == 3.13* ]]; then
+  # downgrade conda version for python 3.13t, 3.13t install.
+  conda install -y conda=24.7.1
+fi
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   conda install libpng libwebp -y
