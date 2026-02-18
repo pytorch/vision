@@ -12,13 +12,13 @@ if [[ "$(uname)" == Darwin ]]; then
   conda install -y wget
 fi
 
-if [[ "${PYTHON_VERSION:-}" == *t || "${PYTHON_VERSION:-}" == 3.13* ]]; then
-  # downgrade conda version for python 3.13t, 3.13t install.
-  conda install -y conda=24.7.1
+# workaround for conda install failure on 3.13t 
+if [[ "${PYTHON_VERSION:-}" == 3.13t ]]; then
+  CONDA_SUFFIX="-c conda-forge"
 fi
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
-  conda install libpng libwebp -y
+  conda install -y libpng libwebp $CONDA_SUFFIX
   # Installing webp also installs a non-turbo jpeg, so we uninstall jpeg stuff
   # before re-installing them
   conda uninstall libjpeg-turbo libjpeg -y
@@ -37,7 +37,7 @@ else
     conda install -y libjpeg-turbo -c pytorch-nightly
   fi
 
-  conda install -y libwebp 
+  conda install -y libwebp $CONDA_SUFFIX
   conda install libjpeg-turbo -c pytorch
   yum install -y freetype gnutls
   pip install "auditwheel<6.3.0"
