@@ -165,53 +165,22 @@ inline int convex_hull_graham(
     bool shift_to_zero = false) {
   assert(num_in >= 2);
 
-  // Step 0: Deduplicate points that are very close together.
-  // This prevents numerical instability in the Graham scan when points
-  // differ only by floating-point epsilon (e.g., when comparing boxes with
-  // angles that differ by ~180 degrees like 45° vs -135°).
-  const T DEDUP_EPS_SQ = static_cast<T>(1e-10); // 1e-5 squared
-  Point<T> deduped[24];
-  int num_deduped = 0;
-  for (int i = 0; i < num_in; i++) {
-    bool is_dup = false;
-    for (int j = 0; j < num_deduped; j++) {
-      T dx = p[i].x - deduped[j].x;
-      T dy = p[i].y - deduped[j].y;
-      if (dx * dx + dy * dy < DEDUP_EPS_SQ) {
-        is_dup = true;
-        break;
-      }
-    }
-    if (!is_dup) {
-      deduped[num_deduped++] = p[i];
-    }
-  }
-
-  // If after deduplication we have too few points, return early
-  if (num_deduped < 2) {
-    if (num_deduped == 1) {
-      q[0] = deduped[0];
-    }
-    return num_deduped;
-  }
-
   // Step 1:
   // Find point with minimum y
   // if more than 1 points have the same minimum y,
   // pick the one with the minimum x.
   int t = 0;
-  for (int i = 1; i < num_deduped; i++) {
-    if (deduped[i].y < deduped[t].y ||
-        (deduped[i].y == deduped[t].y && deduped[i].x < deduped[t].x)) {
+  for (int i = 1; i < num_in; i++) {
+    if (p[i].y < p[t].y || (p[i].y == p[t].y && p[i].x < p[t].x)) {
       t = i;
     }
   }
-  auto& start = deduped[t]; // starting point
+  auto& start = p[t]; // starting point
 
   // Step 2:
   // Subtract starting point from every points (for sorting in the next step)
-  for (int i = 0; i < num_deduped; i++) {
-    q[i] = deduped[i] - start;
+  for (int i = 0; i < num_in; i++) {
+    q[i] = p[i] - start;
   }
 
   // Swap the starting point to position 0
@@ -338,7 +307,6 @@ inline T rotated_boxes_intersection(
   // Convex Hull to order the intersection points in clockwise order and find
   // the contour area.
   int num_convex = convex_hull_graham<T>(intersectPts, num, orderedPts, true);
-
   return polygon_area<T>(orderedPts, num_convex);
 }
 
