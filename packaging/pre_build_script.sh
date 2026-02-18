@@ -12,6 +12,8 @@ if [[ "$(uname)" == Darwin ]]; then
   conda install -y wget
 fi
 
+conda update -n base -c defaults conda
+
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
   conda install libpng libwebp -y
   # Installing webp also installs a non-turbo jpeg, so we uninstall jpeg stuff
@@ -32,7 +34,7 @@ else
     conda install -y libjpeg-turbo -c pytorch-nightly
   fi
 
-  conda install libwebp -c conda-forge -y
+  conda install -y libwebp 
   conda install libjpeg-turbo -c pytorch
   yum install -y freetype gnutls
   pip install "auditwheel<6.3.0"
