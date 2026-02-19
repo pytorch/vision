@@ -185,6 +185,5 @@ class TestModelsDetectionUtilsExport:
         torch.testing.assert_close(eager_out2, export_out2, atol=1e-6, rtol=1e-6)
 
 
-
 if __name__ == "__main__":
     pytest.main([__file__])
