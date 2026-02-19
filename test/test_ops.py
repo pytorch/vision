@@ -944,6 +944,92 @@ class TestNMS:
         empty = torch.empty((0,), dtype=torch.int64)
         torch.testing.assert_close(empty, ops.batched_nms(empty, None, None, None))
 
+    @pytest.mark.parametrize("strict", [False, True])
+    @pytest.mark.opcheck_only_one()
+    def test_nms_export(self, strict):
+        """Exported nms should match eager."""
+        from torch.export import export
+
+        class NMSModule(nn.Module):
+            def forward(self, boxes, scores, iou_threshold):
+                return ops.nms(boxes, scores, iou_threshold)
+
+        torch.random.manual_seed(0)
+        boxes, scores = self._create_tensors_with_iou(100, 0.5)
+        model = NMSModule()
+
+        with torch.no_grad():
+            ep = export(model, (boxes, scores, 0.5), strict=strict)
+
+        eager_out = model(boxes, scores, 0.5)
+        export_out = ep.module()(boxes, scores, 0.5)
+        torch.testing.assert_close(eager_out, export_out)
+
+    @pytest.mark.parametrize("strict", [False, True])
+    @pytest.mark.opcheck_only_one()
+    def test_batched_nms_export(self, strict):
+        """Exported batched_nms should match eager using the same inputs as
+        test_batched_nms_implementations."""
+        from torch.export import export
+
+        class BatchedNMSModule(nn.Module):
+            def forward(self, boxes, scores, idxs, iou_threshold):
+                return ops.batched_nms(boxes, scores, idxs, iou_threshold)
+
+        torch.random.manual_seed(0)
+        num_boxes = 100
+        iou_threshold = 0.9
+        boxes = torch.cat((torch.rand(num_boxes, 2), torch.rand(num_boxes, 2) + 10), dim=1)
+        scores = torch.rand(num_boxes)
+        idxs = torch.randint(0, 4, size=(num_boxes,))
+
+        model = BatchedNMSModule()
+        with torch.no_grad():
+            ep = export(model, (boxes, scores, idxs, iou_threshold), strict=strict)
+
+        eager_out = model(boxes, scores, idxs, iou_threshold)
+        export_out = ep.module()(boxes, scores, idxs, iou_threshold)
+        torch.testing.assert_close(eager_out, export_out)
+
+
+class TestMultiScaleRoIAlignExport:
+    """Export tests for MultiScaleRoIAlign, following the same input setup as test_onnx.py."""
+
+    @pytest.mark.parametrize("strict", [False, True])
+    def test_multiscale_roi_align_export(self, strict):
+        """Exported MultiScaleRoIAlign should match eager."""
+        from collections import OrderedDict
+
+        from torch.export import export
+
+        class TransformModule(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.model = ops.MultiScaleRoIAlign(["feat1", "feat2"], 3, 2)
+                self.image_sizes = [(512, 512)]
+
+            def forward(self, feat1, feat2, boxes):
+                x = OrderedDict([("feat1", feat1), ("feat2", feat2)])
+                return self.model(x, [boxes], self.image_sizes)
+
+        torch.random.manual_seed(0)
+        feat1 = torch.rand(1, 5, 64, 64)
+        feat2 = torch.rand(1, 5, 16, 16)
+        boxes = torch.rand(6, 4) * 256
+        boxes[:, 2:] += boxes[:, :2]
+
+        model = TransformModule()
+        # Pre-initialize scales
+        with torch.no_grad():
+            _ = model(feat1, feat2, boxes)
+
+        with torch.no_grad():
+            ep = export(model, (feat1, feat2, boxes), strict=strict)
+
+        eager_out = model(feat1, feat2, boxes)
+        export_out = ep.module()(feat1, feat2, boxes)
+        torch.testing.assert_close(eager_out, export_out, atol=1e-5, rtol=1e-5)
+
 
 optests.generate_opcheck_tests(
     testcase=TestNMS,

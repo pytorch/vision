@@ -1,6 +1,7 @@
 import torch
 import torchvision
 from torch import Tensor
+from torch.fx.experimental.symbolic_shapes import guard_or_false
 from torchvision.extension import _assert_has_ops
 
 from ..utils import _log_api_usage_once
@@ -77,10 +78,17 @@ def batched_nms(
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
     # and https://github.com/pytorch/vision/pull/8925
-    if boxes.numel() > (4000 if boxes.device.type == "cpu" else 100_000) and not torchvision._is_tracing():
-        return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
-    else:
+    if torch.jit.is_scripting():
+        # _is_tracing() is always False during scripting, so omitted here
+        if boxes.numel() > (4000 if boxes.device.type == "cpu" else 100_000):
+            return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
         return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
+    # In eager mode, use the original performance-based dispatch.
+    # In export (is_compiling), always use coordinate_trick to avoid
+    # data-dependent branching on boxes.numel().
+    if not torch.compiler.is_compiling() and boxes.numel() > (4000 if boxes.device.type == "cpu" else 100_000) and not torchvision._is_tracing():
+        return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
+    return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
 
 
 @torch.jit._script_if_tracing
@@ -94,9 +102,19 @@ def _batched_nms_coordinate_trick(
     # we add an offset to all the boxes. The offset is dependent
     # only on the class idx, and is large enough so that boxes
     # from different classes do not overlap
-    if boxes.numel() == 0:
-        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
-    max_coordinate = boxes.max()
+    if torch.jit.is_scripting():
+        if boxes.numel() == 0:
+            return torch.empty((0,), dtype=torch.int64, device=boxes.device)
+        max_coordinate = boxes.max()
+    else:
+        if guard_or_false(boxes.numel() == 0):
+            return torch.empty((0,), dtype=torch.int64, device=boxes.device)
+        if torch.compiler.is_compiling():
+            # Concat a zero sentinel so .max() is safe when boxes is empty
+            # (export traces the non-empty path, but at runtime boxes can be empty)
+            max_coordinate = torch.cat([boxes.reshape(-1), torch.zeros(1, dtype=boxes.dtype, device=boxes.device)]).max()
+        else:
+            max_coordinate = boxes.max()
     offsets = idxs.to(boxes) * (max_coordinate + torch.tensor(1).to(boxes))
     boxes_for_nms = boxes + offsets[:, None]
     keep = nms(boxes_for_nms, scores, iou_threshold)

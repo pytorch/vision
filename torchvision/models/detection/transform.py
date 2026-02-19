@@ -241,10 +241,10 @@ class GeneralizedRCNNTransform(nn.Module):
             return self._onnx_batch_images(images, size_divisible)
 
         max_size = self.max_by_axis([list(img.shape) for img in images])
-        stride = float(size_divisible)
+        stride = size_divisible
         max_size = list(max_size)
-        max_size[1] = int(math.ceil(float(max_size[1]) / stride) * stride)
-        max_size[2] = int(math.ceil(float(max_size[2]) / stride) * stride)
+        max_size[1] = (max_size[1] + stride - 1) // stride * stride
+        max_size[2] = (max_size[2] + stride - 1) // stride * stride
 
         batch_shape = [len(images)] + max_size
         batched_imgs = images[0].new_full(batch_shape, 0)

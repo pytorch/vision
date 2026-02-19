@@ -81,5 +81,110 @@ class TestModelsDetectionUtils:
             out = transform(image, targets)  # noqa: F841
 
 
+class TestModelsDetectionUtilsExport:
+    """Export tests for detection utility components."""
+
+    @pytest.mark.parametrize("strict", [False, True])
+    def test_box_coder_decode_export(self, strict):
+        """Exported BoxCoder.decode should match eager, using the same pattern
+        as test_box_linear_coder."""
+        from torch.export import export
+
+        class BoxCoderDecodeModule(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.box_coder = _utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
+
+            def forward(self, rel_codes, boxes):
+                return self.box_coder.decode(rel_codes, [boxes])
+
+        torch.manual_seed(0)
+        boxes = torch.rand(10, 4) * 50
+        boxes[:, 2:] += boxes[:, :2]
+        rel_codes = torch.randn(10, 4)
+
+        model = BoxCoderDecodeModule()
+        with torch.no_grad():
+            ep = export(model, (rel_codes, boxes), strict=strict)
+
+        eager_out = model(rel_codes, boxes)
+        export_out = ep.module()(rel_codes, boxes)
+        torch.testing.assert_close(eager_out, export_out, atol=1e-5, rtol=1e-5)
+
+    @pytest.mark.parametrize("strict", [False, True])
+    def test_box_coder_decode_multi_class_export(self, strict):
+        """BoxCoder.decode with multi-class box regression (num_classes * 4 columns)."""
+        from torch.export import export
+
+        num_classes = 5
+
+        class BoxCoderDecodeModule(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.box_coder = _utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
+
+            def forward(self, rel_codes, boxes):
+                return self.box_coder.decode(rel_codes, [boxes])
+
+        torch.manual_seed(0)
+        boxes = torch.rand(10, 4) * 50
+        boxes[:, 2:] += boxes[:, :2]
+        rel_codes = torch.randn(10, num_classes * 4)
+
+        model = BoxCoderDecodeModule()
+        with torch.no_grad():
+            ep = export(model, (rel_codes, boxes), strict=strict)
+
+        eager_out = model(rel_codes, boxes)
+        export_out = ep.module()(rel_codes, boxes)
+        torch.testing.assert_close(eager_out, export_out, atol=1e-5, rtol=1e-5)
+
+    @pytest.mark.parametrize("strict", [False, True])
+    def test_transform_batch_images_export(self, strict):
+        """Exported batch_images should match eager, using the
+        same inputs as test_transform_copy_targets."""
+        from torch.export import Dim, export
+
+        transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
+
+        class BatchImagesModule(torch.nn.Module):
+            def __init__(self, t):
+                super().__init__()
+                self.size_divisible = t.size_divisible
+
+            def forward(self, image):
+                return transform.batch_images([image], self.size_divisible)
+
+        model = BatchImagesModule(transform)
+        model.eval()
+
+        # batch_images pads to stride-32 multiples, creating // guards
+        # that require constrained dims (32*k aligned)
+        _h = Dim("_h", min=4, max=25)
+        _w = Dim("_w", min=4, max=25)
+        h = 32 * _h
+        w = 32 * _w
+
+        x = torch.rand(3, 192, 256)  # 32-aligned example
+        with torch.no_grad():
+            ep = export(
+                model, (x,),
+                dynamic_shapes={"image": {1: h, 2: w}},
+                strict=strict,
+            )
+
+        # Same input
+        eager_out = model(x)
+        export_out = ep.module()(x)
+        torch.testing.assert_close(eager_out, export_out, atol=1e-6, rtol=1e-6)
+
+        # Different 32-aligned size
+        x2 = torch.rand(3, 160, 320)
+        eager_out2 = model(x2)
+        export_out2 = ep.module()(x2)
+        torch.testing.assert_close(eager_out2, export_out2, atol=1e-6, rtol=1e-6)
+
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
