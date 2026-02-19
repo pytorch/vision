@@ -114,8 +114,9 @@ def _batched_nms_coordinate_trick(
         if guard_or_false(boxes.numel() == 0):
             return torch.empty((0,), dtype=torch.int64, device=boxes.device)
         if torch.compiler.is_compiling():
-            # Concat a zero sentinel so .max() is safe when boxes is empty
-            # (export traces the non-empty path, but at runtime boxes can be empty)
+            # Concat a zero sentinel so .max() is safe when boxes is empty.
+            # This only affects max_coordinate; NMS still operates on the
+            # original (possibly empty) boxes and correctly returns empty.
             max_coordinate = torch.cat(
                 [boxes.reshape(-1), torch.zeros(1, dtype=boxes.dtype, device=boxes.device)]
             ).max()

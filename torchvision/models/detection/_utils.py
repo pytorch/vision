@@ -4,7 +4,6 @@ from typing import Optional
 
 import torch
 from torch import nn, Tensor
-from torch.fx.experimental.symbolic_shapes import guard_or_true
 from torch.nn import functional as F
 from torchvision.ops import complete_box_iou_loss, distance_box_iou_loss, FrozenBatchNorm2d, generalized_box_iou_loss
 
@@ -175,10 +174,9 @@ class BoxCoder:
         for val in boxes_per_image:
             box_sum += val
         ncols = rel_codes.shape[-1]
-        # Duplicated branches: JIT path uses original code (reshape with -1,
-        # bare if). Export path uses guard_or_true (avoids data-dependent
-        # guard on unbacked box_sum) and explicit dims (avoids reshape -1
-        # ambiguity when box_sum is 0).
+        # JIT path uses reshape with -1, which is ambiguous when box_sum is 0.
+        # Non-JIT path uses explicit dims so reshape works for all box_sum
+        # (including 0, producing correctly-shaped empty tensors).
         if torch.jit.is_scripting():
             if box_sum > 0:
                 rel_codes = rel_codes.reshape(box_sum, -1)
@@ -186,11 +184,9 @@ class BoxCoder:
             if box_sum > 0:
                 pred_boxes = pred_boxes.reshape(box_sum, -1, 4)
         else:
-            if guard_or_true(box_sum > 0):
-                rel_codes = rel_codes.reshape(box_sum, ncols)
+            rel_codes = rel_codes.reshape(box_sum, ncols)
             pred_boxes = self.decode_single(rel_codes, concat_boxes)
-            if guard_or_true(box_sum > 0):
-                pred_boxes = pred_boxes.reshape(box_sum, ncols // 4, 4)
+            pred_boxes = pred_boxes.reshape(box_sum, ncols // 4, 4)
         return pred_boxes
 
     def decode_single(self, rel_codes: Tensor, boxes: Tensor) -> Tensor:

@@ -181,9 +181,9 @@ class GeneralizedRCNNTransform(nn.Module):
         target: Optional[dict[str, Tensor]] = None,
     ) -> tuple[Tensor, Optional[dict[str, Tensor]]]:
         h, w = image.shape[-2:]
+        if self._skip_resize:
+            return image, target
         if self.training:
-            if self._skip_resize:
-                return image, target
             size = self.torch_choice(self.min_size)
         else:
             size = self.min_size[-1]
@@ -245,13 +245,11 @@ class GeneralizedRCNNTransform(nn.Module):
         max_size[1] = (max_size[1] + stride - 1) // stride * stride
         max_size[2] = (max_size[2] + stride - 1) // stride * stride
 
-        batch_shape = [len(images)] + max_size
-        batched_imgs = images[0].new_full(batch_shape, 0)
-        for i in range(batched_imgs.shape[0]):
-            img = images[i]
-            batched_imgs[i, : img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
-
-        return batched_imgs
+        padded_imgs = []
+        for img in images:
+            padding = [0, max_size[2] - img.shape[2], 0, max_size[1] - img.shape[1]]
+            padded_imgs.append(torch.nn.functional.pad(img, padding))
+        return torch.stack(padded_imgs)
 
     def postprocess(
         self,

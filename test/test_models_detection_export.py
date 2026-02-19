@@ -23,6 +23,18 @@ def _get_image(input_shape, device="cpu"):
     return torch.rand(input_shape, device=device)
 
 
+def _fpn_dynamic_shapes():
+    """Dynamic shapes constrained to multiples of 64 for FPN compatibility.
+
+    Strided convolutions in the backbone specialize on the parity of
+    ceil_to_32(dim)/32. Using multiples of 64 ensures consistent even
+    block counts, avoiding shape guards that would reject valid inputs.
+    """
+    _h = Dim("_h", min=4, max=21)
+    _w = Dim("_w", min=4, max=21)
+    return {"images": [{1: 64 * _h, 2: 64 * _w}]}
+
+
 @pytest.fixture(scope="module")
 def fasterrcnn_model():
     """Load and pre-initialize FasterRCNN once for all tests in the module.
@@ -41,14 +53,14 @@ def fasterrcnn_model():
     )
     model.eval()
     with torch.no_grad():
-        _ = model([torch.randn(3, 224, 224)])
+        _ = model([torch.randn(3, 256, 256)])
     return model
 
 
 @pytest.fixture(scope="module")
 def real_image():
     """Load the same real image used by test_detection_model."""
-    return _get_image((3, 300, 300))
+    return _get_image((3, 320, 320))
 
 
 class TestDetectionExport:
@@ -62,13 +74,11 @@ class TestDetectionExport:
     @pytest.mark.parametrize("strict", [False, True])
     def test_export_succeeds(self, fasterrcnn_model, strict):
         """Export should succeed with dynamic H/W shapes."""
-        h = Dim("h", min=200, max=1333)
-        w = Dim("w", min=200, max=1333)
         with torch.no_grad():
             ep = export(
                 fasterrcnn_model,
-                ([torch.randn(3, 300, 400)],),
-                dynamic_shapes={"images": [{1: h, 2: w}]},
+                ([torch.randn(3, 256, 320)],),
+                dynamic_shapes=_fpn_dynamic_shapes(),
                 strict=strict,
             )
         assert ep is not None
@@ -76,13 +86,11 @@ class TestDetectionExport:
     @pytest.mark.parametrize("strict", [False, True])
     def test_export_matches_eager_real_image(self, fasterrcnn_model, real_image, strict):
         """Exported model output should match eager on the same real image."""
-        h = Dim("h", min=200, max=1333)
-        w = Dim("w", min=200, max=1333)
         with torch.no_grad():
             ep = export(
                 fasterrcnn_model,
-                ([torch.randn(3, 300, 400)],),
-                dynamic_shapes={"images": [{1: h, 2: w}]},
+                ([torch.randn(3, 256, 320)],),
+                dynamic_shapes=_fpn_dynamic_shapes(),
                 strict=strict,
             )
 
@@ -119,17 +127,15 @@ class TestDetectionExport:
     def test_export_matches_eager_random_input(self, fasterrcnn_model, strict):
         """Exported model should match eager on the same random input used by test_detection_model."""
         set_rng_seed(0)
-        h = Dim("h", min=200, max=1333)
-        w = Dim("w", min=200, max=1333)
         with torch.no_grad():
             ep = export(
                 fasterrcnn_model,
-                ([torch.randn(3, 300, 400)],),
-                dynamic_shapes={"images": [{1: h, 2: w}]},
+                ([torch.randn(3, 256, 320)],),
+                dynamic_shapes=_fpn_dynamic_shapes(),
                 strict=strict,
             )
 
-        x = torch.rand(3, 300, 300)
+        x = torch.rand(3, 320, 320)
         with torch.no_grad():
             eager_out = fasterrcnn_model([x.clone()])
             export_out = ep.module()([x.clone()])
@@ -149,16 +155,14 @@ class TestDetectionExport:
             )
 
     @pytest.mark.parametrize("strict", [False, True])
-    @pytest.mark.parametrize("h_val,w_val", [(256, 512), (400, 300), (500, 700), (224, 224)])
+    @pytest.mark.parametrize("h_val,w_val", [(256, 512), (384, 320), (448, 640), (256, 256)])
     def test_export_dynamic_shapes(self, fasterrcnn_model, h_val, w_val, strict):
         """Exported model should run on various input sizes without error."""
-        h = Dim("h", min=200, max=1333)
-        w = Dim("w", min=200, max=1333)
         with torch.no_grad():
             ep = export(
                 fasterrcnn_model,
-                ([torch.randn(3, 300, 400)],),
-                dynamic_shapes={"images": [{1: h, 2: w}]},
+                ([torch.randn(3, 256, 320)],),
+                dynamic_shapes=_fpn_dynamic_shapes(),
                 strict=strict,
             )
 
@@ -179,20 +183,18 @@ class TestDetectionExport:
         model = fasterrcnn_mobilenet_v3_large_fpn(num_classes=50, weights_backbone=None, _skip_resize=True)
         model.eval()
         with torch.no_grad():
-            _ = model([torch.randn(3, 224, 224)])
+            _ = model([torch.randn(3, 256, 256)])
 
-        h = Dim("h", min=200, max=1333)
-        w = Dim("w", min=200, max=1333)
         with torch.no_grad():
             ep = export(
                 model,
-                ([torch.randn(3, 300, 400)],),
-                dynamic_shapes={"images": [{1: h, 2: w}]},
+                ([torch.randn(3, 256, 320)],),
+                dynamic_shapes=_fpn_dynamic_shapes(),
                 strict=strict,
             )
 
         set_rng_seed(0)
-        x = torch.rand(3, 320, 480)
+        x = torch.rand(3, 320, 512)
         with torch.no_grad():
             eager_out = model([x.clone()])
             export_out = ep.module()([x.clone()])
@@ -211,20 +213,18 @@ class TestDetectionExport:
         model.roi_heads.detections_per_img = 20
 
         with torch.no_grad():
-            _ = model([torch.randn(3, 224, 224)])
+            _ = model([torch.randn(3, 256, 256)])
 
-        h = Dim("h", min=200, max=1333)
-        w = Dim("w", min=200, max=1333)
         with torch.no_grad():
             ep = export(
                 model,
-                ([torch.randn(3, 300, 400)],),
-                dynamic_shapes={"images": [{1: h, 2: w}]},
+                ([torch.randn(3, 256, 320)],),
+                dynamic_shapes=_fpn_dynamic_shapes(),
                 strict=strict,
             )
 
         set_rng_seed(42)
-        x = torch.rand(3, 320, 480)
+        x = torch.rand(3, 320, 512)
         with torch.no_grad():
             eager_out = model([x.clone()])
             export_out = ep.module()([x.clone()])
@@ -236,6 +236,33 @@ class TestDetectionExport:
         # With random weights, NMS is sensitive to floating-point differences
         # so we verify count and structure rather than exact coordinates
         assert n_eager == n_export
+
+    @pytest.mark.parametrize("strict", [False, True])
+    def test_export_zero_detections_structure(self, strict):
+        """Exported model should produce correctly-shaped empty tensors when NMS finds nothing."""
+        model = fasterrcnn_mobilenet_v3_large_fpn(num_classes=50, weights_backbone=None, _skip_resize=True)
+        model.eval()
+        with torch.no_grad():
+            _ = model([torch.randn(3, 256, 256)])
+
+        with torch.no_grad():
+            ep = export(
+                model,
+                ([torch.randn(3, 256, 320)],),
+                dynamic_shapes=_fpn_dynamic_shapes(),
+                strict=strict,
+            )
+
+        set_rng_seed(0)
+        x = torch.rand(3, 384, 512)
+        with torch.no_grad():
+            eager_out = model([x.clone()])
+            export_out = ep.module()([x.clone()])
+
+        assert eager_out[0]["boxes"].shape[0] == 0, "Expected 0 eager detections with default thresholds"
+        assert export_out[0]["boxes"].shape == torch.Size([0, 4])
+        assert export_out[0]["scores"].shape == torch.Size([0])
+        assert export_out[0]["labels"].shape == torch.Size([0])
 
     @pytest.mark.parametrize("strict", [False, True])
     def test_export_static_shapes(self, fasterrcnn_model, strict):
