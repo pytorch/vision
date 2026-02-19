@@ -356,13 +356,11 @@ def _convert_bounding_box_format(
     if tv_tensors.is_rotated_bounding_format(old_format) ^ tv_tensors.is_rotated_bounding_format(new_format):
         raise ValueError("Cannot convert between rotated and unrotated bounding boxes.")
 
-    # Direct conversion between XYWH and CXCYWH for better performance
     if old_format == BoundingBoxFormat.XYWH and new_format == BoundingBoxFormat.CXCYWH:
         return _xywh_to_cxcywh(bounding_boxes, inplace)
     if old_format == BoundingBoxFormat.CXCYWH and new_format == BoundingBoxFormat.XYWH:
         return _cxcywh_to_xywh(bounding_boxes, inplace)
 
-    # For other conversions, use XYXY/XYWHR as intermediate format
     if old_format == BoundingBoxFormat.XYWH:
         bounding_boxes = _xywh_to_xyxy(bounding_boxes, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:
