@@ -168,7 +168,8 @@ class TestModelsDetectionUtilsExport:
         x = torch.rand(3, 192, 256)  # 32-aligned example
         with torch.no_grad():
             ep = export(
-                model, (x,),
+                model,
+                (x,),
                 dynamic_shapes={"image": {1: h, 2: w}},
                 strict=strict,
             )

@@ -1,4 +1,3 @@
-import math
 from typing import Any, Optional
 
 import torch

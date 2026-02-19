@@ -86,7 +86,11 @@ def batched_nms(
     # In eager mode, use the original performance-based dispatch.
     # In export (is_compiling), always use coordinate_trick to avoid
     # data-dependent branching on boxes.numel().
-    if not torch.compiler.is_compiling() and boxes.numel() > (4000 if boxes.device.type == "cpu" else 100_000) and not torchvision._is_tracing():
+    if (
+        not torch.compiler.is_compiling()
+        and boxes.numel() > (4000 if boxes.device.type == "cpu" else 100_000)
+        and not torchvision._is_tracing()
+    ):
         return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
     return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
 
@@ -112,7 +116,9 @@ def _batched_nms_coordinate_trick(
         if torch.compiler.is_compiling():
             # Concat a zero sentinel so .max() is safe when boxes is empty
             # (export traces the non-empty path, but at runtime boxes can be empty)
-            max_coordinate = torch.cat([boxes.reshape(-1), torch.zeros(1, dtype=boxes.dtype, device=boxes.device)]).max()
+            max_coordinate = torch.cat(
+                [boxes.reshape(-1), torch.zeros(1, dtype=boxes.dtype, device=boxes.device)]
+            ).max()
         else:
             max_coordinate = boxes.max()
     offsets = idxs.to(boxes) * (max_coordinate + torch.tensor(1).to(boxes))

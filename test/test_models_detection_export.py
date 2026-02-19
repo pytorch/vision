@@ -4,9 +4,7 @@ import pytest
 import torch
 from common_utils import set_rng_seed
 from torch.export import Dim, export
-from torchvision.models.detection import (
-    fasterrcnn_mobilenet_v3_large_fpn,
-)
+from torchvision.models.detection import fasterrcnn_mobilenet_v3_large_fpn
 
 
 def _get_image(input_shape, device="cpu"):
@@ -36,7 +34,9 @@ def fasterrcnn_model():
     """
     set_rng_seed(0)
     model = fasterrcnn_mobilenet_v3_large_fpn(
-        num_classes=50, weights_backbone=None, box_score_thresh=0.02076,
+        num_classes=50,
+        weights_backbone=None,
+        box_score_thresh=0.02076,
         _skip_resize=True,
     )
     model.eval()
@@ -105,12 +105,14 @@ class TestDetectionExport:
             torch.testing.assert_close(
                 eager_out[0]["boxes"][eager_confident],
                 export_out[0]["boxes"][export_confident],
-                atol=1e-4, rtol=1e-4,
+                atol=1e-4,
+                rtol=1e-4,
             )
             torch.testing.assert_close(
                 eager_out[0]["scores"][eager_confident],
                 export_out[0]["scores"][export_confident],
-                atol=1e-6, rtol=1e-6,
+                atol=1e-6,
+                rtol=1e-6,
             )
 
     @pytest.mark.parametrize("strict", [False, True])
@@ -142,13 +144,12 @@ class TestDetectionExport:
             torch.testing.assert_close(
                 eager_out[0]["boxes"][eager_confident],
                 export_out[0]["boxes"][export_confident],
-                atol=1e-4, rtol=1e-4,
+                atol=1e-4,
+                rtol=1e-4,
             )
 
     @pytest.mark.parametrize("strict", [False, True])
-    @pytest.mark.parametrize(
-        "h_val,w_val", [(256, 512), (400, 300), (500, 700), (224, 224)]
-    )
+    @pytest.mark.parametrize("h_val,w_val", [(256, 512), (400, 300), (500, 700), (224, 224)])
     def test_export_dynamic_shapes(self, fasterrcnn_model, h_val, w_val, strict):
         """Exported model should run on various input sizes without error."""
         h = Dim("h", min=200, max=1333)
@@ -175,9 +176,7 @@ class TestDetectionExport:
     def test_export_zero_detections(self, fasterrcnn_model, strict):
         """Exported model should handle the case where NMS produces 0 detections."""
         # Use default thresholds — random noise should produce 0 detections
-        model = fasterrcnn_mobilenet_v3_large_fpn(
-            num_classes=50, weights_backbone=None, _skip_resize=True
-        )
+        model = fasterrcnn_mobilenet_v3_large_fpn(num_classes=50, weights_backbone=None, _skip_resize=True)
         model.eval()
         with torch.no_grad():
             _ = model([torch.randn(3, 224, 224)])
@@ -203,9 +202,7 @@ class TestDetectionExport:
     @pytest.mark.parametrize("strict", [False, True])
     def test_export_many_detections(self, strict):
         """Exported model with lowered thresholds should produce many detections."""
-        model = fasterrcnn_mobilenet_v3_large_fpn(
-            num_classes=50, weights_backbone=None, _skip_resize=True
-        )
+        model = fasterrcnn_mobilenet_v3_large_fpn(num_classes=50, weights_backbone=None, _skip_resize=True)
         model.eval()
         model.rpn.score_thresh = 0.0
         model.rpn._pre_nms_top_n = {"training": 2000, "testing": 100}
