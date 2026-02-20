@@ -442,7 +442,7 @@ class Pad(Transform):
             .. note::
                 In torchscript mode padding as single int is not supported, use a sequence of
                 length 1: ``[padding, ]``.
-        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+        fill (number or tuple or dict, optional): Pixel fill value used for pixels outside the image boundary.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
@@ -517,7 +517,7 @@ class RandomZoomOut(_RandomApplyTransform):
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
-        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+        fill (number or tuple or dict, optional): Pixel fill value used for pixels outside the image boundary.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
@@ -594,7 +594,7 @@ class RandomRotation(Transform):
                 center of rotation. In practice however, due to numerical precision, this can lead to off-by-one
                 differences of the resulting image size compared to using the image center in the first place. Thus, when
                 setting ``expand=True``, it's best to leave ``center=None`` (default).
-        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+        fill (number or tuple or dict, optional): Pixel fill value used for pixels outside the image boundary.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
@@ -672,7 +672,7 @@ class RandomAffine(Transform):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
-        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+        fill (number or tuple or dict, optional): Pixel fill value used for pixels outside the image boundary.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
@@ -788,7 +788,8 @@ class RandomCrop(Transform):
         pad_if_needed (boolean, optional): It will pad the image if smaller than the
             desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
-        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+        fill (number or tuple or dict, optional): Pixel fill value used for pixels outside the image boundary.
+
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
@@ -935,7 +936,7 @@ class RandomPerspective(_RandomApplyTransform):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
-        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+        fill (number or tuple or dict, optional): Pixel fill value used for pixels outside the image boundary.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
@@ -1038,7 +1039,7 @@ class ElasticTransform(Transform):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
-        fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
+        fill (number or tuple or dict, optional): Pixel fill value used for pixels outside the image boundary.
             Default is 0. If a tuple of length 3, it is used to fill R, G, B channels respectively.
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
