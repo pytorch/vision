@@ -53,6 +53,14 @@ from torchvision.transforms.functional import pil_modes_mapping, to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import check_type, is_pure_tensor
 from torchvision.transforms.v2.functional._geometry import _get_perspective_coeffs, _parallelogram_to_bounding_boxes
+from torchvision.transforms.v2.functional._meta import (
+    _cxcywh_to_xywh,
+    _cxcywh_to_xyxy,
+    _xywh_to_cxcywh,
+    _xywh_to_xyxy,
+    _xyxy_to_cxcywh,
+    _xyxy_to_xywh,
+)
 from torchvision.transforms.v2.functional._utils import _get_kernel, _import_cvcuda, _register_kernel_internal
 
 
@@ -4411,6 +4419,56 @@ class TestConvertBoundingBoxFormat:
             F.convert_bounding_box_format(
                 input_tv_tensor, old_format=input_tv_tensor.format, new_format=input_tv_tensor.format
             )
+
+    @pytest.mark.parametrize(
+        "old_format",
+        [tv_tensors.BoundingBoxFormat.XYWH, tv_tensors.BoundingBoxFormat.CXCYWH],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.int32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_xywh_cxcywh_direct_conversion_parity(self, old_format, dtype, device):
+
+        bounding_boxes = make_bounding_boxes(format=old_format, dtype=dtype, device=device)
+        input_tensor = bounding_boxes.as_subclass(torch.Tensor).clone()
+
+        if old_format == tv_tensors.BoundingBoxFormat.XYWH:
+            actual = _xywh_to_cxcywh(input_tensor.clone(), inplace=False)
+            expected = _xyxy_to_cxcywh(_xywh_to_xyxy(input_tensor.clone(), inplace=False), inplace=False)
+        else:
+            actual = _cxcywh_to_xywh(input_tensor.clone(), inplace=False)
+            expected = _xyxy_to_xywh(_cxcywh_to_xyxy(input_tensor.clone(), inplace=False), inplace=False)
+
+        torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize(
+        "old_format",
+        [tv_tensors.BoundingBoxFormat.XYWH, tv_tensors.BoundingBoxFormat.CXCYWH],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_xywh_cxcywh_direct_conversion_inplace(self, old_format, dtype, device):
+        bounding_boxes = make_bounding_boxes(format=old_format, dtype=dtype, device=device)
+        input_tensor = bounding_boxes.as_subclass(torch.Tensor).clone()
+
+        if old_format == tv_tensors.BoundingBoxFormat.XYWH:
+            convert_fn = _xywh_to_cxcywh
+        else:
+            convert_fn = _cxcywh_to_xywh
+
+        input_clone = input_tensor.clone()
+        output_inplace_false = convert_fn(input_clone, inplace=False)
+        assert output_inplace_false.data_ptr() != input_clone.data_ptr()
+
+        input_clone = input_tensor.clone()
+        input_data_ptr = input_clone.data_ptr()
+
+        output_inplace = convert_fn(input_clone, inplace=True)
+
+        assert output_inplace.data_ptr() == input_data_ptr
+
+        assert output_inplace is input_clone
+
+        torch.testing.assert_close(output_inplace, output_inplace_false)
 
     def test_cxcywh_to_xyxy_odd_dimensions(self):
         # Non-regression test for https://github.com/pytorch/vision/issues/8887
