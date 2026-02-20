@@ -3,12 +3,16 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 
 from typing import Any, Callable, TypeVar
+from typing_extensions import Self
 
 import torch
 from torch._C import DisableTorchFunctionSubclass
 from torch.types import _device, _dtype, _size
 
-from torchvision.tv_tensors._torch_function_helpers import _FORCE_TORCHFUNCTION_SUBCLASS, _must_return_subclass
+from torchvision.tv_tensors._torch_function_helpers import (
+    _FORCE_TORCHFUNCTION_SUBCLASS,
+    _must_return_subclass,
+)
 
 
 D = TypeVar("D", bound="TVTensor")
@@ -30,8 +34,12 @@ class TVTensor(torch.Tensor):
         requires_grad: bool | None = None,
     ) -> torch.Tensor:
         if requires_grad is None:
-            requires_grad = data.requires_grad if isinstance(data, torch.Tensor) else False
-        return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(requires_grad)
+            requires_grad = (
+                data.requires_grad if isinstance(data, torch.Tensor) else False
+            )
+        return torch.as_tensor(data, dtype=dtype, device=device).requires_grad_(
+            requires_grad
+        )
 
     @classmethod
     def _wrap_output(
@@ -46,8 +54,13 @@ class TVTensor(torch.Tensor):
 
         if isinstance(output, (tuple, list)):
             # Also handles things like namedtuples
-            output = type(output)(cls._wrap_output(part, args, kwargs) for part in output)
+            output = type(output)(
+                cls._wrap_output(part, args, kwargs) for part in output
+            )
         return output
+
+    def __wrap__(self, tensor: torch.Tensor) -> Self:
+        return tensor.as_subclass(type(self))
 
     @classmethod
     def __torch_function__(
@@ -79,7 +92,9 @@ class TVTensor(torch.Tensor):
             output = func(*args, **kwargs or dict())
 
         must_return_subclass = _must_return_subclass()
-        if must_return_subclass or (func in _FORCE_TORCHFUNCTION_SUBCLASS and isinstance(args[0], cls)):
+        if must_return_subclass or (
+            func in _FORCE_TORCHFUNCTION_SUBCLASS and isinstance(args[0], cls)
+        ):
             # If you're wondering why we need the `isinstance(args[0], cls)` check, remove it and see what fails
             # in test_to_tv_tensor_reference().
             # The __torch_function__ protocol will invoke the __torch_function__ method on *all* types involved in
