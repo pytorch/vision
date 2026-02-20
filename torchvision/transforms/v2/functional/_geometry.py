@@ -1922,6 +1922,50 @@ def crop_video(video: torch.Tensor, top: int, left: int, height: int, width: int
     return crop_image(video, top, left, height, width)
 
 
+def _crop_image_cvcuda(
+    image: "cvcuda.Tensor",
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    image_height, image_width, channels = image.shape[1:]
+    top_diff = 0
+    left_diff = 0
+    height_diff = 0
+    width_diff = 0
+    if top < 0:
+        top_diff = int(-1 * top)
+    if left < 0:
+        left_diff = int(-1 * left)
+    if top + height > image_height:
+        height_diff = int(top + height - image_height)
+    if left + width > image_width:
+        width_diff = int(left + width - image_width)
+    if top_diff or left_diff or height_diff or width_diff:
+        image = cvcuda.copymakeborder(
+            image,
+            border_mode=cvcuda.Border.CONSTANT,
+            border_value=[0.0] * channels,
+            top=top_diff,
+            left=left_diff,
+            bottom=height_diff,
+            right=width_diff,
+        )
+        top = top + top_diff
+        left = left + left_diff
+    return cvcuda.customcrop(
+        image,
+        cvcuda.RectI(x=left, y=top, width=width, height=height),
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(crop, _import_cvcuda().Tensor)(_crop_image_cvcuda)
+
+
 def perspective(
     inpt: torch.Tensor,
     startpoints: Optional[list[list[int]]],
@@ -2672,6 +2716,47 @@ def center_crop_video(video: torch.Tensor, output_size: list[int]) -> torch.Tens
     return center_crop_image(video, output_size)
 
 
+def _center_crop_image_cvcuda(
+    image: "cvcuda.Tensor",
+    output_size: list[int],
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    crop_height, crop_width = _center_crop_parse_output_size(output_size)
+    # we only allow cvcuda conversion for 4 ndim, and always use nhwc layout
+    image_height = image.shape[1]
+    image_width = image.shape[2]
+    channels = image.shape[3]
+    if crop_height > image_height or crop_width > image_width:
+        padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
+        image = cvcuda.copymakeborder(
+            image,
+            border_mode=cvcuda.Border.CONSTANT,
+            border_value=[0.0] * channels,
+            top=padding_ltrb[1],
+            left=padding_ltrb[0],
+            bottom=padding_ltrb[3],
+            right=padding_ltrb[2],
+        )
+
+        image_height = image.shape[1]
+        image_width = image.shape[2]
+
+        if crop_width == image_width and crop_height == image_height:
+            return image
+
+    # use customcrop to match crop_image behavior
+    crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, image_height, image_width)
+    return cvcuda.customcrop(
+        image,
+        cvcuda.RectI(x=crop_left, y=crop_top, width=crop_width, height=crop_height),
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(center_crop, _import_cvcuda().Tensor)(_center_crop_image_cvcuda)
+
+
 def resized_crop(
     inpt: torch.Tensor,
     top: int,
@@ -2858,6 +2943,24 @@ def resized_crop_video(
     )
 
 
+def _resized_crop_image_cvcuda(
+    image: "cvcuda.Tensor",
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: list[int],
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    antialias: Optional[bool] = True,
+) -> "cvcuda.Tensor":
+    image = _crop_image_cvcuda(image, top, left, height, width)
+    return _resize_image_cvcuda(image, size, interpolation=interpolation, antialias=antialias)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(resized_crop, _import_cvcuda().Tensor)(_resized_crop_image_cvcuda)
+
+
 def five_crop(
     inpt: torch.Tensor, size: list[int]
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -2929,6 +3032,29 @@ def five_crop_video(
     video: torch.Tensor, size: list[int]
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     return five_crop_image(video, size)
+
+
+def _five_crop_image_cvcuda(
+    image: "cvcuda.Tensor",
+    size: list[int],
+) -> tuple["cvcuda.Tensor", "cvcuda.Tensor", "cvcuda.Tensor", "cvcuda.Tensor", "cvcuda.Tensor"]:
+    crop_height, crop_width = _parse_five_crop_size(size)
+    image_height, image_width = image.shape[1], image.shape[2]
+
+    if crop_width > image_width or crop_height > image_height:
+        raise ValueError(f"Requested crop size {size} is bigger than input size {(image_height, image_width)}")
+
+    tl = _crop_image_cvcuda(image, 0, 0, crop_height, crop_width)
+    tr = _crop_image_cvcuda(image, 0, image_width - crop_width, crop_height, crop_width)
+    bl = _crop_image_cvcuda(image, image_height - crop_height, 0, crop_height, crop_width)
+    br = _crop_image_cvcuda(image, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
+    center = _center_crop_image_cvcuda(image, [crop_height, crop_width])
+
+    return tl, tr, bl, br, center
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(five_crop, _import_cvcuda().Tensor)(_five_crop_image_cvcuda)
 
 
 def ten_crop(
@@ -3026,3 +3152,35 @@ def ten_crop_video(
     torch.Tensor,
 ]:
     return ten_crop_image(video, size, vertical_flip=vertical_flip)
+
+
+def _ten_crop_image_cvcuda(
+    image: "cvcuda.Tensor",
+    size: list[int],
+    vertical_flip: bool = False,
+) -> tuple[
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+    "cvcuda.Tensor",
+]:
+    non_flipped = _five_crop_image_cvcuda(image, size)
+
+    if vertical_flip:
+        image = _vertical_flip_image_cvcuda(image)
+    else:
+        image = _horizontal_flip_image_cvcuda(image)
+
+    flipped = _five_crop_image_cvcuda(image, size)
+
+    return non_flipped + flipped
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(ten_crop, _import_cvcuda().Tensor)(_ten_crop_image_cvcuda)
