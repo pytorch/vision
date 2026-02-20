@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import gc
 import operator
 import os
 import pkgutil
@@ -949,6 +950,9 @@ def test_video_model(model_fn, dev):
             assert out.shape[-1] == num_classes
 
     _check_input_backprop(model, x)
+
+    del model, x, out
+    gc.collect()
 
 
 @pytest.mark.skipif(
