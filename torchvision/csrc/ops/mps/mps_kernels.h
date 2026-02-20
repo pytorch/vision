@@ -1,9 +1,6 @@
 #include <ATen/native/mps/OperationUtils.h>
 
-namespace vision {
-namespace ops {
-
-namespace mps {
+namespace vision::ops::mps {
 
 static at::native::mps::MetalShaderLibrary lib(R"VISION_METAL(
 
@@ -115,15 +112,15 @@ inline T bilinear_interpolate_deformable_conv2d(
   T v1 = 0;
   if (y_low >= 0 && x_low >= 0)
     v1 = input[y_low * width + x_low];
-  
+
   T v2 = 0;
   if (y_low >= 0 && x_high <= width - 1)
     v2 = input[y_low * width + x_high];
-  
+
   T v3 = 0;
   if (y_high <= height - 1 && x_low >= 0)
     v3 = input[y_high * width + x_low];
-  
+
   T v4 = 0;
   if (y_high <= height - 1 && x_high <= width - 1)
     v4 = input[y_high * width + x_high];
@@ -228,7 +225,7 @@ kernel void nms(constant  T        * dev_boxes     [[buffer(0)]],
                 constant  float    & iou_threshold [[buffer(3)]],
                 uint2     tgid     [[threadgroup_position_in_grid]],
                 uint2     tid2     [[thread_position_in_threadgroup]]) {
-  
+
   const uint row_start = tgid.y;
   const uint col_start = tgid.x;
   const uint tid = tid2.x;
@@ -245,7 +242,7 @@ kernel void nms(constant  T        * dev_boxes     [[buffer(0)]],
     const uint cur_box_idx = nmsThreadsPerBlock * row_start + tid;
     uint64_t t = 0;
     uint start = 0;
-    
+
     if (row_start == col_start) {
       start = tid + 1;
     }
@@ -309,48 +306,48 @@ kernel void deformable_im2col_kernel(
     int out_b = (tid / (out_w * out_h)) % batch_size;
     int in_c  = tid / (out_w * out_h * batch_size);
     int out_c = in_c * weight_h * weight_w;
-    
+
     int c_per_offset_grp = n_in_channels / n_offset_grps;
     int grp_idx = in_c / c_per_offset_grp;
-    
+
     int col_offset = out_c * (batch_size * out_h * out_w)
                       + out_b * (out_h * out_w)
                       + out_y * out_w + out_x;
     device T* local_columns_ptr = columns_ptr + col_offset;
-    
+
     int input_offset = out_b * (n_in_channels * height * width)
                         + in_c * (height * width);
     constant T* local_input_ptr = input_ptr + input_offset;
-    
+
     int offset_offset = (out_b * n_offset_grps + grp_idx) * 2 * weight_h * weight_w * out_h * out_w;
     constant T* local_offset_ptr = offset_ptr + offset_offset;
-    
+
     constant T* local_mask_ptr = nullptr;
     if (use_mask) {
         int mask_offset = (out_b * n_offset_grps + grp_idx) * weight_h * weight_w * out_h * out_w;
         local_mask_ptr = mask_ptr + mask_offset;
     }
-    
+
     for (int i = 0; i < weight_h; ++i) {
         for (int j = 0; j < weight_w; ++j) {
             int mask_index = i * weight_w + j;
             int offset_index = 2 * mask_index;
-            
+
             T mask_value = 1;
             if (use_mask) {
                 mask_value = local_mask_ptr[mask_index * (out_h * out_w) + out_y * out_w + out_x];
             }
-            
+
             T offset_h_val = local_offset_ptr[offset_index * (out_h * out_w) + out_y * out_w + out_x];
             T offset_w_val = local_offset_ptr[(offset_index + 1) * (out_h * out_w) + out_y * out_w + out_x];
-            
+
             T y = (out_y * stride_h - pad_h) + i * dilation_h + offset_h_val;
             T x = (out_x * stride_w - pad_w) + j * dilation_w + offset_w_val;
-            
+
             T interp = bilinear_interpolate_deformable_conv2d(local_input_ptr, height, width, y, x, tid);
-            
+
             *local_columns_ptr = mask_value * interp;
-            
+
             local_columns_ptr += batch_size * out_h * out_w;
         }
     }
@@ -575,7 +572,7 @@ kernel void roi_align_backward(
           atomic_add_float(grad_input + input_offset + y_low * width + x_high, static_cast<T>(g2));
           atomic_add_float(grad_input + input_offset + y_high * width + x_low, static_cast<T>(g3));
           atomic_add_float(grad_input + input_offset + y_high * width + x_high, static_cast<T>(g4));
-          
+
         } // if
       } // ix
     } // iy
@@ -733,7 +730,6 @@ kernel void roi_pool_backward(
     if (argmax != -1) {
       atomic_add_float(grad_input + offset + argmax, static_cast<T>(grad_output[output_offset + ph * h_stride + pw * w_stride]));
     }
-    
   } // MPS_1D_KERNEL_LOOP
 }
 
@@ -1130,7 +1126,6 @@ kernel void ps_roi_pool_backward(
         atomic_add_float(grad_input + offset + grad_input_index, diff_val);
       }
     }
-    
   } // MPS_1D_KERNEL_LOOP
 }
 
@@ -1183,6 +1178,4 @@ static id<MTLComputePipelineState> visionPipelineState(
   return lib.getPipelineStateForFunc(kernel);
 }
 
-} // namespace mps
-} // namespace ops
-} // namespace vision
+} // namespace vision::ops::mps
