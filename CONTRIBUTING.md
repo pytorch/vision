@@ -68,9 +68,6 @@ pip install -e . -v --no-build-isolation  # leave out the -e switch if you don't
 By default, GPU support is built if CUDA is found and `torch.cuda.is_available()` is true. It's possible to force
 building GPU support by setting `FORCE_CUDA=1` environment variable, which is useful when building a docker image.
 
-We don't officially support building from source using `pip`, but _if_ you do, you'll need to use the
-`--no-build-isolation` flag.
-
 #### Other development dependencies (some of these are needed to run tests):
 
 ```

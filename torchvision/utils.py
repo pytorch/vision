@@ -180,7 +180,7 @@ def _Image_fromarray(
 ) -> Image.Image:
     """
     A wrapper around PIL.Image.fromarray to mitigate the deprecation of the
-    mode paramter. See:
+    mode parameter. See:
       https://pillow.readthedocs.io/en/stable/releasenotes/11.3.0.html#image-fromarray-mode-parameter
     """
 
@@ -204,7 +204,7 @@ def _Image_fromarray(
         #    new behavior: PIL will infer the image mode from the data passed
         #                  in. That is, the type and shape determines the mode.
         #
-        #    old behiavor: The mode will change how PIL reads the image,
+        #    old behavior: The mode will change how PIL reads the image,
         #                  regardless of the data. That is, it will make the
         #                  data work with the mode.
         #

@@ -8,10 +8,11 @@ import subprocess
 import sys
 import sysconfig
 import warnings
+from importlib.metadata import distribution, PackageNotFoundError
 from pathlib import Path
 
 import torch
-from pkg_resources import DistributionNotFound, get_distribution, parse_version
+from packaging.version import parse as parse_version
 from setuptools import find_packages, setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDA_HOME, CUDAExtension, ROCM_HOME
 
@@ -82,8 +83,8 @@ def write_version_file(version, sha):
 def get_requirements():
     def get_dist(pkgname):
         try:
-            return get_distribution(pkgname)
-        except DistributionNotFound:
+            return distribution(pkgname)
+        except PackageNotFoundError:
             return None
 
     pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
