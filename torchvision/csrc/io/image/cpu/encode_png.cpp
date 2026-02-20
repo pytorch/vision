@@ -1,14 +1,17 @@
-#include "encode_jpeg.h"
+#include "encode_png.h"
+#include "../common.h"
 
 #include "common_png.h"
 
 namespace vision {
 namespace image {
 
+using namespace vision::stable;
+
 #if !PNG_FOUND
 
-torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
-  TORCH_CHECK(
+Tensor encode_png(const Tensor& data, int64_t compression_level) {
+  VISION_CHECK(
       false, "encode_png: torchvision not compiled with libpng support");
 }
 
@@ -64,9 +67,9 @@ void torch_png_write_data(
 
 } // namespace
 
-torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
-  C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.encode_png.encode_png");
-  // Define compression structures and error handling
+Tensor encode_png(const Tensor& data, int64_t compression_level) {
+  // Note: C10_LOG_API_USAGE_ONCE is not available in stable ABI, so we just
+  // skip the logging Define compression structures and error handling
   png_structp png_write;
   png_infop info_ptr;
   struct torch_png_error_mgr err_ptr;
@@ -93,30 +96,31 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
       free(buf_info.buffer);
     }
 
-    TORCH_CHECK(false, err_ptr.pngLastErrorMsg);
+    VISION_CHECK(false, err_ptr.pngLastErrorMsg);
   }
 
   // Check that the compression level is between 0 and 9
-  TORCH_CHECK(
+  VISION_CHECK(
       compression_level >= 0 && compression_level <= 9,
       "Compression level should be between 0 and 9");
 
   // Check that the input tensor is on CPU
-  TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
+  VISION_CHECK(data.device() == Device(kCPU), "Input tensor should be on CPU");
 
   // Check that the input tensor dtype is uint8
-  TORCH_CHECK(data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+  VISION_CHECK(
+      data.scalar_type() == kByte, "Input tensor dtype should be uint8");
 
   // Check that the input tensor is 3-dimensional
-  TORCH_CHECK(data.dim() == 3, "Input data should be a 3-dimensional tensor");
+  VISION_CHECK(data.dim() == 3, "Input data should be a 3-dimensional tensor");
 
   // Get image info
   int channels = data.size(0);
   int height = data.size(1);
   int width = data.size(2);
-  auto input = data.permute({1, 2, 0}).contiguous();
+  auto input = torch::stable::contiguous(permute(data, {1, 2, 0}));
 
-  TORCH_CHECK(
+  VISION_CHECK(
       channels == 1 || channels == 3,
       "The number of channels should be 1 or 3, got: ",
       channels);
@@ -150,7 +154,7 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   png_write_info(png_write, info_ptr);
 
   auto stride = width * channels;
-  auto ptr = input.data_ptr<uint8_t>();
+  auto ptr = input.const_data_ptr<uint8_t>();
 
   // Encode PNG file
   for (int y = 0; y < height; ++y) {
@@ -164,13 +168,10 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   // Destroy structures
   png_destroy_write_struct(&png_write, &info_ptr);
 
-  torch::TensorOptions options = torch::TensorOptions{torch::kU8};
-  auto outTensor = torch::empty({(long)buf_info.size}, options);
-
-  // Copy memory from png buffer, since torch cannot get ownership of it via
-  // `from_blob`
-  auto outPtr = outTensor.data_ptr<uint8_t>();
-  std::memcpy(outPtr, buf_info.buffer, sizeof(uint8_t) * outTensor.numel());
+  // Create tensor and copy data
+  auto outTensor = emptyCPU({(int64_t)buf_info.size}, kByte);
+  auto outPtr = outTensor.mutable_data_ptr<uint8_t>();
+  std::memcpy(outPtr, buf_info.buffer, buf_info.size);
   free(buf_info.buffer);
 
   return outTensor;

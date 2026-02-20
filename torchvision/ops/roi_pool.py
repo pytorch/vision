@@ -11,6 +11,56 @@ from ..utils import _log_api_usage_once
 from ._utils import check_roi_boxes_shape, convert_boxes_to_roi_format
 
 
+class _RoIPoolFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx,
+        input: Tensor,
+        rois: Tensor,
+        spatial_scale: float,
+        pooled_height: int,
+        pooled_width: int,
+    ) -> Tensor:
+        ctx.save_for_backward(rois)
+        ctx.spatial_scale = spatial_scale
+        ctx.pooled_height = pooled_height
+        ctx.pooled_width = pooled_width
+        ctx.input_shape = input.shape
+        output, argmax = torch.ops.torchvision.roi_pool(
+            input, rois, spatial_scale, pooled_height, pooled_width
+        )
+        ctx.save_for_backward(rois, argmax)
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output: Tensor):
+        rois, argmax = ctx.saved_tensors
+        batch_size, channels, height, width = ctx.input_shape
+        grad_input = torch.ops.torchvision._roi_pool_backward(
+            grad_output,
+            rois,
+            argmax,
+            ctx.spatial_scale,
+            ctx.pooled_height,
+            ctx.pooled_width,
+            batch_size,
+            channels,
+            height,
+            width,
+        )
+        return grad_input, None, None, None, None
+
+
+def _roi_pool_autograd(
+    input: Tensor,
+    rois: Tensor,
+    spatial_scale: float,
+    pooled_height: int,
+    pooled_width: int,
+) -> Tensor:
+    return _RoIPoolFunction.apply(input, rois, spatial_scale, pooled_height, pooled_width)
+
+
 @torch.fx.wrap
 def roi_pool(
     input: Tensor,
@@ -49,8 +99,7 @@ def roi_pool(
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
-    output, _ = torch.ops.torchvision.roi_pool(input, rois, spatial_scale, output_size[0], output_size[1])
-    return output
+    return _roi_pool_autograd(input, rois, spatial_scale, output_size[0], output_size[1])
 
 
 class RoIPool(nn.Module):

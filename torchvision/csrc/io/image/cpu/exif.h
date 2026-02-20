@@ -58,11 +58,13 @@ direct,
 #include <png.h>
 #endif
 
-#include <torch/types.h>
+#include "../../../StableABICompat.h"
 
 namespace vision {
 namespace image {
 namespace exif_private {
+
+using namespace vision::stable;
 
 constexpr uint16_t APP1 = 0xe1;
 constexpr uint16_t ENDIANNESS_INTEL = 0x49;
@@ -78,7 +80,7 @@ class ExifDataReader {
     return _size;
   }
   const unsigned char& operator[](size_t index) const {
-    TORCH_CHECK(index >= 0 && index < _size);
+    VISION_CHECK(index >= 0 && index < _size, "EXIF data index out of bounds");
     return _ptr[index];
   }
 
@@ -227,27 +229,25 @@ constexpr uint16_t IMAGE_ORIENTATION_RB =
     7; // mirrored horizontal & rotate 90 CW
 constexpr uint16_t IMAGE_ORIENTATION_LB = 8; // needs 270 CW rotation
 
-inline torch::Tensor exif_orientation_transform(
-    const torch::Tensor& image,
-    int orientation) {
+inline Tensor exif_orientation_transform(const Tensor& image, int orientation) {
   if (orientation == IMAGE_ORIENTATION_TL) {
     return image;
   } else if (orientation == IMAGE_ORIENTATION_TR) {
-    return image.flip(-1);
+    return flip(image, {-1});
   } else if (orientation == IMAGE_ORIENTATION_BR) {
     // needs 180 rotation equivalent to
     // flip both horizontally and vertically
-    return image.flip({-2, -1});
+    return flip(image, {-2, -1});
   } else if (orientation == IMAGE_ORIENTATION_BL) {
-    return image.flip(-2);
+    return flip(image, {-2});
   } else if (orientation == IMAGE_ORIENTATION_LT) {
-    return image.transpose(-1, -2);
+    return torch::stable::transpose(image, -1, -2);
   } else if (orientation == IMAGE_ORIENTATION_RT) {
-    return image.transpose(-1, -2).flip(-1);
+    return flip(torch::stable::transpose(image, -1, -2), {-1});
   } else if (orientation == IMAGE_ORIENTATION_RB) {
-    return image.transpose(-1, -2).flip({-2, -1});
+    return flip(torch::stable::transpose(image, -1, -2), {-2, -1});
   } else if (orientation == IMAGE_ORIENTATION_LB) {
-    return image.transpose(-1, -2).flip(-2);
+    return flip(torch::stable::transpose(image, -1, -2), {-2});
   }
   return image;
 }

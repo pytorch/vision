@@ -1,13 +1,13 @@
 #pragma once
 
-#include <torch/types.h>
+#include "../../../StableABICompat.h"
 
 namespace vision {
 namespace image {
 
-C10_EXPORT torch::Tensor read_file(const std::string& filename);
+vision::stable::Tensor read_file(std::string filename);
 
-C10_EXPORT void write_file(const std::string& filename, torch::Tensor& data);
+void write_file(std::string filename, const vision::stable::Tensor& data);
 
 } // namespace image
 } // namespace vision
