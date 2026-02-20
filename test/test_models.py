@@ -951,6 +951,7 @@ def test_video_model(model_fn, dev):
 
     _check_input_backprop(model, x)
 
+    # Clean up to prevent OOM error that was causing Windows CI to fail.
     del model, x, out
     gc.collect()
 
