@@ -21,6 +21,7 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 
 from common_utils import (
+    assert_close,
     assert_equal,
     cache,
     cpu_and_cuda,
@@ -42,7 +43,6 @@ from common_utils import (
 )
 
 from torch import nn
-from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten, tree_map
 from torch.utils.data import DataLoader, default_collate
 from torchvision import tv_tensors
@@ -3926,9 +3926,20 @@ class TestGaussianBlur:
     def test_kernel_video(self):
         check_kernel(F.gaussian_blur_video, make_video(), kernel_size=(3, 3))
 
+    @needs_cvcuda
+    def test_functional_error_cvcuda(self):
+        with pytest.raises(ValueError, match="CV-CUDA's GaussianBlur only supports float32 and uint8 dtype"):
+            F.gaussian_blur(make_image_cvcuda(dtype=torch.float64), kernel_size=(3, 3), sigma=0.8)
+
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
+        ],
     )
     def test_functional(self, make_input):
         check_functional(F.gaussian_blur, make_input(), kernel_size=(3, 3))
@@ -3940,14 +3951,29 @@ class TestGaussianBlur:
             (F._misc._gaussian_blur_image_pil, PIL.Image.Image),
             (F.gaussian_blur_image, tv_tensors.Image),
             (F.gaussian_blur_video, tv_tensors.Video),
+            pytest.param(
+                F._misc._gaussian_blur_image_cvcuda,
+                None,
+                marks=pytest.mark.needs_cvcuda,
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if kernel is F._misc._gaussian_blur_image_cvcuda:
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.gaussian_blur, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
         "make_input",
-        [make_image_tensor, make_image_pil, make_image, make_bounding_boxes, make_segmentation_mask, make_video],
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_bounding_boxes,
+            make_segmentation_mask,
+            make_video,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
+        ],
     )
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("sigma", [5, 2.0, (0.5, 2), [1.3, 2.7]])
@@ -4010,11 +4036,20 @@ class TestGaussianBlur:
             ((1, 26, 28), (23, 23), 1.7),
         ],
     )
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.float16])
+    @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32, torch.float64, torch.float16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_functional_image_correctness(self, dimensions, kernel_size, sigma, dtype, device):
+    @pytest.mark.parametrize(
+        "input_type",
+        [
+            tv_tensors.Image,
+            pytest.param("cvcuda.Tensor", marks=pytest.mark.needs_cvcuda),
+        ],
+    )
+    def test_functional_image_correctness(self, dimensions, kernel_size, sigma, dtype, device, input_type):
         if dtype is torch.float16 and device == "cpu":
             pytest.skip("The CPU implementation of float16 on CPU differs from opencv")
+        if not (dtype == torch.float32 or dtype == torch.uint8) and input_type == "cvcuda.Tensor":
+            pytest.xfail("CV-CUDA only supports float32 and uint8 dtypes for gaussian blur")
 
         num_channels, height, width = dimensions
 
@@ -4034,9 +4069,16 @@ class TestGaussianBlur:
             device=device,
         )
 
-        actual = F.gaussian_blur_image(image, kernel_size=kernel_size, sigma=sigma)
+        if input_type == "cvcuda.Tensor":
+            image = image.unsqueeze(0)
+            image = F.to_cvcuda_tensor(image)
 
-        torch.testing.assert_close(actual, expected, rtol=0, atol=1)
+        actual = F.gaussian_blur(image, kernel_size=kernel_size, sigma=sigma)
+
+        if input_type == "cvcuda.Tensor":
+            actual = F.cvcuda_to_tensor(actual)[0].to(device)
+
+        assert_close(actual, expected, rtol=0, atol=1)
 
 
 class TestGaussianNoise:
