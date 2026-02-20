@@ -21,6 +21,7 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 
 from common_utils import (
+    assert_close,
     assert_equal,
     cache,
     cpu_and_cuda,
@@ -42,7 +43,6 @@ from common_utils import (
 )
 
 from torch import nn
-from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten, tree_map
 from torch.utils.data import DataLoader, default_collate
 from torchvision import tv_tensors
@@ -5582,7 +5582,15 @@ class TestNormalize:
     def test_kernel_video(self):
         check_kernel(F.normalize_video, make_video(dtype=torch.float32), mean=self.MEAN, std=self.STD)
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image,
+            make_video,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
+        ],
+    )
     def test_functional(self, make_input):
         check_functional(F.normalize, make_input(dtype=torch.float32), mean=self.MEAN, std=self.STD)
 
@@ -5592,9 +5600,16 @@ class TestNormalize:
             (F.normalize_image, torch.Tensor),
             (F.normalize_image, tv_tensors.Image),
             (F.normalize_video, tv_tensors.Video),
+            pytest.param(
+                F._misc._normalize_image_cvcuda,
+                None,
+                marks=pytest.mark.needs_cvcuda,
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if kernel is F._misc._normalize_image_cvcuda:
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.normalize, kernel=kernel, input_type=input_type)
 
     def test_functional_error(self):
@@ -5608,6 +5623,11 @@ class TestNormalize:
             with pytest.raises(ValueError, match="std evaluated to zero, leading to division by zero"):
                 F.normalize_image(make_image(dtype=torch.float32), mean=self.MEAN, std=std)
 
+    @needs_cvcuda
+    def test_functional_error_cvcuda(self):
+        with pytest.raises(ValueError, match="Input tensor should be a float tensor"):
+            F.normalize(make_image_cvcuda(dtype=torch.uint8), mean=self.MEAN, std=self.STD)
+
     def _sample_input_adapter(self, transform, input, device):
         adapted_input = {}
         for key, value in input.items():
@@ -5620,7 +5640,15 @@ class TestNormalize:
             adapted_input[key] = value
         return adapted_input
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image,
+            make_video,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
+        ],
+    )
     def test_transform(self, make_input):
         check_transform(
             transforms.Normalize(mean=self.MEAN, std=self.STD),
@@ -5635,14 +5663,33 @@ class TestNormalize:
 
     @pytest.mark.parametrize(("mean", "std"), MEANS_STDS)
     @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.float64])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
+        ],
+    )
     @pytest.mark.parametrize("fn", [F.normalize, transform_cls_to_functional(transforms.Normalize)])
-    def test_correctness_image(self, mean, std, dtype, fn):
-        image = make_image(dtype=dtype)
+    def test_correctness_image(self, mean, std, dtype, make_input, fn):
+        is_cvcuda = make_input is make_image_cvcuda
+
+        if is_cvcuda and dtype != torch.float32:
+            pytest.xfail("CVCUDA only supports float32 for normalize")
+
+        image = make_input(dtype=dtype)
 
         actual = fn(image, mean=mean, std=std)
+
+        if is_cvcuda:
+            image = F.cvcuda_to_tensor(image)[0].cpu()
+
         expected = self._reference_normalize_image(image, mean=mean, std=std)
 
-        assert_equal(actual, expected)
+        if is_cvcuda:
+            assert_close(actual, expected)
+        else:
+            assert_equal(actual, expected)
 
 
 class TestClampBoundingBoxes:
