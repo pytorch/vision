@@ -169,7 +169,7 @@ def _evaluate(
         logger.add_meter("fl-all", fmt="{global_avg:.4f}")
 
     num_processed_samples = 0
-    with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
+    with torch.amp.autocast("cuda", enabled=args.mixed_precision, dtype=torch.float16):
         for blob in metric_logger.log_every(val_loader, print_freq, header):
             image_left, image_right, disp_gt, valid_disp_mask = (x.to(device) for x in blob)
             padder = utils.InputPadder(image_left.shape, mode=padder_mode)
@@ -314,7 +314,7 @@ def run(model, optimizer, scheduler, train_loader, val_loaders, logger, writer, 
 
         # unpack the data blob
         image_left, image_right, disp_mask, valid_disp_mask = (x.to(device) for x in data_blob)
-        with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
+        with torch.amp.autocast("cuda", enabled=args.mixed_precision, dtype=torch.float16):
             disp_predictions = model(image_left, image_right, flow_init=None, num_iters=args.recurrent_updates)
             # different models have different outputs, make sure we get the right ones for this task
             disp_predictions = make_stereo_flow(disp_predictions, model_out_channels)

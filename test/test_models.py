@@ -606,7 +606,7 @@ def test_fasterrcnn_switch_devices():
 
     checkOut(out)
 
-    with torch.cuda.amp.autocast():
+    with torch.amp.autocast("cuda"):
         out = model(model_input)
 
     checkOut(out)
@@ -705,7 +705,7 @@ def test_classification_model(model_fn, dev):
     _check_fx_compatible(model, x, eager_out=out)
 
     if dev == "cuda":
-        with torch.cuda.amp.autocast():
+        with torch.amp.autocast("cuda"):
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
@@ -761,7 +761,7 @@ def test_segmentation_model(model_fn, dev):
     _check_fx_compatible(model, x, eager_out=out)
 
     if dev == "cuda":
-        with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
+        with torch.amp.autocast("cuda"), torch.no_grad(), freeze_rng_state():
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
@@ -864,7 +864,7 @@ def test_detection_model(model_fn, dev):
     _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
 
     if dev == "cuda":
-        with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
+        with torch.amp.autocast("cuda"), torch.no_grad(), freeze_rng_state():
             out = model(model_input)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
@@ -941,7 +941,7 @@ def test_video_model(model_fn, dev):
     assert out.shape[-1] == num_classes
 
     if dev == "cuda":
-        with torch.cuda.amp.autocast():
+        with torch.amp.autocast("cuda"):
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
