@@ -53,7 +53,12 @@ from torchvision.transforms.functional import pil_modes_mapping, to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import check_type, is_pure_tensor
 from torchvision.transforms.v2.functional._geometry import _get_perspective_coeffs, _parallelogram_to_bounding_boxes
-from torchvision.transforms.v2.functional._utils import _get_kernel, _import_cvcuda, _register_kernel_internal
+from torchvision.transforms.v2.functional._utils import (
+    _cvcuda_shared_stream,
+    _get_kernel,
+    _import_cvcuda,
+    _register_kernel_internal,
+)
 
 
 # turns all warnings into errors for this module
@@ -8086,3 +8091,29 @@ class TestUtils:
     def test_no_valid_input(self, query):
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
+
+
+@needs_cvcuda
+class TestCVCUDASharedStream:
+    def test_shared_stream(self):
+        cvcuda = _import_cvcuda()
+
+        stream = torch.cuda.Stream(device=None)
+
+        @_cvcuda_shared_stream
+        def _assert_cvcuda_shared_stream():
+            assert cvcuda.Stream.current.handle == stream.cuda_stream
+
+        with stream:
+            _assert_cvcuda_shared_stream()
+
+    def test_shared_stream_negative(self):
+        cvcuda = _import_cvcuda()
+
+        stream = torch.cuda.Stream(device=None)
+
+        def _assert_cvcuda_shared_stream_negative():
+            assert cvcuda.Stream.current.handle != stream.cuda_stream
+
+        with stream:
+            _assert_cvcuda_shared_stream_negative()
