@@ -116,7 +116,15 @@ class BoundingBoxes(TVTensor):
         bounding_boxes.clamping_mode = clamping_mode
         return bounding_boxes
 
-    def __wrap__(self, tensor: torch.Tensor, *, format=None, canvas_size=None, clamping_mode=None) -> BoundingBoxes:
+    def __wrap__(
+        self,
+        tensor: torch.Tensor,
+        *,
+        format: BoundingBoxFormat | str | None = None,
+        canvas_size: tuple[int, int] | None = None,
+        clamping_mode: CLAMPING_MODE_TYPE = None,
+        check_dims: bool | None = None,
+    ) -> BoundingBoxes:
         return BoundingBoxes._wrap(
             tensor,
             format=format if format is not None else self.format,
@@ -164,10 +172,7 @@ class BoundingBoxes(TVTensor):
         if isinstance(output, torch.Tensor) and not isinstance(output, BoundingBoxes):
             output = first_bbox_from_args.__wrap__(output)
         elif isinstance(output, (tuple, list)):
-            output = type(output)(
-                first_bbox_from_args.__wrap__(part)
-                for part in output
-            )
+            output = type(output)(first_bbox_from_args.__wrap__(part) for part in output)
         return output
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]

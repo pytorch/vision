@@ -67,7 +67,7 @@ class KeyPoints(TVTensor):
         points.canvas_size = canvas_size
         return points
 
-    def __wrap__(self, tensor: torch.Tensor, *, canvas_size=None) -> KeyPoints:
+    def __wrap__(self, tensor: torch.Tensor, *, canvas_size: tuple[int, int] | None = None) -> KeyPoints:
         return KeyPoints._wrap(
             tensor,
             canvas_size=canvas_size if canvas_size is not None else self.canvas_size,
@@ -96,7 +96,6 @@ class KeyPoints(TVTensor):
         # Similar to BoundingBoxes._wrap_output(), see comment there.
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
         first_keypoints_from_args = next(x for x in flat_params if isinstance(x, KeyPoints))
-        canvas_size = first_keypoints_from_args.canvas_size
 
         if isinstance(output, torch.Tensor) and not isinstance(output, KeyPoints):
             output = first_keypoints_from_args.__wrap__(output)
