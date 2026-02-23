@@ -4,7 +4,7 @@
 #include <float.h>
 #include <torch/library.h>
 #include <ATen/native/cuda/KernelUtils.cuh>
-
+#include <ATen/AccumulateType.h>
 #include "cuda_helpers.h"
 
 namespace vision {
