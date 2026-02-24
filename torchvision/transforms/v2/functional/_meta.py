@@ -176,6 +176,46 @@ def _xyxy_to_xywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xywh
 
 
+def _xywh_to_cxcywh(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if not inplace:
+        xywh = xywh.clone()
+
+    # cx = x + width / 2, cy = y + height / 2, width and height stay the same
+    xywh[..., :2].add_(xywh[..., 2:].div(2, rounding_mode=None if xywh.is_floating_point() else "floor"))
+
+    return xywh
+
+
+def _cxcywh_to_xywh(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    # For integer tensors, use float arithmetic to match the behavior of the
+    # two-step conversion CXCYWH -> XYXY -> XYWH (where _cxcywh_to_xyxy uses
+    # float arithmetic, see PR #9322).
+    original = cxcywh
+    dtype = cxcywh.dtype
+    need_cast = not cxcywh.is_floating_point()
+
+    if need_cast:
+        cxcywh = cxcywh.float()
+    elif not inplace:
+        cxcywh = cxcywh.clone()
+
+    half_wh = cxcywh[..., 2:] / 2
+    # x = cx - w/2, y = cy - h/2
+    cxcywh[..., :2].sub_(half_wh)
+
+    if need_cast:
+        # For integer types, truncation of x1/y1 and x2/y2 (= x1 + w, y1 + h) can change
+        # the effective width/height. Recompute w/h to match the two-step path.
+        x2y2 = (cxcywh[..., :2] + cxcywh[..., 2:]).to(dtype)
+        cxcywh = cxcywh.to(dtype)
+        cxcywh[..., 2:] = x2y2 - cxcywh[..., :2]
+        if inplace:
+            original[:] = cxcywh
+            return original
+
+    return cxcywh
+
+
 def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
     # For integer tensors, use float arithmetic to match the behavior of
     # `torchvision.ops._box_convert._box_cxcywh_to_xyxy`.
@@ -316,7 +356,11 @@ def _convert_bounding_box_format(
     if tv_tensors.is_rotated_bounding_format(old_format) ^ tv_tensors.is_rotated_bounding_format(new_format):
         raise ValueError("Cannot convert between rotated and unrotated bounding boxes.")
 
-    # TODO: Add _xywh_to_cxcywh and _cxcywh_to_xywh to improve performance
+    if old_format == BoundingBoxFormat.XYWH and new_format == BoundingBoxFormat.CXCYWH:
+        return _xywh_to_cxcywh(bounding_boxes, inplace)
+    if old_format == BoundingBoxFormat.CXCYWH and new_format == BoundingBoxFormat.XYWH:
+        return _cxcywh_to_xywh(bounding_boxes, inplace)
+
     if old_format == BoundingBoxFormat.XYWH:
         bounding_boxes = _xywh_to_xyxy(bounding_boxes, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:
