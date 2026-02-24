@@ -1,10 +1,11 @@
 #include <ATen/ATen.h>
+#include <ATen/AccumulateType.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <float.h>
 #include <torch/library.h>
 #include <ATen/native/cuda/KernelUtils.cuh>
-#include <ATen/AccumulateType.h>
+
 #include "cuda_helpers.h"
 
 namespace vision {
@@ -67,7 +68,7 @@ __global__ void roi_pool_forward_kernel_impl(
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
         int input_index = h * width + w;
-        acc_t v  = static_cast<acc_t>(offset_input[input_index]);
+        acc_t v = static_cast<acc_t>(offset_input[input_index]);
         acc_t mv = static_cast<acc_t>(maxval);
 
         if (v > mv) {
