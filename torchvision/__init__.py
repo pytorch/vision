@@ -49,10 +49,7 @@ def set_video_backend(backend):
             The :mod:`pyav` package uses the 3rd party PyAv library. It is a Pythonic
             binding for the FFmpeg libraries.
     """
-    global _video_backend
-    if backend != "pyav":
-        raise ValueError("Invalid video backend '%s'. Only 'pyav' is supported" % backend)
-    _video_backend = backend
+    pass
 
 
 def get_video_backend():
