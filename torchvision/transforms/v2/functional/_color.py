@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import PIL.Image
 import torch
 from torch.nn.functional import conv2d
@@ -9,7 +11,13 @@ from torchvision.utils import _log_api_usage_once
 
 from ._misc import _num_value_bits, to_dtype_image
 from ._type_conversion import pil_to_tensor, to_pil_image
-from ._utils import _get_kernel, _register_kernel_internal
+from ._utils import _get_kernel, _import_cvcuda, _is_cvcuda_available, _register_kernel_internal
+
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 
 def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
@@ -647,6 +655,17 @@ _equalize_image_pil = _register_kernel_internal(equalize, PIL.Image.Image)(_FP.e
 @_register_kernel_internal(equalize, tv_tensors.Video)
 def equalize_video(video: torch.Tensor) -> torch.Tensor:
     return equalize_image(video)
+
+
+def _equalize_image_cvcuda(
+    image: "cvcuda.Tensor",
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+    return cvcuda.histogrameq(image, dtype=image.dtype)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(equalize, _import_cvcuda().Tensor)(_equalize_image_cvcuda)
 
 
 def invert(inpt: torch.Tensor) -> torch.Tensor:
