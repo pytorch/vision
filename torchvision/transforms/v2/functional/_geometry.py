@@ -2528,7 +2528,7 @@ def elastic_video(
 
 
 def center_crop(inpt: torch.Tensor, output_size: list[int]) -> torch.Tensor:
-    """See :class:`~torchvision.transforms.v2.RandomCrop` for details."""
+    """See :class:`~torchvision.transforms.v2.CenterCrop` for details."""
     if torch.jit.is_scripting():
         return center_crop_image(inpt, output_size=output_size)
 
