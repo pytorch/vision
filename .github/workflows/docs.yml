@@ -34,12 +34,6 @@ jobs:
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
         conda activate ci
-        # FIXME: not sure why we need this. `ldd torchvision/video_reader.so` shows that it
-        #  already links against the one pulled from conda. However, at runtime it pulls from
-        #  /lib64
-        # Should we maybe always do this in `./.github/scripts/setup-env.sh` so that we don't
-        # have to pay attention in all other workflows?
-        export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
 
         cd docs
 
