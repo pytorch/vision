@@ -104,16 +104,3 @@ Video - DEPREACTED
     read_video
     read_video_timestamps
     write_video
-
-
-**Fine-grained video API**
-
-In addition to the :mod:`read_video` function, we provide a high-performance 
-lower-level API for more fine-grained control compared to the :mod:`read_video` function.
-It does all this whilst fully supporting torchscript.
-
-.. autosummary::
-    :toctree: generated/
-    :template: class.rst
-
-    VideoReader
