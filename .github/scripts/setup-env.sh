@@ -79,7 +79,7 @@ echo '::endgroup::'
 
 if [[ "${OS_TYPE}" == linux && "${GPU_ARCH_TYPE}" == cpu ]]; then
   echo '::group::Install TorchCodec and ffmpeg'
-  conda install --quiet --yes ffmpeg -c conda-forge
+  conda install --quiet --yes ffmpeg
   pip install --progress-bar=off --pre torchcodec --index-url="https://download.pytorch.org/whl/nightly/cpu"
   echo '::endgroup::'
 fi
