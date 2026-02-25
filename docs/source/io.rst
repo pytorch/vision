@@ -1,10 +1,11 @@
-Decoding / Encoding images and videos
-=====================================
+Decoding and Encoding images
+============================
 
 .. currentmodule:: torchvision.io
 
 The :mod:`torchvision.io` module provides utilities for decoding and encoding
-images and videos.
+images. For videos and audio, please use `TorchCodec
+<https://github.com/meta-pytorch/torchcodec>`__.
 
 Image Decoding
 --------------
@@ -85,22 +86,3 @@ IO operations
 
     read_file
     write_file
-
-Video - DEPREACTED
-------------------
-
-.. warning::
-
-    DEPRECATED: All the video decoding and encoding capabilities of torchvision
-    are deprecated from version 0.22 and will be removed in version 0.24.  We
-    recommend that you migrate to
-    `TorchCodec <https://github.com/pytorch/torchcodec>`__, where we'll
-    consolidate the future decoding/encoding capabilities of PyTorch
-
-.. autosummary::
-    :toctree: generated/
-    :template: function.rst
-
-    read_video
-    read_video_timestamps
-    write_video
