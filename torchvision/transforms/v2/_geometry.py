@@ -6,7 +6,6 @@ from typing import Any, Callable, Literal, Optional, Union
 
 import PIL.Image
 import torch
-
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs

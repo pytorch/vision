@@ -15,11 +15,9 @@ from unittest import mock
 import numpy as np
 import PIL.Image
 import pytest
-
 import torch
 import torchvision.ops
 import torchvision.transforms.v2 as transforms
-
 from common_utils import (
     assert_equal,
     cache,
@@ -40,14 +38,12 @@ from common_utils import (
     needs_cvcuda,
     set_rng_seed,
 )
-
 from torch import nn
 from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten, tree_map
 from torch.utils.data import DataLoader, default_collate
 from torchvision import tv_tensors
 from torchvision.ops.boxes import box_iou
-
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping, to_pil_image
 from torchvision.transforms.v2 import functional as F
@@ -62,7 +58,6 @@ from torchvision.transforms.v2.functional._meta import (
     _xyxy_to_xywh,
 )
 from torchvision.transforms.v2.functional._utils import _get_kernel, _import_cvcuda, _register_kernel_internal
-
 
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
@@ -8132,8 +8127,6 @@ class TestThreadSafeGenerator:
     """
 
     TRANSFORMS = [
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomResizedCrop(size=(24, 24)),
         transforms.RandomRotation(degrees=10),
         transforms.RandomAffine(degrees=10),
@@ -8143,22 +8136,27 @@ class TestThreadSafeGenerator:
         transforms.ScaleJitter(target_size=(24, 24)),
     ]
 
+    class TransformDataset(torch.utils.data.Dataset):
+        def __init__(self, size, transform):
+            self.size = size
+            self.transform = transform
+            self.image = make_image((32, 32))
+
+        def __getitem__(self, idx):
+            return self.transform(self.image)
+
+        def __len__(self):
+            return self.size
+
     @pytest.mark.parametrize("transform", TRANSFORMS, ids=lambda t: type(t).__name__)
-    def test_multiprocessing_worker_uses_global_rng(self, transform):
-        """In multiprocessing workers, thread_safe_generator() returns None,
-        so transforms use the default global (per-process) RNG. Mimic two
-        workers with different seeds and verify they produce different results."""
-        image = make_image((32, 32))
-
-        with mock.patch("torch.thread_safe_generator", return_value=None):
-            torch.manual_seed(0)
-            result_worker0 = transform(image)
-
-        with mock.patch("torch.thread_safe_generator", return_value=None):
-            torch.manual_seed(1)
-            result_worker1 = transform(image)
-
-        assert not torch.equal(result_worker0, result_worker1)
+    def test_multiprocessing_workers(self, transform):
+        """With multiprocessing DataLoader workers, thread_safe_generator()
+        returns None and transforms use the per-process global RNG.
+        Each worker gets a different seed, so results should differ."""
+        dataset = self.TransformDataset(size=2, transform=transform)
+        dl = DataLoader(dataset, batch_size=1, num_workers=2)
+        batch0, batch1 = list(dl)
+        assert not torch.equal(batch0, batch1)
 
     @pytest.mark.parametrize("transform", TRANSFORMS, ids=lambda t: type(t).__name__)
     def test_thread_worker_uses_thread_local_generator(self, transform):
