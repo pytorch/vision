@@ -4,11 +4,22 @@ import warnings
 from typing import Any, Optional, TypeVar, Union
 
 import torch
-from torchvision.io import read_video, read_video_timestamps
 
 from .utils import tqdm
 
 T = TypeVar("T")
+
+
+def _get_torchcodec():
+    try:
+        import torchcodec
+    except ImportError:
+        raise ImportError(
+            "Video decoding capabilities were removed from torchvision and migrated "
+            "to TorchCodec. Please install TorchCodec following instructions at "
+            "https://github.com/pytorch/torchcodec#installing-torchcodec"
+        )
+    return torchcodec
 
 
 def unfold(tensor: torch.Tensor, size: int, step: int, dilation: int = 1) -> torch.Tensor:
@@ -47,7 +58,11 @@ class _VideoTimestampsDataset:
         return len(self.video_paths)
 
     def __getitem__(self, idx: int) -> tuple[list[int], Optional[float]]:
-        return read_video_timestamps(self.video_paths[idx])
+        torchcodec = _get_torchcodec()
+        decoder = torchcodec.decoders.VideoDecoder(self.video_paths[idx])
+        num_frames = decoder.metadata.num_frames
+        fps = decoder.metadata.average_fps
+        return list(range(num_frames)), fps
 
 
 def _collate_fn(x: T) -> T:
@@ -292,9 +307,27 @@ class VideoClips:
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
 
-        start_pts = clip_pts[0].item()
-        end_pts = clip_pts[-1].item()
-        video, audio, info = read_video(video_path, start_pts, end_pts)
+        start_idx = clip_pts[0].item()
+        end_idx = clip_pts[-1].item()
+
+        torchcodec = _get_torchcodec()
+
+        # Video frames via TorchCodec (returns TCHW format)
+        decoder = torchcodec.decoders.VideoDecoder(video_path)
+        video = decoder.get_frames_at(indices=list(range(start_idx, end_idx + 1))).data
+
+        # Audio via TorchCodec
+        fps = decoder.metadata.average_fps
+        start_sec = start_idx / fps
+        end_sec = (end_idx + 1) / fps
+        try:
+            audio_decoder = torchcodec.decoders.AudioDecoder(video_path)
+            audio_samples = audio_decoder.get_samples_played_in_range(start_seconds=start_sec, stop_seconds=end_sec)
+            audio = audio_samples.data
+        except Exception:
+            audio = torch.empty((1, 0), dtype=torch.float32)
+
+        info = {"video_fps": fps}
 
         if self.frame_rate is not None:
             resampling_idx = self.resampling_idxs[video_idx][clip_idx]
@@ -304,9 +337,10 @@ class VideoClips:
             info["video_fps"] = self.frame_rate
         assert len(video) == self.num_frames, f"{video.shape} x {self.num_frames}"
 
-        if self.output_format == "TCHW":
-            # [T,H,W,C] --> [T,C,H,W]
-            video = video.permute(0, 3, 1, 2)
+        # TorchCodec returns TCHW; convert to THWC if needed
+        if self.output_format == "THWC":
+            # [T,C,H,W] --> [T,H,W,C]
+            video = video.permute(0, 2, 3, 1)
 
         return video, audio, info, video_idx
 
