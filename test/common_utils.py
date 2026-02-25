@@ -18,7 +18,7 @@ import torch
 import torch.testing
 
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
-from torchvision import io, tv_tensors
+from torchvision import tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.v2.functional import cvcuda_to_tensor, to_cvcuda_tensor, to_image, to_pil_image
 from torchvision.transforms.v2.functional._utils import _is_cvcuda_available, _is_cvcuda_tensor
@@ -166,6 +166,8 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
 
 
 def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
+    import av
+
     names = []
     for i in range(num_videos):
         if sizes is None:
@@ -179,7 +181,18 @@ def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
         data = torch.randint(0, 256, (size, 300, 400, 3), dtype=torch.uint8)
         name = os.path.join(tmpdir, f"{i}.mp4")
         names.append(name)
-        io.write_video(name, data, fps=f)
+
+        with av.open(name, mode="w") as container:
+            stream = container.add_stream("libx264", rate=f)
+            stream.width = 400
+            stream.height = 300
+            stream.pix_fmt = "yuv420p"
+            for frame_data in data.numpy():
+                frame = av.VideoFrame.from_ndarray(frame_data, format="rgb24")
+                for packet in stream.encode(frame):
+                    container.mux(packet)
+            for packet in stream.encode():
+                container.mux(packet)
 
     return names
 
