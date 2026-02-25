@@ -1,34 +1,34 @@
 #pragma once
-#include <torch/types.h>
 #include <vector>
+#include "../../../StableABICompat.h"
 #include "../common.h"
 
 #if NVJPEG_FOUND
-#include <c10/cuda/CUDAStream.h>
+#include <cuda_runtime.h>
 #include <nvjpeg.h>
 
 namespace vision {
 namespace image {
 class CUDAJpegDecoder {
  public:
-  CUDAJpegDecoder(const torch::Device& target_device);
+  CUDAJpegDecoder(const vision::stable::Device& target_device);
   ~CUDAJpegDecoder();
 
-  std::vector<torch::Tensor> decode_images(
-      const std::vector<torch::Tensor>& encoded_images,
+  std::vector<vision::stable::Tensor> decode_images(
+      const std::vector<vision::stable::Tensor>& encoded_images,
       const nvjpegOutputFormat_t& output_format);
 
-  const torch::Device original_device;
-  const torch::Device target_device;
-  const c10::cuda::CUDAStream stream;
+  const vision::stable::Device original_device;
+  const vision::stable::Device target_device;
+  cudaStream_t stream;
 
  private:
   std::tuple<
       std::vector<nvjpegImage_t>,
-      std::vector<torch::Tensor>,
+      std::vector<vision::stable::Tensor>,
       std::vector<int>>
   prepare_buffers(
-      const std::vector<torch::Tensor>& encoded_images,
+      const std::vector<vision::stable::Tensor>& encoded_images,
       const nvjpegOutputFormat_t& output_format);
   nvjpegJpegState_t nvjpeg_state;
   nvjpegJpegState_t nvjpeg_decoupled_state;

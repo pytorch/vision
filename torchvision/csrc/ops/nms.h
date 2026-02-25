@@ -1,15 +1,13 @@
 #pragma once
 
-#include <ATen/ATen.h>
+#include "../StableABICompat.h"
 #include "../macros.h"
 
 namespace vision {
 namespace ops {
 
-VISION_API at::Tensor nms(
-    const at::Tensor& dets,
-    const at::Tensor& scores,
-    double iou_threshold);
+// Note: With stable ABI, nms is called directly via torch.ops.torchvision.nms
+// This header is kept for backwards compatibility but the C++ API is deprecated.
 
 } // namespace ops
 } // namespace vision

@@ -118,7 +118,7 @@ def get_macros_and_flags():
             define_macros += [("WITH_HIP", None)]
             nvcc_flags = []
         else:
-            define_macros += [("WITH_CUDA", None)]
+            define_macros += [("WITH_CUDA", None), ("USE_CUDA", None)]
             if NVCC_FLAGS is None:
                 nvcc_flags = []
             else:
@@ -284,10 +284,13 @@ def make_image_extension():
 
     libraries = []
     define_macros, extra_compile_args = get_macros_and_flags()
+    # PyTorch Stable ABI target version (2.11) - required for string handling in TORCH_BOX
+    define_macros += [("TORCH_TARGET_VERSION", "0x020b000000000000")]
 
     image_dir = CSRS_DIR / "io/image"
     sources = list(image_dir.glob("*.cpp")) + list(image_dir.glob("cpu/*.cpp")) + list(image_dir.glob("cpu/giflib/*.c"))
 
+    # Always include CUDA sources - they have stubs when NVJPEG_FOUND is not defined
     if IS_ROCM:
         sources += list(image_dir.glob("hip/*.cpp"))
         # we need to exclude this in favor of the hipified source

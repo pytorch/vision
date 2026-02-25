@@ -10,6 +10,8 @@
 namespace vision {
 namespace image {
 
+using namespace vision::stable;
+
 #ifdef _WIN32
 namespace {
 std::wstring utf8_decode(const std::string& str) {
@@ -18,7 +20,7 @@ std::wstring utf8_decode(const std::string& str) {
   }
   int size_needed = MultiByteToWideChar(
       CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), nullptr, 0);
-  TORCH_CHECK(size_needed > 0, "Error converting the content to Unicode");
+  VISION_CHECK(size_needed > 0, "Error converting the content to Unicode");
   std::wstring wstrTo(size_needed, 0);
   MultiByteToWideChar(
       CP_UTF8,
@@ -32,9 +34,7 @@ std::wstring utf8_decode(const std::string& str) {
 } // namespace
 #endif
 
-torch::Tensor read_file(const std::string& filename) {
-  C10_LOG_API_USAGE_ONCE(
-      "torchvision.csrc.io.image.cpu.read_write_file.read_file");
+Tensor read_file(std::string filename) {
 #ifdef _WIN32
   // According to
   // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019,
@@ -47,49 +47,44 @@ torch::Tensor read_file(const std::string& filename) {
   int rc = stat(filename.c_str(), &stat_buf);
 #endif
   // errno is a variable defined in errno.h
-  TORCH_CHECK(
+  VISION_CHECK(
       rc == 0, "[Errno ", errno, "] ", strerror(errno), ": '", filename, "'");
 
   int64_t size = stat_buf.st_size;
 
-  TORCH_CHECK(size > 0, "Expected a non empty file");
+  VISION_CHECK(size > 0, "Expected a non empty file");
 
 #ifdef _WIN32
-  // TODO: Once torch::from_file handles UTF-8 paths correctly, we should move
-  // back to use the following implementation since it uses file mapping.
-  //   auto data =
-  //       torch::from_file(filename, /*shared=*/false, /*size=*/size,
-  //       torch::kU8).clone()
+  // On Windows, read file manually since torch::from_file may not handle UTF-8
   FILE* infile = _wfopen(fileW.c_str(), L"rb");
+#else
+  // Use fopen/fread instead of from_file for stable ABI compatibility
+  FILE* infile = fopen(filename.c_str(), "rb");
+#endif
 
-  TORCH_CHECK(infile != nullptr, "Error opening input file");
+  VISION_CHECK(infile != nullptr, "Error opening input file");
 
-  auto data = torch::empty({size}, torch::kU8);
-  auto dataBytes = data.data_ptr<uint8_t>();
+  auto data = emptyCPU({size}, kByte);
+  auto dataBytes = data.mutable_data_ptr<uint8_t>();
 
   fread(dataBytes, sizeof(uint8_t), size, infile);
   fclose(infile);
-#else
-  auto data =
-      torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8);
-#endif
 
   return data;
 }
 
-void write_file(const std::string& filename, torch::Tensor& data) {
-  C10_LOG_API_USAGE_ONCE(
-      "torchvision.csrc.io.image.cpu.read_write_file.write_file");
+void write_file(std::string filename, const Tensor& data) {
   // Check that the input tensor is on CPU
-  TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
+  VISION_CHECK(data.device().type() == kCPU, "Input tensor should be on CPU");
 
   // Check that the input tensor dtype is uint8
-  TORCH_CHECK(data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+  VISION_CHECK(
+      data.scalar_type() == kByte, "Input tensor dtype should be uint8");
 
   // Check that the input tensor is 3-dimensional
-  TORCH_CHECK(data.dim() == 1, "Input data should be a 1-dimensional tensor");
+  VISION_CHECK(data.dim() == 1, "Input data should be a 1-dimensional tensor");
 
-  auto fileBytes = data.data_ptr<uint8_t>();
+  auto fileBytes = data.const_data_ptr<uint8_t>();
   auto fileCStr = filename.c_str();
 #ifdef _WIN32
   auto fileW = utf8_decode(filename);
@@ -98,7 +93,7 @@ void write_file(const std::string& filename, torch::Tensor& data) {
   FILE* outfile = fopen(fileCStr, "wb");
 #endif
 
-  TORCH_CHECK(outfile != nullptr, "Error opening output file");
+  VISION_CHECK(outfile != nullptr, "Error opening output file");
 
   fwrite(fileBytes, sizeof(uint8_t), data.numel(), outfile);
   fclose(outfile);

@@ -6,6 +6,8 @@
 namespace vision {
 namespace image {
 
+using namespace vision::stable;
+
 typedef struct reader_helper_t {
   uint8_t const* encoded_data; // input tensor data pointer
   size_t encoded_data_size; // size of input tensor in bytes
@@ -30,7 +32,7 @@ int read_from_tensor(GifFileType* gifFile, GifByteType* buf, int len) {
   return num_bytes_to_read;
 }
 
-torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
+Tensor decode_gif(const Tensor& encoded_data) {
   // LibGif docs: https://giflib.sourceforge.net/intro.html
   // Refer over there for more details on the libgif API, API ref, and a
   // detailed description of the GIF format.
@@ -57,13 +59,13 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   // If we do that, we'd have to make sure the buffers are never written to by
   // GIFLIB, otherwise we'd be overriding the tensor data.
   reader_helper_t reader_helper;
-  reader_helper.encoded_data = encoded_data.data_ptr<uint8_t>();
+  reader_helper.encoded_data = encoded_data.const_data_ptr<uint8_t>();
   reader_helper.encoded_data_size = encoded_data.numel();
   reader_helper.num_bytes_read = 0;
   GifFileType* gifFile =
       DGifOpen(static_cast<void*>(&reader_helper), read_from_tensor, &error);
 
-  TORCH_CHECK(
+  VISION_CHECK(
       (gifFile != nullptr) && (error == D_GIF_SUCCEEDED),
       "DGifOpenFileName() failed - ",
       error);
@@ -71,12 +73,12 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   if (DGifSlurp(gifFile) == GIF_ERROR) {
     auto gifFileError = gifFile->Error;
     DGifCloseFile(gifFile, &error);
-    TORCH_CHECK(false, "DGifSlurp() failed - ", gifFileError);
+    VISION_CHECK(false, "DGifSlurp() failed - ", gifFileError);
   }
   auto num_images = gifFile->ImageCount;
 
   // This check should already done within DGifSlurp(), just to be safe
-  TORCH_CHECK(num_images > 0, "GIF file should contain at least one image!");
+  VISION_CHECK(num_images > 0, "GIF file should contain at least one image!");
 
   GifColorType bg = {0, 0, 0};
   if (gifFile->SColorMap) {
@@ -94,12 +96,19 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
 
   // We output a channels-last tensor for consistency with other image decoders.
   // Torchvision's resize tends to be is faster on uint8 channels-last tensors.
-  auto options = torch::TensorOptions()
-                     .dtype(torch::kU8)
-                     .memory_format(torch::MemoryFormat::ChannelsLast);
-  auto out = torch::empty(
-      {int64_t(num_images), 3, int64_t(out_h), int64_t(out_w)}, options);
-  auto out_a = out.accessor<uint8_t, 4>();
+  std::vector<int64_t> sizes = {
+      int64_t(num_images), 3, int64_t(out_h), int64_t(out_w)};
+  auto out = emptyCPUChannelsLast(sizes, kByte);
+  auto out_ptr = out.mutable_data_ptr<uint8_t>();
+
+  // Calculate strides for NCHW layout with ChannelsLast memory format
+  // In ChannelsLast format for NCHW tensor, memory is laid out as NHWC
+  // Stride order: N -> HWC, C -> 1, H -> WC, W -> C
+  int64_t stride_n = 3 * out_h * out_w;
+  int64_t stride_c = 1;
+  int64_t stride_h = out_w * 3;
+  int64_t stride_w = 3;
+
   for (int i = 0; i < num_images; i++) {
     const SavedImage& img = gifFile->SavedImages[i];
 
@@ -109,7 +118,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
     const GifImageDesc& desc = img.ImageDesc;
     const ColorMapObject* cmap =
         desc.ColorMap ? desc.ColorMap : gifFile->SColorMap;
-    TORCH_CHECK(
+    VISION_CHECK(
         cmap != nullptr,
         "Global and local color maps are missing. This should never happen!");
 
@@ -132,14 +141,18 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
         (gcb.DisposalMode == DISPOSAL_UNSPECIFIED ||
          gcb.DisposalMode == DISPOSE_DO_NOT ||
          gcb.DisposalMode == DISPOSE_PREVIOUS)) {
-      out[i] = out[i - 1];
+      // Copy previous frame to current frame
+      auto prev_frame_ptr = out_ptr + (i - 1) * stride_n;
+      auto curr_frame_ptr = out_ptr + i * stride_n;
+      std::memcpy(curr_frame_ptr, prev_frame_ptr, stride_n);
     } else {
       // Background. If bg wasn't defined, it will be (0, 0, 0)
       for (int h = 0; h < gifFile->SHeight; h++) {
         for (int w = 0; w < gifFile->SWidth; w++) {
-          out_a[i][0][h][w] = bg.Red;
-          out_a[i][1][h][w] = bg.Green;
-          out_a[i][2][h][w] = bg.Blue;
+          auto base_idx = i * stride_n + h * stride_h + w * stride_w;
+          out_ptr[base_idx + 0 * stride_c] = bg.Red;
+          out_ptr[base_idx + 1 * stride_c] = bg.Green;
+          out_ptr[base_idx + 2 * stride_c] = bg.Blue;
         }
       }
     }
@@ -151,17 +164,20 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
           continue;
         }
         GifColorType rgb = cmap->Colors[c];
-        out_a[i][0][h + desc.Top][w + desc.Left] = rgb.Red;
-        out_a[i][1][h + desc.Top][w + desc.Left] = rgb.Green;
-        out_a[i][2][h + desc.Top][w + desc.Left] = rgb.Blue;
+        auto base_idx = i * stride_n + (h + desc.Top) * stride_h +
+            (w + desc.Left) * stride_w;
+        out_ptr[base_idx + 0 * stride_c] = rgb.Red;
+        out_ptr[base_idx + 1 * stride_c] = rgb.Green;
+        out_ptr[base_idx + 2 * stride_c] = rgb.Blue;
       }
     }
   }
 
-  out = out.squeeze(0); // remove batch dim if there's only one image
+  out = torch::stable::squeeze(
+      out, 0); // remove batch dim if there's only one image
 
   DGifCloseFile(gifFile, &error);
-  TORCH_CHECK(error == D_GIF_SUCCEEDED, "DGifCloseFile() failed - ", error);
+  VISION_CHECK(error == D_GIF_SUCCEEDED, "DGifCloseFile() failed - ", error);
 
   return out;
 }

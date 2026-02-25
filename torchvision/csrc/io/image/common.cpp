@@ -12,13 +12,16 @@ void* PyInit_image(void) {
 namespace vision {
 namespace image {
 
-void validate_encoded_data(const torch::Tensor& encoded_data) {
-  TORCH_CHECK(encoded_data.is_contiguous(), "Input tensor must be contiguous.");
-  TORCH_CHECK(
-      encoded_data.dtype() == torch::kU8,
+using namespace vision::stable;
+
+void validate_encoded_data(const Tensor& encoded_data) {
+  VISION_CHECK(
+      encoded_data.is_contiguous(), "Input tensor must be contiguous.");
+  VISION_CHECK(
+      encoded_data.scalar_type() == kByte,
       "Input tensor must have uint8 data type, got ",
-      encoded_data.dtype());
-  TORCH_CHECK(
+      scalarTypeName(encoded_data.scalar_type()));
+  VISION_CHECK(
       encoded_data.dim() == 1 && encoded_data.numel() > 0,
       "Input tensor must be 1-dimensional and non-empty, got ",
       encoded_data.dim(),
