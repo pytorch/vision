@@ -670,6 +670,7 @@ class VideoDatasetTestCase(DatasetTestCase):
     - Overwrites the 'FEATURE_TYPES' class attribute to expect two :class:`torch.Tensor` s for the video and audio as
       well as an integer label.
     - Overwrites the 'REQUIRED_PACKAGES' class attribute to require TorchCodec (``torchcodec``).
+    - Skips on non-Linux platforms and CUDA-only environments.
     - Adds the 'DEFAULT_FRAMES_PER_CLIP' class attribute. If no 'frames_per_clip' is provided by 'inject_fake_data()'
         and it is the last parameter without a default value in the dataset constructor, the value of the
         'DEFAULT_FRAMES_PER_CLIP' class attribute is appended to the output.
@@ -679,6 +680,12 @@ class VideoDatasetTestCase(DatasetTestCase):
     REQUIRED_PACKAGES = ("torchcodec",)
 
     FRAMES_PER_CLIP = 1
+
+    @classmethod
+    def setUpClass(cls):
+        if platform.system() != "Linux":
+            raise unittest.SkipTest("Video dataset tests are only supported on Linux.")
+        super().setUpClass()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

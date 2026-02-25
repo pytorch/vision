@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 import torch
 from common_utils import assert_equal, get_list_of_videos
@@ -12,7 +14,10 @@ except ImportError:
     _torchcodec_available = False
 
 
-@pytest.mark.skipif(not _torchcodec_available, reason="this test requires torchcodec")
+@pytest.mark.skipif(
+    not (_torchcodec_available and sys.platform == "linux"),
+    reason="this test requires torchcodec (linux only)",
+)
 class TestDatasetsSamplers:
     def test_random_clip_sampler(self, tmpdir):
         video_list = get_list_of_videos(tmpdir, num_videos=3, sizes=[25, 25, 25])

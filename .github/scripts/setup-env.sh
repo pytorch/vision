@@ -32,7 +32,6 @@ conda create \
   libwebp
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
-conda install --quiet --yes ffmpeg -c conda-forge
 pip install --progress-bar=off --upgrade setuptools==72.1.0
 
 echo '::endgroup::'
@@ -67,7 +66,7 @@ case $GPU_ARCH_TYPE in
     ;;
 esac
 PYTORCH_WHEEL_INDEX="https://download.pytorch.org/whl/${CHANNEL}/${GPU_ARCH_ID}"
-pip install --progress-bar=off --pre torch torchcodec --index-url="${PYTORCH_WHEEL_INDEX}"
+pip install --progress-bar=off --pre torch --index-url="${PYTORCH_WHEEL_INDEX}"
 
 if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
   python -c "import torch; exit(not torch.cuda.is_available())"
@@ -77,6 +76,13 @@ echo '::endgroup::'
 echo '::group::Install TorchVision'
 pip install -e . -v --no-build-isolation
 echo '::endgroup::'
+
+if [[ "${OS_TYPE}" == linux && "${GPU_ARCH_TYPE}" == cpu ]]; then
+  echo '::group::Install TorchCodec and ffmpeg'
+  conda install --quiet --yes ffmpeg -c conda-forge
+  pip install --progress-bar=off --pre torchcodec --index-url="https://download.pytorch.org/whl/nightly/cpu"
+  echo '::endgroup::'
+fi
 
 if [[ "${CVCUDA:-}" == "1" ]]; then
   echo '::group::Install CV-CUDA'

@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 import torch
 from common_utils import assert_equal, get_list_of_videos
@@ -9,6 +11,11 @@ try:
     _torchcodec_available = True
 except ImportError:
     _torchcodec_available = False
+
+_requires_torchcodec = pytest.mark.skipif(
+    not (_torchcodec_available and sys.platform == "linux"),
+    reason="this test requires torchcodec (linux only)",
+)
 
 
 class TestVideo:
@@ -37,7 +44,7 @@ class TestVideo:
         )
         assert_equal(r, expected)
 
-    @pytest.mark.skipif(not _torchcodec_available, reason="this test requires torchcodec")
+    @_requires_torchcodec
     def test_video_clips(self, tmpdir):
         video_list = get_list_of_videos(tmpdir, num_videos=3)
         video_clips = VideoClips(video_list, 5, 5, num_workers=2)
@@ -61,7 +68,7 @@ class TestVideo:
             assert video_idx == v_idx
             assert clip_idx == c_idx
 
-    @pytest.mark.skipif(not _torchcodec_available, reason="this test requires torchcodec")
+    @_requires_torchcodec
     def test_video_clips_custom_fps(self, tmpdir):
         video_list = get_list_of_videos(tmpdir, num_videos=3, sizes=[12, 12, 12], fps=[3, 4, 6])
         num_frames = 4
