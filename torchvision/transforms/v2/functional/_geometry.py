@@ -2448,12 +2448,12 @@ def elastic_bounding_boxes(
 
     # Pad displacement to match extended grid size (replicate edge values)
     padded_displacement = torch.nn.functional.pad(
-        displacement.permute(0, 3, 1, 2),  # (1, 2, H, W)
+        displacement.permute(0, 3, 1, 2),  # NHWC -> NCHW format
         (0, 1, 0, 1),  # pad right and bottom by 1
         mode="replicate",
     ).permute(
         0, 2, 3, 1
-    )  # back to (1, H+1, W+1, 2)
+    )  # back to NHWC
 
     # We construct an approximation of inverse grid as inv_grid = id_grid - displacement
     # This is not an exact inverse of the grid
