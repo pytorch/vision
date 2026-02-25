@@ -686,6 +686,8 @@ class RandomAffine(Transform):
 
     _v1_transform_cls = _transforms.RandomAffine
 
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+
     def __init__(
         self,
         degrees: Union[numbers.Number, Sequence],

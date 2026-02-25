@@ -4,6 +4,7 @@ import warnings
 from collections.abc import Sequence
 from typing import Any, Optional, TYPE_CHECKING, Union
 
+import numpy as np
 import PIL.Image
 import torch
 from torch.nn.functional import grid_sample, interpolate, pad as torch_pad
@@ -28,6 +29,7 @@ from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_b
 
 from ._utils import (
     _FillTypeJIT,
+    _get_cvcuda_interp,
     _get_kernel,
     _import_cvcuda,
     _is_cvcuda_available,
@@ -1329,6 +1331,59 @@ def affine_video(
         fill=fill,
         center=center,
     )
+
+
+def _affine_image_cvcuda(
+    image: "cvcuda.Tensor",
+    angle: Union[int, float],
+    translate: list[float],
+    scale: float,
+    shear: list[float],
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    fill: _FillTypeJIT = None,
+    center: Optional[list[float]] = None,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    interpolation = _check_interpolation(interpolation)
+    angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
+
+    height, width, num_channels = image.shape[1:]
+
+    # Determine the actual center point (cx, cy)
+    # torchvision uses image center by default, cvcuda transforms around upper-left (0,0)
+    # Unlike the tensor version which uses normalized coordinates centered at image center,
+    # CV-CUDA uses absolute pixel coordinates, so we pass actual center to _get_inverse_affine_matrix
+    if center is None:
+        cx, cy = width / 2.0, height / 2.0
+    else:
+        cx, cy = float(center[0]), float(center[1])
+
+    translate_f = [float(t) for t in translate]
+    matrix = _get_inverse_affine_matrix([cx, cy], angle, translate_f, scale, shear)
+
+    interp = _get_cvcuda_interp(interpolation)
+
+    xform = np.array([[matrix[0], matrix[1], matrix[2]], [matrix[3], matrix[4], matrix[5]]], dtype=np.float32)
+
+    if fill is None:
+        border_value = np.zeros(num_channels, dtype=np.float32)
+    elif isinstance(fill, (int, float)):
+        border_value = np.full(num_channels, fill, dtype=np.float32)
+    else:
+        border_value = np.array(fill, dtype=np.float32)[:num_channels]
+
+    return cvcuda.warp_affine(
+        image,
+        xform,
+        flags=interp | cvcuda.Interp.WARP_INVERSE_MAP,
+        border_mode=cvcuda.Border.CONSTANT,
+        border_value=border_value,
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(affine, _import_cvcuda().Tensor)(_affine_image_cvcuda)
 
 
 def rotate(
