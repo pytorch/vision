@@ -284,14 +284,26 @@ def make_image_extension():
 
     libraries = []
     define_macros, extra_compile_args = get_macros_and_flags()
+    # PyTorch Stable ABI target version (2.11) - required for string handling in TORCH_BOX
+    define_macros += [("TORCH_TARGET_VERSION", "0x020b000000000000")]
 
     image_dir = CSRS_DIR / "io/image"
-    sources = list(image_dir.glob("*.cpp")) + list(image_dir.glob("cpu/*.cpp")) + list(image_dir.glob("cpu/giflib/*.c"))
+    # Exclude *_hip.cpp files - those are hipified versions that would cause multiple definition errors
+    sources = [s for s in image_dir.glob("*.cpp") if not s.name.endswith("_hip.cpp")]
+    sources += [s for s in image_dir.glob("cpu/*.cpp") if not s.name.endswith("_hip.cpp")]
+    sources += list(image_dir.glob("cpu/giflib/*.c"))
 
+    # Always include CUDA sources - they have stubs when NVJPEG_FOUND is not defined
     if IS_ROCM:
-        sources += list(image_dir.glob("hip/*.cpp"))
-        # we need to exclude this in favor of the hipified source
-        sources.remove(image_dir / "image.cpp")
+        hip_sources = list(image_dir.glob("hip/*.cpp"))
+        if hip_sources:
+            sources += hip_sources
+            # Only remove image.cpp if we have a hipified replacement
+            if (image_dir / "image.cpp") in sources:
+                sources.remove(image_dir / "image.cpp")
+        else:
+            # No hip/ directory - use cuda sources (they have stubs for non-NVJPEG builds)
+            sources += list(image_dir.glob("cuda/*.cpp"))
     else:
         sources += list(image_dir.glob("cuda/*.cpp"))
 
