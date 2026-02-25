@@ -312,8 +312,8 @@ class VideoClips:
 
         torchcodec = _get_torchcodec()
 
-        # Video frames via TorchCodec (returns TCHW format)
-        decoder = torchcodec.decoders.VideoDecoder(video_path)
+        dimension_order = "NHWC" if self.output_format == "THWC" else "NCHW"
+        decoder = torchcodec.decoders.VideoDecoder(video_path, dimension_order=dimension_order)
         video = decoder.get_frames_at(indices=list(range(start_idx, end_idx + 1))).data
 
         # Audio via TorchCodec
@@ -336,11 +336,6 @@ class VideoClips:
             video = video[resampling_idx]
             info["video_fps"] = self.frame_rate
         assert len(video) == self.num_frames, f"{video.shape} x {self.num_frames}"
-
-        # TorchCodec returns TCHW; convert to THWC if needed
-        if self.output_format == "THWC":
-            # [T,C,H,W] --> [T,H,W,C]
-            video = video.permute(0, 2, 3, 1)
 
         return video, audio, info, video_idx
 
