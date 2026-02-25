@@ -32,6 +32,7 @@ conda create \
   libwebp
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
+conda install --quiet --yes ffmpeg -c conda-forge
 pip install --progress-bar=off --upgrade setuptools==72.1.0
 
 echo '::endgroup::'
