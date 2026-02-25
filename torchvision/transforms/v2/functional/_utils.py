@@ -1,9 +1,13 @@
 import functools
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, TYPE_CHECKING, Union
 
 import torch
 from torchvision import tv_tensors
+from torchvision.transforms.functional import InterpolationMode
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 _FillType = Union[int, float, Sequence[int], Sequence[float], None]
 _FillTypeJIT = Optional[list[float]]
@@ -177,3 +181,45 @@ def _is_cvcuda_tensor(inpt: Any) -> bool:
         return isinstance(inpt, cvcuda.Tensor)
     except ImportError:
         return False
+
+
+_interpolation_mode_to_cvcuda_interp: dict[InterpolationMode | str | int, "cvcuda.Interp"] = {}
+
+
+def _get_cvcuda_interp(interpolation: InterpolationMode | str | int) -> "cvcuda.Interp":
+    """
+    Get the CV-CUDA interpolation mode for a given interpolation mode.
+
+    CV-CUDA has the two following differences (evaluated in tests) comapred to TorchVision/PIL:
+    1. CV-CUDA does not have a match for NEAREST, its Interp.NEAREST is actually NEAREST_EXACT
+       Since we need to do interpolation, we will map NEAREST to Interp.NEAREST (which is NEAREST_EXACT)
+    2. BICUBIC interpolation method is different compared to TorchVision/PIL, algorithmic difference
+    """
+    if not _interpolation_mode_to_cvcuda_interp:
+        cvcuda = _import_cvcuda()
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.NEAREST] = cvcuda.Interp.NEAREST
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.NEAREST_EXACT] = cvcuda.Interp.NEAREST
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.BILINEAR] = cvcuda.Interp.LINEAR
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.BICUBIC] = cvcuda.Interp.CUBIC
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.BOX] = cvcuda.Interp.BOX
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.HAMMING] = cvcuda.Interp.HAMMING
+        _interpolation_mode_to_cvcuda_interp[InterpolationMode.LANCZOS] = cvcuda.Interp.LANCZOS
+        _interpolation_mode_to_cvcuda_interp["nearest"] = cvcuda.Interp.NEAREST
+        _interpolation_mode_to_cvcuda_interp["nearest-exact"] = cvcuda.Interp.NEAREST
+        _interpolation_mode_to_cvcuda_interp["bilinear"] = cvcuda.Interp.LINEAR
+        _interpolation_mode_to_cvcuda_interp["bicubic"] = cvcuda.Interp.CUBIC
+        _interpolation_mode_to_cvcuda_interp["box"] = cvcuda.Interp.BOX
+        _interpolation_mode_to_cvcuda_interp["hamming"] = cvcuda.Interp.HAMMING
+        _interpolation_mode_to_cvcuda_interp["lanczos"] = cvcuda.Interp.LANCZOS
+        _interpolation_mode_to_cvcuda_interp[0] = cvcuda.Interp.NEAREST
+        _interpolation_mode_to_cvcuda_interp[2] = cvcuda.Interp.LINEAR
+        _interpolation_mode_to_cvcuda_interp[3] = cvcuda.Interp.CUBIC
+        _interpolation_mode_to_cvcuda_interp[4] = cvcuda.Interp.BOX
+        _interpolation_mode_to_cvcuda_interp[5] = cvcuda.Interp.HAMMING
+        _interpolation_mode_to_cvcuda_interp[1] = cvcuda.Interp.LANCZOS
+
+    interp = _interpolation_mode_to_cvcuda_interp.get(interpolation)
+    if interp is None:
+        raise ValueError(f"Interpolation mode {interpolation} is not supported with CV-CUDA")
+
+    return interp

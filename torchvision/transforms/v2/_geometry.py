@@ -1047,6 +1047,8 @@ class ElasticTransform(Transform):
 
     _v1_transform_cls = _transforms.ElasticTransform
 
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+
     def __init__(
         self,
         alpha: Union[float, Sequence[float]] = 50.0,
