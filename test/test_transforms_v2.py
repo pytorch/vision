@@ -8120,3 +8120,61 @@ class TestUtils:
     def test_no_valid_input(self, query):
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
+
+
+class TestThreadSafeGenerator:
+    """Test that transforms correctly use torch.thread_safe_generator().
+
+    For multiprocessing workers, thread_safe_generator() returns None,
+    so transforms use the default process global RNG,
+    i.e. for a multiprocessing worker the RNG of that process.
+    For thread workers, it returns a thread-local torch.Generator.
+    """
+
+    TRANSFORMS = [
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomVerticalFlip(p=0.5),
+        transforms.RandomResizedCrop(size=(24, 24)),
+        transforms.RandomRotation(degrees=10),
+        transforms.RandomAffine(degrees=10),
+        transforms.RandomCrop(size=(24, 24), pad_if_needed=True),
+        transforms.RandomPerspective(p=1.0),
+        transforms.RandomErasing(p=1.0),
+        transforms.ScaleJitter(target_size=(24, 24)),
+    ]
+
+    @pytest.mark.parametrize("transform", TRANSFORMS, ids=lambda t: type(t).__name__)
+    def test_multiprocessing_worker_uses_global_rng(self, transform):
+        """In multiprocessing workers, thread_safe_generator() returns None,
+        so transforms use the default global (per-process) RNG. Mimic two
+        workers with different seeds and verify they produce different results."""
+        image = make_image((32, 32))
+
+        with mock.patch("torch.thread_safe_generator", return_value=None):
+            torch.manual_seed(0)
+            result_worker0 = transform(image)
+
+        with mock.patch("torch.thread_safe_generator", return_value=None):
+            torch.manual_seed(1)
+            result_worker1 = transform(image)
+
+        assert not torch.equal(result_worker0, result_worker1)
+
+    @pytest.mark.parametrize("transform", TRANSFORMS, ids=lambda t: type(t).__name__)
+    def test_thread_worker_uses_thread_local_generator(self, transform):
+        """In thread workers, thread_safe_generator() returns a thread-local
+        Generator. Mimic two workers with differently seeded generators
+        and verify they produce different results."""
+        image = make_image((32, 32))
+
+        g0 = torch.Generator()
+        g0.manual_seed(0)
+        with mock.patch("torch.thread_safe_generator", return_value=g0):
+            result_worker0 = transform(image)
+
+        g1 = torch.Generator()
+        g1.manual_seed(1)
+        with mock.patch("torch.thread_safe_generator", return_value=g1):
+            result_worker1 = transform(image)
+
+        assert not torch.equal(result_worker0, result_worker1)
