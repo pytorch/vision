@@ -12,7 +12,7 @@ T = TypeVar("T")
 
 def _get_torchcodec():
     try:
-        import torchcodec
+        import torchcodec  # type: ignore[import-not-found]
     except ImportError:
         raise ImportError(
             "Video decoding capabilities were removed from torchvision and migrated "
@@ -307,8 +307,8 @@ class VideoClips:
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
 
-        start_idx = clip_pts[0].item()
-        end_idx = clip_pts[-1].item()
+        start_idx = int(clip_pts[0].item())
+        end_idx = int(clip_pts[-1].item())
 
         torchcodec = _get_torchcodec()
 
