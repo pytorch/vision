@@ -186,7 +186,7 @@ class MNIST(VisionDataset):
                 url = f"{mirror}{filename}"
                 try:
                     download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
-                except URLError as e:
+                except (RuntimeError, URLError) as e:
                     errors.append(e)
                     continue
                 break
