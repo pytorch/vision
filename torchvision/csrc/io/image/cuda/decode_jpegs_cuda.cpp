@@ -129,11 +129,7 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
     event.block(current_stream);
     return result;
   } catch (const std::exception& e) {
-    if (typeid(e) != typeid(std::runtime_error)) {
-      STD_TORCH_CHECK(false, "Error while decoding JPEG images: ", e.what());
-    } else {
-      throw;
-    }
+    STD_TORCH_CHECK(false, "Error while decoding JPEG images: ", e.what());
   }
 }
 
