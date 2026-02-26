@@ -9,8 +9,8 @@ namespace image {
 using namespace exif_private;
 
 #if !PNG_FOUND
-torch::Tensor decode_png(
-    const torch::Tensor& data,
+torch::stable::Tensor decode_png(
+    const torch::stable::Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
   STD_TORCH_CHECK(
@@ -23,13 +23,11 @@ bool is_little_endian() {
   return *(uint8_t*)&x;
 }
 
-torch::Tensor decode_png(
-    const torch::Tensor& data,
+torch::stable::Tensor decode_png(
+    const torch::stable::Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
-  C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.decode_png.decode_png");
-
-  validate_encoded_data(data);
+  validate_encoded_data_stable(data);
 
   auto png_ptr =
       png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -41,7 +39,7 @@ torch::Tensor decode_png(
     STD_TORCH_CHECK(info_ptr, "libpng info structure allocation failed!")
   }
 
-  auto accessor = data.accessor<unsigned char, 1>();
+  auto accessor = constAccessor<unsigned char, 1>(data);
   auto datap = accessor.data();
   auto datap_len = accessor.size(0);
 
@@ -197,19 +195,21 @@ torch::Tensor decode_png(
 
   auto num_pixels_per_row = width * channels;
   auto is_16_bits = bit_depth == 16;
-  auto tensor = torch::empty(
-      {int64_t(height), int64_t(width), channels},
-      is_16_bits ? at::kUInt16 : torch::kU8);
+  int64_t tensor_sizes[] = {int64_t(height), int64_t(width), channels};
+  auto tensor = torch::stable::empty(
+      {tensor_sizes, 3},
+      is_16_bits ? torch::headeronly::ScalarType::UInt16
+                 : torch::headeronly::ScalarType::Byte);
   if (is_little_endian()) {
     png_set_swap(png_ptr);
   }
-  auto t_ptr = (uint8_t*)tensor.data_ptr();
+  auto t_ptr = static_cast<uint8_t*>(tensor.mutable_data_ptr());
   for (int pass = 0; pass < number_of_passes; pass++) {
     for (png_uint_32 i = 0; i < height; ++i) {
       png_read_row(png_ptr, t_ptr, nullptr);
       t_ptr += num_pixels_per_row * (is_16_bits ? 2 : 1);
     }
-    t_ptr = (uint8_t*)tensor.data_ptr();
+    t_ptr = static_cast<uint8_t*>(tensor.mutable_data_ptr());
   }
 
   int exif_orientation = -1;
@@ -219,9 +219,9 @@ torch::Tensor decode_png(
 
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
 
-  auto output = tensor.permute({2, 0, 1});
+  auto output = stablePermute(tensor, {2, 0, 1});
   if (apply_exif_orientation) {
-    return exif_orientation_transform(output, exif_orientation);
+    return exif_orientation_transform_stable(output, exif_orientation);
   }
   return output;
 }
