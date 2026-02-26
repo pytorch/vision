@@ -1,5 +1,7 @@
 #include "encode_jpeg.h"
 
+#include <torch/headeronly/util/Exception.h>
+
 #include "common_jpeg.h"
 
 namespace vision {
@@ -8,7 +10,7 @@ namespace image {
 #if !JPEG_FOUND
 
 torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       false, "encode_jpeg: torchvision not compiled with libjpeg support");
 }
 
@@ -48,17 +50,20 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
       free(jpegBuf);
     }
 
-    TORCH_CHECK(false, (const char*)jerr.jpegLastErrorMsg);
+    STD_TORCH_CHECK(false, (const char*)jerr.jpegLastErrorMsg);
   }
 
   // Check that the input tensor is on CPU
-  TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
+  STD_TORCH_CHECK(
+      data.device() == torch::kCPU, "Input tensor should be on CPU");
 
   // Check that the input tensor dtype is uint8
-  TORCH_CHECK(data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+  STD_TORCH_CHECK(
+      data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
 
   // Check that the input tensor is 3-dimensional
-  TORCH_CHECK(data.dim() == 3, "Input data should be a 3-dimensional tensor");
+  STD_TORCH_CHECK(
+      data.dim() == 3, "Input data should be a 3-dimensional tensor");
 
   // Get image info
   int channels = data.size(0);
@@ -66,7 +71,7 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   int width = data.size(2);
   auto input = data.permute({1, 2, 0}).contiguous();
 
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       channels == 1 || channels == 3,
       "The number of channels should be 1 or 3, got: ",
       channels);

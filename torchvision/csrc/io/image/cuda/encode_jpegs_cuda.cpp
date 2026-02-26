@@ -1,11 +1,13 @@
 #include "encode_jpegs_cuda.h"
+
+#include <torch/headeronly/util/Exception.h>
 #if !NVJPEG_FOUND
 namespace vision {
 namespace image {
 std::vector<torch::Tensor> encode_jpegs_cuda(
     const std::vector<torch::Tensor>& decoded_images,
     const int64_t quality) {
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       false, "encode_jpegs_cuda: torchvision not compiled with nvJPEG support");
 }
 } // namespace image
@@ -37,7 +39,7 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
   // threaded for now. In the future this may be an opportunity to unlock
   // further speedups
   std::lock_guard<std::mutex> lock(encoderMutex);
-  TORCH_CHECK(decoded_images.size() > 0, "Empty input tensor list");
+  STD_TORCH_CHECK(decoded_images.size() > 0, "Empty input tensor list");
   torch::Device device = decoded_images[0].device();
   at::cuda::CUDAGuard device_guard(device);
 
@@ -66,18 +68,18 @@ std::vector<torch::Tensor> encode_jpegs_cuda(
   std::vector<torch::Tensor> contig_images;
   contig_images.reserve(decoded_images.size());
   for (const auto& image : decoded_images) {
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         image.dtype() == torch::kU8, "Input tensor dtype should be uint8");
 
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         image.device() == device,
         "All input tensors must be on the same CUDA device when encoding with nvjpeg")
 
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         image.dim() == 3 && image.numel() > 0,
         "Input data should be a 3-dimensional tensor");
 
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         image.size(0) == 3,
         "The number of channels should be 3, got: ",
         image.size(0));
@@ -123,19 +125,19 @@ CUDAJpegEncoder::CUDAJpegEncoder(const torch::Device& target_device)
               : at::cuda::getCurrentCUDAStream()} {
   nvjpegStatus_t status;
   status = nvjpegCreateSimple(&nvjpeg_handle);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create nvjpeg handle: ",
       status);
 
   status = nvjpegEncoderStateCreate(nvjpeg_handle, &nv_enc_state, stream);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create nvjpeg encoder state: ",
       status);
 
   status = nvjpegEncoderParamsCreate(nvjpeg_handle, &nv_enc_params, stream);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create nvjpeg encoder params: ",
       status);
@@ -166,13 +168,13 @@ CUDAJpegEncoder::~CUDAJpegEncoder() {
   // nvjpegStatus_t status;
 
   // status = nvjpegEncoderParamsDestroy(nv_enc_params);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy nvjpeg encoder params: ",
   //     status);
 
   // status = nvjpegEncoderStateDestroy(nv_enc_state);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy nvjpeg encoder state: ",
   //     status);
@@ -180,7 +182,7 @@ CUDAJpegEncoder::~CUDAJpegEncoder() {
   // cudaStreamSynchronize(stream);
 
   // status = nvjpegDestroy(nvjpeg_handle);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
 }
 
@@ -190,7 +192,7 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
 
   // Ensure that the incoming src_image is safe to use
   cudaStatus = cudaStreamSynchronize(current_stream);
-  TORCH_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
+  STD_TORCH_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
 
   int channels = src_image.size(0);
   int height = src_image.size(1);
@@ -198,7 +200,7 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
 
   status = nvjpegEncoderParamsSetSamplingFactors(
       nv_enc_params, NVJPEG_CSS_444, stream);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to set nvjpeg encoder params sampling factors: ",
       status);
@@ -224,20 +226,20 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
       height,
       stream);
 
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS, "image encoding failed: ", status);
   // Retrieve length of the encoded image
   size_t length;
   status = nvjpegEncodeRetrieveBitstreamDevice(
       nvjpeg_handle, nv_enc_state, NULL, &length, stream);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to retrieve encoded image stream state: ",
       status);
 
   // Synchronize the stream to ensure that the encoded image is ready
   cudaStatus = cudaStreamSynchronize(stream);
-  TORCH_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
+  STD_TORCH_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
 
   // Reserve buffer for the encoded image
   torch::Tensor encoded_image = torch::empty(
@@ -248,7 +250,7 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
           .device(target_device)
           .requires_grad(false));
   cudaStatus = cudaStreamSynchronize(stream);
-  TORCH_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
+  STD_TORCH_CHECK(cudaStatus == cudaSuccess, "CUDA ERROR: ", cudaStatus);
   // Retrieve the encoded image
   status = nvjpegEncodeRetrieveBitstreamDevice(
       nvjpeg_handle,
@@ -256,7 +258,7 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
       encoded_image.data_ptr<uint8_t>(),
       &length,
       stream);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to retrieve encoded image: ",
       status);
@@ -266,7 +268,7 @@ torch::Tensor CUDAJpegEncoder::encode_jpeg(const torch::Tensor& src_image) {
 void CUDAJpegEncoder::set_quality(const int64_t quality) {
   nvjpegStatus_t paramsQualityStatus =
       nvjpegEncoderParamsSetQuality(nv_enc_params, quality, stream);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       paramsQualityStatus == NVJPEG_STATUS_SUCCESS,
       "Failed to set nvjpeg encoder params quality: ",
       paramsQualityStatus);
