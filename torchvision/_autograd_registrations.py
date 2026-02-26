@@ -212,7 +212,7 @@ def _no_double_backward(op_name):
 _all_autocast_keys = (
     torch._C.DispatchKeySet(torch._C.DispatchKey.AutocastCPU)
     | torch._C.DispatchKeySet(torch._C.DispatchKey.AutocastCUDA)
-    | torch._C.DispatchKeySet(torch._C.DispatchKey.AutocastXPU)
+    | torch._C.DispatchKeySet(torch._C.DispatchKey.AutocastXPU)  # type: ignore[attr-defined]
 )
 
 
