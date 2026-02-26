@@ -39,8 +39,9 @@ torch::stable::Tensor decode_png(
     STD_TORCH_CHECK(info_ptr, "libpng info structure allocation failed!")
   }
 
-  auto datap = data.const_data_ptr<unsigned char>();
-  auto datap_len = data.size(0);
+  auto accessor = constAccessor<unsigned char, 1>(data);
+  auto datap = accessor.data();
+  auto datap_len = accessor.size(0);
 
   if (setjmp(png_jmpbuf(png_ptr)) != 0) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
