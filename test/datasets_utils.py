@@ -66,7 +66,7 @@ class LazyImporter:
     """
 
     MODULES = (
-        "av",
+        "torchcodec",
         "lmdb",
         "pycocotools",
         "requests",
@@ -669,16 +669,23 @@ class VideoDatasetTestCase(DatasetTestCase):
 
     - Overwrites the 'FEATURE_TYPES' class attribute to expect two :class:`torch.Tensor` s for the video and audio as
       well as an integer label.
-    - Overwrites the 'REQUIRED_PACKAGES' class attribute to require PyAV (``av``).
+    - Overwrites the 'REQUIRED_PACKAGES' class attribute to require TorchCodec (``torchcodec``).
+    - Skips on non-Linux platforms and CUDA-only environments.
     - Adds the 'DEFAULT_FRAMES_PER_CLIP' class attribute. If no 'frames_per_clip' is provided by 'inject_fake_data()'
         and it is the last parameter without a default value in the dataset constructor, the value of the
         'DEFAULT_FRAMES_PER_CLIP' class attribute is appended to the output.
     """
 
     FEATURE_TYPES = (torch.Tensor, torch.Tensor, int)
-    REQUIRED_PACKAGES = ("av",)
+    REQUIRED_PACKAGES = ("torchcodec",)
 
     FRAMES_PER_CLIP = 1
+
+    @classmethod
+    def setUpClass(cls):
+        if platform.system() != "Linux":
+            raise unittest.SkipTest("Video dataset tests are only supported on Linux.")
+        super().setUpClass()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -864,13 +871,12 @@ def shape_test_for_stereo(
         assert dw == mw
 
 
-@requires_lazy_imports("av")
+@requires_lazy_imports("torchcodec")
 def create_video_file(
     root: Union[pathlib.Path, str],
     name: Union[pathlib.Path, str],
     size: Union[Sequence[int], int] = (1, 3, 10, 10),
     fps: float = 25,
-    **kwargs: Any,
 ) -> pathlib.Path:
     """Create a video file from random data.
 
@@ -881,14 +887,15 @@ def create_video_file(
             ``(num_frames, num_channels, height, width)``. If scalar, the value is used for the height and width.
             If not provided, ``num_frames=1`` and ``num_channels=3`` are assumed.
         fps (float): Frame rate in frames per second.
-        kwargs (Any): Additional parameters passed to :func:`torchvision.io.write_video`.
 
     Returns:
-        pathlib.Path: Path to the created image file.
+        pathlib.Path: Path to the created video file.
 
     Raises:
-        UsageError: If PyAV is not available.
+        UsageError: If TorchCodec is not available.
     """
+    from torchcodec.encoders import VideoEncoder
+
     if isinstance(size, int):
         size = (size, size)
     if len(size) == 2:
@@ -902,11 +909,14 @@ def create_video_file(
 
     video = create_image_or_video_tensor(size)
     file = pathlib.Path(root) / name
-    torchvision.io.write_video(str(file), video.permute(0, 2, 3, 1), fps, **kwargs)
+
+    encoder = VideoEncoder(video, frame_rate=fps)
+    encoder.to_file(str(file))
+
     return file
 
 
-@requires_lazy_imports("av")
+@requires_lazy_imports("torchcodec")
 def create_video_folder(
     root: Union[str, pathlib.Path],
     name: Union[str, pathlib.Path],
@@ -933,7 +943,7 @@ def create_video_folder(
         List[pathlib.Path]: Paths to all created video files.
 
     Raises:
-        UsageError: If PyAV is not available.
+        UsageError: If TorchCodec is not available.
 
     .. seealso::
 
@@ -944,7 +954,7 @@ def create_video_folder(
         def size(idx):
             num_frames = 1
             num_channels = 3
-            # The 'libx264' video codec, which is the default of torchvision.io.write_video, requires the height and
+            # The 'libx264' video codec requires the height and
             # width of the video to be divisible by 2.
             height, width = (torch.randint(2, 6, size=(2,), dtype=torch.int) * 2).tolist()
             return (num_frames, num_channels, height, width)
