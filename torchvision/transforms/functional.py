@@ -385,7 +385,7 @@ def _compute_resized_output_size(
 
 
 def resize(
-    img: Tensor,
+    img: Union[PIL.Image.Image, Tensor],
     size: list[int],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
@@ -479,7 +479,7 @@ def resize(
     return F_t.resize(img, size=output_size, interpolation=interpolation.value, antialias=antialias)
 
 
-def pad(img: Tensor, padding: list[int], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
+def pad(img: Union[PIL.Image.Image, Tensor], padding: list[int], fill: Union[int, float] = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,
