@@ -2,6 +2,8 @@
 
 #include <torch/headeronly/util/Exception.h>
 
+#include <torch/headeronly/util/Exception.h>
+
 #include "common_png.h"
 
 namespace vision {
@@ -107,12 +109,21 @@ torch::stable::Tensor encode_png(
       "Compression level should be between 0 and 9");
 
   // Check that the input tensor is on CPU
+<<<<<<< HEAD
   STD_TORCH_CHECK(data.is_cpu(), "Input tensor should be on CPU");
 
   // Check that the input tensor dtype is uint8
   STD_TORCH_CHECK(
       data.scalar_type() == torch::headeronly::ScalarType::Byte,
       "Input tensor dtype should be uint8");
+=======
+  STD_TORCH_CHECK(
+      data.device() == torch::kCPU, "Input tensor should be on CPU");
+
+  // Check that the input tensor dtype is uint8
+  STD_TORCH_CHECK(
+      data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+>>>>>>> c0331c5e2933c621db9a44623f4f3981fe2342e0
 
   // Check that the input tensor is 3-dimensional
   STD_TORCH_CHECK(
