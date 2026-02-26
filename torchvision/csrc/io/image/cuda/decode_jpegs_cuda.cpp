@@ -6,7 +6,7 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
     const std::vector<torch::Tensor>& encoded_images,
     vision::image::ImageReadMode mode,
     torch::Device device) {
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       false, "decode_jpegs_cuda: torchvision not compiled with nvJPEG support");
 }
 } // namespace image
@@ -42,18 +42,18 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
   std::vector<torch::Tensor> contig_images;
   contig_images.reserve(encoded_images.size());
 
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       device.is_cuda(), "Expected the device parameter to be a cuda device");
 
   for (auto& encoded_image : encoded_images) {
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         encoded_image.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
 
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         !encoded_image.is_cuda(),
         "The input tensor must be on CPU when decoding with nvjpeg")
 
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         encoded_image.dim() == 1 && encoded_image.numel() > 0,
         "Expected a non empty 1-dimensional tensor");
 
@@ -72,11 +72,11 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
   nvjpegStatus_t get_minor_property_status =
       nvjpegGetProperty(MINOR_VERSION, &minor_version);
 
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       get_major_property_status == NVJPEG_STATUS_SUCCESS,
       "nvjpegGetProperty failed: ",
       get_major_property_status);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       get_minor_property_status == NVJPEG_STATUS_SUCCESS,
       "nvjpegGetProperty failed: ",
       get_minor_property_status);
@@ -114,7 +114,7 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
       output_format = NVJPEG_OUTPUT_RGB;
       break;
     default:
-      TORCH_CHECK(
+      STD_TORCH_CHECK(
           false, "The provided mode is not supported for JPEG decoding on GPU");
   }
 
@@ -130,7 +130,7 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
     return result;
   } catch (const std::exception& e) {
     if (typeid(e) != typeid(std::runtime_error)) {
-      TORCH_CHECK(false, "Error while decoding JPEG images: ", e.what());
+      STD_TORCH_CHECK(false, "Error while decoding JPEG images: ", e.what());
     } else {
       throw;
     }
@@ -160,70 +160,70 @@ CUDAJpegDecoder::CUDAJpegDecoder(const torch::Device& target_device)
         NULL,
         NVJPEG_FLAGS_DEFAULT,
         &nvjpeg_handle);
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         status == NVJPEG_STATUS_SUCCESS,
         "Failed to initialize nvjpeg with default backend: ",
         status);
     hw_decode_available = false;
   } else {
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         status == NVJPEG_STATUS_SUCCESS,
         "Failed to initialize nvjpeg with hardware backend: ",
         status);
   }
 
   status = nvjpegJpegStateCreate(nvjpeg_handle, &nvjpeg_state);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create nvjpeg state: ",
       status);
 
   status = nvjpegDecoderCreate(
       nvjpeg_handle, NVJPEG_BACKEND_DEFAULT, &nvjpeg_decoder);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create nvjpeg decoder: ",
       status);
 
   status = nvjpegDecoderStateCreate(
       nvjpeg_handle, nvjpeg_decoder, &nvjpeg_decoupled_state);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create nvjpeg decoder state: ",
       status);
 
   status = nvjpegBufferPinnedCreate(nvjpeg_handle, NULL, &pinned_buffers[0]);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create pinned buffer: ",
       status);
 
   status = nvjpegBufferPinnedCreate(nvjpeg_handle, NULL, &pinned_buffers[1]);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create pinned buffer: ",
       status);
 
   status = nvjpegBufferDeviceCreate(nvjpeg_handle, NULL, &device_buffer);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create device buffer: ",
       status);
 
   status = nvjpegJpegStreamCreate(nvjpeg_handle, &jpeg_streams[0]);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create jpeg stream: ",
       status);
 
   status = nvjpegJpegStreamCreate(nvjpeg_handle, &jpeg_streams[1]);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create jpeg stream: ",
       status);
 
   status = nvjpegDecodeParamsCreate(nvjpeg_handle, &nvjpeg_decode_params);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       status == NVJPEG_STATUS_SUCCESS,
       "Failed to create decode params: ",
       status);
@@ -243,61 +243,61 @@ CUDAJpegDecoder::~CUDAJpegDecoder() {
   // nvjpegStatus_t status;
 
   // status = nvjpegDecodeParamsDestroy(nvjpeg_decode_params);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy nvjpeg decode params: ",
   //     status);
 
   // status = nvjpegJpegStreamDestroy(jpeg_streams[0]);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy jpeg stream: ",
   //     status);
 
   // status = nvjpegJpegStreamDestroy(jpeg_streams[1]);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy jpeg stream: ",
   //     status);
 
   // status = nvjpegBufferPinnedDestroy(pinned_buffers[0]);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy pinned buffer[0]: ",
   //     status);
 
   // status = nvjpegBufferPinnedDestroy(pinned_buffers[1]);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy pinned buffer[1]: ",
   //     status);
 
   // status = nvjpegBufferDeviceDestroy(device_buffer);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy device buffer: ",
   //     status);
 
   // status = nvjpegJpegStateDestroy(nvjpeg_decoupled_state);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy nvjpeg decoupled state: ",
   //     status);
 
   // status = nvjpegDecoderDestroy(nvjpeg_decoder);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy nvjpeg decoder: ",
   //     status);
 
   // status = nvjpegJpegStateDestroy(nvjpeg_state);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS,
   //     "Failed to destroy nvjpeg state: ",
   //     status);
 
   // status = nvjpegDestroy(nvjpeg_handle);
-  // TORCH_CHECK(
+  // STD_TORCH_CHECK(
   //     status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
 }
 
@@ -350,10 +350,10 @@ CUDAJpegDecoder::prepare_buffers(
         &subsampling,
         width,
         height);
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         status == NVJPEG_STATUS_SUCCESS, "Failed to get image info: ", status);
 
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         subsampling != NVJPEG_CSS_UNKNOWN, "Unknown chroma subsampling");
 
     // output channels may be different from the actual number of channels in
@@ -420,7 +420,7 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
   cudaError_t cudaStatus;
 
   cudaStatus = cudaStreamSynchronize(stream);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       cudaStatus == cudaSuccess,
       "Failed to synchronize CUDA stream: ",
       cudaStatus);
@@ -479,7 +479,7 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
         1,
         output_format == NVJPEG_OUTPUT_UNCHANGED ? NVJPEG_OUTPUT_RGB
                                                  : output_format);
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         status == NVJPEG_STATUS_SUCCESS,
         "Failed to initialize batch decoding: ",
         status);
@@ -491,14 +491,14 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
         hw_input_buffer_size.data(),
         hw_output_buffer.data(),
         stream);
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         status == NVJPEG_STATUS_SUCCESS, "Failed to decode batch: ", status);
   }
 
   if (sw_input_buffer.size() > 0) {
     status =
         nvjpegStateAttachDeviceBuffer(nvjpeg_decoupled_state, device_buffer);
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         status == NVJPEG_STATUS_SUCCESS,
         "Failed to attach device buffer: ",
         status);
@@ -508,7 +508,7 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
         nvjpeg_decode_params,
         output_format == NVJPEG_OUTPUT_UNCHANGED ? NVJPEG_OUTPUT_RGB
                                                  : output_format);
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         status == NVJPEG_STATUS_SUCCESS,
         "Failed to set output format: ",
         status);
@@ -521,14 +521,14 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
           0,
           0,
           jpeg_streams[buffer_index]);
-      TORCH_CHECK(
+      STD_TORCH_CHECK(
           status == NVJPEG_STATUS_SUCCESS,
           "Failed to parse jpeg stream: ",
           status);
 
       status = nvjpegStateAttachPinnedBuffer(
           nvjpeg_decoupled_state, pinned_buffers[buffer_index]);
-      TORCH_CHECK(
+      STD_TORCH_CHECK(
           status == NVJPEG_STATUS_SUCCESS,
           "Failed to attach pinned buffer: ",
           status);
@@ -539,13 +539,13 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
           nvjpeg_decoupled_state,
           nvjpeg_decode_params,
           jpeg_streams[buffer_index]);
-      TORCH_CHECK(
+      STD_TORCH_CHECK(
           status == NVJPEG_STATUS_SUCCESS,
           "Failed to decode jpeg stream: ",
           status);
 
       cudaStatus = cudaStreamSynchronize(stream);
-      TORCH_CHECK(
+      STD_TORCH_CHECK(
           cudaStatus == cudaSuccess,
           "Failed to synchronize CUDA stream: ",
           cudaStatus);
@@ -556,7 +556,7 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
           nvjpeg_decoupled_state,
           jpeg_streams[buffer_index],
           stream);
-      TORCH_CHECK(
+      STD_TORCH_CHECK(
           status == NVJPEG_STATUS_SUCCESS,
           "Failed to transfer jpeg to device: ",
           status);
@@ -570,7 +570,7 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
           nvjpeg_decoupled_state,
           &sw_output_buffer[i],
           stream);
-      TORCH_CHECK(
+      STD_TORCH_CHECK(
           status == NVJPEG_STATUS_SUCCESS,
           "Failed to decode jpeg stream: ",
           status);
@@ -578,7 +578,7 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
   }
 
   cudaStatus = cudaStreamSynchronize(stream);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       cudaStatus == cudaSuccess,
       "Failed to synchronize CUDA stream: ",
       cudaStatus);
