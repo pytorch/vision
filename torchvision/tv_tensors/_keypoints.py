@@ -67,6 +67,13 @@ class KeyPoints(TVTensor):
         points.canvas_size = canvas_size
         return points
 
+    def __wrap__(self, tensor: torch.Tensor, *, canvas_size: tuple[int, int] | None = None) -> KeyPoints:
+        return KeyPoints._wrap(
+            tensor,
+            canvas_size=canvas_size if canvas_size is not None else self.canvas_size,
+            check_dims=False,
+        )
+
     def __new__(
         cls,
         data: Any,
@@ -89,13 +96,11 @@ class KeyPoints(TVTensor):
         # Similar to BoundingBoxes._wrap_output(), see comment there.
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
         first_keypoints_from_args = next(x for x in flat_params if isinstance(x, KeyPoints))
-        canvas_size = first_keypoints_from_args.canvas_size
 
         if isinstance(output, torch.Tensor) and not isinstance(output, KeyPoints):
-            output = KeyPoints._wrap(output, canvas_size=canvas_size, check_dims=False)
+            output = first_keypoints_from_args.__wrap__(output)
         elif isinstance(output, (tuple, list)):
-            # This branch exists for chunk() and unbind()
-            output = type(output)(KeyPoints._wrap(part, canvas_size=canvas_size, check_dims=False) for part in output)
+            output = type(output)(first_keypoints_from_args.__wrap__(part) for part in output)
         return output
 
     def __repr__(self, *, tensor_contents: Any = None) -> str:  # type: ignore[override]

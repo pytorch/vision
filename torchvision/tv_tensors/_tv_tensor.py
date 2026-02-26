@@ -9,6 +9,7 @@ from torch._C import DisableTorchFunctionSubclass
 from torch.types import _device, _dtype, _size
 
 from torchvision.tv_tensors._torch_function_helpers import _FORCE_TORCHFUNCTION_SUBCLASS, _must_return_subclass
+from typing_extensions import Self
 
 
 D = TypeVar("D", bound="TVTensor")
@@ -48,6 +49,9 @@ class TVTensor(torch.Tensor):
             # Also handles things like namedtuples
             output = type(output)(cls._wrap_output(part, args, kwargs) for part in output)
         return output
+
+    def __wrap__(self, tensor: torch.Tensor) -> Self:
+        return tensor.as_subclass(type(self))
 
     @classmethod
     def __torch_function__(
