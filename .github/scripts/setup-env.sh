@@ -77,14 +77,6 @@ echo '::group::Install TorchVision'
 pip install -e . -v --no-build-isolation
 echo '::endgroup::'
 
-if [[ "${OS_TYPE}" == linux && "${GPU_ARCH_TYPE}" == cpu ]]; then
-  echo '::group::Install TorchCodec and ffmpeg'
-  conda install --quiet --yes ffmpeg
-  pip install --progress-bar=off --pre torchcodec --index-url="https://download.pytorch.org/whl/nightly/cpu"
-  export LD_LIBRARY_PATH="${CONDA_PREFIX}/lib:${LD_LIBRARY_PATH}"
-  echo '::endgroup::'
-fi
-
 if [[ "${CVCUDA:-}" == "1" ]]; then
   echo '::group::Install CV-CUDA'
   pip install --progress-bar=off cvcuda-cu12
