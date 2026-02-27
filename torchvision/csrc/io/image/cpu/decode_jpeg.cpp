@@ -11,7 +11,7 @@ torch::Tensor decode_jpeg(
     const torch::Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       false, "decode_jpeg: torchvision not compiled with libjpeg support");
 }
 #else
@@ -151,7 +151,7 @@ torch::Tensor decode_jpeg(
      * We need to clean up the JPEG object.
      */
     jpeg_destroy_decompress(&cinfo);
-    TORCH_CHECK(false, jerr.jpegLastErrorMsg);
+    STD_TORCH_CHECK(false, jerr.jpegLastErrorMsg);
   }
 
   jpeg_create_decompress(&cinfo);
@@ -192,7 +192,8 @@ torch::Tensor decode_jpeg(
        */
       default:
         jpeg_destroy_decompress(&cinfo);
-        TORCH_CHECK(false, "The provided mode is not supported for JPEG files");
+        STD_TORCH_CHECK(
+            false, "The provided mode is not supported for JPEG files");
     }
 
     jpeg_calc_output_dimensions(&cinfo);

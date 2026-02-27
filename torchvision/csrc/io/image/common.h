@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <torch/headeronly/util/Exception.h>
 #include <torch/torch.h>
 
 namespace vision {
