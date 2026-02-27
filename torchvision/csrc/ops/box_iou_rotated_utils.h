@@ -262,8 +262,6 @@ HOST_DEVICE_INLINE int convex_hull_graham(
       // q2.x*q1.y) So it may not return 0 even when q1==q2. Therefore we
       // compare round(q1.x*q2.y) and round(q2.x*q1.y) directly. (round means
       // round to nearest floating point).
-      // Add small tolerance to handle near-collinear points from xyxyxyxy
-      // format
       if (q1.x * q2.y >= q2.x * q1.y) {
         m--;
       } else {
