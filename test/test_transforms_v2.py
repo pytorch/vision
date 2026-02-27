@@ -6456,7 +6456,18 @@ class TestRgbToGrayscale:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.rgb_to_grayscale_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            pytest.param(
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
+            ),
+        ],
+    )
     def test_functional(self, make_input):
         check_functional(F.rgb_to_grayscale, make_input())
 
@@ -6466,23 +6477,55 @@ class TestRgbToGrayscale:
             (F.rgb_to_grayscale_image, torch.Tensor),
             (F._color._rgb_to_grayscale_image_pil, PIL.Image.Image),
             (F.rgb_to_grayscale_image, tv_tensors.Image),
+            pytest.param(
+                F._color._rgb_to_grayscale_image_cvcuda,
+                None,
+                marks=pytest.mark.needs_cvcuda,
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if kernel is F._color._rgb_to_grayscale_image_cvcuda:
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.rgb_to_grayscale, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize("transform", [transforms.Grayscale(), transforms.RandomGrayscale(p=1)])
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            pytest.param(
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
+            ),
+        ],
+    )
     def test_transform(self, transform, make_input):
         check_transform(transform, make_input())
 
     @pytest.mark.parametrize("num_output_channels", [1, 3])
     @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
+            ),
+        ],
+    )
     @pytest.mark.parametrize("fn", [F.rgb_to_grayscale, transform_cls_to_functional(transforms.Grayscale)])
-    def test_image_correctness(self, num_output_channels, color_space, fn):
-        image = make_image(dtype=torch.uint8, device="cpu", color_space=color_space)
+    def test_image_correctness(self, num_output_channels, color_space, make_input, fn):
+        image = make_input(dtype=torch.uint8, device="cpu", color_space=color_space)
 
         actual = fn(image, num_output_channels=num_output_channels)
+
+        if make_input is make_image_cvcuda:
+            image = F.cvcuda_to_tensor(image)[0].cpu()
+
         expected = F.to_image(F.rgb_to_grayscale(F.to_pil_image(image), num_output_channels=num_output_channels))
 
         assert_equal(actual, expected, rtol=0, atol=1)
@@ -6520,7 +6563,18 @@ class TestGrayscaleToRgb:
     def test_kernel_image(self, dtype, device):
         check_kernel(F.grayscale_to_rgb_image, make_image(dtype=dtype, device=device))
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            pytest.param(
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
+            ),
+        ],
+    )
     def test_functional(self, make_input):
         check_functional(F.grayscale_to_rgb, make_input())
 
@@ -6530,20 +6584,52 @@ class TestGrayscaleToRgb:
             (F.rgb_to_grayscale_image, torch.Tensor),
             (F._color._rgb_to_grayscale_image_pil, PIL.Image.Image),
             (F.rgb_to_grayscale_image, tv_tensors.Image),
+            pytest.param(
+                F._color._rgb_to_grayscale_image_cvcuda,
+                None,
+                marks=pytest.mark.needs_cvcuda,
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if kernel is F._color._rgb_to_grayscale_image_cvcuda:
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.grayscale_to_rgb, kernel=kernel, input_type=input_type)
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            pytest.param(
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
+            ),
+        ],
+    )
     def test_transform(self, make_input):
         check_transform(transforms.RGB(), make_input(color_space="GRAY"))
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(
+                make_image_cvcuda,
+                marks=pytest.mark.needs_cvcuda,
+            ),
+        ],
+    )
     @pytest.mark.parametrize("fn", [F.grayscale_to_rgb, transform_cls_to_functional(transforms.RGB)])
-    def test_image_correctness(self, fn):
-        image = make_image(dtype=torch.uint8, device="cpu", color_space="GRAY")
+    def test_image_correctness(self, make_input, fn):
+        image = make_input(dtype=torch.uint8, device="cpu", color_space="GRAY")
 
         actual = fn(image)
+
+        if make_input is make_image_cvcuda:
+            image = F.cvcuda_to_tensor(image)[0].cpu()
+
         expected = F.to_image(F.grayscale_to_rgb(F.to_pil_image(image)))
 
         assert_equal(actual, expected, rtol=0, atol=1)
