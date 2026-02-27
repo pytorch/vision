@@ -213,17 +213,9 @@ HOST_DEVICE_INLINE int convex_hull_graham(
 
   for (int i = 1; i < num_in - 1; i++) {
     for (int j = i + 1; j < num_in; j++) {
-      // Avoid cross_2d() here to prevent FMA precision issues on CUDA.
-      // cross_2d() computes A.x*B.y - B.x*A.y, but with FMA the subtraction
-      // can have precision issues when the two products are nearly equal.
-      // Instead, compare products directly (same approach as step 5).
-      T prod_ij = q[i].x * q[j].y;
-      T prod_ji = q[j].x * q[i].y;
-      // j should come before i if: cross < 0, or cross ≈ 0 and dist[i] >
-      // dist[j]
-      if ((prod_ij < prod_ji - 1e-6) ||
-          (prod_ij >= prod_ji - 1e-6 && prod_ij <= prod_ji + 1e-6 &&
-           dist[i] > dist[j])) {
+      T crossProduct = cross_2d<T>(q[i], q[j]);
+      if ((crossProduct < -1e-4) ||
+          (fabs(crossProduct) < 1e-4 && dist[i] > dist[j])) {
         auto q_tmp = q[i];
         q[i] = q[j];
         q[j] = q_tmp;
@@ -270,6 +262,8 @@ HOST_DEVICE_INLINE int convex_hull_graham(
       // q2.x*q1.y) So it may not return 0 even when q1==q2. Therefore we
       // compare round(q1.x*q2.y) and round(q2.x*q1.y) directly. (round means
       // round to nearest floating point).
+      // Add small tolerance to handle near-collinear points from xyxyxyxy
+      // format
       if (q1.x * q2.y >= q2.x * q1.y) {
         m--;
       } else {
@@ -326,36 +320,9 @@ HOST_DEVICE_INLINE T rotated_boxes_intersection(
     return 0.0;
   }
 
-  // De-duplicate intersection points to improve numerical stability.
-  // For nearly-identical boxes, we can get many near-duplicate points at
-  // each corner, which can confuse the convex hull algorithm due to
-  // floating-point precision issues (especially on CUDA with FMA).
-  const T dup_eps = 1e-5; // Same tolerance as EPS in get_intersection_points
-  Point<T> uniquePts[24];
-  int num_unique = 0;
-  for (int i = 0; i < num; i++) {
-    bool is_dup = false;
-    for (int j = 0; j < num_unique; j++) {
-      T dx = intersectPts[i].x - uniquePts[j].x;
-      T dy = intersectPts[i].y - uniquePts[j].y;
-      if (dx * dx + dy * dy < dup_eps * dup_eps) {
-        is_dup = true;
-        break;
-      }
-    }
-    if (!is_dup) {
-      uniquePts[num_unique++] = intersectPts[i];
-    }
-  }
-
-  if (num_unique <= 2) {
-    return 0.0;
-  }
-
   // Convex Hull to order the intersection points in clockwise order and find
   // the contour area.
-  int num_convex =
-      convex_hull_graham<T>(uniquePts, num_unique, orderedPts, true);
+  int num_convex = convex_hull_graham<T>(intersectPts, num, orderedPts, true);
   return polygon_area<T>(orderedPts, num_convex);
 }
 
