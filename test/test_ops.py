@@ -1764,7 +1764,6 @@ class TestRotatedBoxIou:
         expected_tensor = torch.tensor(expected, dtype=torch.float32, device=device)
         # Use higher tolerance on macOS with xyxyxyxy format due to float32 precision
         # differences in angle computation that can affect the Graham scan algorithm
-        # Same issue occurs on CUDA due to FMA and different floating-point behavior
         if sys.platform == "darwin" and fmt == "xyxyxyxy" and dtype == torch.float32:
             atol = 0.5
         else:
