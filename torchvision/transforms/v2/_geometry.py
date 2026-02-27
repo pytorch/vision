@@ -139,6 +139,8 @@ class Resize(Transform):
 
     _v1_transform_cls = _transforms.Resize
 
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+
     def __init__(
         self,
         size: Union[int, Sequence[int], None],
@@ -1260,6 +1262,8 @@ class ScaleJitter(Transform):
             v0.17, for the PIL and Tensor backends to be consistent.
     """
 
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
+
     def __init__(
         self,
         target_size: tuple[int, int],
@@ -1324,6 +1328,8 @@ class RandomShortestSize(Transform):
             The default value changed from ``None`` to ``True`` in
             v0.17, for the PIL and Tensor backends to be consistent.
     """
+
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(
         self,
@@ -1403,6 +1409,8 @@ class RandomResize(Transform):
             The default value changed from ``None`` to ``True`` in
             v0.17, for the PIL and Tensor backends to be consistent.
     """
+
+    _transformed_types = Transform._transformed_types + (_is_cvcuda_tensor,)
 
     def __init__(
         self,
