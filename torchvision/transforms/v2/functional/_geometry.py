@@ -28,6 +28,7 @@ from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_b
 
 from ._utils import (
     _FillTypeJIT,
+    _get_cvcuda_border_from_pad_mode,
     _get_kernel,
     _import_cvcuda,
     _is_cvcuda_available,
@@ -1678,6 +1679,38 @@ def _pad_with_vector_fill(
 
 
 _pad_image_pil = _register_kernel_internal(pad, PIL.Image.Image)(_FP.pad)
+
+
+def _pad_image_cvcuda(
+    image: "cvcuda.Tensor",
+    padding: list[int],
+    fill: Optional[Union[int, float, list[float]]] = None,
+    padding_mode: str = "constant",
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    border_mode = _get_cvcuda_border_from_pad_mode(padding_mode)
+
+    if fill is None:
+        fill = 0
+    if isinstance(fill, (int, float)):
+        fill = [fill] * image.shape[3]
+
+    left, right, top, bottom = _parse_pad_padding(padding)
+
+    return cvcuda.copymakeborder(
+        image,
+        border_mode=border_mode,
+        border_value=fill,
+        top=top,
+        left=left,
+        bottom=bottom,
+        right=right,
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(pad, _import_cvcuda().Tensor)(_pad_image_cvcuda)
 
 
 @_register_kernel_internal(pad, tv_tensors.Mask)
