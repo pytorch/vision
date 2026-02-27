@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import PIL.Image
 import torch
 from torch.nn.functional import conv2d
@@ -9,7 +11,13 @@ from torchvision.utils import _log_api_usage_once
 
 from ._misc import _num_value_bits, to_dtype_image
 from ._type_conversion import pil_to_tensor, to_pil_image
-from ._utils import _get_kernel, _register_kernel_internal
+from ._utils import _get_kernel, _import_cvcuda, _is_cvcuda_available, _register_kernel_internal
+
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 
 def rgb_to_grayscale(inpt: torch.Tensor, num_output_channels: int = 1) -> torch.Tensor:
@@ -135,6 +143,19 @@ def adjust_brightness_video(video: torch.Tensor, brightness_factor: float) -> to
     return adjust_brightness_image(video, brightness_factor=brightness_factor)
 
 
+def _adjust_brightness_image_cvcuda(image: "cvcuda.Tensor", brightness_factor: float) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    cv_brightness = torch.tensor([brightness_factor], dtype=torch.float32, device="cuda")
+    cv_brightness = cvcuda.as_tensor(cv_brightness, "N")
+
+    return cvcuda.brightness_contrast(image, brightness=cv_brightness)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(adjust_brightness, _import_cvcuda().Tensor)(_adjust_brightness_image_cvcuda)
+
+
 def adjust_saturation(inpt: torch.Tensor, saturation_factor: float) -> torch.Tensor:
     """Adjust saturation."""
     if torch.jit.is_scripting():
@@ -174,6 +195,39 @@ def adjust_saturation_video(video: torch.Tensor, saturation_factor: float) -> to
     return adjust_saturation_image(video, saturation_factor=saturation_factor)
 
 
+def _adjust_saturation_image_cvcuda(image: "cvcuda.Tensor", saturation_factor: float) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if saturation_factor < 0:
+        raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
+
+    c = image.shape[3]
+    if c not in [1, 3, 4]:
+        raise TypeError(f"Input image tensor permitted channel values are 1, 3, or 4, but found {c}")
+
+    if c == 1:  # Match PIL behaviour
+        return image
+
+    # grayscale weights
+    sf = saturation_factor
+    r, g, b = 0.2989, 0.587, 0.114
+    twist_data = [
+        [sf + (1 - sf) * r, (1 - sf) * g, (1 - sf) * b, 0.0],
+        [(1 - sf) * r, sf + (1 - sf) * g, (1 - sf) * b, 0.0],
+        [(1 - sf) * r, (1 - sf) * g, sf + (1 - sf) * b, 0.0],
+    ]
+    twist_tensor = cvcuda.as_tensor(
+        torch.tensor(twist_data, dtype=torch.float32, device="cuda"),
+        "HW",
+    )
+
+    return cvcuda.color_twist(image, twist_tensor)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(adjust_saturation, _import_cvcuda().Tensor)(_adjust_saturation_image_cvcuda)
+
+
 def adjust_contrast(inpt: torch.Tensor, contrast_factor: float) -> torch.Tensor:
     """See :class:`~torchvision.transforms.RandomAutocontrast`"""
     if torch.jit.is_scripting():
@@ -211,6 +265,48 @@ _adjust_contrast_image_pil = _register_kernel_internal(adjust_contrast, PIL.Imag
 @_register_kernel_internal(adjust_contrast, tv_tensors.Video)
 def adjust_contrast_video(video: torch.Tensor, contrast_factor: float) -> torch.Tensor:
     return adjust_contrast_image(video, contrast_factor=contrast_factor)
+
+
+def _adjust_contrast_image_cvcuda(image: "cvcuda.Tensor", contrast_factor: float) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if contrast_factor < 0:
+        raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
+
+    c = image.shape[3]
+    if c not in [1, 3]:
+        raise TypeError(f"Input image tensor permitted channel values are 1 or 3, but found {c}")
+
+    # for now only float32 is supported for cvcuda, add float16 in the future
+    fp = image.dtype == cvcuda.Type.F32
+
+    if c == 3 and not fp:
+        grayscale = cvcuda.cvtcolor(image, cvcuda.ColorConversion.RGB2GRAY)
+    elif c == 3 and fp:
+        grayscale = cvcuda.cvtcolor(
+            cvcuda.convertto(image, cvcuda.Type.U8, scale=1.0 / 255.0, offset=0.0), cvcuda.ColorConversion.RGB2GRAY
+        )
+    else:
+        grayscale = image
+
+    contrast = cvcuda.as_tensor(torch.tensor([contrast_factor], dtype=torch.float32, device="cuda"))
+
+    # torchvision uses the mean of the image as the center of contrast
+    # we will compute that here using torch as well for consistency
+    torch_image = torch.as_tensor(grayscale.cuda())
+    mean = torch.mean(torch_image.float())
+    contrast_center = cvcuda.as_tensor(torch.tensor([mean.item()], dtype=torch.float32, device="cuda"))
+
+    result = cvcuda.brightness_contrast(image, contrast=contrast, contrast_center=contrast_center)
+
+    if fp:
+        result = cvcuda.convertto(result, cvcuda.Type.F32, scale=256.0 - 1e-3, offset=0.0)
+
+    return result
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(adjust_contrast, _import_cvcuda().Tensor)(_adjust_contrast_image_cvcuda)
 
 
 def adjust_sharpness(inpt: torch.Tensor, sharpness_factor: float) -> torch.Tensor:
@@ -402,6 +498,44 @@ _adjust_hue_image_pil = _register_kernel_internal(adjust_hue, PIL.Image.Image)(_
 @_register_kernel_internal(adjust_hue, tv_tensors.Video)
 def adjust_hue_video(video: torch.Tensor, hue_factor: float) -> torch.Tensor:
     return adjust_hue_image(video, hue_factor=hue_factor)
+
+
+def _adjust_hue_image_cvcuda(image: "cvcuda.Tensor", hue_factor: float) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    if not (-0.5 <= hue_factor <= 0.5):
+        raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
+
+    c = image.shape[3]
+    if c not in [1, 3, 4]:
+        raise TypeError(f"Input image tensor permitted channel values are 1, 3, or 4, but found {c}")
+
+    if c == 1:  # Match PIL behaviour
+        return image
+
+    # for now only float32 is supported for cvcuda, add float16 in the future
+    fp = image.dtype == cvcuda.Type.F32
+    if fp:
+        image = cvcuda.convertto(image, cvcuda.Type.U8, scale=1.0 / 255.0, offset=0.0)
+
+    # no native adjust_hue, use CV-CUDA for color converison, use torch for elementwise operations
+    # CV-CUDA accelerates the HSV conversion
+    hsv = cvcuda.cvtcolor(image, cvcuda.ColorConversion.RGB2HSV)
+    # then use torch for elementwise operations
+    hsv_torch = torch.as_tensor(hsv.cuda()).float()
+    hsv_torch[..., 0] = (hsv_torch[..., 0] + hue_factor * 180) % 180
+    # convert back to cvcuda tensor and accelerate the HSV2RGB conversion
+    hsv_modified = cvcuda.as_tensor(hsv_torch.to(torch.uint8), "NHWC")
+    rgb = cvcuda.cvtcolor(hsv_modified, cvcuda.ColorConversion.HSV2RGB)
+
+    if fp:
+        rgb = cvcuda.convertto(rgb, cvcuda.Type.F32, scale=256.0 - 1e-3, offset=0.0)
+
+    return rgb
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(adjust_hue, _import_cvcuda().Tensor)(_adjust_hue_image_cvcuda)
 
 
 def adjust_gamma(inpt: torch.Tensor, gamma: float, gain: float = 1) -> torch.Tensor:
