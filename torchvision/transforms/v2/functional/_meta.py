@@ -51,6 +51,14 @@ def get_dimensions_video(video: torch.Tensor) -> list[int]:
     return get_dimensions_image(video)
 
 
+def get_dimensions_image_cvcuda(image: "cvcuda.Tensor") -> list[int]:
+    return [image.shape[3], image.shape[1], image.shape[2]]
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(get_dimensions, cvcuda.Tensor)(get_dimensions_image_cvcuda)
+
+
 def get_num_channels(inpt: torch.Tensor) -> int:
     if torch.jit.is_scripting():
         return get_num_channels_image(inpt)
