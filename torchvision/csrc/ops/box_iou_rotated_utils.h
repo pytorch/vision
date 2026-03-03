@@ -37,19 +37,19 @@ struct RotatedBox {
 template <typename T>
 struct Point {
   T x, y;
-  HOST_DEVICE Point(const T& px = 0, const T& py = 0) : x(px), y(py) {}
-  HOST_DEVICE Point operator+(const Point& p) const {
+  HOST_DEVICE_INLINE Point(const T& px = 0, const T& py = 0) : x(px), y(py) {}
+  HOST_DEVICE_INLINE Point operator+(const Point& p) const {
     return Point(x + p.x, y + p.y);
   }
-  HOST_DEVICE Point& operator+=(const Point& p) {
+  HOST_DEVICE_INLINE Point& operator+=(const Point& p) {
     x += p.x;
     y += p.y;
     return *this;
   }
-  HOST_DEVICE Point operator-(const Point& p) const {
+  HOST_DEVICE_INLINE Point operator-(const Point& p) const {
     return Point(x - p.x, y - p.y);
   }
-  HOST_DEVICE Point operator*(const T& coeff) const {
+  HOST_DEVICE_INLINE Point operator*(const T coeff) const {
     return Point(x * coeff, y * coeff);
   }
 };
@@ -207,6 +207,33 @@ HOST_DEVICE_INLINE int convex_hull_graham(
   // (essentially sorting according to angles)
   // If the angles are the same, sort according to their distance to origin
   T dist[24];
+#if defined(__CUDACC__) || __HCC__ == 1 || __HIP__ == 1
+  // compute distance to origin before sort, and sort them together with the
+  // points
+  for (int i = 0; i < num_in; i++) {
+    dist[i] = dot_2d<T>(q[i], q[i]);
+  }
+
+  // CUDA version
+  // In the future, we can potentially use thrust
+  // for sorting here to improve speed (though not guaranteed)
+
+  for (int i = 1; i < num_in - 1; i++) {
+    for (int j = i + 1; j < num_in; j++) {
+      T crossProduct = cross_2d<T>(q[i], q[j]);
+      if ((crossProduct < -1e-6) ||
+          (fabs(crossProduct) < 1e-6 && dist[i] > dist[j])) {
+        auto q_tmp = q[i];
+        q[i] = q[j];
+        q[j] = q_tmp;
+        auto dist_tmp = dist[i];
+        dist[i] = dist[j];
+        dist[j] = dist_tmp;
+      }
+    }
+  }
+#else
+  // CPU version
   for (int i = 0; i < num_in; i++) {
     dist[i] = dot_2d<T>(q[i], q[i]);
   }
@@ -214,8 +241,8 @@ HOST_DEVICE_INLINE int convex_hull_graham(
   for (int i = 1; i < num_in - 1; i++) {
     for (int j = i + 1; j < num_in; j++) {
       T crossProduct = cross_2d<T>(q[i], q[j]);
-      if ((crossProduct < -1e-4) ||
-          (fabs(crossProduct) < 1e-4 && dist[i] > dist[j])) {
+      if ((crossProduct < -1e-6) ||
+          (fabs(crossProduct) < 1e-6 && dist[i] > dist[j])) {
         auto q_tmp = q[i];
         q[i] = q[j];
         q[j] = q_tmp;
@@ -230,6 +257,7 @@ HOST_DEVICE_INLINE int convex_hull_graham(
   for (int i = 0; i < num_in; i++) {
     dist[i] = dot_2d<T>(q[i], q[i]);
   }
+#endif
 
   // Step 4:
   // Make sure there are at least 2 points (that don't overlap with each other)
