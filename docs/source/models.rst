@@ -374,7 +374,7 @@ The output format of the models is illustrated in :ref:`semantic_seg_output`.
 Table of all available semantic segmentation weights
 ----------------------------------------------------
 
-All models are evaluated a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:
+All models are evaluated on a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:
 
 .. include:: generated/segmentation_table.rst
 
