@@ -11,7 +11,7 @@ from torchvision import transforms as _transforms, tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._utils import _FillType
+from torchvision.transforms.v2.functional._utils import _FillType, _is_cvcuda_available, _is_cvcuda_tensor
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
@@ -30,6 +30,8 @@ from ._utils import (
     query_size,
 )
 
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+
 
 class RandomHorizontalFlip(_RandomApplyTransform):
     """Horizontally flip the input with a given probability.
@@ -44,6 +46,9 @@ class RandomHorizontalFlip(_RandomApplyTransform):
     """
 
     _v1_transform_cls = _transforms.RandomHorizontalFlip
+
+    if CVCUDA_AVAILABLE:
+        _transformed_types = _RandomApplyTransform._transformed_types + (_is_cvcuda_tensor,)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.horizontal_flip, inpt)
@@ -62,6 +67,9 @@ class RandomVerticalFlip(_RandomApplyTransform):
     """
 
     _v1_transform_cls = _transforms.RandomVerticalFlip
+
+    if CVCUDA_AVAILABLE:
+        _transformed_types = _RandomApplyTransform._transformed_types + (_is_cvcuda_tensor,)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.vertical_flip, inpt)
@@ -1022,8 +1030,10 @@ class ElasticTransform(Transform):
         see-through-water-like effect.
 
     Args:
-        alpha (float or sequence of floats, optional): Magnitude of displacements. Default is 50.0.
-        sigma (float or sequence of floats, optional): Smoothness of displacements. Default is 5.0.
+        alpha (float or sequence of floats, optional): Magnitude of displacements.
+            Default is 50.0. A single value is ``[alpha, alpha]``.
+        sigma (float or sequence of floats, optional): Smoothness of displacements.
+            Default is 5.0. A single value is ``[sigma, sigma]``.
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -1053,25 +1063,25 @@ class ElasticTransform(Transform):
         self._fill = _setup_fill_arg(fill)
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
-        size = list(query_size(flat_inputs))
+        height, width = query_size(flat_inputs)
 
-        dx = torch.rand([1, 1] + size) * 2 - 1
+        dx = torch.rand(1, 1, height, width) * 2 - 1
         if self.sigma[0] > 0.0:
             kx = int(8 * self.sigma[0] + 1)
             # if kernel size is even we have to make it odd
             if kx % 2 == 0:
                 kx += 1
             dx = self._call_kernel(F.gaussian_blur, dx, [kx, kx], list(self.sigma))
-        dx = dx * self.alpha[0] / size[0]
+        dx = dx * self.alpha[0] / width
 
-        dy = torch.rand([1, 1] + size) * 2 - 1
+        dy = torch.rand(1, 1, height, width) * 2 - 1
         if self.sigma[1] > 0.0:
             ky = int(8 * self.sigma[1] + 1)
             # if kernel size is even we have to make it odd
             if ky % 2 == 0:
                 ky += 1
             dy = self._call_kernel(F.gaussian_blur, dy, [ky, ky], list(self.sigma))
-        dy = dy * self.alpha[1] / size[1]
+        dy = dy * self.alpha[1] / height
         displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
         return dict(displacement=displacement)
 

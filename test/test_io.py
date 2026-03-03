@@ -7,7 +7,6 @@ import pytest
 import torch
 import torchvision.io as io
 from common_utils import assert_equal, cpu_and_cuda
-from torchvision import get_video_backend
 
 
 try:
@@ -45,12 +44,7 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
         options = {"crf": "0"}
 
     if video_codec is None:
-        if get_video_backend() == "pyav":
-            video_codec = "libx264"
-        else:
-            # when video_codec is not set, we assume it is libx264rgb which accepts
-            # RGB pixel formats as input instead of YUV
-            video_codec = "libx264rgb"
+        video_codec = "libx264"
     if options is None:
         options = {}
 
@@ -62,9 +56,6 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
     os.unlink(f.name)
 
 
-@pytest.mark.skipif(
-    get_video_backend() != "pyav" and not io._HAS_CPU_VIDEO_DECODER, reason="video_reader backend not available"
-)
 @pytest.mark.skipif(av is None, reason="PyAV unavailable")
 class TestVideo:
     # compression adds artifacts, thus we add a tolerance of
@@ -76,22 +67,6 @@ class TestVideo:
             lv, _, info = io.read_video(f_name)
             assert_equal(data, lv)
             assert info["video_fps"] == 5
-
-    @pytest.mark.skipif(not io._HAS_CPU_VIDEO_DECODER, reason="video_reader backend is not chosen")
-    def test_probe_video_from_file(self):
-        with temp_video(10, 300, 300, 5) as (f_name, data):
-            video_info = io._probe_video_from_file(f_name)
-            assert pytest.approx(2, rel=0.0, abs=0.1) == video_info.video_duration
-            assert pytest.approx(5, rel=0.0, abs=0.1) == video_info.video_fps
-
-    @pytest.mark.skipif(not io._HAS_CPU_VIDEO_DECODER, reason="video_reader backend is not chosen")
-    def test_probe_video_from_memory(self):
-        with temp_video(10, 300, 300, 5) as (f_name, data):
-            with open(f_name, "rb") as fp:
-                filebuffer = fp.read()
-            video_info = io._probe_video_from_memory(filebuffer)
-            assert pytest.approx(2, rel=0.0, abs=0.1) == video_info.video_duration
-            assert pytest.approx(5, rel=0.0, abs=0.1) == video_info.video_fps
 
     def test_read_timestamps(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
@@ -118,12 +93,9 @@ class TestVideo:
             assert len(lv) == offset
             assert_equal(s_data, lv)
 
-            if get_video_backend() == "pyav":
-                # for "video_reader" backend, we don't decode the closest early frame
-                # when the given start pts is not matching any frame pts
-                lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
-                assert len(lv) == 4
-                assert_equal(data[4:8], lv)
+            lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
+            assert len(lv) == 4
+            assert_equal(data[4:8], lv)
 
     @pytest.mark.parametrize("start", range(0, 80, 20))
     @pytest.mark.parametrize("offset", range(1, 4))
@@ -139,13 +111,8 @@ class TestVideo:
             assert_equal(s_data, lv, rtol=0.0, atol=self.TOLERANCE)
 
             lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
-            # TODO fix this
-            if get_video_backend() == "pyav":
-                assert len(lv) == 4
-                assert_equal(data[4:8], lv, rtol=0.0, atol=self.TOLERANCE)
-            else:
-                assert len(lv) == 3
-                assert_equal(data[5:8], lv, rtol=0.0, atol=self.TOLERANCE)
+            assert len(lv) == 4
+            assert_equal(data[4:8], lv, rtol=0.0, atol=self.TOLERANCE)
 
     def test_read_packed_b_frames_divx_file(self):
         name = "hmdb51_Turnk_r_Pippi_Michel_cartwheel_f_cm_np2_le_med_6.avi"
@@ -207,11 +174,8 @@ class TestVideo:
                 lv, _, _ = io.read_video(
                     f_name, int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7], pts_unit="sec"
                 )
-            if get_video_backend() == "pyav":
-                # for "video_reader" backend, we don't decode the closest early frame
-                # when the given start pts is not matching any frame pts
-                assert len(lv) == 4
-                assert_equal(data[4:8], lv)
+            assert len(lv) == 4
+            assert_equal(data[4:8], lv)
 
     def test_read_video_corrupted_file(self):
         with tempfile.NamedTemporaryFile(suffix=".mp4") as f:
@@ -243,11 +207,7 @@ class TestVideo:
             # this exercises the container.decode assertion check
             video, audio, info = io.read_video(f.name, pts_unit="sec")
             # check that size is not equal to 5, but 3
-            # TODO fix this
-            if get_video_backend() == "pyav":
-                assert len(video) == 3
-            else:
-                assert len(video) == 4
+            assert len(video) == 3
             # but the valid decoded content is still correct
             assert_equal(video[:3], data[:3])
             # and the last few frames are wrong
