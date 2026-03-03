@@ -5,7 +5,16 @@ import torch
 # Don't re-order these, we need to load the _C extension (done when importing
 # .extension) before entering _meta_registrations.
 from . import extension  # usort:skip  # noqa: F401
-from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils  # usort:skip
+from torchvision import (
+    _autograd_registrations,
+    _meta_registrations,
+    datasets,
+    io,
+    models,
+    ops,
+    transforms,
+    utils,
+)  # usort:skip
 
 try:
     from .version import __version__  # noqa: F401
