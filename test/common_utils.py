@@ -18,7 +18,7 @@ import torch
 import torch.testing
 
 from torch.testing._comparison import BooleanPair, NonePair, not_close_error_metas, NumberPair, TensorLikePair
-from torchvision import io, tv_tensors
+from torchvision import tv_tensors
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.v2.functional import cvcuda_to_tensor, to_cvcuda_tensor, to_image, to_pil_image
 from torchvision.transforms.v2.functional._utils import _is_cvcuda_available, _is_cvcuda_tensor
@@ -166,6 +166,8 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
 
 
 def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
+    from datasets_utils import create_video_file
+
     names = []
     for i in range(num_videos):
         if sizes is None:
@@ -176,10 +178,9 @@ def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
             f = 5
         else:
             f = fps[i]
-        data = torch.randint(0, 256, (size, 300, 400, 3), dtype=torch.uint8)
-        name = os.path.join(tmpdir, f"{i}.mp4")
-        names.append(name)
-        io.write_video(name, data, fps=f)
+        name = f"{i}.mp4"
+        create_video_file(tmpdir, name, size=(size, 3, 300, 400), fps=f)
+        names.append(os.path.join(tmpdir, name))
 
     return names
 
