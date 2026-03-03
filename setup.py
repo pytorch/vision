@@ -152,8 +152,6 @@ def make_C_extension():
     sources = (
         list(CSRS_DIR.glob("*.cpp"))
         + list(CSRS_DIR.glob("ops/*.cpp"))
-        + list(CSRS_DIR.glob("ops/autocast/*.cpp"))
-        + list(CSRS_DIR.glob("ops/autograd/*.cpp"))
         + list(CSRS_DIR.glob("ops/cpu/*.cpp"))
         + list(CSRS_DIR.glob("ops/quantized/cpu/*.cpp"))
     )
