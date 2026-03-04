@@ -272,6 +272,15 @@ autocast_flaky_numerics = (
     "maskrcnn_resnet50_fpn",
     "maskrcnn_resnet50_fpn_v2",
     "keypointrcnn_resnet50_fpn",
+    "swin_t",
+    "swin_s",
+    "swin_b",
+    "swin_v2_t",
+    "swin_v2_s",
+    "swin_v2_b",
+    "swin3d_t",
+    "swin3d_s",
+    "swin3d_b",
 )
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
