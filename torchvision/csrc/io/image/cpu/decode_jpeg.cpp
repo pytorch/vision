@@ -3,6 +3,8 @@
 #include "common_jpeg.h"
 #include "exif.h"
 
+#include <c10/util/Optional.h>
+
 namespace vision {
 namespace image {
 
@@ -30,7 +32,7 @@ struct torch_jpeg_mgr {
 static void torch_jpeg_init_source(j_decompress_ptr cinfo) {}
 
 static boolean torch_jpeg_fill_input_buffer(j_decompress_ptr cinfo) {
-  // No more data.  Probably an incomplete image;  Raise exception.
+  // No more data. Probably an incomplete image; Raise exception.
   torch_jpeg_error_ptr myerr = (torch_jpeg_error_ptr)cinfo->err;
   strcpy(myerr->jpegLastErrorMsg, "Image is incomplete or truncated");
   longjmp(myerr->setjmp_buffer, 1);
@@ -39,7 +41,7 @@ static boolean torch_jpeg_fill_input_buffer(j_decompress_ptr cinfo) {
 static void torch_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes) {
   torch_jpeg_mgr* src = (torch_jpeg_mgr*)cinfo->src;
   if (src->pub.bytes_in_buffer < (size_t)num_bytes) {
-    // Skipping over all of remaining data;  output EOI.
+    // Skipping over all of remaining data; output EOI.
     src->pub.next_input_byte = EOI_BUFFER;
     src->pub.bytes_in_buffer = 1;
   } else {
@@ -56,7 +58,7 @@ static void torch_jpeg_set_source_mgr(
     const unsigned char* data,
     size_t len) {
   torch_jpeg_mgr* src;
-  if (cinfo->src == 0) { // if this is first time;  allocate memory
+  if (cinfo->src == 0) { // if this is first time; allocate memory
     cinfo->src = (struct jpeg_source_mgr*)(*cinfo->mem->alloc_small)(
         (j_common_ptr)cinfo, JPOOL_PERMANENT, sizeof(torch_jpeg_mgr));
   }
@@ -141,15 +143,26 @@ torch::Tensor decode_jpeg(
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
 
+  // IMPORTANT:
+  // libjpeg uses setjmp/longjmp. longjmp does NOT unwind C++ stack frames,
+  // so destructors for objects created after setjmp won't run.
+  // Declare tensors before setjmp and explicitly reset them in the error path.
+  c10::optional<torch::Tensor> tensor_opt;
+  c10::optional<torch::Tensor> cmyk_line_opt;
+
   auto datap = data.data_ptr<uint8_t>();
   // Setup decompression structure
   cinfo.err = jpeg_std_error(&jerr.pub);
   jerr.pub.error_exit = torch_jpeg_error_exit;
+
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(jerr.setjmp_buffer)) {
-    /* If we get here, the JPEG code has signaled an error.
-     * We need to clean up the JPEG object.
-     */
+    // Release any tensors that may have been allocated after setjmp.
+    cmyk_line_opt.reset();
+    tensor_opt.reset();
+
+    // If we get here, the JPEG code has signaled an error.
+    // We need to clean up the JPEG object.
     jpeg_destroy_decompress(&cinfo);
     TORCH_CHECK(false, jerr.jpegLastErrorMsg);
   }
@@ -185,11 +198,6 @@ torch::Tensor decode_jpeg(
         }
         channels = 3;
         break;
-      /*
-       * Libjpeg does not support converting from CMYK to grayscale etc. There
-       * is a way to do this but it involves converting it manually to RGB:
-       * https://github.com/tensorflow/tensorflow/blob/86871065265b04e0db8ca360c046421efb2bdeb4/tensorflow/core/lib/jpeg/jpeg_mem.cc#L284-L313
-       */
       default:
         jpeg_destroy_decompress(&cinfo);
         TORCH_CHECK(false, "The provided mode is not supported for JPEG files");
@@ -209,21 +217,18 @@ torch::Tensor decode_jpeg(
   int width = cinfo.output_width;
 
   int stride = width * channels;
-  auto tensor =
+
+  tensor_opt =
       torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
-  auto ptr = tensor.data_ptr<uint8_t>();
-  torch::Tensor cmyk_line_tensor;
+  auto ptr = tensor_opt->data_ptr<uint8_t>();
+
   if (cmyk_to_rgb_or_gray) {
-    cmyk_line_tensor = torch::empty({int64_t(width), 4}, torch::kU8);
+    cmyk_line_opt = torch::empty({int64_t(width), 4}, torch::kU8);
   }
 
   while (cinfo.output_scanline < cinfo.output_height) {
-    /* jpeg_read_scanlines expects an array of pointers to scanlines.
-     * Here the array is only one element long, but you could ask for
-     * more than one scanline at a time if that's more convenient.
-     */
     if (cmyk_to_rgb_or_gray) {
-      auto cmyk_line_ptr = cmyk_line_tensor.data_ptr<uint8_t>();
+      auto cmyk_line_ptr = cmyk_line_opt->data_ptr<uint8_t>();
       jpeg_read_scanlines(&cinfo, &cmyk_line_ptr, 1);
 
       if (channels == 3) {
@@ -239,7 +244,8 @@ torch::Tensor decode_jpeg(
 
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
-  auto output = tensor.permute({2, 0, 1});
+
+  auto output = tensor_opt->permute({2, 0, 1});
 
   if (apply_exif_orientation) {
     return exif_orientation_transform(output, exif_orientation);
