@@ -30,7 +30,7 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
     if mode not in ["batch", "row"]:
         raise ValueError(f"mode has to be either 'batch' or 'row', but got {mode}")
     if not training or p == 0.0:
-        return input.clone()
+        return input
 
     survival_rate = 1.0 - p
     if mode == "row":
