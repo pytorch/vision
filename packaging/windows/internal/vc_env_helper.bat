@@ -24,6 +24,8 @@ if "%CU_VERSION%" == "xpu" call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat
 
 set DISTUTILS_USE_SDK=1
 
+set MAX_JOBS=4
+
 set args=%1
 shift
 :start
