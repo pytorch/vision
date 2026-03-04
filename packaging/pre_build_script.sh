@@ -40,3 +40,7 @@ fi
 
 pip install numpy pyyaml future ninja
 pip install --upgrade setuptools==72.1.0
+
+if [[ "$OSTYPE" == "msys" ]]; then
+  echo "MAX_JOBS=1" >> "${GITHUB_ENV}"
+fi
