@@ -45,26 +45,11 @@ def set_video_backend(backend):
     Specifies the package used to decode videos.
 
     Args:
-        backend (string): Name of the video backend. one of {'pyav', 'video_reader'}.
+        backend (string): Name of the video backend. Only 'pyav' is supported.
             The :mod:`pyav` package uses the 3rd party PyAv library. It is a Pythonic
             binding for the FFmpeg libraries.
-            The :mod:`video_reader` package includes a native C++ implementation on
-            top of FFMPEG libraries, and a python API of TorchScript custom operator.
-            It generally decodes faster than :mod:`pyav`, but is perhaps less robust.
-
-    .. note::
-        Building with FFMPEG is disabled by default in the latest `main`. If you want to use the 'video_reader'
-        backend, please compile torchvision from source.
     """
-    global _video_backend
-    if backend not in ["pyav", "video_reader"]:
-        raise ValueError("Invalid video backend '%s'. Options are 'pyav' and 'video_reader'" % backend)
-    if backend == "video_reader" and not io._HAS_CPU_VIDEO_DECODER:
-        # TODO: better messages
-        message = "video_reader video backend is not available. Please compile torchvision from source and try again"
-        raise RuntimeError(message)
-    else:
-        _video_backend = backend
+    pass
 
 
 def get_video_backend():
@@ -72,7 +57,7 @@ def get_video_backend():
     Returns the currently active video backend used to decode videos.
 
     Returns:
-        str: Name of the video backend. one of {'pyav', 'video_reader'}.
+        str: Name of the video backend. Currently only 'pyav' is supported.
     """
 
     return _video_backend

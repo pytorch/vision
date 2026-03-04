@@ -1,27 +1,25 @@
 import bisect
 import math
 import warnings
-from fractions import Fraction
-from typing import Any, Callable, cast, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import torch
-from torchvision.io import _probe_video_from_file, _read_video_from_file, read_video, read_video_timestamps
 
 from .utils import tqdm
 
 T = TypeVar("T")
 
 
-def pts_convert(pts: int, timebase_from: Fraction, timebase_to: Fraction, round_func: Callable = math.floor) -> int:
-    """convert pts between different time bases
-    Args:
-        pts: presentation timestamp, float
-        timebase_from: original timebase. Fraction
-        timebase_to: new timebase. Fraction
-        round_func: rounding function.
-    """
-    new_pts = Fraction(pts, 1) * timebase_from / timebase_to
-    return round_func(new_pts)
+def _get_torchcodec():
+    try:
+        import torchcodec  # type: ignore[import-not-found]
+    except ImportError:
+        raise ImportError(
+            "Video decoding capabilities were removed from torchvision and migrated "
+            "to TorchCodec. Please install TorchCodec following instructions at "
+            "https://github.com/pytorch/torchcodec#installing-torchcodec"
+        )
+    return torchcodec
 
 
 def unfold(tensor: torch.Tensor, size: int, step: int, dilation: int = 1) -> torch.Tensor:
@@ -60,7 +58,11 @@ class _VideoTimestampsDataset:
         return len(self.video_paths)
 
     def __getitem__(self, idx: int) -> tuple[list[int], Optional[float]]:
-        return read_video_timestamps(self.video_paths[idx])
+        torchcodec = _get_torchcodec()
+        decoder = torchcodec.decoders.VideoDecoder(self.video_paths[idx])
+        num_frames = decoder.metadata.num_frames
+        fps = decoder.metadata.average_fps
+        return list(range(num_frames)), fps
 
 
 def _collate_fn(x: T) -> T:
@@ -305,60 +307,27 @@ class VideoClips:
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
 
-        from torchvision import get_video_backend
+        start_idx = int(clip_pts[0].item())
+        end_idx = int(clip_pts[-1].item())
 
-        backend = get_video_backend()
+        torchcodec = _get_torchcodec()
 
-        if backend == "pyav":
-            # check for invalid options
-            if self._video_width != 0:
-                raise ValueError("pyav backend doesn't support _video_width != 0")
-            if self._video_height != 0:
-                raise ValueError("pyav backend doesn't support _video_height != 0")
-            if self._video_min_dimension != 0:
-                raise ValueError("pyav backend doesn't support _video_min_dimension != 0")
-            if self._video_max_dimension != 0:
-                raise ValueError("pyav backend doesn't support _video_max_dimension != 0")
-            if self._audio_samples != 0:
-                raise ValueError("pyav backend doesn't support _audio_samples != 0")
+        dimension_order = "NHWC" if self.output_format == "THWC" else "NCHW"
+        decoder = torchcodec.decoders.VideoDecoder(video_path, dimension_order=dimension_order)
+        video = decoder.get_frames_at(indices=list(range(start_idx, end_idx + 1))).data
 
-        if backend == "pyav":
-            start_pts = clip_pts[0].item()
-            end_pts = clip_pts[-1].item()
-            video, audio, info = read_video(video_path, start_pts, end_pts)
-        else:
-            _info = _probe_video_from_file(video_path)
-            video_fps = _info.video_fps
-            audio_fps = None
+        # Audio via TorchCodec
+        fps = decoder.metadata.average_fps
+        start_sec = start_idx / fps
+        end_sec = (end_idx + 1) / fps
+        try:
+            audio_decoder = torchcodec.decoders.AudioDecoder(video_path)
+            audio_samples = audio_decoder.get_samples_played_in_range(start_seconds=start_sec, stop_seconds=end_sec)
+            audio = audio_samples.data
+        except Exception:
+            audio = torch.empty((1, 0), dtype=torch.float32)
 
-            video_start_pts = cast(int, clip_pts[0].item())
-            video_end_pts = cast(int, clip_pts[-1].item())
-
-            audio_start_pts, audio_end_pts = 0, -1
-            audio_timebase = Fraction(0, 1)
-            video_timebase = Fraction(_info.video_timebase.numerator, _info.video_timebase.denominator)
-            if _info.has_audio:
-                audio_timebase = Fraction(_info.audio_timebase.numerator, _info.audio_timebase.denominator)
-                audio_start_pts = pts_convert(video_start_pts, video_timebase, audio_timebase, math.floor)
-                audio_end_pts = pts_convert(video_end_pts, video_timebase, audio_timebase, math.ceil)
-                audio_fps = _info.audio_sample_rate
-            video, audio, _ = _read_video_from_file(
-                video_path,
-                video_width=self._video_width,
-                video_height=self._video_height,
-                video_min_dimension=self._video_min_dimension,
-                video_max_dimension=self._video_max_dimension,
-                video_pts_range=(video_start_pts, video_end_pts),
-                video_timebase=video_timebase,
-                audio_samples=self._audio_samples,
-                audio_channels=self._audio_channels,
-                audio_pts_range=(audio_start_pts, audio_end_pts),
-                audio_timebase=audio_timebase,
-            )
-
-            info = {"video_fps": video_fps}
-            if audio_fps is not None:
-                info["audio_fps"] = audio_fps
+        info = {"video_fps": fps}
 
         if self.frame_rate is not None:
             resampling_idx = self.resampling_idxs[video_idx][clip_idx]
@@ -367,10 +336,6 @@ class VideoClips:
             video = video[resampling_idx]
             info["video_fps"] = self.frame_rate
         assert len(video) == self.num_frames, f"{video.shape} x {self.num_frames}"
-
-        if self.output_format == "TCHW":
-            # [T,H,W,C] --> [T,C,H,W]
-            video = video.permute(0, 3, 1, 2)
 
         return video, audio, info, video_idx
 
