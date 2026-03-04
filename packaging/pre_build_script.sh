@@ -38,5 +38,13 @@ else
   pip install "auditwheel<6.3.0"
 fi
 
-pip install numpy pyyaml future ninja
+pip install numpy pyyaml future
 pip install --upgrade setuptools==72.1.0
+
+# Use conda ninja on Windows to avoid "ReadFile: The handle is invalid" errors
+# with pip-installed ninja. On other platforms, pip ninja works fine.
+if [[ "$OSTYPE" == "msys" ]]; then
+    conda install -y ninja
+else
+    pip install ninja
+fi

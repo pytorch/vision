@@ -24,10 +24,6 @@ if "%CU_VERSION%" == "xpu" call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat
 
 set DISTUTILS_USE_SDK=1
 
-REM Ensure pip-installed tools (like ninja) are accessible
-for /f "delims=" %%i in ('python -c "import sys; print(sys.prefix + r'\Scripts')"') do set PYTHON_SCRIPTS=%%i
-if exist "%PYTHON_SCRIPTS%\ninja.exe" set PATH=%PYTHON_SCRIPTS%;%PATH%
-
 set args=%1
 shift
 :start
