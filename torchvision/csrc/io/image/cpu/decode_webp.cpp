@@ -13,7 +13,7 @@ namespace image {
 torch::Tensor decode_webp(
     const torch::Tensor& encoded_data,
     ImageReadMode mode) {
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       false, "decode_webp: torchvision not compiled with libwebp support");
 }
 #else
@@ -28,9 +28,9 @@ torch::Tensor decode_webp(
 
   WebPBitstreamFeatures features;
   auto res = WebPGetFeatures(encoded_data_p, encoded_data_size, &features);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       res == VP8_STATUS_OK, "WebPGetFeatures failed with error code ", res);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       !features.has_animation, "Animated webp files are not supported.");
 
   if (mode == IMAGE_READ_MODE_GRAY || mode == IMAGE_READ_MODE_GRAY_ALPHA) {
@@ -52,7 +52,7 @@ torch::Tensor decode_webp(
   auto decoded_data =
       decoding_func(encoded_data_p, encoded_data_size, &width, &height);
 
-  TORCH_CHECK(decoded_data != nullptr, "WebPDecodeRGB[A] failed.");
+  STD_TORCH_CHECK(decoded_data != nullptr, "WebPDecodeRGB[A] failed.");
 
   auto deleter = [decoded_data](void*) { WebPFree(decoded_data); };
   auto out = torch::from_blob(

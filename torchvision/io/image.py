@@ -1,6 +1,5 @@
 from enum import Enum
 from typing import Union
-from warnings import warn
 
 import torch
 
@@ -8,15 +7,23 @@ from ..extension import _load_library
 from ..utils import _log_api_usage_once
 
 
-try:
-    _load_library("image")
-except (ImportError, OSError) as e:
-    warn(
-        f"Failed to load image Python extension: '{e}'"
-        f"If you don't plan on using image functionality from `torchvision.io`, you can ignore this warning. "
-        f"Otherwise, there might be something wrong with your environment. "
-        f"Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?"
-    )
+def _has_image_ops():
+    return False
+
+
+if _load_library("image"):
+
+    def _has_image_ops():  # noqa: F811
+        return True
+
+
+def _assert_has_image_ops():
+    if not _has_image_ops():
+        raise RuntimeError(
+            "Couldn't load the image extension. "
+            "If you built torchvision from source, make sure libjpeg and libpng were found. "
+            "Set TORCHVISION_WARN_WHEN_EXTENSION_LOADING_FAILS=1 and retry to get more details."
+        )
 
 
 class ImageReadMode(Enum):
@@ -61,6 +68,7 @@ def read_file(path: str) -> torch.Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_file)
+    _assert_has_image_ops()
     data = torch.ops.image.read_file(str(path))
     return data
 
@@ -75,6 +83,7 @@ def write_file(filename: str, data: torch.Tensor) -> None:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_file)
+    _assert_has_image_ops()
     torch.ops.image.write_file(str(filename), data)
 
 
@@ -108,6 +117,7 @@ def decode_png(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_png)
+    _assert_has_image_ops()
     if isinstance(mode, str):
         mode = ImageReadMode[mode.upper()]
     output = torch.ops.image.decode_png(input, mode.value, apply_exif_orientation)
@@ -131,6 +141,7 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(encode_png)
+    _assert_has_image_ops()
     output = torch.ops.image.encode_png(input, compression_level)
     return output
 
@@ -198,6 +209,7 @@ def decode_jpeg(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_jpeg)
+    _assert_has_image_ops()
     if isinstance(device, str):
         device = torch.device(device)
     if isinstance(mode, str):
@@ -244,6 +256,7 @@ def encode_jpeg(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(encode_jpeg)
+    _assert_has_image_ops()
     if quality < 1 or quality > 100:
         raise ValueError("Image quality should be a positive number between 1 and 100")
     if isinstance(input, list):
@@ -317,6 +330,7 @@ def decode_image(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_image)
+    _assert_has_image_ops()
     if not isinstance(input, torch.Tensor):
         input = read_file(str(input))
     if isinstance(mode, str):
@@ -354,6 +368,7 @@ def decode_gif(input: torch.Tensor) -> torch.Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_gif)
+    _assert_has_image_ops()
     return torch.ops.image.decode_gif(input)
 
 
@@ -378,6 +393,7 @@ def decode_webp(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_webp)
+    _assert_has_image_ops()
     if isinstance(mode, str):
         mode = ImageReadMode[mode.upper()]
     return torch.ops.image.decode_webp(input, mode.value)

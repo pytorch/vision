@@ -2,7 +2,7 @@ import fnmatch
 import importlib
 import inspect
 import sys
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
@@ -87,7 +87,7 @@ class WeightsEnum(Enum):
                 )
         return obj
 
-    def get_state_dict(self, *args: Any, **kwargs: Any) -> Mapping[str, Any]:
+    def get_state_dict(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         return load_state_dict_from_url(self.url, *args, **kwargs)
 
     def __repr__(self) -> str:

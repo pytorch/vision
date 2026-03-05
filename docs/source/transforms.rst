@@ -413,6 +413,7 @@ Miscellaneous
     v2.RandomErasing
     v2.Lambda
     v2.SanitizeBoundingBoxes
+    v2.SanitizeKeyPoints
     v2.ClampBoundingBoxes
     v2.ClampKeyPoints
     v2.UniformTemporalSubsample
@@ -427,6 +428,7 @@ Functionals
     v2.functional.normalize
     v2.functional.erase
     v2.functional.sanitize_bounding_boxes
+    v2.functional.sanitize_keypoints
     v2.functional.clamp_bounding_boxes
     v2.functional.clamp_keypoints
     v2.functional.uniform_temporal_subsample
@@ -530,6 +532,7 @@ Developer tools
     v2.query_size
     v2.query_chw
     v2.get_bounding_boxes
+    v2.get_keypoints
 
 
 V1 API Reference

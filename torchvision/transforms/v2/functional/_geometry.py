@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any, Optional, TYPE_CHECKING, Union
 
 import PIL.Image
 import torch
@@ -24,9 +24,20 @@ from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE
 
 from torchvision.utils import _log_api_usage_once
 
-from ._meta import _get_size_image_pil, clamp_bounding_boxes, clamp_keypoints, convert_bounding_box_format
+from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_box_format
 
-from ._utils import _FillTypeJIT, _get_kernel, _register_five_ten_crop_kernel_internal, _register_kernel_internal
+from ._utils import (
+    _FillTypeJIT,
+    _get_kernel,
+    _import_cvcuda,
+    _is_cvcuda_available,
+    _register_five_ten_crop_kernel_internal,
+    _register_kernel_internal,
+)
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -62,6 +73,14 @@ def _horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.hflip(image)
 
 
+def _horizontal_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
+    return _import_cvcuda().flip(image, flipCode=1)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(horizontal_flip, _import_cvcuda().Tensor)(_horizontal_flip_image_cvcuda)
+
+
 @_register_kernel_internal(horizontal_flip, tv_tensors.Mask)
 def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return horizontal_flip_image(mask)
@@ -71,7 +90,7 @@ def horizontal_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, i
     shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
     keypoints[..., 0] = keypoints[..., 0].sub_(canvas_size[1] - 1).neg_()
-    return clamp_keypoints(keypoints.reshape(shape), canvas_size=canvas_size)
+    return keypoints.reshape(shape)
 
 
 @_register_kernel_internal(horizontal_flip, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -150,6 +169,14 @@ def _vertical_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.vflip(image)
 
 
+def _vertical_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
+    return _import_cvcuda().flip(image, flipCode=0)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(vertical_flip, _import_cvcuda().Tensor)(_vertical_flip_image_cvcuda)
+
+
 @_register_kernel_internal(vertical_flip, tv_tensors.Mask)
 def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
     return vertical_flip_image(mask)
@@ -159,7 +186,7 @@ def vertical_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int
     shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
     keypoints[..., 1] = keypoints[..., 1].sub_(canvas_size[0] - 1).neg_()
-    return clamp_keypoints(keypoints.reshape(shape), canvas_size=canvas_size)
+    return keypoints.reshape(shape)
 
 
 def vertical_flip_bounding_boxes(
@@ -1026,7 +1053,7 @@ def _affine_keypoints_with_expand(
         new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         canvas_size = (new_height, new_width)
 
-    out_keypoints = clamp_keypoints(transformed_points, canvas_size=canvas_size).reshape(original_shape)
+    out_keypoints = transformed_points.reshape(original_shape)
     out_keypoints = out_keypoints.to(original_dtype)
 
     return out_keypoints, canvas_size
@@ -1539,9 +1566,7 @@ def _parse_pad_padding(padding: Union[int, list[int]]) -> list[int]:
             pad_right = padding[2]
             pad_bottom = padding[3]
         else:
-            raise ValueError(
-                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
-            )
+            raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple or list. Found {len(padding)}")
     else:
         raise TypeError(f"`padding` should be an integer or tuple or list of integers, but got {padding}")
 
@@ -1695,7 +1720,7 @@ def pad_keypoints(
     left, right, top, bottom = _parse_pad_padding(padding)
     pad = torch.tensor([left, top], dtype=keypoints.dtype, device=keypoints.device)
     canvas_size = (canvas_size[0] + top + bottom, canvas_size[1] + left + right)
-    return clamp_keypoints(keypoints + pad, canvas_size), canvas_size
+    return keypoints + pad, canvas_size
 
 
 @_register_kernel_internal(pad, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -1817,7 +1842,7 @@ def crop_keypoints(
     keypoints = keypoints - torch.tensor([left, top], dtype=keypoints.dtype, device=keypoints.device)
     canvas_size = (height, width)
 
-    return clamp_keypoints(keypoints, canvas_size=canvas_size), canvas_size
+    return keypoints, canvas_size
 
 
 @_register_kernel_internal(crop, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -2047,7 +2072,7 @@ def perspective_keypoints(
     numer_points = torch.matmul(points, theta1.T)
     denom_points = torch.matmul(points, theta2.T)
     transformed_points = numer_points.div_(denom_points)
-    return clamp_keypoints(transformed_points.to(keypoints.dtype), canvas_size).reshape(original_shape)
+    return transformed_points.to(keypoints.dtype).reshape(original_shape)
 
 
 @_register_kernel_internal(perspective, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -2376,7 +2401,7 @@ def elastic_keypoints(
     t_size = torch.tensor(canvas_size[::-1], device=displacement.device, dtype=displacement.dtype)
     transformed_points = inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
 
-    return clamp_keypoints(transformed_points.to(keypoints.dtype), canvas_size=canvas_size).reshape(original_shape)
+    return transformed_points.to(keypoints.dtype).reshape(original_shape)
 
 
 @_register_kernel_internal(elastic, tv_tensors.KeyPoints, tv_tensor_wrapper=False)
@@ -2503,7 +2528,7 @@ def elastic_video(
 
 
 def center_crop(inpt: torch.Tensor, output_size: list[int]) -> torch.Tensor:
-    """See :class:`~torchvision.transforms.v2.RandomCrop` for details."""
+    """See :class:`~torchvision.transforms.v2.CenterCrop` for details."""
     if torch.jit.is_scripting():
         return center_crop_image(inpt, output_size=output_size)
 

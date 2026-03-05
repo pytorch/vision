@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, TYPE_CHECKING, Union
 
 import PIL.Image
 import torch
@@ -9,7 +9,14 @@ from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
+from ._utils import _get_kernel, _import_cvcuda, _is_cvcuda_available, _register_kernel_internal, is_pure_tensor
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
+if CVCUDA_AVAILABLE:
+    cvcuda = _import_cvcuda()  # noqa: F811
 
 
 def get_dimensions(inpt: torch.Tensor) -> list[int]:
@@ -107,6 +114,20 @@ def _get_size_image_pil(image: PIL.Image.Image) -> list[int]:
     return [height, width]
 
 
+def get_size_image_cvcuda(image: "cvcuda.Tensor") -> list[int]:
+    """Get size of `cvcuda.Tensor` with NHWC layout."""
+    hw = list(image.shape[-3:-1])
+    ndims = len(hw)
+    if ndims == 2:
+        return hw
+    else:
+        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
+
+
+if CVCUDA_AVAILABLE:
+    _get_size_image_cvcuda = _register_kernel_internal(get_size, cvcuda.Tensor)(get_size_image_cvcuda)
+
+
 @_register_kernel_internal(get_size, tv_tensors.Video, tv_tensor_wrapper=False)
 def get_size_video(video: torch.Tensor) -> list[int]:
     return get_size_image(video)
@@ -155,17 +176,69 @@ def _xyxy_to_xywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
     return xywh
 
 
-def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+def _xywh_to_cxcywh(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
     if not inplace:
+        xywh = xywh.clone()
+
+    # cx = x + width / 2, cy = y + height / 2, width and height stay the same
+    xywh[..., :2].add_(xywh[..., 2:].div(2, rounding_mode=None if xywh.is_floating_point() else "floor"))
+
+    return xywh
+
+
+def _cxcywh_to_xywh(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    # For integer tensors, use float arithmetic to match the behavior of the
+    # two-step conversion CXCYWH -> XYXY -> XYWH (where _cxcywh_to_xyxy uses
+    # float arithmetic, see PR #9322).
+    original = cxcywh
+    dtype = cxcywh.dtype
+    need_cast = not cxcywh.is_floating_point()
+
+    if need_cast:
+        cxcywh = cxcywh.float()
+    elif not inplace:
         cxcywh = cxcywh.clone()
 
-    # Trick to do fast division by 2 and ceil, without casting. It produces the same result as
+    half_wh = cxcywh[..., 2:] / 2
+    # x = cx - w/2, y = cy - h/2
+    cxcywh[..., :2].sub_(half_wh)
+
+    if need_cast:
+        # For integer types, truncation of x1/y1 and x2/y2 (= x1 + w, y1 + h) can change
+        # the effective width/height. Recompute w/h to match the two-step path.
+        x2y2 = (cxcywh[..., :2] + cxcywh[..., 2:]).to(dtype)
+        cxcywh = cxcywh.to(dtype)
+        cxcywh[..., 2:] = x2y2 - cxcywh[..., :2]
+        if inplace:
+            original[:] = cxcywh
+            return original
+
+    return cxcywh
+
+
+def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    # For integer tensors, use float arithmetic to match the behavior of
     # `torchvision.ops._box_convert._box_cxcywh_to_xyxy`.
-    half_wh = cxcywh[..., 2:].div(-2, rounding_mode=None if cxcywh.is_floating_point() else "floor").abs_()
+    original = cxcywh
+    dtype = cxcywh.dtype
+    need_cast = not cxcywh.is_floating_point()
+
+    if need_cast:
+        cxcywh = cxcywh.float()
+    elif not inplace:
+        cxcywh = cxcywh.clone()
+
+    half_wh = cxcywh[..., 2:] / 2
     # (cx - width / 2) = x1, same for y1
     cxcywh[..., :2].sub_(half_wh)
     # (x1 + width) = x2, same for y2
     cxcywh[..., 2:].add_(cxcywh[..., :2])
+
+    if need_cast:
+        cxcywh = cxcywh.to(dtype)
+        if inplace:
+            original[:] = cxcywh
+            return original
 
     return cxcywh
 
@@ -283,7 +356,11 @@ def _convert_bounding_box_format(
     if tv_tensors.is_rotated_bounding_format(old_format) ^ tv_tensors.is_rotated_bounding_format(new_format):
         raise ValueError("Cannot convert between rotated and unrotated bounding boxes.")
 
-    # TODO: Add _xywh_to_cxcywh and _cxcywh_to_xywh to improve performance
+    if old_format == BoundingBoxFormat.XYWH and new_format == BoundingBoxFormat.CXCYWH:
+        return _xywh_to_cxcywh(bounding_boxes, inplace)
+    if old_format == BoundingBoxFormat.CXCYWH and new_format == BoundingBoxFormat.XYWH:
+        return _cxcywh_to_xywh(bounding_boxes, inplace)
+
     if old_format == BoundingBoxFormat.XYWH:
         bounding_boxes = _xywh_to_xyxy(bounding_boxes, inplace)
     elif old_format == BoundingBoxFormat.CXCYWH:

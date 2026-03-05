@@ -77,7 +77,7 @@ class FasterRCNN(GeneralizedRCNN):
             we attempt to preserve the aspect ratio and scale the shorter edge
             to ``min_size``. If the resulting longer edge exceeds ``max_size``,
             then downscale so that the longer edge does not exceed ``max_size``.
-            This may result in the shorter edge beeing lower than ``min_size``.
+            This may result in the shorter edge being lower than ``min_size``.
         max_size (int): See ``min_size``.
         image_mean (Tuple[float, float, float]): mean values used for input normalization.
             They are generally the mean values of the dataset on which the backbone has been trained
