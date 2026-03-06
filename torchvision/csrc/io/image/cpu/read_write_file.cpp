@@ -1,5 +1,7 @@
 #include "read_write_file.h"
 
+#include <torch/headeronly/util/Exception.h>
+
 #include <sys/stat.h>
 
 #ifdef _WIN32
@@ -18,7 +20,7 @@ std::wstring utf8_decode(const std::string& str) {
   }
   int size_needed = MultiByteToWideChar(
       CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), nullptr, 0);
-  TORCH_CHECK(size_needed > 0, "Error converting the content to Unicode");
+  STD_TORCH_CHECK(size_needed > 0, "Error converting the content to Unicode");
   std::wstring wstrTo(size_needed, 0);
   MultiByteToWideChar(
       CP_UTF8,
@@ -47,12 +49,12 @@ torch::Tensor read_file(const std::string& filename) {
   int rc = stat(filename.c_str(), &stat_buf);
 #endif
   // errno is a variable defined in errno.h
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       rc == 0, "[Errno ", errno, "] ", strerror(errno), ": '", filename, "'");
 
   int64_t size = stat_buf.st_size;
 
-  TORCH_CHECK(size > 0, "Expected a non empty file");
+  STD_TORCH_CHECK(size > 0, "Expected a non empty file");
 
 #ifdef _WIN32
   // TODO: Once torch::from_file handles UTF-8 paths correctly, we should move
@@ -62,7 +64,7 @@ torch::Tensor read_file(const std::string& filename) {
   //       torch::kU8).clone()
   FILE* infile = _wfopen(fileW.c_str(), L"rb");
 
-  TORCH_CHECK(infile != nullptr, "Error opening input file");
+  STD_TORCH_CHECK(infile != nullptr, "Error opening input file");
 
   auto data = torch::empty({size}, torch::kU8);
   auto dataBytes = data.data_ptr<uint8_t>();
@@ -81,13 +83,16 @@ void write_file(const std::string& filename, torch::Tensor& data) {
   C10_LOG_API_USAGE_ONCE(
       "torchvision.csrc.io.image.cpu.read_write_file.write_file");
   // Check that the input tensor is on CPU
-  TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
+  STD_TORCH_CHECK(
+      data.device() == torch::kCPU, "Input tensor should be on CPU");
 
   // Check that the input tensor dtype is uint8
-  TORCH_CHECK(data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+  STD_TORCH_CHECK(
+      data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
 
   // Check that the input tensor is 3-dimensional
-  TORCH_CHECK(data.dim() == 1, "Input data should be a 1-dimensional tensor");
+  STD_TORCH_CHECK(
+      data.dim() == 1, "Input data should be a 1-dimensional tensor");
 
   auto fileBytes = data.data_ptr<uint8_t>();
   auto fileCStr = filename.c_str();
@@ -98,7 +103,7 @@ void write_file(const std::string& filename, torch::Tensor& data) {
   FILE* outfile = fopen(fileCStr, "wb");
 #endif
 
-  TORCH_CHECK(outfile != nullptr, "Error opening output file");
+  STD_TORCH_CHECK(outfile != nullptr, "Error opening output file");
 
   fwrite(fileBytes, sizeof(uint8_t), data.numel(), outfile);
   fclose(outfile);

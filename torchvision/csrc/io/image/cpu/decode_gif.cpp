@@ -63,7 +63,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   GifFileType* gifFile =
       DGifOpen(static_cast<void*>(&reader_helper), read_from_tensor, &error);
 
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       (gifFile != nullptr) && (error == D_GIF_SUCCEEDED),
       "DGifOpenFileName() failed - ",
       error);
@@ -71,12 +71,13 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   if (DGifSlurp(gifFile) == GIF_ERROR) {
     auto gifFileError = gifFile->Error;
     DGifCloseFile(gifFile, &error);
-    TORCH_CHECK(false, "DGifSlurp() failed - ", gifFileError);
+    STD_TORCH_CHECK(false, "DGifSlurp() failed - ", gifFileError);
   }
   auto num_images = gifFile->ImageCount;
 
   // This check should already done within DGifSlurp(), just to be safe
-  TORCH_CHECK(num_images > 0, "GIF file should contain at least one image!");
+  STD_TORCH_CHECK(
+      num_images > 0, "GIF file should contain at least one image!");
 
   GifColorType bg = {0, 0, 0};
   if (gifFile->SColorMap) {
@@ -109,7 +110,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
     const GifImageDesc& desc = img.ImageDesc;
     const ColorMapObject* cmap =
         desc.ColorMap ? desc.ColorMap : gifFile->SColorMap;
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         cmap != nullptr,
         "Global and local color maps are missing. This should never happen!");
 
@@ -161,7 +162,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   out = out.squeeze(0); // remove batch dim if there's only one image
 
   DGifCloseFile(gifFile, &error);
-  TORCH_CHECK(error == D_GIF_SUCCEEDED, "DGifCloseFile() failed - ", error);
+  STD_TORCH_CHECK(error == D_GIF_SUCCEEDED, "DGifCloseFile() failed - ", error);
 
   return out;
 }
