@@ -3,6 +3,8 @@
 #include "common_jpeg.h"
 #include "exif.h"
 
+#include <c10/util/Optional.h>
+
 namespace vision {
 namespace image {
 
@@ -141,12 +143,22 @@ torch::Tensor decode_jpeg(
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
 
+  // NOTE: libjpeg uses setjmp/longjmp for error handling. longjmp does not
+  // unwind C++ stack frames, so destructors of objects created after setjmp
+  // won't run. Declare tensors before setjmp and reset them on the error path.
+  c10::optional<torch::Tensor> tensor_opt;
+  c10::optional<torch::Tensor> cmyk_line_opt;
+
   auto datap = data.data_ptr<uint8_t>();
   // Setup decompression structure
   cinfo.err = jpeg_std_error(&jerr.pub);
   jerr.pub.error_exit = torch_jpeg_error_exit;
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(jerr.setjmp_buffer)) {
+    // Release any tensors that may have been allocated after setjmp.
+    cmyk_line_opt.reset();
+    tensor_opt.reset();
+
     /* If we get here, the JPEG code has signaled an error.
      * We need to clean up the JPEG object.
      */
@@ -210,12 +222,12 @@ torch::Tensor decode_jpeg(
   int width = cinfo.output_width;
 
   int stride = width * channels;
-  auto tensor =
+  tensor_opt =
       torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
-  auto ptr = tensor.data_ptr<uint8_t>();
-  torch::Tensor cmyk_line_tensor;
+  auto ptr = tensor_opt->data_ptr<uint8_t>();
+
   if (cmyk_to_rgb_or_gray) {
-    cmyk_line_tensor = torch::empty({int64_t(width), 4}, torch::kU8);
+    cmyk_line_opt = torch::empty({int64_t(width), 4}, torch::kU8);
   }
 
   while (cinfo.output_scanline < cinfo.output_height) {
@@ -224,7 +236,7 @@ torch::Tensor decode_jpeg(
      * more than one scanline at a time if that's more convenient.
      */
     if (cmyk_to_rgb_or_gray) {
-      auto cmyk_line_ptr = cmyk_line_tensor.data_ptr<uint8_t>();
+      auto cmyk_line_ptr = cmyk_line_opt->data_ptr<uint8_t>();
       jpeg_read_scanlines(&cinfo, &cmyk_line_ptr, 1);
 
       if (channels == 3) {
@@ -240,7 +252,7 @@ torch::Tensor decode_jpeg(
 
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
-  auto output = tensor.permute({2, 0, 1});
+  auto output = tensor_opt->permute({2, 0, 1});
 
   if (apply_exif_orientation) {
     return exif_orientation_transform(output, exif_orientation);
