@@ -40,14 +40,3 @@ fi
 
 pip install numpy pyyaml future ninja
 pip install --upgrade setuptools==72.1.0
-
-if [[ "$OSTYPE" == "msys" ]]; then
- echo "MAX_JOBS=1" >> "${GITHUB_ENV}"
- # Explicitly add CUDA bin to PATH so nvcc is findable by ninja subprocesses
- # regardless of how conda 25.x handles environment inheritance
- CUDA_PATH_WIN=$(cmd //c "echo %CUDA_PATH%" 2>/dev/null | tr -d '\r')
- if [[ -n "$CUDA_PATH_WIN" ]]; then
-   CUDA_BIN=$(cygpath -u "${CUDA_PATH_WIN}/bin")
-   echo "PATH=${CUDA_BIN}:${PATH}" >> "${GITHUB_ENV}"
- fi
-fi
