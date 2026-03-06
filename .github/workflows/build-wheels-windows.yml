@@ -19,12 +19,12 @@ permissions:
 
 jobs:
   generate-matrix:
-    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@417d17c019ed248404ba85f7af7c54befe20f0eb
+    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@a79eb7c044afe4ceb7699acf3ba38e4bd19e4811
     with:
       package-type: wheel
       os: windows
       test-infra-repository: pytorch/test-infra
-      test-infra-ref: 417d17c019ed248404ba85f7af7c54befe20f0eb
+      test-infra-ref: a79eb7c044afe4ceb7699acf3ba38e4bd19e4811
       with-xpu: enable
   build:
     needs: generate-matrix
@@ -39,12 +39,12 @@ jobs:
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@417d17c019ed248404ba85f7af7c54befe20f0eb
+    uses: pytorch/test-infra/.github/workflows/build_wheels_windows.yml@a79eb7c044afe4ceb7699acf3ba38e4bd19e4811
     with:
       repository: ${{ matrix.repository }}
       ref: ""
       test-infra-repository: pytorch/test-infra
-      test-infra-ref: 417d17c019ed248404ba85f7af7c54befe20f0eb
+      test-infra-ref: a79eb7c044afe4ceb7699acf3ba38e4bd19e4811
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
       env-script: ${{ matrix.env-script }}
