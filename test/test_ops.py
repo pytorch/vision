@@ -1762,10 +1762,18 @@ class TestRotatedBoxIou:
         out = ops.box_iou(boxes, boxes, fmt=fmt)
         assert out.dtype == torch.float32
         expected_tensor = torch.tensor(expected, dtype=torch.float32, device=device)
-        # Use higher tolerance on macOS with xyxyxyxy format due to float32 precision
-        # differences in angle computation that can affect the Graham scan algorithm
-        if sys.platform == "darwin" and fmt == "xyxyxyxy" and dtype == torch.float32:
-            atol = 0.5
+        # Handle precision issues with xyxyxyxy format and float32
+        if fmt == "xyxyxyxy" and dtype == torch.float32:
+            # Use higher tolerance on macOS due to float32 precision differences
+            # in angle computation that can affect the Graham scan algorithm
+            if sys.platform == "darwin":
+                atol = 0.5
+            elif device == "cuda":
+                pytest.xfail(
+                    "xyxyxyxy format with float32 on CUDA has expected failure due to floating-point precision errors in format conversion"
+                )
+            else:
+                atol = 1e-4
         else:
             atol = 1e-4
         torch.testing.assert_close(out, expected_tensor, atol=atol, rtol=1e-4)

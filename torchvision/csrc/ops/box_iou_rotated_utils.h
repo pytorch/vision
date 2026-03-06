@@ -378,6 +378,7 @@ single_box_iou_rotated(T const* const box1_raw, T const* const box2_raw) {
 
   T intersection = rotated_boxes_intersection<T>(box1, box2);
   T iou = intersection / (area1 + area2 - intersection);
+  iou = (iou < 0) ? 0 : (iou > 1 ? 1 : iou);
   return iou;
 }
 
