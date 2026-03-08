@@ -600,6 +600,13 @@ class RandomRotation(Transform):
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
 
+        .. note::
+
+            When ``center=None`` and the angle is a multiple of 90 degrees (0, 90, 180, 270),
+            the rotation is performed using :func:`torch.rot90` instead of an affine transform.
+            This is significantly faster, but the output tensor for 90 and 270 degree rotations
+            may not be contiguous. Users who need contiguous output should call :meth:`~torch.Tensor.contiguous` on the result.
+
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
