@@ -1,6 +1,7 @@
 """Run smoke tests"""
 
 import os
+os.environ["CUDA_LOG_FILE"] = "stdout"
 import sys
 import sysconfig
 from pathlib import Path
