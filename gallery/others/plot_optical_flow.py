@@ -47,10 +47,11 @@ def plot(imgs, **imshow_kwargs):
     plt.tight_layout()
 
 # %%
-# Reading Videos Using TorchCodec
+# Reading Videos Using Torchvision
 # --------------------------------
-# We will first read a video using
-# `TorchCodec <https://github.com/pytorch/torchcodec>`_.
+# We will first read a video using :func:`~torchvision.io.read_video`.
+# Alternatively one can use the new :class:`~torchvision.io.VideoReader` API (if
+# torchvision is built from source).
 # The video we will use here is free of use from `pexels.com
 # <https://www.pexels.com/video/a-man-playing-a-game-of-basketball-5192157/>`_,
 # credits go to `Pavel Danilyuk <https://www.pexels.com/@pavel-danilyuk>`_.
@@ -66,16 +67,16 @@ video_path = Path(tempfile.mkdtemp()) / "basketball.mp4"
 _ = urlretrieve(video_url, video_path)
 
 # %%
-# We use :class:`~torchcodec.decoders.VideoDecoder` to decode the video frames.
-# TorchCodec returns frames in NCHW format by default.
+# :func:`~torchvision.io.read_video` returns the video frames, audio frames and
+# the metadata associated with the video. In our case, we only need the video
+# frames.
 #
 # Here we will just make 2 predictions between 2 pre-selected pairs of frames,
 # namely frames (100, 101) and (150, 151). Each of these pairs corresponds to a
 # single model input.
 
-from torchcodec.decoders import VideoDecoder
-decoder = VideoDecoder(str(video_path))
-frames = decoder[:]
+from torchvision.io import read_video
+frames, _, _ = read_video(str(video_path), output_format="TCHW")
 
 img1_batch = torch.stack([frames[100], frames[150]])
 img2_batch = torch.stack([frames[101], frames[151]])
@@ -84,7 +85,7 @@ plot(img1_batch)
 
 # %%
 # The RAFT model accepts RGB images. We first get the frames from
-# the decoder and resize them to ensure their dimensions
+# :func:`~torchvision.io.read_video` and resize them to ensure their dimensions
 # are divisible by 8. Note that we explicitly use ``antialias=False``, because
 # this is how those models were trained. Then we use the transforms bundled into
 # the weights in order to preprocess the input and rescale its values to the
