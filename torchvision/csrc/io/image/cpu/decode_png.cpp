@@ -3,6 +3,8 @@
 #include "common_png.h"
 #include "exif.h"
 
+#include <optional>
+
 namespace vision {
 namespace image {
 
@@ -45,7 +47,14 @@ torch::Tensor decode_png(
   auto datap = accessor.data();
   auto datap_len = accessor.size(0);
 
+  // NOTE: libpng uses setjmp/longjmp for error handling. longjmp does not
+  // unwind C++ stack frames, so destructors of objects created after setjmp
+  // won't run. We use std::optional to declare tensors before setjmp while
+  // deferring construction, and explicitly reset them on the error path.
+  std::optional<torch::Tensor> tensor;
+
   if (setjmp(png_jmpbuf(png_ptr)) != 0) {
+    tensor.reset();
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     TORCH_CHECK(false, "Internal error.");
   }
@@ -196,19 +205,19 @@ torch::Tensor decode_png(
 
   auto num_pixels_per_row = width * channels;
   auto is_16_bits = bit_depth == 16;
-  auto tensor = torch::empty(
+  tensor = torch::empty(
       {int64_t(height), int64_t(width), channels},
       is_16_bits ? at::kUInt16 : torch::kU8);
   if (is_little_endian()) {
     png_set_swap(png_ptr);
   }
-  auto t_ptr = (uint8_t*)tensor.data_ptr();
+  auto t_ptr = (uint8_t*)tensor->data_ptr();
   for (int pass = 0; pass < number_of_passes; pass++) {
     for (png_uint_32 i = 0; i < height; ++i) {
       png_read_row(png_ptr, t_ptr, nullptr);
       t_ptr += num_pixels_per_row * (is_16_bits ? 2 : 1);
     }
-    t_ptr = (uint8_t*)tensor.data_ptr();
+    t_ptr = (uint8_t*)tensor->data_ptr();
   }
 
   int exif_orientation = -1;
@@ -218,7 +227,7 @@ torch::Tensor decode_png(
 
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
 
-  auto output = tensor.permute({2, 0, 1});
+  auto output = tensor->permute({2, 0, 1});
   if (apply_exif_orientation) {
     return exif_orientation_transform(output, exif_orientation);
   }
