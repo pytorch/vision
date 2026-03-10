@@ -35,7 +35,9 @@ torch::Tensor decode_image(
   const uint8_t png_signature[4] = {137, 80, 78, 71}; // == "\211PNG"
   STD_TORCH_CHECK(data.numel() >= 4, err_msg);
   if (memcmp(png_signature, datap, 4) == 0) {
-    return decode_png(data, mode, apply_exif_orientation);
+    auto stable_data = vision::toStableTensor(data);
+    auto stable_result = decode_png(stable_data, mode, apply_exif_orientation);
+    return vision::fromStableTensor(stable_result);
   }
 
   const uint8_t gif_signature_1[6] = {

@@ -1,4 +1,6 @@
-#include "encode_jpeg.h"
+#include "encode_png.h"
+
+#include <torch/headeronly/util/Exception.h>
 
 #include <torch/headeronly/util/Exception.h>
 
@@ -9,7 +11,9 @@ namespace image {
 
 #if !PNG_FOUND
 
-torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
+torch::stable::Tensor encode_png(
+    const torch::stable::Tensor& data,
+    int64_t compression_level) {
   STD_TORCH_CHECK(
       false, "encode_png: torchvision not compiled with libpng support");
 }
@@ -66,8 +70,9 @@ void torch_png_write_data(
 
 } // namespace
 
-torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
-  C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.encode_png.encode_png");
+torch::stable::Tensor encode_png(
+    const torch::stable::Tensor& data,
+    int64_t compression_level) {
   // Define compression structures and error handling
   png_structp png_write;
   png_infop info_ptr;
@@ -104,12 +109,12 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
       "Compression level should be between 0 and 9");
 
   // Check that the input tensor is on CPU
-  STD_TORCH_CHECK(
-      data.device() == torch::kCPU, "Input tensor should be on CPU");
+  STD_TORCH_CHECK(data.is_cpu(), "Input tensor should be on CPU");
 
   // Check that the input tensor dtype is uint8
   STD_TORCH_CHECK(
-      data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+      data.scalar_type() == torch::headeronly::ScalarType::Byte,
+      "Input tensor dtype should be uint8");
 
   // Check that the input tensor is 3-dimensional
   STD_TORCH_CHECK(
@@ -119,7 +124,7 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   int channels = data.size(0);
   int height = data.size(1);
   int width = data.size(2);
-  auto input = data.permute({1, 2, 0}).contiguous();
+  auto input = torch::stable::contiguous(stablePermute(data, {1, 2, 0}));
 
   STD_TORCH_CHECK(
       channels == 1 || channels == 3,
@@ -155,7 +160,7 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   png_write_info(png_write, info_ptr);
 
   auto stride = width * channels;
-  auto ptr = input.data_ptr<uint8_t>();
+  auto ptr = input.const_data_ptr<uint8_t>();
 
   // Encode PNG file
   for (int y = 0; y < height; ++y) {
@@ -169,12 +174,13 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   // Destroy structures
   png_destroy_write_struct(&png_write, &info_ptr);
 
-  torch::TensorOptions options = torch::TensorOptions{torch::kU8};
-  auto outTensor = torch::empty({(long)buf_info.size}, options);
+  int64_t out_size = static_cast<int64_t>(buf_info.size);
+  auto outTensor =
+      torch::stable::empty({&out_size, 1}, torch::headeronly::ScalarType::Byte);
 
   // Copy memory from png buffer, since torch cannot get ownership of it via
   // `from_blob`
-  auto outPtr = outTensor.data_ptr<uint8_t>();
+  auto outPtr = static_cast<uint8_t*>(outTensor.mutable_data_ptr());
   std::memcpy(outPtr, buf_info.buffer, sizeof(uint8_t) * outTensor.numel());
   free(buf_info.buffer);
 

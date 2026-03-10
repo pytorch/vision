@@ -60,6 +60,7 @@ direct,
 
 #include <torch/headeronly/util/Exception.h>
 #include <torch/types.h>
+#include "../../../stable_abi_compat.h"
 
 namespace vision {
 namespace image {
@@ -249,6 +250,33 @@ inline torch::Tensor exif_orientation_transform(
     return image.transpose(-1, -2).flip({-2, -1});
   } else if (orientation == IMAGE_ORIENTATION_LB) {
     return image.transpose(-1, -2).flip(-2);
+  }
+  return image;
+}
+
+// Stable ABI version of exif_orientation_transform
+inline torch::stable::Tensor exif_orientation_transform_stable(
+    const torch::stable::Tensor& image,
+    int orientation) {
+  if (orientation == IMAGE_ORIENTATION_TL) {
+    return image;
+  } else if (orientation == IMAGE_ORIENTATION_TR) {
+    return vision::stableFlip(image, {-1});
+  } else if (orientation == IMAGE_ORIENTATION_BR) {
+    // needs 180 rotation equivalent to
+    // flip both horizontally and vertically
+    return vision::stableFlip(image, {-2, -1});
+  } else if (orientation == IMAGE_ORIENTATION_BL) {
+    return vision::stableFlip(image, {-2});
+  } else if (orientation == IMAGE_ORIENTATION_LT) {
+    return torch::stable::transpose(image, -1, -2);
+  } else if (orientation == IMAGE_ORIENTATION_RT) {
+    return vision::stableFlip(torch::stable::transpose(image, -1, -2), {-1});
+  } else if (orientation == IMAGE_ORIENTATION_RB) {
+    return vision::stableFlip(
+        torch::stable::transpose(image, -1, -2), {-2, -1});
+  } else if (orientation == IMAGE_ORIENTATION_LB) {
+    return vision::stableFlip(torch::stable::transpose(image, -1, -2), {-2});
   }
   return image;
 }
