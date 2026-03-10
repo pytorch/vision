@@ -1624,7 +1624,6 @@ class RandomGrayscale(torch.nn.Module):
 
 class RandomErasing(torch.nn.Module):
     """Randomly selects a rectangle region in a torch.Tensor image and erases its pixels.
-    This transform does not support PIL Image.
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
 
     Args:
