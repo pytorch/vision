@@ -2,6 +2,7 @@
 
 import os
 os.environ["CUDA_LOG_FILE"] = "stdout"
+os.environ["TORCH_SHOW_CPP_STACKTRACES"] = "1"
 import sys
 import sysconfig
 from pathlib import Path
