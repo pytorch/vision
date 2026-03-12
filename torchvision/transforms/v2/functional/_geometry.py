@@ -1,5 +1,6 @@
 import math
 import numbers
+import platform
 import warnings
 from collections.abc import Sequence
 from typing import Any, Optional, TYPE_CHECKING, Union
@@ -288,7 +289,10 @@ def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
         if torch.compiler.is_compiling():
             return True
         else:
-            return torch.backends.cpu.get_cpu_capability() in ("AVX2", "AVX512")
+            return torch.backends.cpu.get_cpu_capability() in ("AVX2", "AVX512") or platform.machine() in (
+                "aarch64",
+                "arm64",
+            )
 
     return interpolation == InterpolationMode.BICUBIC
 
