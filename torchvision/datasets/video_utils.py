@@ -1,27 +1,14 @@
 import bisect
 import math
 import warnings
-from fractions import Fraction
-from typing import Any, Callable, cast, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import torch
-from torchvision.io import _probe_video_from_file, _read_video_from_file, read_video, read_video_timestamps
+from torchvision.io import read_video, read_video_timestamps
 
 from .utils import tqdm
 
 T = TypeVar("T")
-
-
-def pts_convert(pts: int, timebase_from: Fraction, timebase_to: Fraction, round_func: Callable = math.floor) -> int:
-    """convert pts between different time bases
-    Args:
-        pts: presentation timestamp, float
-        timebase_from: original timebase. Fraction
-        timebase_to: new timebase. Fraction
-        round_func: rounding function.
-    """
-    new_pts = Fraction(pts, 1) * timebase_from / timebase_to
-    return round_func(new_pts)
 
 
 def unfold(tensor: torch.Tensor, size: int, step: int, dilation: int = 1) -> torch.Tensor:
@@ -305,60 +292,9 @@ class VideoClips:
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
 
-        from torchvision import get_video_backend
-
-        backend = get_video_backend()
-
-        if backend == "pyav":
-            # check for invalid options
-            if self._video_width != 0:
-                raise ValueError("pyav backend doesn't support _video_width != 0")
-            if self._video_height != 0:
-                raise ValueError("pyav backend doesn't support _video_height != 0")
-            if self._video_min_dimension != 0:
-                raise ValueError("pyav backend doesn't support _video_min_dimension != 0")
-            if self._video_max_dimension != 0:
-                raise ValueError("pyav backend doesn't support _video_max_dimension != 0")
-            if self._audio_samples != 0:
-                raise ValueError("pyav backend doesn't support _audio_samples != 0")
-
-        if backend == "pyav":
-            start_pts = clip_pts[0].item()
-            end_pts = clip_pts[-1].item()
-            video, audio, info = read_video(video_path, start_pts, end_pts)
-        else:
-            _info = _probe_video_from_file(video_path)
-            video_fps = _info.video_fps
-            audio_fps = None
-
-            video_start_pts = cast(int, clip_pts[0].item())
-            video_end_pts = cast(int, clip_pts[-1].item())
-
-            audio_start_pts, audio_end_pts = 0, -1
-            audio_timebase = Fraction(0, 1)
-            video_timebase = Fraction(_info.video_timebase.numerator, _info.video_timebase.denominator)
-            if _info.has_audio:
-                audio_timebase = Fraction(_info.audio_timebase.numerator, _info.audio_timebase.denominator)
-                audio_start_pts = pts_convert(video_start_pts, video_timebase, audio_timebase, math.floor)
-                audio_end_pts = pts_convert(video_end_pts, video_timebase, audio_timebase, math.ceil)
-                audio_fps = _info.audio_sample_rate
-            video, audio, _ = _read_video_from_file(
-                video_path,
-                video_width=self._video_width,
-                video_height=self._video_height,
-                video_min_dimension=self._video_min_dimension,
-                video_max_dimension=self._video_max_dimension,
-                video_pts_range=(video_start_pts, video_end_pts),
-                video_timebase=video_timebase,
-                audio_samples=self._audio_samples,
-                audio_channels=self._audio_channels,
-                audio_pts_range=(audio_start_pts, audio_end_pts),
-                audio_timebase=audio_timebase,
-            )
-
-            info = {"video_fps": video_fps}
-            if audio_fps is not None:
-                info["audio_fps"] = audio_fps
+        start_pts = clip_pts[0].item()
+        end_pts = clip_pts[-1].item()
+        video, audio, info = read_video(video_path, start_pts, end_pts)
 
         if self.frame_rate is not None:
             resampling_idx = self.resampling_idxs[video_idx][clip_idx]

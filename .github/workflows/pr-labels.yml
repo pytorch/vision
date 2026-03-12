@@ -13,13 +13,13 @@ jobs:
 
     steps:
       - name: Set up python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
 
       - name: Install requests
         run: pip install requests
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Process commit and find merger responsible for labeling
         id: commit

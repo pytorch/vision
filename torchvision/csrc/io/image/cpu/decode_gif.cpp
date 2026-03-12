@@ -55,7 +55,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   // InternalRead() and just set the `buf` pointer to the tensor data directly.
   // That might even save allocation of those buffers.
   // If we do that, we'd have to make sure the buffers are never written to by
-  // GIFLIB, otherwise we'd be overridding the tensor data.
+  // GIFLIB, otherwise we'd be overriding the tensor data.
   reader_helper_t reader_helper;
   reader_helper.encoded_data = encoded_data.data_ptr<uint8_t>();
   reader_helper.encoded_data_size = encoded_data.numel();
@@ -63,7 +63,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   GifFileType* gifFile =
       DGifOpen(static_cast<void*>(&reader_helper), read_from_tensor, &error);
 
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       (gifFile != nullptr) && (error == D_GIF_SUCCEEDED),
       "DGifOpenFileName() failed - ",
       error);
@@ -71,12 +71,13 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   if (DGifSlurp(gifFile) == GIF_ERROR) {
     auto gifFileError = gifFile->Error;
     DGifCloseFile(gifFile, &error);
-    TORCH_CHECK(false, "DGifSlurp() failed - ", gifFileError);
+    STD_TORCH_CHECK(false, "DGifSlurp() failed - ", gifFileError);
   }
   auto num_images = gifFile->ImageCount;
 
   // This check should already done within DGifSlurp(), just to be safe
-  TORCH_CHECK(num_images > 0, "GIF file should contain at least one image!");
+  STD_TORCH_CHECK(
+      num_images > 0, "GIF file should contain at least one image!");
 
   GifColorType bg = {0, 0, 0};
   if (gifFile->SColorMap) {
@@ -85,7 +86,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
 
   // The GIFLIB docs say that the canvas's height and width are potentially
   // ignored by modern viewers, so to be on the safe side we set the output
-  // height to max(canvas_heigh, first_image_height). Same for width.
+  // height to max(canvas_height, first_image_height). Same for width.
   // https://giflib.sourceforge.net/whatsinagif/bits_and_bytes.html
   auto out_h =
       std::max(gifFile->SHeight, gifFile->SavedImages[0].ImageDesc.Height);
@@ -109,7 +110,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
     const GifImageDesc& desc = img.ImageDesc;
     const ColorMapObject* cmap =
         desc.ColorMap ? desc.ColorMap : gifFile->SColorMap;
-    TORCH_CHECK(
+    STD_TORCH_CHECK(
         cmap != nullptr,
         "Global and local color maps are missing. This should never happen!");
 
@@ -161,7 +162,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   out = out.squeeze(0); // remove batch dim if there's only one image
 
   DGifCloseFile(gifFile, &error);
-  TORCH_CHECK(error == D_GIF_SUCCEEDED, "DGifCloseFile() failed - ", error);
+  STD_TORCH_CHECK(error == D_GIF_SUCCEEDED, "DGifCloseFile() failed - ", error);
 
   return out;
 }

@@ -1,5 +1,9 @@
 #include "encode_jpeg.h"
 
+#include <torch/headeronly/util/Exception.h>
+
+#include <optional>
+
 #include "common_png.h"
 
 namespace vision {
@@ -8,7 +12,7 @@ namespace image {
 #if !PNG_FOUND
 
 torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       false, "encode_png: torchvision not compiled with libpng support");
 }
 
@@ -76,11 +80,19 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   buf_info.buffer = nullptr;
   buf_info.size = 0;
 
+  // NOTE: libpng uses setjmp/longjmp for error handling. longjmp does not
+  // unwind C++ stack frames, so destructors of objects created after setjmp
+  // won't run. We use std::optional to declare tensors before setjmp while
+  // deferring construction, and explicitly reset them on the error path.
+  std::optional<torch::Tensor> input;
+
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(err_ptr.setjmp_buffer)) {
     /* If we get here, the PNG code has signaled an error.
      * We need to clean up the PNG object and the buffer.
      */
+    input.reset();
+
     if (info_ptr != nullptr) {
       png_destroy_info_struct(png_write, &info_ptr);
     }
@@ -93,30 +105,33 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
       free(buf_info.buffer);
     }
 
-    TORCH_CHECK(false, err_ptr.pngLastErrorMsg);
+    STD_TORCH_CHECK(false, err_ptr.pngLastErrorMsg);
   }
 
   // Check that the compression level is between 0 and 9
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       compression_level >= 0 && compression_level <= 9,
       "Compression level should be between 0 and 9");
 
   // Check that the input tensor is on CPU
-  TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
+  STD_TORCH_CHECK(
+      data.device() == torch::kCPU, "Input tensor should be on CPU");
 
   // Check that the input tensor dtype is uint8
-  TORCH_CHECK(data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+  STD_TORCH_CHECK(
+      data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
 
   // Check that the input tensor is 3-dimensional
-  TORCH_CHECK(data.dim() == 3, "Input data should be a 3-dimensional tensor");
+  STD_TORCH_CHECK(
+      data.dim() == 3, "Input data should be a 3-dimensional tensor");
 
   // Get image info
   int channels = data.size(0);
   int height = data.size(1);
   int width = data.size(2);
-  auto input = data.permute({1, 2, 0}).contiguous();
+  input = data.permute({1, 2, 0}).contiguous();
 
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       channels == 1 || channels == 3,
       "The number of channels should be 1 or 3, got: ",
       channels);
@@ -150,7 +165,7 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   png_write_info(png_write, info_ptr);
 
   auto stride = width * channels;
-  auto ptr = input.data_ptr<uint8_t>();
+  auto ptr = input->data_ptr<uint8_t>();
 
   // Encode PNG file
   for (int y = 0; y < height; ++y) {
