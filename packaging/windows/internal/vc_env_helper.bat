@@ -24,6 +24,10 @@ if "%CU_VERSION%" == "xpu" call "C:\Program Files (x86)\Intel\oneAPI\setvars.bat
 
 set DISTUTILS_USE_SDK=1
 
+REM Limit parallel jobs to avoid ninja "ReadFile: The handle is invalid" errors
+REM See: https://github.com/pytorch/pytorch/issues/22450
+set MAX_JOBS=1
+
 set args=%1
 shift
 :start
