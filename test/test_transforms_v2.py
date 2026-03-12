@@ -3323,6 +3323,18 @@ class TestElastic:
             displacement=self._make_displacement(bounding_boxes),
         )
 
+    def test_kernel_bounding_boxes_at_canvas_boundary(self):
+        # Non-regression test for https://github.com/pytorch/vision/issues/9394
+        H, W = 64, 76
+        bbox = tv_tensors.BoundingBoxes([0, 0, W, H], format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=(H, W))
+        check_kernel(
+            F.elastic_bounding_boxes,
+            bbox,
+            format=bbox.format,
+            canvas_size=bbox.canvas_size,
+            displacement=self._make_displacement(bbox),
+        )
+
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_keypoints(self, dtype, device):
