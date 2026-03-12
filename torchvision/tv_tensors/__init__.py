@@ -1,3 +1,5 @@
+from typing import TypeVar
+
 import torch
 
 from ._bounding_boxes import BoundingBoxes, BoundingBoxFormat, is_rotated_bounding_format
@@ -6,34 +8,30 @@ from ._keypoints import KeyPoints
 from ._mask import Mask
 from ._torch_function_helpers import set_return_type
 from ._tv_tensor import TVTensor
+from torchvision.tv_tensors._tv_tensor import TVTensor
+
 from ._video import Video
+
+
+TVTensorType = TypeVar("TVTensorType", bound=TVTensor)
 
 
 # TODO: Fix this. We skip this method as it leads to
 # RecursionError: maximum recursion depth exceeded while calling a Python object
 # Until `disable` is removed, there will be graph breaks after all calls to functional transforms
 @torch.compiler.disable
-def wrap(wrappee, *, like, **kwargs):
+def wrap(wrappee: torch.Tensor, *, like: TVTensorType, **kwargs) -> TVTensorType:
     """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.
-
-    If ``like`` is a :class:`~torchvision.tv_tensors.BoundingBoxes`, the ``format`` and ``canvas_size`` of
-    ``like`` are assigned to ``wrappee``, unless they are passed as ``kwargs``.
 
     Args:
         wrappee (Tensor): The tensor to convert.
         like (:class:`~torchvision.tv_tensors.TVTensor`): The reference.
-            ``wrappee`` will be converted into the same subclass as ``like``.
-        kwargs: Can contain "format", "canvas_size" and "clamping_mode" if ``like`` is a :class:`~torchvision.tv_tensor.BoundingBoxes`.
-            Ignored otherwise.
+            ``wrappee`` will be converted into the same subclass as ``like``
+            maintaining the same metadata as ``like``.
+        kwargs: Optional overrides for metadata. For BoundingBoxes: ``format``, ``canvas_size``, ``clamping_mode``.
+            For KeyPoints: ``canvas_size``.
     """
-    if isinstance(like, BoundingBoxes):
-        return type(like)._wrap(
-            wrappee,
-            format=kwargs.get("format", like.format),
-            canvas_size=kwargs.get("canvas_size", like.canvas_size),
-            clamping_mode=kwargs.get("clamping_mode", like.clamping_mode),
-        )
-    elif isinstance(like, KeyPoints):
-        return type(like)._wrap(wrappee, canvas_size=kwargs.get("canvas_size", like.canvas_size))
-    else:
-        return wrappee.as_subclass(type(like))
+    if not hasattr(like, "__wrap__"):
+        raise TypeError(f"Expected `like` to have a `__wrap__` method, but got {type(like)}")
+
+    return like.__wrap__(wrappee, **kwargs)
