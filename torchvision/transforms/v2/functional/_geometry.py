@@ -28,6 +28,7 @@ from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_b
 
 from ._utils import (
     _FillTypeJIT,
+    _get_cvcuda_interp,
     _get_kernel,
     _import_cvcuda,
     _is_cvcuda_available,
@@ -1533,6 +1534,90 @@ def rotate_video(
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
     return rotate_image(video, angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
+
+
+def _rotate_image_cvcuda(
+    inpt: "cvcuda.Tensor",
+    angle: float,
+    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    expand: bool = False,
+    center: Optional[list[float]] = None,
+    fill: _FillTypeJIT = None,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    angle = angle % 360
+
+    if angle == 0:
+        return inpt
+
+    if angle == 180:
+        return cvcuda.flip(inpt, flipCode=-1)
+
+    interp = _get_cvcuda_interp(interpolation)
+
+    input_height, input_width = inpt.shape[1], inpt.shape[2]
+    num_channels = inpt.shape[3]
+
+    if fill is None:
+        fill_value = [0.0] * num_channels
+    elif isinstance(fill, (int, float)):
+        fill_value = [float(fill)] * num_channels
+    else:
+        fill_value = [float(f) for f in fill]
+
+    # Determine the rotation center
+    # torchvision uses image center by default, cvcuda rotates around upper-left (0,0)
+    # We need to calculate a shift to effectively rotate around the desired center
+    if center is None:
+        cx, cy = input_width / 2.0, input_height / 2.0
+        center_f = [0.0, 0.0]
+    else:
+        cx, cy = float(center[0]), float(center[1])
+        # Convert to image-center-relative coordinates (same as torchvision)
+        center_f = [cx - input_width * 0.5, cy - input_height * 0.5]
+
+    angle_rad = math.radians(angle)
+    cos_angle = math.cos(angle_rad)
+    sin_angle = math.sin(angle_rad)
+
+    # if we are not expanding, simple case
+    if not expand:
+        shift_x = (1 - cos_angle) * cx - sin_angle * cy
+        shift_y = sin_angle * cx + (1 - cos_angle) * cy
+
+        return cvcuda.rotate(inpt, angle_deg=angle, shift=(shift_x, shift_y), interpolation=interp)
+
+    # if we need to expand, use much of the same logic as torchvision, for output size/pad
+    # Use center_f (image-center-relative coords) to match torchvision's output size calculation
+    matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+    output_width, output_height = _compute_affine_output_size(matrix, input_width, input_height)
+
+    pad_left = (output_width - input_width) // 2
+    pad_right = output_width - input_width - pad_left
+    pad_top = (output_height - input_height) // 2
+    pad_bottom = output_height - input_height - pad_top
+
+    padded = cvcuda.copymakeborder(
+        inpt,
+        top=pad_top,
+        left=pad_left,
+        bottom=pad_bottom,
+        right=pad_right,
+        border_mode=cvcuda.Border.CONSTANT,
+        border_value=fill_value,
+    )
+
+    new_cx = pad_left + cx
+    new_cy = pad_top + cy
+    shift_x = (1 - cos_angle) * new_cx - sin_angle * new_cy
+    shift_y = sin_angle * new_cx + (1 - cos_angle) * new_cy
+
+    return cvcuda.rotate(padded, angle_deg=angle, shift=(shift_x, shift_y), interpolation=interp)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(rotate, _import_cvcuda().Tensor)(_rotate_image_cvcuda)
 
 
 def pad(
