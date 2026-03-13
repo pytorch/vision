@@ -219,7 +219,7 @@ __global__ void roi_align_backward_kernel_impl(
     int64_t c_stride,
     int64_t h_stride,
     int64_t w_stride,
-    const int memory_span) {
+    const int64_t memory_span) {
   CUDA_1D_KERNEL_LOOP_T(index, nthreads, int64_t) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
