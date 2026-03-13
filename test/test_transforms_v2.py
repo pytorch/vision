@@ -21,6 +21,7 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 
 from common_utils import (
+    assert_close,
     assert_equal,
     cache,
     cpu_and_cuda,
@@ -42,7 +43,6 @@ from common_utils import (
 )
 
 from torch import nn
-from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten, tree_map
 from torch.utils.data import DataLoader, default_collate
 from torchvision import tv_tensors
@@ -3354,6 +3354,7 @@ class TestElastic:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional(self, make_input):
@@ -3369,9 +3370,16 @@ class TestElastic:
             (F.elastic_mask, tv_tensors.Mask),
             (F.elastic_video, tv_tensors.Video),
             (F.elastic_keypoints, tv_tensors.KeyPoints),
+            pytest.param(
+                F._geometry._elastic_image_cvcuda,
+                None,
+                marks=pytest.mark.needs_cvcuda,
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if kernel is F._geometry._elastic_image_cvcuda:
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.elastic, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
@@ -3384,6 +3392,7 @@ class TestElastic:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_displacement_error(self, make_input):
@@ -3405,6 +3414,7 @@ class TestElastic:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
@@ -3421,6 +3431,36 @@ class TestElastic:
             make_input(size, device=device),
             check_v1_compatibility=check_v1_compatibility,
         )
+
+    @pytest.mark.needs_cvcuda
+    @needs_cuda
+    @pytest.mark.parametrize(
+        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
+    )
+    def test_image_cvcuda_correctness(self, interpolation):
+        image = make_image_cvcuda(dtype=torch.uint8)
+        displacement = self._make_displacement(image)
+
+        result = F._geometry._elastic_image_cvcuda(image, displacement=displacement, interpolation=interpolation)
+        result = F.cvcuda_to_tensor(result)
+
+        expected = F._geometry.elastic_image(
+            F.cvcuda_to_tensor(image), displacement=displacement, interpolation=interpolation
+        )
+
+        # checking properties that are not the pixel values
+        # see note below on pixel-value differences
+        assert_close(result, expected, atol=get_max_value(torch.uint8), rtol=0)
+
+        # visually, the results are identical, however the underlying computations are different
+        # we can define an mae_threshold based on the interpolation mode
+        # the primary difference is along the borders where pixels appear to be shifted in location
+        # by up to 1, causing potentially up to a diff of 255 on a single pixel
+        # this could be because one has fill of 0 and CV-CUDA is shifted and has value with some color
+        # thresholds decrease as image size gets larger since shifted pixels are fewer in comparision
+        mae = (expected.float() - result.float()).abs().mean()
+        mae_threshold = 30.0 if interpolation is transforms.InterpolationMode.NEAREST else 20.0
+        assert mae < mae_threshold, f"MAE {mae} exceeds threshold"
 
 
 class TestToPureTensor:
