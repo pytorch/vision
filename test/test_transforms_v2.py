@@ -21,6 +21,7 @@ import torchvision.ops
 import torchvision.transforms.v2 as transforms
 
 from common_utils import (
+    assert_close,
     assert_equal,
     cache,
     cpu_and_cuda,
@@ -42,7 +43,6 @@ from common_utils import (
 )
 
 from torch import nn
-from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten, tree_map
 from torch.utils.data import DataLoader, default_collate
 from torchvision import tv_tensors
@@ -5227,6 +5227,7 @@ class TestPerspective:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_functional(self, make_input):
@@ -5242,9 +5243,16 @@ class TestPerspective:
             (F.perspective_mask, tv_tensors.Mask),
             (F.perspective_video, tv_tensors.Video),
             (F.perspective_keypoints, tv_tensors.KeyPoints),
+            pytest.param(
+                F._geometry._perspective_image_cvcuda,
+                None,
+                marks=pytest.mark.needs_cvcuda,
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if kernel is F._geometry._perspective_image_cvcuda:
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.perspective, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize("distortion_scale", [0.5, 0.0, 1.0])
@@ -5258,6 +5266,7 @@ class TestPerspective:
             make_segmentation_mask,
             make_video,
             make_keypoints,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
         ],
     )
     def test_transform(self, distortion_scale, make_input):
@@ -5273,12 +5282,23 @@ class TestPerspective:
         "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
     )
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
-    def test_image_functional_correctness(self, coefficients, interpolation, fill):
-        image = make_image(dtype=torch.uint8, device="cpu")
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
+        ],
+    )
+    def test_image_functional_correctness(self, coefficients, interpolation, fill, make_input):
+        image = make_input(dtype=torch.uint8, device="cpu")
 
         actual = F.perspective(
             image, startpoints=None, endpoints=None, coefficients=coefficients, interpolation=interpolation, fill=fill
         )
+        if make_input is make_image_cvcuda:
+            actual = F.cvcuda_to_tensor(actual)[0].cpu()
+            image = F.cvcuda_to_tensor(image)[0].cpu()
+
         expected = F.to_image(
             F.perspective(
                 F.to_pil_image(image),
@@ -5290,13 +5310,20 @@ class TestPerspective:
             )
         )
 
-        if interpolation is transforms.InterpolationMode.BILINEAR:
-            abs_diff = (actual.float() - expected.float()).abs()
-            assert (abs_diff > 1).float().mean() < 7e-2
-            mae = abs_diff.mean()
-            assert mae < 3
-        else:
-            assert_equal(actual, expected)
+        if make_input is make_image:
+            if interpolation is transforms.InterpolationMode.BILINEAR:
+                abs_diff = (actual.float() - expected.float()).abs()
+                assert (abs_diff > 1).float().mean() < 7e-2
+                mae = abs_diff.mean()
+                assert mae < 3
+            else:
+                assert_equal(actual, expected)
+        else:  # CV-CUDA
+            # just check that the shapes/dtypes are the same, cvcuda warp_perspective uses different algorithm
+            # visually the results are the same on real images,
+            # realistically, the diff is not visible to the human eye
+            tolerance = 255 if interpolation is transforms.InterpolationMode.NEAREST else 125
+            assert_close(actual, expected, rtol=0, atol=tolerance)
 
     def _reference_perspective_bounding_boxes(self, bounding_boxes, *, startpoints, endpoints):
         format = bounding_boxes.format
