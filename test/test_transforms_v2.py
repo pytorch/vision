@@ -5871,7 +5871,16 @@ class TestInvert:
     def test_kernel_video(self):
         check_kernel(F.invert_video, make_video())
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_pil, make_video])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image,
+            make_image_pil,
+            make_video,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
+        ],
+    )
     def test_functional(self, make_input):
         check_functional(F.invert, make_input())
 
@@ -5882,20 +5891,47 @@ class TestInvert:
             (F._color._invert_image_pil, PIL.Image.Image),
             (F.invert_image, tv_tensors.Image),
             (F.invert_video, tv_tensors.Video),
+            pytest.param(
+                F._color._invert_image_cvcuda,
+                None,
+                marks=pytest.mark.needs_cvcuda,
+            ),
         ],
     )
     def test_functional_signature(self, kernel, input_type):
+        if kernel is F._color._invert_image_cvcuda:
+            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.invert, kernel=kernel, input_type=input_type)
 
-    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image_tensor,
+            make_image_pil,
+            make_image,
+            make_video,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
+        ],
+    )
     def test_transform(self, make_input):
         check_transform(transforms.RandomInvert(p=1), make_input())
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [
+            make_image,
+            pytest.param(make_image_cvcuda, marks=pytest.mark.needs_cvcuda),
+        ],
+    )
     @pytest.mark.parametrize("fn", [F.invert, transform_cls_to_functional(transforms.RandomInvert, p=1)])
-    def test_correctness_image(self, fn):
-        image = make_image(dtype=torch.uint8, device="cpu")
+    def test_correctness_image(self, make_input, fn):
+        image = make_input(dtype=torch.uint8, device="cpu")
 
         actual = fn(image)
+
+        if make_input is make_image_cvcuda:
+            image = F.cvcuda_to_tensor(image)[0].cpu()
+
         expected = F.to_image(F.invert(F.to_pil_image(image)))
 
         assert_equal(actual, expected)
