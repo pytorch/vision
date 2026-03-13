@@ -67,7 +67,7 @@ __device__ T bilinear_interpolate(
 
 template <typename T>
 __global__ void roi_align_forward_kernel_impl(
-    int nthreads,
+    int64_t nthreads,
     const T* input,
     const T spatial_scale,
     int channels,
@@ -79,7 +79,7 @@ __global__ void roi_align_forward_kernel_impl(
     bool aligned,
     const T* rois,
     T* output) {
-  CUDA_1D_KERNEL_LOOP(index, nthreads) {
+  CUDA_1D_KERNEL_LOOP_T(index, nthreads, int64_t) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
     int ph = (index / pooled_width) % pooled_height;
@@ -107,8 +107,8 @@ __global__ void roi_align_forward_kernel_impl(
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    const T* offset_input =
-        input + (roi_batch_ind * channels + c) * height * width;
+    const T* offset_input = input +
+        (static_cast<int64_t>(roi_batch_ind) * channels + c) * height * width;
 
     // We use roi_bin_grid to sample the grid and mimic integral
     int roi_bin_grid_h = (sampling_ratio > 0)
@@ -203,7 +203,7 @@ __device__ void bilinear_interpolate_gradient(
 
 template <typename T>
 __global__ void roi_align_backward_kernel_impl(
-    int nthreads,
+    int64_t nthreads,
     const T* grad_output,
     const T spatial_scale,
     int channels,
@@ -215,12 +215,12 @@ __global__ void roi_align_backward_kernel_impl(
     bool aligned,
     T* grad_input,
     const T* rois,
-    int n_stride,
-    int c_stride,
-    int h_stride,
-    int w_stride,
+    int64_t n_stride,
+    int64_t c_stride,
+    int64_t h_stride,
+    int64_t w_stride,
     const int memory_span) {
-  CUDA_1D_KERNEL_LOOP(index, nthreads) {
+  CUDA_1D_KERNEL_LOOP_T(index, nthreads, int64_t) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
     int ph = (index / pooled_width) % pooled_height;
@@ -250,7 +250,8 @@ __global__ void roi_align_backward_kernel_impl(
 
     // We need to index the gradient using the tensor strides to access the
     // correct values.
-    const int output_offset = n * n_stride + c * c_stride;
+    const int64_t output_offset =
+        static_cast<int64_t>(n) * n_stride + c * c_stride;
     const T* offset_grad_output = grad_output + output_offset;
     const T grad_output_this_bin =
         offset_grad_output[ph * h_stride + pw * w_stride];
@@ -265,7 +266,8 @@ __global__ void roi_align_backward_kernel_impl(
     // We do average (integral) pooling inside a bin
     const T count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
 
-    const int input_offset = (roi_batch_ind * channels + c) * height * width;
+    const int64_t input_offset =
+        (static_cast<int64_t>(roi_batch_ind) * channels + c) * height * width;
 
     for (int iy = 0; iy < roi_bin_grid_h; iy++) // e.g., iy = 0, 1
     {
@@ -432,10 +434,10 @@ at::Tensor roi_align_backward_kernel(
     return grad_input;
   }
 
-  int n_stride = grad.stride(0);
-  int c_stride = grad.stride(1);
-  int h_stride = grad.stride(2);
-  int w_stride = grad.stride(3);
+  int64_t n_stride = grad.stride(0);
+  int64_t c_stride = grad.stride(1);
+  int64_t h_stride = grad.stride(2);
+  int64_t w_stride = grad.stride(3);
 
   at::globalContext().alertNotDeterministic("roi_align_backward_kernel");
 
