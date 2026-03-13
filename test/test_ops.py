@@ -645,21 +645,7 @@ class TestRoIAlign(RoIOpTester):
 
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     def test_roi_align_large_index(self, device):
-        """Regression test for https://github.com/pytorch/vision/issues/8206
-
-        roi_align used int (32-bit) for output index arithmetic. When
-        n_rois * channels * pooled_h * pooled_w > INT_MAX (~2.1 billion),
-        the index overflows, causing a segfault on CPU or silently wrong
-        results on CUDA. The fix promotes index variables to int64_t.
-
-        This test calls the C++ kernel directly to ensure the native code
-        path is exercised (the pure-Python fallback doesn't have this bug).
-
-        We use n_rois=11,000,000 with channels=4 and pooled 7x7 so that
-        the total output element count (11M * 4 * 49 = 2.156B) exceeds
-        INT_MAX (2,147,483,647). The input feature map is kept tiny (4x4)
-        so memory is dominated by the ~8.6 GB output tensor.
-        """
+        """Regression test for https://github.com/pytorch/vision/issues/8206"""
         pooled_h, pooled_w = 7, 7
         channels = 4
         # 11M * 4 * 7 * 7 = 2,156,000,000 > INT_MAX
@@ -669,7 +655,6 @@ class TestRoIAlign(RoIOpTester):
         spatial_scale = 1.0
         sampling_ratio = 2
 
-        # Output is ~8.6 GB; skip if not enough memory
         output_bytes = n_rois * channels * pooled_h * pooled_w * 4  # float32
         if output_bytes > 9 * 1024**3:
             pytest.skip("Test requires ~9 GB of memory")
@@ -686,12 +671,6 @@ class TestRoIAlign(RoIOpTester):
         rois[:, 3] = width - 1
         rois[:, 4] = height - 1
 
-        # Use torch.ops.torchvision.roi_align directly instead of
-        # torchvision.ops.roi_align, because the latter falls back to a
-        # pure-Python implementation when C++ extensions are not loaded.
-        # The pure-Python path uses PyTorch's native int64 tensor indexing
-        # and would never trigger the int32 overflow. We need to test the
-        # C++ kernel specifically.
         try:
             result = torch.ops.torchvision.roi_align(x, rois, spatial_scale, pooled_h, pooled_w, sampling_ratio, False)
         except RuntimeError:
