@@ -643,6 +643,42 @@ class TestRoIAlign(RoIOpTester):
             execution_time_ms < execution_time_ms_threshold
         ), f"Expected execution to take < {execution_time_ms_threshold} ms, actually took {execution_time_ms} ms"
 
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
+    def test_roi_align_large_index(self, device):
+        """Regression test for https://github.com/pytorch/vision/issues/8206"""
+        pooled_h, pooled_w = 7, 7
+        channels = 4
+        # 11M * 4 * 7 * 7 = 2,156,000,000 > INT_MAX
+        n_rois = 11_000_000
+        num_imgs = 2
+        height, width = 4, 4
+        spatial_scale = 1.0
+        sampling_ratio = 2
+
+        output_bytes = n_rois * channels * pooled_h * pooled_w * 4  # float32
+        if output_bytes > 9 * 1024**3:
+            pytest.skip("Test requires ~9 GB of memory")
+
+        try:
+            x = torch.rand(num_imgs, channels, height, width, dtype=torch.float32, device=device)
+            rois = torch.zeros(n_rois, 5, dtype=torch.float32, device=device)
+        except RuntimeError:
+            pytest.skip("Not enough memory to allocate test tensors")
+
+        rois[:, 0] = torch.randint(0, num_imgs, (n_rois,))
+        rois[:, 1] = 0
+        rois[:, 2] = 0
+        rois[:, 3] = width - 1
+        rois[:, 4] = height - 1
+
+        try:
+            result = torch.ops.torchvision.roi_align(x, rois, spatial_scale, pooled_h, pooled_w, sampling_ratio, False)
+        except RuntimeError:
+            pytest.skip("Not enough memory for roi_align output")
+
+        assert result.shape == (n_rois, channels, pooled_h, pooled_w)
+        assert result.abs().sum() > 0, "roi_align returned all zeros — likely an index overflow bug"
+
 
 class TestPSRoIAlign(RoIOpTester):
     mps_backward_atol = 5e-2

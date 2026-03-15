@@ -8,10 +8,10 @@ namespace detail {
 
 template <typename T>
 struct PreCalc {
-  int pos1;
-  int pos2;
-  int pos3;
-  int pos4;
+  int64_t pos1;
+  int64_t pos2;
+  int64_t pos3;
+  int64_t pos4;
   T w1;
   T w2;
   T w3;
@@ -42,7 +42,7 @@ void pre_calc_for_bilinear_interpolate(
     int roi_bin_grid_h,
     int roi_bin_grid_w,
     std::vector<PreCalc<T>>& pre_calc) {
-  int pre_calc_index = 0;
+  int64_t pre_calc_index = 0;
   for (int ph = 0; ph < pooled_height; ph++) {
     for (int pw = 0; pw < pooled_width; pw++) {
       for (int iy = 0; iy < roi_bin_grid_h; iy++) {
@@ -106,10 +106,10 @@ void pre_calc_for_bilinear_interpolate(
 
           // save weights and indices
           PreCalc<T> pc;
-          pc.pos1 = y_low * width + x_low;
-          pc.pos2 = y_low * width + x_high;
-          pc.pos3 = y_high * width + x_low;
-          pc.pos4 = y_high * width + x_high;
+          pc.pos1 = static_cast<int64_t>(y_low) * width + x_low;
+          pc.pos2 = static_cast<int64_t>(y_low) * width + x_high;
+          pc.pos3 = static_cast<int64_t>(y_high) * width + x_low;
+          pc.pos4 = static_cast<int64_t>(y_high) * width + x_high;
           pc.w1 = w1;
           pc.w2 = w2;
           pc.w3 = w3;
