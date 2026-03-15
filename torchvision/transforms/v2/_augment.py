@@ -17,8 +17,6 @@ from ._utils import _check_sequence_input, _parse_labels_getter, has_any, is_pur
 
 class RandomErasing(_RandomApplyTransform):
     """Randomly select a rectangle region in the input image or video and erase its pixels.
-
-    This transform does not support PIL Image.
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/abs/1708.04896
 
     Args:
