@@ -2454,6 +2454,8 @@ def elastic_bounding_boxes(
         points = points.ceil_()
     index_xy = points.to(dtype=torch.long)
     index_x, index_y = index_xy[:, 0], index_xy[:, 1]
+    index_x = index_x.clamp(0, inv_grid.shape[2] - 1)
+    index_y = index_y.clamp(0, inv_grid.shape[1] - 1)
 
     # Transform points:
     t_size = torch.tensor(canvas_size[::-1], device=displacement.device, dtype=displacement.dtype)
