@@ -68,6 +68,7 @@
 // https://github.com/open-mmlab/mmdetection/blob/master/mmdet/ops/dcn/src/deform_conv_cuda.cpp
 
 #include <ATen/ATen.h>
+#include <ATen/Parallel.h>
 #include <torch/library.h>
 
 namespace vision {
@@ -139,58 +140,60 @@ void deformable_im2col_kernel(
     int out_w,
     bool use_mask,
     scalar_t* columns) {
-  for (int index = 0; index != n; ++index) {
-    const int out_x = index % out_w;
-    const int out_y = (index / out_w) % out_h;
-    const int out_b = (index / (out_w * out_h)) % batch_sz;
-    const int in_c = index / (out_w * out_h * batch_sz);
-    const int out_c = in_c * weight_h * weight_w;
+  at::parallel_for(0, n, 0, [&](int64_t begin, int64_t end) {
+    for (int64_t index = begin; index != end; ++index) {
+      const int out_x = index % out_w;
+      const int out_y = (index / out_w) % out_h;
+      const int out_b = (index / (out_w * out_h)) % batch_sz;
+      const int in_c = index / (out_w * out_h * batch_sz);
+      const int out_c = in_c * weight_h * weight_w;
 
-    int c_per_offset_grp = n_in_channels / n_offset_grps;
-    const int grp_idx = in_c / c_per_offset_grp;
+      int c_per_offset_grp = n_in_channels / n_offset_grps;
+      const int grp_idx = in_c / c_per_offset_grp;
 
-    auto columns_ptr = columns +
-        (out_c * (batch_sz * out_h * out_w) + out_b * (out_h * out_w) +
-         out_y * out_w + out_x);
+      auto columns_ptr = columns +
+          (out_c * (batch_sz * out_h * out_w) + out_b * (out_h * out_w) +
+           out_y * out_w + out_x);
 
-    auto input_ptr = input +
-        (out_b * (n_in_channels * height * width) + in_c * (height * width));
+      auto input_ptr = input +
+          (out_b * (n_in_channels * height * width) + in_c * (height * width));
 
-    auto offset_ptr = offset +
-        (out_b * n_offset_grps + grp_idx) * 2 * weight_h * weight_w * out_h *
-            out_w;
+      auto offset_ptr = offset +
+          (out_b * n_offset_grps + grp_idx) * 2 * weight_h * weight_w * out_h *
+              out_w;
 
-    auto mask_ptr = mask;
-    if (use_mask) {
-      mask_ptr += (out_b * n_offset_grps + grp_idx) * weight_h * weight_w *
-          out_h * out_w;
-    }
+      auto mask_ptr = mask;
+      if (use_mask) {
+        mask_ptr += (out_b * n_offset_grps + grp_idx) * weight_h * weight_w *
+            out_h * out_w;
+      }
 
-    for (int i = 0; i < weight_h; ++i) {
-      for (int j = 0; j < weight_w; ++j) {
-        const int mask_idx = i * weight_w + j;
-        const int offset_idx = 2 * mask_idx;
+      for (int i = 0; i < weight_h; ++i) {
+        for (int j = 0; j < weight_w; ++j) {
+          const int mask_idx = i * weight_w + j;
+          const int offset_idx = 2 * mask_idx;
 
-        scalar_t mask_value = 1;
-        if (use_mask) {
-          mask_value =
-              mask_ptr[mask_idx * (out_h * out_w) + out_y * out_w + out_x];
+          scalar_t mask_value = 1;
+          if (use_mask) {
+            mask_value =
+                mask_ptr[mask_idx * (out_h * out_w) + out_y * out_w + out_x];
+          }
+
+          const scalar_t offset_h =
+              offset_ptr[offset_idx * (out_h * out_w) + out_y * out_w + out_x];
+          const scalar_t offset_w = offset_ptr
+              [(offset_idx + 1) * (out_h * out_w) + out_y * out_w + out_x];
+          const scalar_t y =
+              (out_y * stride_h - pad_h) + i * dilation_h + offset_h;
+          const scalar_t x =
+              (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
+          *columns_ptr =
+              mask_value * bilinear_interpolate(input_ptr, height, width, y, x);
+          columns_ptr += batch_sz * out_h * out_w;
         }
-
-        const scalar_t offset_h =
-            offset_ptr[offset_idx * (out_h * out_w) + out_y * out_w + out_x];
-        const scalar_t offset_w = offset_ptr
-            [(offset_idx + 1) * (out_h * out_w) + out_y * out_w + out_x];
-        const scalar_t y =
-            (out_y * stride_h - pad_h) + i * dilation_h + offset_h;
-        const scalar_t x =
-            (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
-        *columns_ptr =
-            mask_value * bilinear_interpolate(input_ptr, height, width, y, x);
-        columns_ptr += batch_sz * out_h * out_w;
       }
     }
-  }
+  });
 }
 
 void deformable_im2col(
@@ -1013,7 +1016,7 @@ at::Tensor deform_conv2d_forward_kernel(
          out_w});
   }
 
-  at::Tensor out_buf = at::zeros(
+  at::Tensor out_buf = at::empty(
       {batch_sz / n_parallel_imgs,
        out_channels,
        n_parallel_imgs * out_h,
@@ -1035,7 +1038,7 @@ at::Tensor deform_conv2d_forward_kernel(
        weight_c.size(3)});
 
   // Sample points and perform convolution
-  auto columns = at::zeros(
+  auto columns = at::empty(
       {n_in_channels * weight_h * weight_w, n_parallel_imgs * out_h * out_w},
       input_c.options());
   for (int b = 0; b < batch_sz / n_parallel_imgs; b++) {
@@ -1064,10 +1067,9 @@ at::Tensor deform_conv2d_forward_kernel(
     columns = columns.view(
         {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
     for (int g = 0; g < n_weight_grps; g++) {
-      out_buf[b][g] = out_buf[b][g]
-                          .flatten(1)
-                          .addmm_(weight_c[g].flatten(1), columns[g])
-                          .view_as(out_buf[b][g]);
+      out_buf[b][g]
+          .flatten(1)
+          .addmm_(weight_c[g].flatten(1), columns[g], 0, 1);
     }
     columns =
         columns.view({columns.size(0) * columns.size(1), columns.size(2)});
