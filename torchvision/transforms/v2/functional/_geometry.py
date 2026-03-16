@@ -283,10 +283,10 @@ def resize(
 # This is an internal helper method for resize_image. We should put it here instead of keeping it
 # inside resize_image due to torchscript.
 # uint8 dtype support for bilinear and bicubic is limited to cpu and
-# according to our benchmarks on eager, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
+# according to our benchmarks on eager, non-AVX x86 CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
 def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
     if interpolation == InterpolationMode.BILINEAR:
-        if torch.compiler.is_compiling():
+        if torch.compiler.is_compiling() or torch.jit.is_scripting():
             return True
         else:
             return torch.backends.cpu.get_cpu_capability() in ("AVX2", "AVX512") or platform.machine() in (
