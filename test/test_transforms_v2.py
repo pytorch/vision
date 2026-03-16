@@ -8033,6 +8033,19 @@ class TestThreadSafeGenerator:
         transforms.RandomPerspective(p=1.0),
         transforms.RandomErasing(p=1.0),
         transforms.ScaleJitter(target_size=(24, 24)),
+        transforms.RandomZoomOut(),
+        transforms.ElasticTransform(),
+        transforms.RandomShortestSize(min_size=(20, 24)),
+        transforms.RandomResize(min_size=20, max_size=28),
+        transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.1),
+        transforms.RandomChannelPermutation(),
+        transforms.RandomPhotometricDistort(),
+        transforms.AutoAugment(),
+        transforms.RandAugment(),
+        transforms.TrivialAugmentWide(),
+        transforms.AugMix(),
+        transforms.JPEG(quality=(1, 100)),
+        transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
     ]
 
     class TransformDataset(torch.utils.data.Dataset):
@@ -8070,8 +8083,55 @@ class TestThreadSafeGenerator:
             result_worker0 = transform(image)
 
         g1 = torch.Generator()
-        g1.manual_seed(1)
+        g1.manual_seed(5)
         with mock.patch("torch.thread_safe_generator", return_value=g1):
             result_worker1 = transform(image)
 
         assert not torch.equal(result_worker0, result_worker1)
+
+    def test_thread_generator_random_iou_crop(self):
+        """RandomIoUCrop requires bounding boxes, so test it separately."""
+        image = make_image((32, 32))
+        bboxes = make_bounding_boxes(canvas_size=(32, 32), format="XYXY", num_boxes=3)
+
+        transform = transforms.RandomIoUCrop()
+
+        results = []
+        for seed in (0, 1):
+            g = torch.Generator()
+            g.manual_seed(seed)
+            with mock.patch("torch.thread_safe_generator", return_value=g):
+                result = transform(image, bboxes)
+            results.append(result)
+
+        # The image output should differ between different seeds
+        assert not torch.equal(results[0][0], results[1][0])
+
+    # Reproducibility test list: includes flips which are excluded from
+    # the divergence tests above.
+    ALL_TRANSFORMS = TRANSFORMS + [
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomVerticalFlip(p=0.5),
+    ]
+
+    @pytest.mark.parametrize("transform", ALL_TRANSFORMS, ids=lambda t: type(t).__name__)
+    def test_thread_generator_reproducibility(self, transform):
+        """Verify transforms use the provided generator, not the global RNG.
+        Same seeded generator should produce identical results even when
+        the global RNG state changes between calls."""
+        image = make_image((32, 32))
+
+        g1 = torch.Generator()
+        g1.manual_seed(42)
+        with mock.patch("torch.thread_safe_generator", return_value=g1):
+            result1 = transform(image)
+
+        # Advance global RNG so it's in a different state
+        torch.rand(100)
+
+        g2 = torch.Generator()
+        g2.manual_seed(42)
+        with mock.patch("torch.thread_safe_generator", return_value=g2):
+            result2 = transform(image)
+
+        torch.testing.assert_close(result1, result2)

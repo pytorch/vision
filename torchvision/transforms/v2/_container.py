@@ -101,7 +101,8 @@ class RandomApply(Transform):
     def forward(self, *inputs: Any) -> Any:
         needs_unpacking = len(inputs) > 1
 
-        if torch.rand(1) >= self.p:
+        g = torch.thread_safe_generator()
+        if torch.rand(1, generator=g) >= self.p:
             return inputs if needs_unpacking else inputs[0]
 
         for transform in self.transforms:
@@ -149,7 +150,8 @@ class RandomChoice(Transform):
         self.p = [prob / total for prob in p]
 
     def forward(self, *inputs: Any) -> Any:
-        idx = int(torch.multinomial(torch.tensor(self.p), 1))
+        g = torch.thread_safe_generator()
+        idx = int(torch.multinomial(torch.tensor(self.p), 1, generator=g))
         transform = self.transforms[idx]
         return transform(*inputs)
 
@@ -173,7 +175,8 @@ class RandomOrder(Transform):
 
     def forward(self, *inputs: Any) -> Any:
         needs_unpacking = len(inputs) > 1
-        for idx in torch.randperm(len(self.transforms)):
+        g = torch.thread_safe_generator()
+        for idx in torch.randperm(len(self.transforms), generator=g):
             transform = self.transforms[idx]
             outputs = transform(*inputs)
             inputs = outputs if needs_unpacking else (outputs,)

@@ -38,9 +38,11 @@ class _AutoAugmentBase(Transform):
 
         return params
 
-    def _get_random_item(self, dct: dict[str, tuple[Callable, bool]]) -> tuple[str, tuple[Callable, bool]]:
+    def _get_random_item(
+        self, dct: dict[str, tuple[Callable, bool]], generator: torch.Generator = None
+    ) -> tuple[str, tuple[Callable, bool]]:
         keys = tuple(dct.keys())
-        key = keys[int(torch.randint(len(keys), ()))]
+        key = keys[int(torch.randint(len(keys), (), generator=generator))]
         return key, dct[key]
 
     def _flatten_and_extract_image_or_video(
@@ -327,10 +329,11 @@ class AutoAugment(_AutoAugmentBase):
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
         height, width = get_size(image_or_video)  # type: ignore[arg-type]
 
-        policy = self._policies[int(torch.randint(len(self._policies), ()))]
+        g = torch.thread_safe_generator()
+        policy = self._policies[int(torch.randint(len(self._policies), (), generator=g))]
 
         for transform_id, probability, magnitude_idx in policy:
-            if not torch.rand(()) <= probability:
+            if not torch.rand((), generator=g) <= probability:
                 continue
 
             magnitudes_fn, signed = self._AUGMENTATION_SPACE[transform_id]
@@ -338,7 +341,7 @@ class AutoAugment(_AutoAugmentBase):
             magnitudes = magnitudes_fn(10, height, width)
             if magnitudes is not None:
                 magnitude = float(magnitudes[magnitude_idx])
-                if signed and torch.rand(()) <= 0.5:
+                if signed and torch.rand((), generator=g) <= 0.5:
                     magnitude *= -1
             else:
                 magnitude = 0.0
@@ -419,12 +422,13 @@ class RandAugment(_AutoAugmentBase):
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
         height, width = get_size(image_or_video)  # type: ignore[arg-type]
 
+        g = torch.thread_safe_generator()
         for _ in range(self.num_ops):
-            transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
+            transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE, generator=g)
             magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
             if magnitudes is not None:
                 magnitude = float(magnitudes[self.magnitude])
-                if signed and torch.rand(()) <= 0.5:
+                if signed and torch.rand((), generator=g) <= 0.5:
                     magnitude *= -1
             else:
                 magnitude = 0.0
@@ -488,12 +492,13 @@ class TrivialAugmentWide(_AutoAugmentBase):
         flat_inputs_with_spec, image_or_video = self._flatten_and_extract_image_or_video(inputs)
         height, width = get_size(image_or_video)  # type: ignore[arg-type]
 
-        transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
+        g = torch.thread_safe_generator()
+        transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE, generator=g)
 
         magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
         if magnitudes is not None:
-            magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
-            if signed and torch.rand(()) <= 0.5:
+            magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, (), generator=g))])
+            if signed and torch.rand((), generator=g) <= 0.5:
                 magnitude *= -1
         else:
             magnitude = 0.0
@@ -572,9 +577,9 @@ class AugMix(_AutoAugmentBase):
         self.alpha = alpha
         self.all_ops = all_ops
 
-    def _sample_dirichlet(self, params: torch.Tensor) -> torch.Tensor:
+    def _sample_dirichlet(self, params: torch.Tensor, generator: torch.Generator = None) -> torch.Tensor:
         # Must be on a separate method so that we can overwrite it in tests.
-        return torch._sample_dirichlet(params)
+        return torch._sample_dirichlet(params, generator)
 
     def forward(self, *inputs: Any) -> Any:
         flat_inputs_with_spec, orig_image_or_video = self._flatten_and_extract_image_or_video(inputs)
@@ -595,26 +600,33 @@ class AugMix(_AutoAugmentBase):
         # Sample the beta weights for combining the original and augmented image or video. To get Beta, we use a
         # Dirichlet with 2 parameters. The 1st column stores the weights of the original and the 2nd the ones of
         # augmented image or video.
+        g = torch.thread_safe_generator()
         m = self._sample_dirichlet(
-            torch.tensor([self.alpha, self.alpha], device=batch.device).expand(batch_dims[0], -1)
+            torch.tensor([self.alpha, self.alpha], device=batch.device).expand(batch_dims[0], -1),
+            generator=g,
         )
 
         # Sample the mixing weights and combine them with the ones sampled from Beta for the augmented images or videos.
         combined_weights = self._sample_dirichlet(
-            torch.tensor([self.alpha] * self.mixture_width, device=batch.device).expand(batch_dims[0], -1)
+            torch.tensor([self.alpha] * self.mixture_width, device=batch.device).expand(batch_dims[0], -1),
+            generator=g,
         ) * m[:, 1].reshape([batch_dims[0], -1])
 
         mix = m[:, 0].reshape(batch_dims) * batch
         for i in range(self.mixture_width):
             aug = batch
-            depth = self.chain_depth if self.chain_depth > 0 else int(torch.randint(low=1, high=4, size=(1,)).item())
+            depth = (
+                self.chain_depth
+                if self.chain_depth > 0
+                else int(torch.randint(low=1, high=4, size=(1,), generator=g).item())
+            )
             for _ in range(depth):
-                transform_id, (magnitudes_fn, signed) = self._get_random_item(augmentation_space)
+                transform_id, (magnitudes_fn, signed) = self._get_random_item(augmentation_space, generator=g)
 
                 magnitudes = magnitudes_fn(self._PARAMETER_MAX, height, width)
                 if magnitudes is not None:
-                    magnitude = float(magnitudes[int(torch.randint(self.severity, ()))])
-                    if signed and torch.rand(()) <= 0.5:
+                    magnitude = float(magnitudes[int(torch.randint(self.severity, (), generator=g))])
+                    if signed and torch.rand((), generator=g) <= 0.5:
                         magnitude *= -1
                 else:
                     magnitude = 0.0
