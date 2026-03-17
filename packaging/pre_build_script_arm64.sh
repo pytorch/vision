@@ -27,6 +27,7 @@ echo "set(VCPKG_BUILD_TYPE release)" >> "$TRIPLET_FILE"
 
 # Install dependencies using vcpkg
 ./vcpkg install libjpeg-turbo:arm64-windows --x-install-root="$DEPENDENCIES_DIR"
+# NOTE: libwebp>=1.3.2 is required. vcpkg installs the latest port version (currently 1.6.0).
 ./vcpkg install libwebp:arm64-windows --x-install-root="$DEPENDENCIES_DIR"
 ./vcpkg install libpng[tools]:arm64-windows --x-install-root="$DEPENDENCIES_DIR"
 
