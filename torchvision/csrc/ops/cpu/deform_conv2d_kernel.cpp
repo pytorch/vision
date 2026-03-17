@@ -1067,9 +1067,7 @@ at::Tensor deform_conv2d_forward_kernel(
     columns = columns.view(
         {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
     for (int g = 0; g < n_weight_grps; g++) {
-      out_buf[b][g]
-          .flatten(1)
-          .addmm_(weight_c[g].flatten(1), columns[g], 0, 1);
+      out_buf[b][g].flatten(1).addmm_(weight_c[g].flatten(1), columns[g], 0, 1);
     }
     columns =
         columns.view({columns.size(0) * columns.size(1), columns.size(2)});
