@@ -655,15 +655,8 @@ class TestRoIAlign(RoIOpTester):
         spatial_scale = 1.0
         sampling_ratio = 2
 
-        output_bytes = n_rois * channels * pooled_h * pooled_w * 4  # float32
-        if output_bytes > 9 * 1024**3:
-            pytest.skip("Test requires ~9 GB of memory")
-
-        try:
-            x = torch.rand(num_imgs, channels, height, width, dtype=torch.float32, device=device)
-            rois = torch.zeros(n_rois, 5, dtype=torch.float32, device=device)
-        except RuntimeError:
-            pytest.skip("Not enough memory to allocate test tensors")
+        x = torch.rand(num_imgs, channels, height, width, dtype=torch.float32, device=device)
+        rois = torch.zeros(n_rois, 5, dtype=torch.float32, device=device)
 
         rois[:, 0] = torch.randint(0, num_imgs, (n_rois,))
         rois[:, 1] = 0
@@ -671,10 +664,9 @@ class TestRoIAlign(RoIOpTester):
         rois[:, 3] = width - 1
         rois[:, 4] = height - 1
 
-        try:
-            result = torch.ops.torchvision.roi_align(x, rois, spatial_scale, pooled_h, pooled_w, sampling_ratio, False)
-        except RuntimeError:
-            pytest.skip("Not enough memory for roi_align output")
+        # Call the C++ kernel directly, in case that torchvision.ops.roi_align may fall
+        # back to a pure-Python path that doesn't have the int32 overflow bug.
+        result = torch.ops.torchvision.roi_align(x, rois, spatial_scale, pooled_h, pooled_w, sampling_ratio, False)
 
         assert result.shape == (n_rois, channels, pooled_h, pooled_w)
         assert result.abs().sum() > 0, "roi_align returned all zeros — likely an index overflow bug"
