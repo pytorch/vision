@@ -655,7 +655,7 @@ class TestRoIAlign(RoIOpTester):
         spatial_scale = 1.0
         sampling_ratio = 2
 
-        x = torch.rand(num_imgs, channels, height, width, dtype=torch.float32, device=device)
+        x = torch.rand(num_imgs, channels, height, width, dtype=torch.float32, device=device, requires_grad=True)
         rois = torch.zeros(n_rois, 5, dtype=torch.float32, device=device)
 
         rois[:, 0] = torch.randint(0, num_imgs, (n_rois,))
@@ -668,8 +668,14 @@ class TestRoIAlign(RoIOpTester):
         # back to a pure-Python path that doesn't have the int32 overflow bug.
         result = torch.ops.torchvision.roi_align(x, rois, spatial_scale, pooled_h, pooled_w, sampling_ratio, False)
 
+        # Forward kernel test
         assert result.shape == (n_rois, channels, pooled_h, pooled_w)
         assert result.abs().sum() > 0, "roi_align returned all zeros — likely an index overflow bug"
+
+        # Backward kernel test
+        result.sum().backward()
+        assert x.grad is not None, "x.grad is None — backward was not executed"
+        assert x.grad.abs().sum() > 0, "x.grad is all zeros — likely an index overflow bug in the backward kernel"
 
 
 class TestPSRoIAlign(RoIOpTester):
