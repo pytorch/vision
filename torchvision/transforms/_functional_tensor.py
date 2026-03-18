@@ -249,7 +249,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     if not torch.is_floating_point(img):
         result = convert_image_dtype(result, torch.float32)
 
-    result = (gain * result**gamma).clamp(0, 1)
+    result = (gain * result.pow(gamma)).clamp(0, 1)
 
     result = convert_image_dtype(result, dtype)
     return result

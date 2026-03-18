@@ -495,8 +495,8 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
     cy = (y1 + y3) / 2
 
     # Calculate width, height, and rotation angle of the parallelogram
-    wp = torch.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-    hp = torch.sqrt((x4 - x1) ** 2 + (y4 - y1) ** 2)
+    wp = torch.sqrt((x2 - x1).pow(2) + (y2 - y1).pow(2))
+    hp = torch.sqrt((x4 - x1).pow(2) + (y4 - y1).pow(2))
     r12 = torch.atan2(y1 - y2, x2 - x1)
     r14 = torch.atan2(y1 - y4, x4 - x1)
     r_rad = r12 - r14
