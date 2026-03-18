@@ -292,8 +292,8 @@ class VideoClips:
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
 
-        start_pts = clip_pts[0].item()
-        end_pts = clip_pts[-1].item()
+        start_pts = int(clip_pts[0].item())
+        end_pts = int(clip_pts[-1].item())
         video, audio, info = read_video(video_path, start_pts, end_pts)
 
         if self.frame_rate is not None:

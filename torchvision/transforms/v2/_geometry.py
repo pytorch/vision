@@ -739,8 +739,9 @@ class RandomAffine(Transform):
         if self.translate is not None:
             max_dx = float(self.translate[0] * width)
             max_dy = float(self.translate[1] * height)
-            tx = int(round(torch.empty(1).uniform_(-max_dx, max_dx).item()))
-            ty = int(round(torch.empty(1).uniform_(-max_dy, max_dy).item()))
+            tx = int(round(float(torch.empty(1).uniform_(-max_dx, max_dx).item())))
+            ty = int(round(float(torch.empty(1).uniform_(-max_dy, max_dy).item())))
+
             translate = (tx, ty)
         else:
             translate = (0, 0)
@@ -752,9 +753,9 @@ class RandomAffine(Transform):
 
         shear_x = shear_y = 0.0
         if self.shear is not None:
-            shear_x = torch.empty(1).uniform_(self.shear[0], self.shear[1]).item()
+            shear_x = float(torch.empty(1).uniform_(self.shear[0], self.shear[1]).item())
             if len(self.shear) == 4:
-                shear_y = torch.empty(1).uniform_(self.shear[2], self.shear[3]).item()
+                shear_y = float(torch.empty(1).uniform_(self.shear[2], self.shear[3]).item())
 
         shear = (shear_x, shear_y)
         return dict(angle=angle, translate=translate, scale=scale, shear=shear)
