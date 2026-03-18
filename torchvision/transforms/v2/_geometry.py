@@ -573,6 +573,13 @@ class RandomRotation(Transform):
     it can have arbitrary number of leading batch dimensions. For example,
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
+    .. note::
+
+        When ``center=None`` and the angle is a multiple of 90 degrees (0, 90, 180, 270),
+        the rotation is performed using :func:`torch.rot90` instead of an affine transform.
+        This is significantly faster, but the output tensor for 90 and 270 degree rotations
+        may not be contiguous. Users who need contiguous output should call :meth:`~torch.Tensor.contiguous` on the result.
+
     Args:
         degrees (sequence or number): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
