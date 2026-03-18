@@ -100,8 +100,30 @@ class AutoAugmentPolicy(Enum):
     SVHN = "svhn"
 
 
-# FIXME: Eliminate copy-pasted code for fill standardization and _augmentation_space() by moving stuff on a base class
-class AutoAugment(torch.nn.Module):
+class _AutoAugmentBase(torch.nn.Module):
+    """Base class for AutoAugment, RandAugment, TrivialAugmentWide, and AugMix."""
+
+    def __init__(
+        self,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[list[float]] = None,
+    ) -> None:
+        super().__init__()
+        self.interpolation = interpolation
+        self.fill = fill
+
+    def _get_fill(self, img: Tensor) -> Optional[list[float]]:
+        fill = self.fill
+        channels, height, width = F.get_dimensions(img)
+        if isinstance(img, Tensor):
+            if isinstance(fill, (int, float)):
+                fill = [float(fill)] * channels
+            elif fill is not None:
+                fill = [float(f) for f in fill]
+        return fill
+
+
+class AutoAugment(_AutoAugmentBase):
     r"""AutoAugment data augmentation method based on
     `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
@@ -124,10 +146,8 @@ class AutoAugment(torch.nn.Module):
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: Optional[list[float]] = None,
     ) -> None:
-        super().__init__()
+        super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
-        self.interpolation = interpolation
-        self.fill = fill
         self.policies = self._get_policies(policy)
 
     def _get_policies(
@@ -259,13 +279,8 @@ class AutoAugment(torch.nn.Module):
         Returns:
             PIL Image or Tensor: AutoAugmented image.
         """
-        fill = self.fill
+        fill = self._get_fill(img)
         channels, height, width = F.get_dimensions(img)
-        if isinstance(img, Tensor):
-            if isinstance(fill, (int, float)):
-                fill = [float(fill)] * channels
-            elif fill is not None:
-                fill = [float(f) for f in fill]
 
         transform_id, probs, signs = self.get_params(len(self.policies))
 
@@ -284,7 +299,7 @@ class AutoAugment(torch.nn.Module):
         return f"{self.__class__.__name__}(policy={self.policy}, fill={self.fill})"
 
 
-class RandAugment(torch.nn.Module):
+class RandAugment(_AutoAugmentBase):
     r"""RandAugment data augmentation method based on
     `"RandAugment: Practical automated data augmentation with a reduced search space"
     <https://arxiv.org/abs/1909.13719>`_.
@@ -311,12 +326,10 @@ class RandAugment(torch.nn.Module):
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: Optional[list[float]] = None,
     ) -> None:
-        super().__init__()
+        super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
         self.magnitude = magnitude
         self.num_magnitude_bins = num_magnitude_bins
-        self.interpolation = interpolation
-        self.fill = fill
 
     def _augmentation_space(self, num_bins: int, image_size: tuple[int, int]) -> dict[str, tuple[Tensor, bool]]:
         return {
@@ -344,13 +357,8 @@ class RandAugment(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Transformed image.
         """
-        fill = self.fill
+        fill = self._get_fill(img)
         channels, height, width = F.get_dimensions(img)
-        if isinstance(img, Tensor):
-            if isinstance(fill, (int, float)):
-                fill = [float(fill)] * channels
-            elif fill is not None:
-                fill = [float(f) for f in fill]
 
         op_meta = self._augmentation_space(self.num_magnitude_bins, (height, width))
         for _ in range(self.num_ops):
@@ -377,7 +385,7 @@ class RandAugment(torch.nn.Module):
         return s
 
 
-class TrivialAugmentWide(torch.nn.Module):
+class TrivialAugmentWide(_AutoAugmentBase):
     r"""Dataset-independent data-augmentation with TrivialAugment Wide, as described in
     `"TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation" <https://arxiv.org/abs/2103.10158>`_.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
@@ -399,10 +407,8 @@ class TrivialAugmentWide(torch.nn.Module):
         interpolation: InterpolationMode = InterpolationMode.NEAREST,
         fill: Optional[list[float]] = None,
     ) -> None:
-        super().__init__()
+        super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
-        self.interpolation = interpolation
-        self.fill = fill
 
     def _augmentation_space(self, num_bins: int) -> dict[str, tuple[Tensor, bool]]:
         return {
@@ -430,13 +436,7 @@ class TrivialAugmentWide(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Transformed image.
         """
-        fill = self.fill
-        channels, height, width = F.get_dimensions(img)
-        if isinstance(img, Tensor):
-            if isinstance(fill, (int, float)):
-                fill = [float(fill)] * channels
-            elif fill is not None:
-                fill = [float(f) for f in fill]
+        fill = self._get_fill(img)
 
         op_meta = self._augmentation_space(self.num_magnitude_bins)
         op_index = int(torch.randint(len(op_meta), (1,)).item())
@@ -463,7 +463,7 @@ class TrivialAugmentWide(torch.nn.Module):
         return s
 
 
-class AugMix(torch.nn.Module):
+class AugMix(_AutoAugmentBase):
     r"""AugMix data augmentation method based on
     `"AugMix: A Simple Data Processing Method to Improve Robustness and Uncertainty" <https://arxiv.org/abs/1912.02781>`_.
     If the image is torch Tensor, it should be of type torch.uint8, and it is expected
@@ -494,7 +494,7 @@ class AugMix(torch.nn.Module):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[list[float]] = None,
     ) -> None:
-        super().__init__()
+        super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10
         if not (1 <= severity <= self._PARAMETER_MAX):
             raise ValueError(f"The severity must be between [1, {self._PARAMETER_MAX}]. Got {severity} instead.")
@@ -503,8 +503,6 @@ class AugMix(torch.nn.Module):
         self.chain_depth = chain_depth
         self.alpha = alpha
         self.all_ops = all_ops
-        self.interpolation = interpolation
-        self.fill = fill
 
     def _augmentation_space(self, num_bins: int, image_size: tuple[int, int]) -> dict[str, tuple[Tensor, bool]]:
         s = {
@@ -549,14 +547,10 @@ class AugMix(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Transformed image.
         """
-        fill = self.fill
+        fill = self._get_fill(orig_img)
         channels, height, width = F.get_dimensions(orig_img)
         if isinstance(orig_img, Tensor):
             img = orig_img
-            if isinstance(fill, (int, float)):
-                fill = [float(fill)] * channels
-            elif fill is not None:
-                fill = [float(f) for f in fill]
         else:
             img = self._pil_to_tensor(orig_img)
 
