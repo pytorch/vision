@@ -1,5 +1,6 @@
 import math
 import numbers
+import platform
 import warnings
 from collections.abc import Sequence
 from typing import Any, Optional, TYPE_CHECKING, Union
@@ -282,13 +283,16 @@ def resize(
 # This is an internal helper method for resize_image. We should put it here instead of keeping it
 # inside resize_image due to torchscript.
 # uint8 dtype support for bilinear and bicubic is limited to cpu and
-# according to our benchmarks on eager, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
+# according to our benchmarks on eager, non-AVX x86 CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
 def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
     if interpolation == InterpolationMode.BILINEAR:
-        if torch.compiler.is_compiling():
+        if torch.compiler.is_compiling() or torch.jit.is_scripting():
             return True
         else:
-            return torch.backends.cpu.get_cpu_capability() in ("AVX2", "AVX512")
+            return torch.backends.cpu.get_cpu_capability() in ("AVX2", "AVX512") or platform.machine() in (
+                "aarch64",
+                "arm64",
+            )
 
     return interpolation == InterpolationMode.BICUBIC
 
@@ -491,8 +495,8 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
     cy = (y1 + y3) / 2
 
     # Calculate width, height, and rotation angle of the parallelogram
-    wp = torch.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-    hp = torch.sqrt((x4 - x1) ** 2 + (y4 - y1) ** 2)
+    wp = torch.sqrt((x2 - x1).pow(2) + (y2 - y1).pow(2))
+    hp = torch.sqrt((x4 - x1).pow(2) + (y4 - y1).pow(2))
     r12 = torch.atan2(y1 - y2, x2 - x1)
     r14 = torch.atan2(y1 - y4, x4 - x1)
     r_rad = r12 - r14
@@ -1566,9 +1570,7 @@ def _parse_pad_padding(padding: Union[int, list[int]]) -> list[int]:
             pad_right = padding[2]
             pad_bottom = padding[3]
         else:
-            raise ValueError(
-                f"Padding must be an int or a 1, 2, or 4 element tuple, not a {len(padding)} element tuple"
-            )
+            raise ValueError(f"Padding must be an int or a 1, 2, or 4 element tuple or list. Found {len(padding)}")
     else:
         raise TypeError(f"`padding` should be an integer or tuple or list of integers, but got {padding}")
 
@@ -2456,6 +2458,8 @@ def elastic_bounding_boxes(
         points = points.ceil_()
     index_xy = points.to(dtype=torch.long)
     index_x, index_y = index_xy[:, 0], index_xy[:, 1]
+    index_x = index_x.clamp(0, inv_grid.shape[2] - 1)
+    index_y = index_y.clamp(0, inv_grid.shape[1] - 1)
 
     # Transform points:
     t_size = torch.tensor(canvas_size[::-1], device=displacement.device, dtype=displacement.dtype)
@@ -2530,7 +2534,7 @@ def elastic_video(
 
 
 def center_crop(inpt: torch.Tensor, output_size: list[int]) -> torch.Tensor:
-    """See :class:`~torchvision.transforms.v2.RandomCrop` for details."""
+    """See :class:`~torchvision.transforms.v2.CenterCrop` for details."""
     if torch.jit.is_scripting():
         return center_crop_image(inpt, output_size=output_size)
 
