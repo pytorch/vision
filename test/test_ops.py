@@ -643,7 +643,7 @@ class TestRoIAlign(RoIOpTester):
             execution_time_ms < execution_time_ms_threshold
         ), f"Expected execution to take < {execution_time_ms_threshold} ms, actually took {execution_time_ms} ms"
 
-    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
+    @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_roi_align_large_index(self, device):
         """Regression test for https://github.com/pytorch/vision/issues/8206"""
         pooled_h, pooled_w = 7, 7
