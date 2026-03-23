@@ -18,6 +18,15 @@ try:
 except ImportError:
     pass
 
+try:
+    from pytorch.vision.fb.io.video import (  # type: ignore[import-not-found]
+        read_video,
+        read_video_timestamps,
+        write_video,
+    )
+except ImportError:
+    pass
+
 from .image import (
     decode_avif,
     decode_gif,
@@ -35,13 +44,9 @@ from .image import (
     write_jpeg,
     write_png,
 )
-from .video import read_video, read_video_timestamps, write_video
 
 
 __all__ = [
-    "write_video",
-    "read_video",
-    "read_video_timestamps",
     "ImageReadMode",
     "decode_image",
     "decode_jpeg",
