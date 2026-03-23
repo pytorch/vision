@@ -2007,6 +2007,125 @@ class TestRotatedBoxIou:
         torch.testing.assert_close(iou_cpu, iou_cuda.cpu(), atol=1e-5, rtol=1e-5)
 
 
+class TestNMSRotated:
+    def _reference_horizontal_nms(self, boxes, scores, iou_threshold):
+        """
+        Args:
+            box_scores (N, 5): boxes in corner-form and probabilities.
+                (Note here 5 == 4 + 1, i.e., 4-dim horizontal box + 1-dim prob)
+            iou_threshold: intersection over union threshold.
+        Returns:
+             picked: a list of indexes of the kept boxes
+        """
+        picked = []
+        _, indexes = scores.sort(descending=True)
+        while len(indexes) > 0:
+            current = indexes[0]
+            picked.append(current.item())
+            if len(indexes) == 1:
+                break
+            current_box = boxes[current, :]
+            indexes = indexes[1:]
+            rest_boxes = boxes[indexes, :]
+            iou = ops.box_iou(rest_boxes, current_box.unsqueeze(0)).squeeze(1)
+            indexes = indexes[iou <= iou_threshold]
+
+        return torch.as_tensor(picked)
+
+    @staticmethod
+    def _nms_edit_distance(keep1, keep2):
+        """
+        Compare the "keep" result of two nms call.
+        They are allowed to be different in terms of edit distance
+        due to floating point precision issues, e.g.,
+        if a box happen to have an IoU of 0.5 with another box,
+        one implementation may choose to keep it while another may discard it.
+        """
+        keep1, keep2 = keep1.cpu(), keep2.cpu()
+        if torch.equal(keep1, keep2):
+            # they should be equal most of the time
+            return 0
+        keep1, keep2 = tuple(keep1), tuple(keep2)
+        m, n = len(keep1), len(keep2)
+
+        # edit distance with DP
+        f = [np.arange(n + 1), np.arange(n + 1)]
+        for i in range(m):
+            cur_row = i % 2
+            other_row = (i + 1) % 2
+            f[other_row][0] = i + 1
+            for j in range(n):
+                f[other_row][j + 1] = (
+                    f[cur_row][j]
+                    if keep1[i] == keep2[j]
+                    else min(min(f[cur_row][j], f[cur_row][j + 1]), f[other_row][j]) + 1
+                )
+        return f[m % 2][n]
+
+    @staticmethod
+    def _create_tensors(N, device="cpu"):
+        boxes = torch.rand(N, 4, device=device) * 200
+        boxes[:, 2:] += boxes[:, :2]
+        scores = torch.rand(N, device=device)
+        return boxes, scores
+
+    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    def test_nms_rotated_0_degree(self, iou):
+        N = 1000
+        boxes, scores = self._create_tensors(N)
+        rotated_boxes = torch.zeros(N, 5)
+        rotated_boxes[:, 0] = (boxes[:, 0] + boxes[:, 2]) / 2.0
+        rotated_boxes[:, 1] = (boxes[:, 1] + boxes[:, 3]) / 2.0
+        rotated_boxes[:, 2] = boxes[:, 2] - boxes[:, 0]
+        rotated_boxes[:, 3] = boxes[:, 3] - boxes[:, 1]
+
+        keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
+        keep = ops.nms_rotated(rotated_boxes, scores, iou)
+        err_msg = f"Rotated NMS incompatible with reference implementation for IoU={iou}"
+        assert self._nms_edit_distance(keep, keep_ref) <= 1, err_msg
+
+    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    def test_nms_rotated_90_degrees(self, iou):
+        N = 1000
+        boxes, scores = self._create_tensors(N)
+        rotated_boxes = torch.zeros(N, 5)
+        rotated_boxes[:, 0] = (boxes[:, 0] + boxes[:, 2]) / 2.0
+        rotated_boxes[:, 1] = (boxes[:, 1] + boxes[:, 3]) / 2.0
+        # Swap width and height for 90 degrees so reference horizontal NMS can be used
+        rotated_boxes[:, 2] = boxes[:, 3] - boxes[:, 1]
+        rotated_boxes[:, 3] = boxes[:, 2] - boxes[:, 0]
+        rotated_boxes[:, 4] = 90
+
+        keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
+        keep = ops.nms_rotated(rotated_boxes, scores, iou)
+        err_msg = f"Rotated NMS incompatible with reference implementation for IoU={iou}"
+        assert self._nms_edit_distance(keep, keep_ref) <= 1, err_msg
+
+    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    def test_nms_rotated_180_degrees(self, iou):
+        N = 1000
+        boxes, scores = self._create_tensors(N)
+        rotated_boxes = torch.zeros(N, 5)
+        rotated_boxes[:, 0] = (boxes[:, 0] + boxes[:, 2]) / 2.0
+        rotated_boxes[:, 1] = (boxes[:, 1] + boxes[:, 3]) / 2.0
+        rotated_boxes[:, 2] = boxes[:, 2] - boxes[:, 0]
+        rotated_boxes[:, 3] = boxes[:, 3] - boxes[:, 1]
+        rotated_boxes[:, 4] = 180
+
+        keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
+        keep = ops.nms_rotated(rotated_boxes, scores, iou)
+        err_msg = f"Rotated NMS incompatible with reference implementation for IoU={iou}"
+        assert self._nms_edit_distance(keep, keep_ref) <= 1, err_msg
+
+    def test_nms_rotated_scriptable(self):
+        class TestingModule(torch.nn.Module):
+            def forward(self, boxes, scores, threshold):
+                return ops.nms_rotated(boxes, scores, threshold)
+
+        m = TestingModule()
+        _ = torch.jit.script(m)
+
+
 def get_boxes(dtype, device):
     box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
     box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
