@@ -48,6 +48,33 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
 
+def nms_rotated(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
+    """
+    Performs non-maximum suppression (NMS) on the rotated boxes according
+    to their intersection-over-union (IoU).
+
+    NMS iteratively removes lower scoring boxes which have an
+    IoU greater than ``iou_threshold`` with another (higher scoring)
+    box.
+
+    Args:
+        boxes (Tensor[N, 5])): rotated boxes to perform NMS on. They
+            are expected to be in ``(cx, cy, w, h, angle)`` format where
+            ``(cx, cy)`` is the center, ``(w, h)`` is width and height,
+            and ``angle`` is the rotation angle in degrees.
+        scores (Tensor[N]): scores for each one of the boxes
+        iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
+
+    Returns:
+        Tensor: int64 tensor with the indices of the elements that have been kept
+        by NMS, sorted in decreasing order of scores
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(nms_rotated)
+    _assert_has_ops()
+    return torch.ops.torchvision.nms_rotated(boxes, scores, iou_threshold)
+
+
 def batched_nms(
     boxes: Tensor,
     scores: Tensor,
