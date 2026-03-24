@@ -79,8 +79,7 @@ void roi_align_forward_kernel_impl(
         pre_calc);
 
     for (int c = 0; c < channels; c++) {
-      int64_t index_n_c =
-          index_n + static_cast<int64_t>(c) * pooled_width * pooled_height;
+      int64_t index_n_c = index_n + c * pooled_width * pooled_height;
       const T* offset_input = input +
           (static_cast<int64_t>(roi_batch_ind) * channels + c) * height * width;
       int pre_calc_index = 0;
@@ -189,10 +188,10 @@ void roi_align_backward_kernel_impl(
     bool aligned,
     T* grad_input,
     const T* rois,
-    int64_t n_stride,
-    int64_t c_stride,
-    int64_t h_stride,
-    int64_t w_stride) {
+    int n_stride,
+    int c_stride,
+    int h_stride,
+    int w_stride) {
   for (int64_t index = 0; index < nthreads; index++) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;

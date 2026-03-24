@@ -215,10 +215,10 @@ __global__ void roi_align_backward_kernel_impl(
     bool aligned,
     T* grad_input,
     const T* rois,
-    int64_t n_stride,
-    int64_t c_stride,
-    int64_t h_stride,
-    int64_t w_stride,
+    int n_stride,
+    int c_stride,
+    int h_stride,
+    int w_stride,
     const int64_t memory_span) {
   CUDA_1D_KERNEL_LOOP_T(index, nthreads, int64_t) {
     // (n, c, ph, pw) is an element in the pooled output
