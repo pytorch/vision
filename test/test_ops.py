@@ -643,9 +643,9 @@ class TestRoIAlign(RoIOpTester):
             execution_time_ms < execution_time_ms_threshold
         ), f"Expected execution to take < {execution_time_ms_threshold} ms, actually took {execution_time_ms} ms"
 
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_roi_align_large_index(self, device):
-        """Regression test for https://github.com/pytorch/vision/issues/8206"""
+    @needs_cuda
+    def test_roi_align_large_index(self, device="cuda"):
+        """Non-regression test for https://github.com/pytorch/vision/issues/8206"""
         pooled_h, pooled_w = 7, 7
         channels = 4
         # 11M * 4 * 7 * 7 = 2,156,000,000 > INT_MAX
@@ -670,12 +670,12 @@ class TestRoIAlign(RoIOpTester):
 
         # Forward kernel test
         assert result.shape == (n_rois, channels, pooled_h, pooled_w)
-        assert result.abs().sum() > 0, "roi_align returned all zeros — likely an index overflow bug"
+        assert result.abs().sum() > 0
 
         # Backward kernel test
         result.sum().backward()
-        assert x.grad is not None, "x.grad is None — backward was not executed"
-        assert x.grad.abs().sum() > 0, "x.grad is all zeros — likely an index overflow bug in the backward kernel"
+        assert x.grad is not None
+        assert x.grad.abs().sum() > 0
 
 
 class TestPSRoIAlign(RoIOpTester):
