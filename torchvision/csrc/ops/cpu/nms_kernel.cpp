@@ -50,13 +50,15 @@ at::Tensor nms_kernel_impl(
     }
     keep[num_to_keep++] = i;
 
+    iou_func.set_box(i);
+
     for (int64_t _j = _i + 1; _j < ndets; _j++) {
       auto j = order[_j];
       if (suppressed[j] == 1) {
         continue;
       }
 
-      auto ovr = iou_func(dets, i, j);
+      auto ovr = iou_func.compare(j);
       if (ovr > iou_threshold) {
         suppressed[j] = 1;
       }
@@ -74,6 +76,8 @@ struct AABBIoU {
   const scalar_t* areas;
   at::Tensor x1_t, y1_t, x2_t, y2_t, areas_t;
 
+  scalar_t ix1, iy1, ix2, iy2, iarea;
+
   AABBIoU(const at::Tensor& dets) {
     x1_t = dets.select(1, 0).contiguous();
     y1_t = dets.select(1, 1).contiguous();
@@ -87,24 +91,43 @@ struct AABBIoU {
     areas = areas_t.data_ptr<scalar_t>();
   }
 
-  scalar_t operator()(const at::Tensor& /*dets*/, int64_t i, int64_t j) const {
-    auto xx1 = std::max(x1[i], x1[j]);
-    auto yy1 = std::max(y1[i], y1[j]);
-    auto xx2 = std::min(x2[i], x2[j]);
-    auto yy2 = std::min(y2[i], y2[j]);
+  void set_box(int64_t i) {
+    ix1 = x1[i];
+    iy1 = y1[i];
+    ix2 = x2[i];
+    iy2 = y2[i];
+    iarea = areas[i];
+  }
+
+  scalar_t compare(int64_t j) const {
+    auto xx1 = std::max(ix1, x1[j]);
+    auto yy1 = std::max(iy1, y1[j]);
+    auto xx2 = std::min(ix2, x2[j]);
+    auto yy2 = std::min(iy2, y2[j]);
 
     auto w = std::max(static_cast<scalar_t>(0), xx2 - xx1);
     auto h = std::max(static_cast<scalar_t>(0), yy2 - yy1);
     auto inter = w * h;
-    return inter / (areas[i] + areas[j] - inter);
+    return inter / (iarea + areas[j] - inter);
   }
 };
 
 template <typename scalar_t>
 struct RotatedIoU {
-  scalar_t operator()(const at::Tensor& dets, int64_t i, int64_t j) const {
+  const at::Tensor* dets_ptr;
+
+  RotatedIoU(const at::Tensor& dets) : dets_ptr(&dets) {}
+
+  int64_t cached_i;
+
+  void set_box(int64_t i) {
+    cached_i = i;
+  }
+
+  scalar_t compare(int64_t j) const {
     return single_box_iou_rotated<scalar_t>(
-        dets[i].data_ptr<scalar_t>(), dets[j].data_ptr<scalar_t>());
+        (*dets_ptr)[cached_i].data_ptr<scalar_t>(),
+        (*dets_ptr)[j].data_ptr<scalar_t>());
   }
 };
 
@@ -167,7 +190,7 @@ at::Tensor nms_rotated_kernel(
 
   AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms_rotated_kernel", [&] {
     result = nms_kernel_impl<scalar_t>(
-        dets, scores, iou_threshold, RotatedIoU<scalar_t>{});
+        dets, scores, iou_threshold, RotatedIoU<scalar_t>(dets));
   });
   return result;
 }
