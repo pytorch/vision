@@ -434,10 +434,10 @@ at::Tensor roi_align_backward_kernel(
     return grad_input;
   }
 
-  int64_t n_stride = grad.stride(0);
-  int64_t c_stride = grad.stride(1);
-  int64_t h_stride = grad.stride(2);
-  int64_t w_stride = grad.stride(3);
+  int n_stride = grad.stride(0);
+  int c_stride = grad.stride(1);
+  int h_stride = grad.stride(2);
+  int w_stride = grad.stride(3);
 
   at::globalContext().alertNotDeterministic("roi_align_backward_kernel");
 
