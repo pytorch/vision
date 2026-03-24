@@ -643,9 +643,12 @@ class TestRoIAlign(RoIOpTester):
             execution_time_ms < execution_time_ms_threshold
         ), f"Expected execution to take < {execution_time_ms_threshold} ms, actually took {execution_time_ms} ms"
 
-    @needs_cuda
-    def test_roi_align_large_index(self, device="cuda"):
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_roi_align_large_index(self, device):
         """Non-regression test for https://github.com/pytorch/vision/issues/8206"""
+        if device == "cpu":
+            pytest.skip("Too slow on CPU")
+
         pooled_h, pooled_w = 7, 7
         channels = 4
         # 11M * 4 * 7 * 7 = 2,156,000,000 > INT_MAX
