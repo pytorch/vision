@@ -91,6 +91,7 @@ jobs:
       download-artifact: docs
       ref: gh-pages
       test-infra-ref: release/2.11
+      timeout-minutes: 60
       script: |
         set -euo pipefail
 
