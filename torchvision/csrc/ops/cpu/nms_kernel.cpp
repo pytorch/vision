@@ -126,8 +126,8 @@ struct RotatedIoU {
 
   scalar_t compare(int64_t j) const {
     return single_box_iou_rotated<scalar_t>(
-        (*dets_ptr)[cached_i].data_ptr<scalar_t>(),
-        (*dets_ptr)[j].data_ptr<scalar_t>());
+        (*dets_ptr)[cached_i].template data_ptr<scalar_t>(),
+        (*dets_ptr)[j].template data_ptr<scalar_t>());
   }
 };
 
