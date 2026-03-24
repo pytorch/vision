@@ -67,31 +67,36 @@ at::Tensor nms_kernel_impl(
 
 template <typename scalar_t>
 struct AABBIoU {
-  scalar_t operator()(const at::Tensor& dets, int64_t i, int64_t j) const {
-    auto x1 = dets.data_ptr<scalar_t>();
-    auto ncols = dets.size(1);
+  const scalar_t* x1;
+  const scalar_t* y1;
+  const scalar_t* x2;
+  const scalar_t* y2;
+  const scalar_t* areas;
+  at::Tensor x1_t, y1_t, x2_t, y2_t, areas_t;
 
-    auto ix1 = x1[i * ncols + 0];
-    auto iy1 = x1[i * ncols + 1];
-    auto ix2 = x1[i * ncols + 2];
-    auto iy2 = x1[i * ncols + 3];
-    auto iarea = (ix2 - ix1) * (iy2 - iy1);
+  AABBIoU(const at::Tensor& dets) {
+    x1_t = dets.select(1, 0).contiguous();
+    y1_t = dets.select(1, 1).contiguous();
+    x2_t = dets.select(1, 2).contiguous();
+    y2_t = dets.select(1, 3).contiguous();
+    areas_t = (x2_t - x1_t) * (y2_t - y1_t);
+    x1 = x1_t.data_ptr<scalar_t>();
+    y1 = y1_t.data_ptr<scalar_t>();
+    x2 = x2_t.data_ptr<scalar_t>();
+    y2 = y2_t.data_ptr<scalar_t>();
+    areas = areas_t.data_ptr<scalar_t>();
+  }
 
-    auto jx1 = x1[j * ncols + 0];
-    auto jy1 = x1[j * ncols + 1];
-    auto jx2 = x1[j * ncols + 2];
-    auto jy2 = x1[j * ncols + 3];
-    auto jarea = (jx2 - jx1) * (jy2 - jy1);
-
-    auto xx1 = std::max(ix1, jx1);
-    auto yy1 = std::max(iy1, jy1);
-    auto xx2 = std::min(ix2, jx2);
-    auto yy2 = std::min(iy2, jy2);
+  scalar_t operator()(const at::Tensor& /*dets*/, int64_t i, int64_t j) const {
+    auto xx1 = std::max(x1[i], x1[j]);
+    auto yy1 = std::max(y1[i], y1[j]);
+    auto xx2 = std::min(x2[i], x2[j]);
+    auto yy2 = std::min(y2[i], y2[j]);
 
     auto w = std::max(static_cast<scalar_t>(0), xx2 - xx1);
     auto h = std::max(static_cast<scalar_t>(0), yy2 - yy1);
     auto inter = w * h;
-    return inter / (iarea + jarea - inter);
+    return inter / (areas[i] + areas[j] - inter);
   }
 };
 
@@ -130,7 +135,7 @@ at::Tensor nms_kernel(
 
   AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms_kernel", [&] {
     result = nms_kernel_impl<scalar_t>(
-        dets, scores, iou_threshold, AABBIoU<scalar_t>{});
+        dets, scores, iou_threshold, AABBIoU<scalar_t>(dets));
   });
   return result;
 }
