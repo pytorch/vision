@@ -3,11 +3,6 @@
 //
 // This source code is licensed under the BSD-style license found in the
 // LICENSE file in the root directory of this source tree.
-//
-// The rotated box IoU computation is adapted from Detectron2's implementation,
-// which is licensed under the Apache License, Version 2.0.
-// Original source: https://github.com/facebookresearch/detectron2
-// License: https://github.com/facebookresearch/detectron2/blob/main/LICENSE
 
 #include <ATen/ATen.h>
 #include <torch/library.h>
