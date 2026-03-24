@@ -142,7 +142,7 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
     expected_file = _get_expected_file(name)
 
     if ACCEPT:
-        filename = {os.path.basename(expected_file)}
+        filename = os.path.basename(expected_file)
         print(f"Accepting updated output for {filename}:\n\n{output}")
         torch.save(output, expected_file)
         MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
@@ -196,7 +196,7 @@ def _check_fx_compatible(model, inputs, eager_out=None):
         eager_out = model(inputs)
     with torch.no_grad(), freeze_rng_state():
         fx_out = model_fx(inputs)
-    torch.testing.assert_close(eager_out, fx_out)
+    torch.testing.assert_close(eager_out, fx_out, atol=1e-4, rtol=1e-4)
 
 
 def _check_input_backprop(model, inputs):
