@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models
+
+
+wide_resnet50_2
+===============
+
+.. autofunction:: wide_resnet50_2
