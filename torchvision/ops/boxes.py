@@ -17,7 +17,7 @@ from ._box_convert import (
 from ._utils import _upcast
 
 
-def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
+def nms(boxes: Tensor, scores: Tensor, iou_threshold: float, fmt: str = "xyxy") -> Tensor:
     """
     Performs non-maximum suppression (NMS) on the boxes according
     to their intersection-over-union (IoU).
@@ -32,11 +32,21 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     to the behavior of argsort in PyTorch when repeated values are present.
 
     Args:
-        boxes (Tensor[N, 4])): boxes to perform NMS on. They
-            are expected to be in ``(x1, y1, x2, y2)`` format with ``0 <= x1 < x2`` and
-            ``0 <= y1 < y2``.
+        boxes (Tensor[N, K])): boxes to perform NMS on. They
+            are expected to be in the format specified by ``fmt``.
         scores (Tensor[N]): scores for each one of the boxes
         iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
+        fmt (str): Format of the input boxes.
+            Default is "xyxy" to preserve backward compatibility.
+
+            Supported axis-aligned format (K=4):
+
+            - ``'xyxy'``: boxes are represented via (x1, y1, x2, y2) corner coordinates.
+
+            Supported rotated format (K=5):
+
+            - ``'cxcywhr'``: boxes are represented via center, width, height, and rotation angle.
+              (cx, cy) is the center, (w, h) is width and height, r is rotation angle in degrees.
 
     Returns:
         Tensor: int64 tensor with the indices of the elements that have been kept
@@ -45,34 +55,15 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(nms)
     _assert_has_ops()
-    return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
-
-def nms_rotated(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
-    """
-    Performs non-maximum suppression (NMS) on the rotated boxes according
-    to their intersection-over-union (IoU).
-
-    NMS iteratively removes lower scoring boxes which have an
-    IoU greater than ``iou_threshold`` with another (higher scoring)
-    box.
-
-    Args:
-        boxes (Tensor[N, 5])): rotated boxes to perform NMS on. They
-            are expected to be in ``(cx, cy, w, h, angle)`` format where
-            ``(cx, cy)`` is the center, ``(w, h)`` is width and height,
-            and ``angle`` is the rotation angle in degrees.
-        scores (Tensor[N]): scores for each one of the boxes
-        iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
-
-    Returns:
-        Tensor: int64 tensor with the indices of the elements that have been kept
-        by NMS, sorted in decreasing order of scores
-    """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(nms_rotated)
-    _assert_has_ops()
-    return torch.ops.torchvision.nms_rotated(boxes, scores, iou_threshold)
+    if fmt == "xyxy":
+        return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
+    elif fmt == "cxcywhr":
+        return torch.ops.torchvision.nms_rotated(boxes, scores, iou_threshold)
+    else:
+        raise ValueError(
+            f"Unsupported format '{fmt}'. " f"Supported formats: 'xyxy' (axis-aligned), 'cxcywhr' (rotated)."
+        )
 
 
 def batched_nms(
@@ -350,14 +341,17 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor, fmt: str = "xyxy") -> tuple
     elif fmt == "xywh":
         lt = torch.max(boxes1[..., None, :2], boxes2[..., None, :, :2])  # [...,N,M,2]
         rb = torch.min(
-            boxes1[..., None, :2] + boxes1[..., None, 2:], boxes2[..., None, :, :2] + boxes2[..., None, :, 2:]
+            boxes1[..., None, :2] + boxes1[..., None, 2:],
+            boxes2[..., None, :, :2] + boxes2[..., None, :, 2:],
         )  # [...,N,M,2]
     else:  # fmt == "cxcywh":
         lt = torch.max(
-            boxes1[..., None, :2] - boxes1[..., None, 2:] / 2, boxes2[..., None, :, :2] - boxes2[..., None, :, 2:] / 2
+            boxes1[..., None, :2] - boxes1[..., None, 2:] / 2,
+            boxes2[..., None, :, :2] - boxes2[..., None, :, 2:] / 2,
         )  # [N,M,2]
         rb = torch.min(
-            boxes1[..., None, :2] + boxes1[..., None, 2:] / 2, boxes2[..., None, :, :2] + boxes2[..., None, :, 2:] / 2
+            boxes1[..., None, :2] + boxes1[..., None, 2:] / 2,
+            boxes2[..., None, :, :2] + boxes2[..., None, :, 2:] / 2,
         )  # [N,M,2]
 
     wh = _upcast(rb - lt).clamp(min=0)  # [N,M,2]
