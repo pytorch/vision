@@ -17,7 +17,7 @@ from ._box_convert import (
 from ._utils import _upcast
 
 
-def nms(boxes: Tensor, scores: Tensor, iou_threshold: float, fmt: str = "xyxy") -> Tensor:
+def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     """
     Performs non-maximum suppression (NMS) on the boxes according
     to their intersection-over-union (IoU).
@@ -32,21 +32,14 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float, fmt: str = "xyxy") 
     to the behavior of argsort in PyTorch when repeated values are present.
 
     Args:
-        boxes (Tensor[N, K])): boxes to perform NMS on. They
-            are expected to be in the format specified by ``fmt``.
+        boxes (Tensor[N, K])): boxes to perform NMS on.
+            If K=4, boxes are expected to be in ``(x1, y1, x2, y2)`` format
+            with ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+            If K=5, boxes are expected to be in ``(cx, cy, w, h, angle)`` format
+            for rotated boxes, where ``(cx, cy)`` is the center, ``(w, h)`` is
+            width and height, and ``angle`` is the rotation angle in degrees.
         scores (Tensor[N]): scores for each one of the boxes
         iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
-        fmt (str): Format of the input boxes.
-            Default is "xyxy" to preserve backward compatibility.
-
-            Supported axis-aligned format (K=4):
-
-            - ``'xyxy'``: boxes are represented via (x1, y1, x2, y2) corner coordinates.
-
-            Supported rotated format (K=5):
-
-            - ``'cxcywhr'``: boxes are represented via center, width, height, and rotation angle.
-              (cx, cy) is the center, (w, h) is width and height, r is rotation angle in degrees.
 
     Returns:
         Tensor: int64 tensor with the indices of the elements that have been kept
@@ -56,13 +49,13 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float, fmt: str = "xyxy") 
         _log_api_usage_once(nms)
     _assert_has_ops()
 
-    if fmt == "xyxy":
+    if boxes.size(-1) == 4:
         return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
-    elif fmt == "cxcywhr":
+    elif boxes.size(-1) == 5:
         return torch.ops.torchvision.nms_rotated(boxes, scores, iou_threshold)
     else:
         raise ValueError(
-            f"Unsupported format '{fmt}'. " f"Supported formats: 'xyxy' (axis-aligned), 'cxcywhr' (rotated)."
+            f"boxes should have 4 (axis-aligned) or 5 (rotated) elements in the last dimension, got {boxes.size(-1)}"
         )
 
 

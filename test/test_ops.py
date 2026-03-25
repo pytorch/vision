@@ -2080,7 +2080,7 @@ class TestNMSRotated:
         rotated_boxes[:, 3] = boxes[:, 3] - boxes[:, 1]
 
         keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
-        keep = ops.nms(rotated_boxes, scores, iou, fmt="cxcywhr")
+        keep = ops.nms(rotated_boxes, scores, iou)
         assert self._nms_edit_distance(keep, keep_ref) <= 1
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
@@ -2096,7 +2096,7 @@ class TestNMSRotated:
         rotated_boxes[:, 4] = 90
 
         keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
-        keep = ops.nms(rotated_boxes, scores, iou, fmt="cxcywhr")
+        keep = ops.nms(rotated_boxes, scores, iou)
         assert self._nms_edit_distance(keep, keep_ref) <= 1
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
@@ -2111,7 +2111,7 @@ class TestNMSRotated:
         rotated_boxes[:, 4] = 180
 
         keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
-        keep = ops.nms(rotated_boxes, scores, iou, fmt="cxcywhr")
+        keep = ops.nms(rotated_boxes, scores, iou)
         assert self._nms_edit_distance(keep, keep_ref) <= 1
 
 
