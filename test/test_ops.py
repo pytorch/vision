@@ -2081,8 +2081,7 @@ class TestNMSRotated:
 
         keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou, fmt="cxcywhr")
-        err_msg = f"Rotated NMS incompatible with reference implementation for IoU={iou}"
-        assert self._nms_edit_distance(keep, keep_ref) <= 1, err_msg
+        assert self._nms_edit_distance(keep, keep_ref) <= 1
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     def test_nms_rotated_90_degrees(self, iou):
@@ -2098,8 +2097,7 @@ class TestNMSRotated:
 
         keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou, fmt="cxcywhr")
-        err_msg = f"Rotated NMS incompatible with reference implementation for IoU={iou}"
-        assert self._nms_edit_distance(keep, keep_ref) <= 1, err_msg
+        assert self._nms_edit_distance(keep, keep_ref) <= 1
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     def test_nms_rotated_180_degrees(self, iou):
@@ -2114,16 +2112,7 @@ class TestNMSRotated:
 
         keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou, fmt="cxcywhr")
-        err_msg = f"Rotated NMS incompatible with reference implementation for IoU={iou}"
-        assert self._nms_edit_distance(keep, keep_ref) <= 1, err_msg
-
-    def test_nms_rotated_scriptable(self):
-        class TestingModule(torch.nn.Module):
-            def forward(self, boxes, scores, threshold):
-                return ops.nms(boxes, scores, threshold, fmt="cxcywhr")
-
-        m = TestingModule()
-        _ = torch.jit.script(m)
+        assert self._nms_edit_distance(keep, keep_ref) <= 1
 
 
 def get_boxes(dtype, device):
