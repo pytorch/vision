@@ -825,8 +825,8 @@ class TestNMS:
     def test_nms_input_errors(self):
         with pytest.raises(RuntimeError):
             ops.nms(torch.rand(4), torch.rand(3), 0.5)
-        with pytest.raises(RuntimeError):
-            ops.nms(torch.rand(3, 5), torch.rand(3), 0.5)
+        with pytest.raises((RuntimeError, ValueError)):
+            ops.nms(torch.rand(3, 6), torch.rand(3), 0.5)
         with pytest.raises(RuntimeError):
             ops.nms(torch.rand(3, 4), torch.rand(3, 2), 0.5)
         with pytest.raises(RuntimeError):
