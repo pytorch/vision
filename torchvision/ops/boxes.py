@@ -72,9 +72,9 @@ def batched_nms(
     will not be applied between elements of different categories.
 
     Args:
-        boxes (Tensor[N, 4]): boxes where NMS will be performed. They
-            are expected to be in ``(x1, y1, x2, y2)`` format with ``0 <= x1 < x2`` and
-            ``0 <= y1 < y2``.
+        boxes (Tensor[N, K]): boxes where NMS will be performed.
+            If K=4, boxes are expected to be in ``(x1, y1, x2, y2)`` format with ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+            If K=5, boxes are expected to be in ``(cx, cy, w, h, angle)`` format.
         scores (Tensor[N]): scores for each one of the boxes
         idxs (Tensor[N]): indices of the categories for each one of the boxes.
         iou_threshold (float): discards all overlapping boxes with IoU > iou_threshold
@@ -109,7 +109,11 @@ def _batched_nms_coordinate_trick(
         return torch.empty((0,), dtype=torch.int64, device=boxes.device)
     max_coordinate = boxes.max()
     offsets = idxs.to(boxes) * (max_coordinate + torch.tensor(1).to(boxes))
-    boxes_for_nms = boxes + offsets[:, None]
+    if boxes.size(-1) == 4:
+        boxes_for_nms = boxes + offsets[:, None]
+    else:
+        boxes_for_nms = boxes.clone()
+        boxes_for_nms[..., :2] = boxes[..., :2] + offsets[:, None]
     keep = nms(boxes_for_nms, scores, iou_threshold)
     return keep
 
