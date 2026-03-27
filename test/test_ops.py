@@ -2030,8 +2030,8 @@ class TestNMSRotated:
         keep_ref = TestNMS._reference_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
-        keep_standard_nms = ops.nms(boxes, scores, iou)
-        torch.testing.assert_close(keep, keep_standard_nms, atol=0, rtol=0)
+        keep_non_rotated = ops.nms(boxes, scores, iou)
+        torch.testing.assert_close(keep, keep_non_rotated, atol=0, rtol=0)
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     def test_nms_rotated_90_degrees(self, iou):
@@ -2049,8 +2049,8 @@ class TestNMSRotated:
         keep_ref = TestNMS._reference_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
-        keep_standard_nms = ops.nms(boxes, scores, iou)
-        torch.testing.assert_close(keep, keep_standard_nms, atol=0, rtol=0)
+        keep_non_rotated = ops.nms(boxes, scores, iou)
+        torch.testing.assert_close(keep, keep_non_rotated, atol=0, rtol=0)
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     def test_nms_rotated_180_degrees(self, iou):
@@ -2067,8 +2067,8 @@ class TestNMSRotated:
         keep_ref = TestNMS._reference_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
-        keep_standard_nms = ops.nms(boxes, scores, iou)
-        torch.testing.assert_close(keep, keep_standard_nms, atol=0, rtol=0)
+        keep_non_rotated = ops.nms(boxes, scores, iou)
+        torch.testing.assert_close(keep, keep_non_rotated, atol=0, rtol=0)
 
 
 def get_boxes(dtype, device):
