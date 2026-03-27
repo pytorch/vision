@@ -2010,36 +2010,6 @@ class TestRotatedBoxIou:
 
 class TestNMSRotated:
     @staticmethod
-    def _nms_edit_distance(keep1, keep2):
-        """
-        Compare the "keep" result of two nms call.
-        They are allowed to be different in terms of edit distance
-        due to floating point precision issues, e.g.,
-        if a box happen to have an IoU of 0.5 with another box,
-        one implementation may choose to keep it while another may discard it.
-        """
-        keep1, keep2 = keep1.cpu(), keep2.cpu()
-        if torch.equal(keep1, keep2):
-            # they should be equal most of the time
-            return 0
-        keep1, keep2 = tuple(keep1), tuple(keep2)
-        m, n = len(keep1), len(keep2)
-
-        # edit distance with DP
-        f = [np.arange(n + 1), np.arange(n + 1)]
-        for i in range(m):
-            cur_row = i % 2
-            other_row = (i + 1) % 2
-            f[other_row][0] = i + 1
-            for j in range(n):
-                f[other_row][j + 1] = (
-                    f[cur_row][j]
-                    if keep1[i] == keep2[j]
-                    else min(min(f[cur_row][j], f[cur_row][j + 1]), f[other_row][j]) + 1
-                )
-        return f[m % 2][n]
-
-    @staticmethod
     def _create_tensors(N, device="cpu"):
         boxes = torch.rand(N, 4, device=device) * 200
         boxes[:, 2:] += boxes[:, :2]
@@ -2048,6 +2018,7 @@ class TestNMSRotated:
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     def test_nms_rotated_0_degree(self, iou):
+        torch.manual_seed(0)
         N = 1000
         boxes, scores = self._create_tensors(N)
         rotated_boxes = torch.zeros(N, 5)
@@ -2058,10 +2029,13 @@ class TestNMSRotated:
 
         keep_ref = TestNMS._reference_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
-        assert self._nms_edit_distance(keep, keep_ref) <= 1
+        torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
+        keep_standard_nms = ops.nms(boxes, scores, iou)
+        torch.testing.assert_close(keep, keep_standard_nms, atol=0, rtol=0)
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     def test_nms_rotated_90_degrees(self, iou):
+        torch.manual_seed(0)
         N = 1000
         boxes, scores = self._create_tensors(N)
         rotated_boxes = torch.zeros(N, 5)
@@ -2074,10 +2048,13 @@ class TestNMSRotated:
 
         keep_ref = TestNMS._reference_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
-        assert self._nms_edit_distance(keep, keep_ref) <= 1
+        torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
+        keep_standard_nms = ops.nms(boxes, scores, iou)
+        torch.testing.assert_close(keep, keep_standard_nms, atol=0, rtol=0)
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
     def test_nms_rotated_180_degrees(self, iou):
+        torch.manual_seed(0)
         N = 1000
         boxes, scores = self._create_tensors(N)
         rotated_boxes = torch.zeros(N, 5)
@@ -2089,7 +2066,9 @@ class TestNMSRotated:
 
         keep_ref = TestNMS._reference_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
-        assert self._nms_edit_distance(keep, keep_ref) <= 1
+        torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
+        keep_standard_nms = ops.nms(boxes, scores, iou)
+        torch.testing.assert_close(keep, keep_standard_nms, atol=0, rtol=0)
 
 
 def get_boxes(dtype, device):
