@@ -58,7 +58,7 @@ at::Tensor nms_kernel_impl(
         continue;
       }
 
-      auto ovr = iou_func.compare(j);
+      auto ovr = iou_func.compute(j);
       if (ovr > iou_threshold) {
         suppressed[j] = 1;
       }
@@ -68,7 +68,7 @@ at::Tensor nms_kernel_impl(
 }
 
 template <typename scalar_t>
-struct AABBIoU {
+struct NonRotatedIoU {
   const scalar_t* x1;
   const scalar_t* y1;
   const scalar_t* x2;
@@ -78,7 +78,7 @@ struct AABBIoU {
 
   scalar_t ix1, iy1, ix2, iy2, iarea;
 
-  AABBIoU(const at::Tensor& dets) {
+  NonRotatedIoU(const at::Tensor& dets) {
     x1_t = dets.select(1, 0).contiguous();
     y1_t = dets.select(1, 1).contiguous();
     x2_t = dets.select(1, 2).contiguous();
@@ -99,7 +99,7 @@ struct AABBIoU {
     iarea = areas[i];
   }
 
-  scalar_t compare(int64_t j) const {
+  scalar_t compute(int64_t j) const {
     auto xx1 = std::max(ix1, x1[j]);
     auto yy1 = std::max(iy1, y1[j]);
     auto xx2 = std::min(ix2, x2[j]);
@@ -118,15 +118,15 @@ struct RotatedIoU {
 
   RotatedIoU(const at::Tensor& dets) : dets_ptr(&dets) {}
 
-  int64_t cached_i;
+  int64_t i;
 
   void set_box(int64_t i) {
-    cached_i = i;
+    this->i = i;
   }
 
-  scalar_t compare(int64_t j) const {
+  scalar_t compute(int64_t j) const {
     return single_box_iou_rotated<scalar_t>(
-        (*dets_ptr)[cached_i].template data_ptr<scalar_t>(),
+        (*dets_ptr)[i].template data_ptr<scalar_t>(),
         (*dets_ptr)[j].template data_ptr<scalar_t>());
   }
 };
@@ -158,7 +158,7 @@ at::Tensor nms_kernel(
 
   AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms_kernel", [&] {
     result = nms_kernel_impl<scalar_t>(
-        dets, scores, iou_threshold, AABBIoU<scalar_t>(dets));
+        dets, scores, iou_threshold, NonRotatedIoU<scalar_t>(dets));
   });
   return result;
 }
