@@ -770,7 +770,8 @@ class TestMultiScaleRoIAlign:
 
 
 class TestNMS:
-    def _reference_nms(self, boxes, scores, iou_threshold):
+    @classmethod
+    def _reference_nms(cls, boxes, scores, iou_threshold):
         """
         Args:
             boxes: boxes in corner-form
@@ -2008,30 +2009,6 @@ class TestRotatedBoxIou:
 
 
 class TestNMSRotated:
-    def _reference_horizontal_nms(self, boxes, scores, iou_threshold):
-        """
-        Args:
-            box_scores (N, 5): boxes in corner-form and probabilities.
-                (Note here 5 == 4 + 1, i.e., 4-dim horizontal box + 1-dim prob)
-            iou_threshold: intersection over union threshold.
-        Returns:
-             picked: a list of indexes of the kept boxes
-        """
-        picked = []
-        _, indexes = scores.sort(descending=True)
-        while len(indexes) > 0:
-            current = indexes[0]
-            picked.append(current.item())
-            if len(indexes) == 1:
-                break
-            current_box = boxes[current, :]
-            indexes = indexes[1:]
-            rest_boxes = boxes[indexes, :]
-            iou = ops.box_iou(rest_boxes, current_box.unsqueeze(0)).squeeze(1)
-            indexes = indexes[iou <= iou_threshold]
-
-        return torch.as_tensor(picked)
-
     @staticmethod
     def _nms_edit_distance(keep1, keep2):
         """
@@ -2079,7 +2056,7 @@ class TestNMSRotated:
         rotated_boxes[:, 2] = boxes[:, 2] - boxes[:, 0]
         rotated_boxes[:, 3] = boxes[:, 3] - boxes[:, 1]
 
-        keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
+        keep_ref = TestNMS._reference_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
         assert self._nms_edit_distance(keep, keep_ref) <= 1
 
@@ -2095,7 +2072,7 @@ class TestNMSRotated:
         rotated_boxes[:, 3] = boxes[:, 2] - boxes[:, 0]
         rotated_boxes[:, 4] = 90
 
-        keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
+        keep_ref = TestNMS._reference_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
         assert self._nms_edit_distance(keep, keep_ref) <= 1
 
@@ -2110,7 +2087,7 @@ class TestNMSRotated:
         rotated_boxes[:, 3] = boxes[:, 3] - boxes[:, 1]
         rotated_boxes[:, 4] = 180
 
-        keep_ref = self._reference_horizontal_nms(boxes, scores, iou)
+        keep_ref = TestNMS._reference_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
         assert self._nms_edit_distance(keep, keep_ref) <= 1
 
