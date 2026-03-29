@@ -164,7 +164,7 @@ def to_tensor(pic: Union[PILImage, np.ndarray]) -> Tensor:
         return torch.from_numpy(nppic).to(dtype=default_float_dtype)
 
     # handle PIL Image
-    mode_to_nptype = {"I": np.int32, "I;16" if sys.byteorder == "little" else "I;16B": np.int16, "F": np.float32}
+    mode_to_nptype = {"I": np.int32, "I;16" if sys.byteorder == "little" else "I;16B": np.int32, "F": np.float32}
     img = torch.from_numpy(np.array(pic, mode_to_nptype.get(pic.mode, np.uint8), copy=True))
 
     if pic.mode == "1":
@@ -206,7 +206,10 @@ def pil_to_tensor(pic: Any) -> Tensor:
         return torch.as_tensor(nppic)
 
     # handle PIL Image
-    img = torch.as_tensor(np.array(pic, copy=True))
+    img = np.array(pic, copy=True)
+    if pic.mode == "I;16":
+        img = img.astype(np.int32)
+    img = torch.as_tensor(img)
     img = img.view(pic.size[1], pic.size[0], F_pil.get_image_num_channels(pic))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1))
