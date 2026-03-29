@@ -606,6 +606,9 @@ class RandomRotation(Transform):
             Fill value can be also a dictionary mapping data type to the fill value, e.g.
             ``fill={tv_tensors.Image: 127, tv_tensors.Mask: 0}`` where ``Image`` will be filled with 127 and
             ``Mask`` will be filled with 0.
+        crop (bool, optional): If ``True``, the rotated output is center-cropped to the largest axis-aligned
+            rectangle that fits entirely within the rotated image, removing any fill/padding regions introduced
+            by the rotation. Mutually exclusive with ``expand``. Default is ``False``.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -620,11 +623,15 @@ class RandomRotation(Transform):
         expand: bool = False,
         center: Optional[list[float]] = None,
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = 0,
+        crop: bool = False,
     ) -> None:
         super().__init__()
+        if crop and expand:
+            raise ValueError("crop and expand are mutually exclusive")
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
         self.interpolation = interpolation
         self.expand = expand
+        self.crop = crop
 
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
@@ -634,21 +641,37 @@ class RandomRotation(Transform):
 
         self.center = center
 
+    def _extract_params_for_v1_transform(self) -> dict[str, Any]:
+        params = super()._extract_params_for_v1_transform()
+        if params.pop("crop"):
+            raise ValueError(
+                f"{type(self).__name__}() cannot be scripted when crop=True, "
+                "as this feature is not supported by the v1 transform."
+            )
+        return params
+
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
         angle = torch.empty(1).uniform_(self.degrees[0], self.degrees[1]).item()
-        return dict(angle=angle)
+        params: dict[str, Any] = dict(angle=angle)
+        if self.crop:
+            height, width = query_size(flat_inputs)
+            params["crop_hw"] = F._geometry._largest_inscribed_crop_size(width, height, angle)
+        return params
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
-        return self._call_kernel(
+        output = self._call_kernel(
             F.rotate,
             inpt,
-            **params,
+            angle=params["angle"],
             interpolation=self.interpolation,
             expand=self.expand,
             center=self.center,
             fill=fill,
         )
+        if self.crop:
+            output = self._call_kernel(F.center_crop, output, output_size=list(params["crop_hw"]))
+        return output
 
 
 class RandomAffine(Transform):

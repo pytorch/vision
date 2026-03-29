@@ -52,7 +52,11 @@ from torchvision.transforms._functional_tensor import _max_value as get_max_valu
 from torchvision.transforms.functional import pil_modes_mapping, to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import check_type, is_pure_tensor
-from torchvision.transforms.v2.functional._geometry import _get_perspective_coeffs, _parallelogram_to_bounding_boxes
+from torchvision.transforms.v2.functional._geometry import (
+    _get_perspective_coeffs,
+    _largest_inscribed_crop_size,
+    _parallelogram_to_bounding_boxes,
+)
 from torchvision.transforms.v2.functional._meta import (
     _cxcywh_to_xywh,
     _cxcywh_to_xyxy,
@@ -2434,6 +2438,85 @@ class TestRotate:
         expected = F.to_image(F.rotate(F.to_pil_image(image), angle=angle, expand=expand))
 
         torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize("size", [(100, 100), (120, 80)])
+    @pytest.mark.parametrize("angle", [15.0, 30.0, 45.0])
+    def test_transform_crop_removes_fill(self, size, angle):
+        # Output of crop=True should contain no fill pixels when input is fully non-zero
+        h, w = size
+        image = tv_tensors.Image(torch.full((3, h, w), 200, dtype=torch.uint8))
+        transform = transforms.RandomRotation((angle, angle), fill=0, crop=True)
+        output = transform(image)
+        assert output.min().item() > 0
+        assert output.shape[-2] < h or output.shape[-1] < w
+
+    @pytest.mark.parametrize("size", [(100, 100), (120, 80)])
+    @pytest.mark.parametrize("angle", [15.0, 30.0, 45.0])
+    def test_transform_crop_consistent_across_inputs(self, size, angle):
+        # Image, mask, and bounding boxes should all be cropped to the same canvas size
+        h, w = size
+        image = tv_tensors.Image(torch.full((3, h, w), 200, dtype=torch.uint8))
+        mask = tv_tensors.Mask(torch.ones(1, h, w, dtype=torch.uint8))
+        boxes = tv_tensors.BoundingBoxes(
+            torch.tensor([[10.0, 10.0, 50.0, 50.0]]),
+            format=tv_tensors.BoundingBoxFormat.XYXY,
+            canvas_size=(h, w),
+        )
+        transform = transforms.RandomRotation((angle, angle), crop=True)
+        out_image, out_mask, out_boxes = transform(image, mask, boxes)
+        assert out_image.shape[-2:] == out_mask.shape[-2:]
+        assert out_boxes.canvas_size == (out_image.shape[-2], out_image.shape[-1])
+
+    def test_transform_crop_and_expand_mutually_exclusive(self):
+        with pytest.raises(ValueError, match="crop and expand are mutually exclusive"):
+            transforms.RandomRotation(30, expand=True, crop=True)
+
+    @pytest.mark.parametrize("angle", [0.0, 180.0])
+    @pytest.mark.parametrize("size", [(100, 100), (120, 80), (80, 120)])
+    def test_transform_crop_half_turn_preserves_size(self, size, angle):
+        # 0° and 180° introduce no padding regardless of aspect ratio
+        h, w = size
+        image = tv_tensors.Image(torch.zeros(3, h, w, dtype=torch.uint8))
+        transform = transforms.RandomRotation((angle, angle), crop=True)
+        output = transform(image)
+        assert output.shape == image.shape
+
+    @pytest.mark.parametrize("angle", [90.0, 270.0])
+    @pytest.mark.parametrize("size", [(100, 100), (120, 80), (80, 120)])
+    def test_transform_crop_quarter_turn(self, size, angle):
+        # With expand=False, only the central min(h, w) square of the rotated content
+        # remains inside the canvas; that's the largest fill-free crop.
+        h, w = size
+        image = tv_tensors.Image(torch.full((3, h, w), 200, dtype=torch.uint8))
+        transform = transforms.RandomRotation((angle, angle), fill=0, crop=True)
+        output = transform(image)
+        expected = min(h, w)
+        assert output.shape == (3, expected, expected)
+        assert output.min().item() > 0
+
+    def test_largest_inscribed_crop_size(self):
+        assert _largest_inscribed_crop_size(100, 100, 0) == (100, 100)
+        assert _largest_inscribed_crop_size(200, 100, 0) == (100, 200)
+
+        # 45° square: inscribed square has side = 100 / sqrt(2) ≈ 70.71 → floor to 70
+        crop_h, crop_w = _largest_inscribed_crop_size(100, 100, 45)
+        assert crop_h == crop_w == 70
+
+        # 90° on non-square: clamped to the central min(h, w) square that fits in the canvas
+        assert _largest_inscribed_crop_size(120, 80, 90) == (80, 80)
+        assert _largest_inscribed_crop_size(80, 120, 90) == (80, 80)
+
+        # 180° preserves full size on any aspect ratio
+        assert _largest_inscribed_crop_size(120, 80, 180) == (80, 120)
+
+        # Negative angles are symmetric to positive ones (abs() on sin/cos)
+        for w, h, a in [(100, 100, 30), (200, 100, 15), (120, 80, 45)]:
+            assert _largest_inscribed_crop_size(w, h, -a) == _largest_inscribed_crop_size(w, h, a)
+
+        # Crop is always smaller than or equal to original dimensions
+        for w, h, a in [(200, 100, 20), (640, 480, 15), (50, 50, 37)]:
+            ch, cw = _largest_inscribed_crop_size(w, h, a)
+            assert ch <= h and cw <= w
 
 
 class TestContainerTransforms:
