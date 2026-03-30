@@ -495,6 +495,7 @@ INTERPOLATION_MODES = [
     transforms.InterpolationMode.NEAREST_EXACT,
     transforms.InterpolationMode.BILINEAR,
     transforms.InterpolationMode.BICUBIC,
+    transforms.InterpolationMode.LANCZOS,
 ]
 
 
@@ -729,9 +730,22 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
+        if interpolation is transforms.InterpolationMode.LANCZOS and str(device) == "cuda":
+            pytest.skip("Lanczos is not supported on CUDA")
+
+        if interpolation is transforms.InterpolationMode.LANCZOS and not antialias:
+            pytest.skip("Lanczos requires antialias=True")
+
         # In contrast to CPU, there is no native `InterpolationMode.BICUBIC` implementation for uint8 images on CUDA.
         # Internally, it uses the float path. Thus, we need to test with an enormous tolerance here to account for that.
-        atol = 30 if (interpolation is transforms.InterpolationMode.BICUBIC and dtype is torch.uint8) else 1
+        atol = (
+            30
+            if (
+                interpolation in (transforms.InterpolationMode.BICUBIC, transforms.InterpolationMode.LANCZOS)
+                and dtype is torch.uint8
+            )
+            else 1
+        )
         check_cuda_vs_cpu_tolerances = dict(rtol=0, atol=atol / 255 if dtype.is_floating_point else atol)
 
         check_kernel(
@@ -886,7 +900,8 @@ class TestResize:
         expected = F.to_image(F.resize(F.to_pil_image(image), size=size, interpolation=interpolation, **max_size_kwarg))
 
         self._check_output_size(image, actual, size=size, **max_size_kwarg)
-        torch.testing.assert_close(actual, expected, atol=1, rtol=0)
+        atol = 2 if interpolation is transforms.InterpolationMode.LANCZOS else 1
+        torch.testing.assert_close(actual, expected, atol=atol, rtol=0)
 
     def _reference_resize_bounding_boxes(self, bounding_boxes, format, *, size, max_size=None):
         old_height, old_width = bounding_boxes.canvas_size
@@ -992,6 +1007,13 @@ class TestResize:
     def test_functional_pil_antialias_warning(self):
         with pytest.warns(UserWarning, match="Anti-alias option is always applied for PIL Image input"):
             F.resize(make_image_pil(self.INPUT_SIZE), size=self.OUTPUT_SIZES[0], antialias=False)
+
+    def test_lanczos_antialias_false_error(self):
+        image = make_image(self.INPUT_SIZE)
+        with pytest.raises(ValueError, match="InterpolationMode.LANCZOS requires antialias=True"):
+            F.resize_image(
+                image, size=self.OUTPUT_SIZES[0], interpolation=transforms.InterpolationMode.LANCZOS, antialias=False
+            )
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
@@ -1175,6 +1197,11 @@ class TestResize:
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_image_memory_format_consistency(self, interpolation, antialias, memory_format, dtype, device):
+        if interpolation is transforms.InterpolationMode.LANCZOS and str(device) == "cuda":
+            pytest.skip("Lanczos is not supported on CUDA")
+        if interpolation is transforms.InterpolationMode.LANCZOS and not antialias:
+            pytest.skip("Lanczos requires antialias=True")
+
         size = self.OUTPUT_SIZES[0]
 
         input = self._make_image(self.INPUT_SIZE, dtype=dtype, device=device, memory_format=memory_format)
@@ -4573,7 +4600,9 @@ class TestResizedCrop:
             )
         )
 
-        torch.testing.assert_close(actual, expected, atol=1, rtol=0)
+        torch.testing.assert_close(
+            actual, expected, atol=2 if interpolation is transforms.InterpolationMode.LANCZOS else 1, rtol=0
+        )
 
     def _reference_resized_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width, size):
         new_height, new_width = size
