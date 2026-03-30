@@ -2,6 +2,8 @@
 
 #include <torch/headeronly/util/Exception.h>
 
+#include <optional>
+
 #include "common_png.h"
 
 namespace vision {
@@ -78,11 +80,19 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   buf_info.buffer = nullptr;
   buf_info.size = 0;
 
+  // NOTE: libpng uses setjmp/longjmp for error handling. longjmp does not
+  // unwind C++ stack frames, so destructors of objects created after setjmp
+  // won't run. We use std::optional to declare tensors before setjmp while
+  // deferring construction, and explicitly reset them on the error path.
+  std::optional<torch::Tensor> input;
+
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(err_ptr.setjmp_buffer)) {
     /* If we get here, the PNG code has signaled an error.
      * We need to clean up the PNG object and the buffer.
      */
+    input.reset();
+
     if (info_ptr != nullptr) {
       png_destroy_info_struct(png_write, &info_ptr);
     }
@@ -119,7 +129,7 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   int channels = data.size(0);
   int height = data.size(1);
   int width = data.size(2);
-  auto input = data.permute({1, 2, 0}).contiguous();
+  input = data.permute({1, 2, 0}).contiguous();
 
   STD_TORCH_CHECK(
       channels == 1 || channels == 3,
@@ -155,7 +165,7 @@ torch::Tensor encode_png(const torch::Tensor& data, int64_t compression_level) {
   png_write_info(png_write, info_ptr);
 
   auto stride = width * channels;
-  auto ptr = input.data_ptr<uint8_t>();
+  auto ptr = input->data_ptr<uint8_t>();
 
   // Encode PNG file
   for (int y = 0; y < height; ++y) {

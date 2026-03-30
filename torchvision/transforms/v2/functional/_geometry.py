@@ -1,5 +1,6 @@
 import math
 import numbers
+import platform
 import warnings
 from collections.abc import Sequence
 from typing import Any, Optional, TYPE_CHECKING, Union
@@ -282,15 +283,18 @@ def resize(
 # This is an internal helper method for resize_image. We should put it here instead of keeping it
 # inside resize_image due to torchscript.
 # uint8 dtype support for bilinear and bicubic is limited to cpu and
-# according to our benchmarks on eager, non-AVX CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
+# according to our benchmarks on eager, non-AVX x86 CPUs should still prefer u8->f32->interpolate->u8 path for bilinear
 def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
     if interpolation == InterpolationMode.BILINEAR:
-        if torch.compiler.is_compiling():
+        if torch.compiler.is_compiling() or torch.jit.is_scripting():
             return True
         else:
-            return torch.backends.cpu.get_cpu_capability() in ("AVX2", "AVX512")
+            return torch.backends.cpu.get_cpu_capability() in ("AVX2", "AVX512") or platform.machine() in (
+                "aarch64",
+                "arm64",
+            )
 
-    return interpolation == InterpolationMode.BICUBIC
+    return interpolation == InterpolationMode.BICUBIC or interpolation == InterpolationMode.LANCZOS
 
 
 @_register_kernel_internal(resize, torch.Tensor)
@@ -305,8 +309,14 @@ def resize_image(
     interpolation = _check_interpolation(interpolation)
     antialias = False if antialias is None else antialias
     align_corners: Optional[bool] = None
-    if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
+    if (
+        interpolation == InterpolationMode.BILINEAR
+        or interpolation == InterpolationMode.BICUBIC
+        or interpolation == InterpolationMode.LANCZOS
+    ):
         align_corners = False
+        if interpolation == InterpolationMode.LANCZOS and not antialias:
+            raise ValueError("InterpolationMode.LANCZOS requires antialias=True")
     else:
         # The default of antialias is True from 0.17, so we don't warn or
         # error if other interpolation modes are used. This is documented.
@@ -357,7 +367,9 @@ def resize_image(
         )
 
         if need_cast:
-            if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
+            if (
+                interpolation == InterpolationMode.BICUBIC or interpolation == InterpolationMode.LANCZOS
+            ) and dtype == torch.uint8:
                 # This path is hit on non-AVX archs, or on GPU.
                 image = image.clamp_(min=0, max=255)
             if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
@@ -491,8 +503,8 @@ def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tenso
     cy = (y1 + y3) / 2
 
     # Calculate width, height, and rotation angle of the parallelogram
-    wp = torch.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-    hp = torch.sqrt((x4 - x1) ** 2 + (y4 - y1) ** 2)
+    wp = torch.sqrt((x2 - x1).pow(2) + (y2 - y1).pow(2))
+    hp = torch.sqrt((x4 - x1).pow(2) + (y4 - y1).pow(2))
     r12 = torch.atan2(y1 - y2, x2 - x1)
     r14 = torch.atan2(y1 - y4, x4 - x1)
     r_rad = r12 - r14
@@ -2454,6 +2466,8 @@ def elastic_bounding_boxes(
         points = points.ceil_()
     index_xy = points.to(dtype=torch.long)
     index_x, index_y = index_xy[:, 0], index_xy[:, 1]
+    index_x = index_x.clamp(0, inv_grid.shape[2] - 1)
+    index_y = index_y.clamp(0, inv_grid.shape[1] - 1)
 
     # Transform points:
     t_size = torch.tensor(canvas_size[::-1], device=displacement.device, dtype=displacement.dtype)
