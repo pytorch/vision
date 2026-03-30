@@ -497,6 +497,7 @@ INTERPOLATION_MODES = [
     transforms.InterpolationMode.BICUBIC,
     transforms.InterpolationMode.LANCZOS,
 ]
+INTERPOLATION_MODES_STR = ["nearest", "nearest-exact", "bilinear", "bicubic", "lanczos"]
 
 
 def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new_canvas_size=None, clamp=True):
@@ -887,7 +888,7 @@ class TestResize:
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
     # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
-    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
+    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES_STR) - {"nearest"})
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
     def test_image_correctness(self, size, interpolation, use_max_size, fn):
@@ -900,7 +901,7 @@ class TestResize:
         expected = F.to_image(F.resize(F.to_pil_image(image), size=size, interpolation=interpolation, **max_size_kwarg))
 
         self._check_output_size(image, actual, size=size, **max_size_kwarg)
-        atol = 2 if interpolation is transforms.InterpolationMode.LANCZOS else 1
+        atol = 2 if interpolation == "lanczos" else 1
         torch.testing.assert_close(actual, expected, atol=atol, rtol=0)
 
     def _reference_resize_bounding_boxes(self, bounding_boxes, format, *, size, max_size=None):
@@ -1095,6 +1096,26 @@ class TestResize:
         actual = F.resize(
             input, size=self.OUTPUT_SIZES[0], interpolation=pil_modes_mapping[interpolation], antialias=True
         )
+
+        assert_equal(actual, expected)
+
+    @pytest.mark.parametrize(
+        "interpolation_str, interpolation_enum",
+        [
+            ("nearest", transforms.InterpolationMode.NEAREST),
+            ("nearest-exact", transforms.InterpolationMode.NEAREST_EXACT),
+            ("bilinear", transforms.InterpolationMode.BILINEAR),
+            ("bicubic", transforms.InterpolationMode.BICUBIC),
+            ("lanczos", transforms.InterpolationMode.LANCZOS),
+        ],
+    )
+    @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
+    def test_interpolation_str(self, interpolation_str, interpolation_enum, fn, make_input):
+        input = make_input(self.INPUT_SIZE)
+
+        expected = fn(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation_enum, antialias=True)
+        actual = fn(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation_str, antialias=True)
 
         assert_equal(actual, expected)
 
@@ -1582,9 +1603,7 @@ class TestAffine:
     @pytest.mark.parametrize("scale", _CORRECTNESS_AFFINE_KWARGS["scale"])
     @pytest.mark.parametrize("shear", _CORRECTNESS_AFFINE_KWARGS["shear"])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     def test_functional_image_correctness(self, angle, translate, scale, shear, center, interpolation, fill):
         image = make_image(dtype=torch.uint8, device="cpu")
@@ -1615,12 +1634,10 @@ class TestAffine:
         )
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 2 if interpolation is transforms.InterpolationMode.NEAREST else 8
+        assert mae < 2 if interpolation == "nearest" else 8
 
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_image_correctness(self, center, interpolation, fill, seed):
@@ -1639,7 +1656,7 @@ class TestAffine:
         expected = F.to_image(transform(F.to_pil_image(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 2 if interpolation is transforms.InterpolationMode.NEAREST else 8
+        assert mae < 2 if interpolation == "nearest" else 8
 
     def _compute_affine_matrix(self, *, angle, translate, scale, shear, center):
         rot = math.radians(angle)
@@ -2196,9 +2213,7 @@ class TestRotate:
 
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     def test_functional_image_correctness(self, angle, center, interpolation, expand, fill):
@@ -2214,12 +2229,10 @@ class TestRotate:
         )
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
+        assert mae < 1 if interpolation == "nearest" else 6
 
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     @pytest.mark.parametrize("seed", list(range(5)))
@@ -2243,7 +2256,7 @@ class TestRotate:
         expected = F.to_image(transform(F.to_pil_image(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
+        assert mae < 1 if interpolation == "nearest" else 6
 
     def _compute_output_canvas_size(self, *, expand, canvas_size, affine_matrix):
         if not expand:
@@ -4200,6 +4213,9 @@ class TestAutoAugmentTransforms:
     # rotate, are tested in their respective classes. The rest of the tests here are mostly smoke tests.
 
     def _reference_shear_translate(self, image, *, transform_id, magnitude, interpolation, fill):
+        if isinstance(interpolation, str):
+            interpolation = transforms.InterpolationMode(interpolation)
+
         if isinstance(image, PIL.Image.Image):
             input = image
         else:
@@ -4223,9 +4239,7 @@ class TestAutoAugmentTransforms:
 
     @pytest.mark.parametrize("transform_id", ["ShearX", "ShearY", "TranslateX", "TranslateY"])
     @pytest.mark.parametrize("magnitude", [0.3, -0.2, 0.0])
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     @pytest.mark.parametrize("input_type", ["Tensor", "PIL"])
     def test_correctness_shear_translate(self, transform_id, magnitude, interpolation, fill, input_type):
@@ -4258,7 +4272,7 @@ class TestAutoAugmentTransforms:
 
         if "Shear" in transform_id and input_type == "Tensor":
             mae = (actual.float() - expected.float()).abs().mean()
-            assert mae < (12 if interpolation is transforms.InterpolationMode.NEAREST else 5)
+            assert mae < (12 if interpolation == "nearest" else 5)
         else:
             assert_close(actual, expected, rtol=0, atol=1)
 
@@ -4587,7 +4601,7 @@ class TestResizedCrop:
 
     # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
     # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
-    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
+    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES_STR) - {"nearest"})
     def test_functional_image_correctness(self, interpolation):
         image = make_image(self.INPUT_SIZE, dtype=torch.uint8)
 
@@ -4600,9 +4614,7 @@ class TestResizedCrop:
             )
         )
 
-        torch.testing.assert_close(
-            actual, expected, atol=2 if interpolation is transforms.InterpolationMode.LANCZOS else 1, rtol=0
-        )
+        torch.testing.assert_close(actual, expected, atol=2 if interpolation == "lanczos" else 1, rtol=0)
 
     def _reference_resized_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width, size):
         new_height, new_width = size
@@ -5307,9 +5319,7 @@ class TestPerspective:
             transforms.RandomPerspective(distortion_scale=distortion_scale)
 
     @pytest.mark.parametrize("coefficients", COEFFICIENTS)
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     def test_image_functional_correctness(self, coefficients, interpolation, fill):
         image = make_image(dtype=torch.uint8, device="cpu")
@@ -5328,7 +5338,7 @@ class TestPerspective:
             )
         )
 
-        if interpolation is transforms.InterpolationMode.BILINEAR:
+        if interpolation == "bilinear":
             abs_diff = (actual.float() - expected.float()).abs()
             assert (abs_diff > 1).float().mean() < 7e-2
             mae = abs_diff.mean()

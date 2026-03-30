@@ -91,7 +91,7 @@ class _AutoAugmentBase(Transform):
         image: ImageOrVideo,
         transform_id: str,
         magnitude: float,
-        interpolation: Union[_InterpolationStr, InterpolationMode, int],
+        interpolation: InterpolationMode,
         fill: dict[Union[type, str], _FillTypeJIT],
     ) -> ImageOrVideo:
         # Note: this cast is wrong and is only here to make mypy happy (it disagrees with torchscript)

@@ -290,6 +290,8 @@ def resize(
     if torch.jit.is_scripting():
         return resize_image(inpt, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias)
 
+    interpolation = _parse_interpolation(interpolation)
+
     _log_api_usage_once(resize)
 
     kernel = _get_kernel(resize, type(inpt))
@@ -652,6 +654,8 @@ def affine(
             fill=fill,
             center=center,
         )
+
+    interpolation = _parse_interpolation(interpolation)
 
     _log_api_usage_once(affine)
 
@@ -1371,6 +1375,8 @@ def rotate(
     if torch.jit.is_scripting():
         return rotate_image(inpt, angle=angle, interpolation=interpolation, expand=expand, fill=fill, center=center)
 
+    interpolation = _parse_interpolation(interpolation)
+
     _log_api_usage_once(rotate)
 
     kernel = _get_kernel(rotate, type(inpt))
@@ -1969,6 +1975,8 @@ def perspective(
             coefficients=coefficients,
         )
 
+    interpolation = _parse_interpolation(interpolation)
+
     _log_api_usage_once(perspective)
 
     kernel = _get_kernel(perspective, type(inpt))
@@ -2320,6 +2328,8 @@ def elastic(
     """See :class:`~torchvision.transforms.v2.ElasticTransform` for details."""
     if torch.jit.is_scripting():
         return elastic_image(inpt, displacement=displacement, interpolation=interpolation, fill=fill)
+
+    interpolation = _parse_interpolation(interpolation)
 
     _log_api_usage_once(elastic)
 
@@ -2724,6 +2734,8 @@ def resized_crop(
             interpolation=interpolation,
             antialias=antialias,
         )
+
+    interpolation = _parse_interpolation(interpolation)
 
     _log_api_usage_once(resized_crop)
 
