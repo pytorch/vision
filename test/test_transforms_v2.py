@@ -6888,7 +6888,7 @@ def test_I16_to_tensor(f):
     cm = pytest.warns(UserWarning, match="deprecated") if f is F.to_tensor else contextlib.nullcontext()
     with cm:
         out = f(I16_pil_img)
-    assert out.dtype == torch.int32
+    assert out.dtype == torch.uint16
 
 
 @needs_cvcuda
