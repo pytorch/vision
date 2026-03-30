@@ -11,7 +11,7 @@ from torchvision import transforms as _transforms, tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._geometry import _InterpolationStr, _parse_interpolation
+from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.functional._utils import _FillType, _is_cvcuda_available, _is_cvcuda_tensor
 
 from ._transform import _RandomApplyTransform
@@ -148,7 +148,7 @@ class Resize(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int], None],
-        interpolation: Union[_InterpolationStr, InterpolationMode, int] = "bilinear",
+        interpolation: Union[str, InterpolationMode, int] = "bilinear",
         max_size: Optional[int] = None,
         antialias: Optional[bool] = True,
     ) -> None:
@@ -167,7 +167,7 @@ class Resize(Transform):
             )
         self.size = size
 
-        self.interpolation = _parse_interpolation(interpolation)
+        self.interpolation = _check_interpolation(interpolation)
         self.max_size = max_size
         self.antialias = antialias
 
@@ -268,7 +268,7 @@ class RandomResizedCrop(Transform):
         size: Union[int, Sequence[int]],
         scale: tuple[float, float] = (0.08, 1.0),
         ratio: tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
-        interpolation: Union[_InterpolationStr, InterpolationMode, int] = "bilinear",
+        interpolation: Union[str, InterpolationMode, int] = "bilinear",
         antialias: Optional[bool] = True,
     ) -> None:
         super().__init__()
@@ -283,7 +283,7 @@ class RandomResizedCrop(Transform):
 
         self.scale = scale
         self.ratio = ratio
-        self.interpolation = _parse_interpolation(interpolation)
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
@@ -631,14 +631,14 @@ class RandomRotation(Transform):
     def __init__(
         self,
         degrees: Union[numbers.Number, Sequence],
-        interpolation: Union[_InterpolationStr, InterpolationMode, int] = "nearest",
+        interpolation: Union[str, InterpolationMode, int] = "nearest",
         expand: bool = False,
         center: Optional[list[float]] = None,
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = 0,
     ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
-        self.interpolation = _parse_interpolation(interpolation)
+        self.interpolation = _check_interpolation(interpolation)
         self.expand = expand
 
         self.fill = fill
@@ -718,7 +718,7 @@ class RandomAffine(Transform):
         translate: Optional[Sequence[float]] = None,
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
-        interpolation: Union[_InterpolationStr, InterpolationMode, int] = "nearest",
+        interpolation: Union[str, InterpolationMode, int] = "nearest",
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = 0,
         center: Optional[list[float]] = None,
     ) -> None:
@@ -742,7 +742,7 @@ class RandomAffine(Transform):
         else:
             self.shear = shear
 
-        self.interpolation = _parse_interpolation(interpolation)
+        self.interpolation = _check_interpolation(interpolation)
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -979,7 +979,7 @@ class RandomPerspective(_RandomApplyTransform):
         self,
         distortion_scale: float = 0.5,
         p: float = 0.5,
-        interpolation: Union[_InterpolationStr, InterpolationMode, int] = "bilinear",
+        interpolation: Union[str, InterpolationMode, int] = "bilinear",
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = 0,
     ) -> None:
         super().__init__(p=p)
@@ -988,7 +988,7 @@ class RandomPerspective(_RandomApplyTransform):
             raise ValueError("Argument distortion_scale value should be between 0 and 1")
 
         self.distortion_scale = distortion_scale
-        self.interpolation = _parse_interpolation(interpolation)
+        self.interpolation = _check_interpolation(interpolation)
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -1086,14 +1086,14 @@ class ElasticTransform(Transform):
         self,
         alpha: Union[float, Sequence[float]] = 50.0,
         sigma: Union[float, Sequence[float]] = 5.0,
-        interpolation: Union[_InterpolationStr, InterpolationMode, int] = "bilinear",
+        interpolation: Union[str, InterpolationMode, int] = "bilinear",
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = 0,
     ) -> None:
         super().__init__()
         self.alpha = _setup_number_or_seq(alpha, "alpha")
         self.sigma = _setup_number_or_seq(sigma, "sigma")
 
-        self.interpolation = _parse_interpolation(interpolation)
+        self.interpolation = _check_interpolation(interpolation)
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -1304,13 +1304,13 @@ class ScaleJitter(Transform):
         self,
         target_size: tuple[int, int],
         scale_range: tuple[float, float] = (0.1, 2.0),
-        interpolation: Union[_InterpolationStr, InterpolationMode, int] = "bilinear",
+        interpolation: Union[str, InterpolationMode, int] = "bilinear",
         antialias: Optional[bool] = True,
     ):
         super().__init__()
         self.target_size = target_size
         self.scale_range = scale_range
-        self.interpolation = _parse_interpolation(interpolation)
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
@@ -1374,13 +1374,13 @@ class RandomShortestSize(Transform):
         self,
         min_size: Union[list[int], tuple[int], int],
         max_size: Optional[int] = None,
-        interpolation: Union[_InterpolationStr, InterpolationMode, int] = "bilinear",
+        interpolation: Union[str, InterpolationMode, int] = "bilinear",
         antialias: Optional[bool] = True,
     ):
         super().__init__()
         self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
         self.max_size = max_size
-        self.interpolation = _parse_interpolation(interpolation)
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
@@ -1458,13 +1458,13 @@ class RandomResize(Transform):
         self,
         min_size: int,
         max_size: int,
-        interpolation: Union[_InterpolationStr, InterpolationMode, int] = "bilinear",
+        interpolation: Union[str, InterpolationMode, int] = "bilinear",
         antialias: Optional[bool] = True,
     ) -> None:
         super().__init__()
         self.min_size = min_size
         self.max_size = max_size
-        self.interpolation = _parse_interpolation(interpolation)
+        self.interpolation = _check_interpolation(interpolation)
         self.antialias = antialias
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
