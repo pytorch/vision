@@ -90,7 +90,7 @@ class _AutoAugmentBase(Transform):
         image: ImageOrVideo,
         transform_id: str,
         magnitude: float,
-        interpolation: InterpolationMode,
+        interpolation: Union[str, InterpolationMode, int],
         fill: dict[Union[type, str], _FillTypeJIT],
     ) -> ImageOrVideo:
         # Note: this cast is wrong and is only here to make mypy happy (it disagrees with torchscript)
@@ -188,7 +188,7 @@ class AutoAugment(_AutoAugmentBase):
         policy (AutoAugmentPolicy, optional): Desired policy enum defined by
             :class:`torchvision.transforms.autoaugment.AutoAugmentPolicy`. Default is ``AutoAugmentPolicy.IMAGENET``.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
@@ -370,7 +370,7 @@ class RandAugment(_AutoAugmentBase):
         magnitude (int, optional): Magnitude for all the transformations.
         num_magnitude_bins (int, optional): The number of different magnitude values.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
@@ -455,7 +455,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
     Args:
         num_magnitude_bins (int, optional): The number of different magnitude values.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
@@ -533,7 +533,7 @@ class AugMix(_AutoAugmentBase):
         alpha (float, optional): The hyperparameter for the probability distributions. Default is ``1.0``.
         all_ops (bool, optional): Use all operations (including brightness, contrast, color and sharpness). Default is ``True``.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.

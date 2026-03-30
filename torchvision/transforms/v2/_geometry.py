@@ -97,7 +97,7 @@ class Resize(Transform):
             .. note::
                 In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"`` and ``"hamming"`` are only supported for PIL images.
@@ -230,7 +230,7 @@ class RandomResizedCrop(Transform):
         ratio (tuple of float, optional): lower and upper bounds for the random aspect ratio of the crop, before
             resizing.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"`` and ``"hamming"`` are only supported for PIL images.
@@ -593,7 +593,7 @@ class RandomRotation(Transform):
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be [-degrees, +degrees]. ``[90, 90]`` will rotate the image by 90 degrees anticlockwise.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
@@ -688,7 +688,7 @@ class RandomAffine(Transform):
             an x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
             Will not apply shear by default.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
@@ -956,7 +956,7 @@ class RandomPerspective(_RandomApplyTransform):
             Default is 0.5.
         p (float, optional): probability of the input being transformed. Default is 0.5.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
@@ -1063,7 +1063,7 @@ class ElasticTransform(Transform):
         sigma (float or sequence of floats, optional): Smoothness of displacements.
             Default is 5.0. A single value is ``[sigma, sigma]``.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
@@ -1268,7 +1268,7 @@ class ScaleJitter(Transform):
             e.g. ``min(target_size[0] / width, target_size[1] / height)``.
         scale_range (tuple of float, optional): Minimum and maximum of the scale range. Default, ``(0.1, 2.0)``.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"`` and ``"hamming"`` are only supported for PIL images.
@@ -1337,7 +1337,7 @@ class RandomShortestSize(Transform):
         min_size (int or sequence of int): Minimum spatial size. Single integer value or a sequence of integer values.
         max_size (int, optional): Maximum spatial size. Default, None.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"`` and ``"hamming"`` are only supported for PIL images.
@@ -1420,7 +1420,7 @@ class RandomResize(Transform):
         min_size (int): Minimum output size for random sampling
         max_size (int): Maximum output size for random sampling
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`.
+            :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
             ``"box"`` and ``"hamming"`` are only supported for PIL images.

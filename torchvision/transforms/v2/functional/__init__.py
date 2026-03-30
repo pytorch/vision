@@ -1,4 +1,4 @@
-from torchvision.transforms import InterpolationMode  # usort: skip
+from torchvision.transforms.functional import InterpolationMode  # usort: skip
 
 from ._utils import is_pure_tensor, register_kernel  # usort: skip
 
