@@ -3,7 +3,7 @@ import numbers
 import platform
 import warnings
 from collections.abc import Sequence
-from typing import Any, Optional, TYPE_CHECKING, Union
+from typing import Any, Literal, Optional, TYPE_CHECKING, Union
 
 import PIL.Image
 import torch
@@ -41,6 +41,11 @@ if TYPE_CHECKING:
     import cvcuda  # type: ignore[import-not-found]
 
 
+_INTERPOLATION_STRING_TO_MODE: dict[str, InterpolationMode] = {m.value: m for m in InterpolationMode}
+
+_InterpolationStr = Literal["nearest", "nearest-exact", "bilinear", "bicubic", "box", "hamming", "lanczos"]
+
+
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
     if isinstance(interpolation, int):
         interpolation = _interpolation_modes_from_int(interpolation)
@@ -50,6 +55,17 @@ def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> Interp
             f"but got {interpolation}."
         )
     return interpolation
+
+
+def _parse_interpolation(interpolation: Union[_InterpolationStr, InterpolationMode, int]) -> InterpolationMode:
+    if isinstance(interpolation, str):
+        if interpolation not in _INTERPOLATION_STRING_TO_MODE:
+            raise ValueError(
+                f"Invalid interpolation mode: '{interpolation}'. "
+                f"Supported string values are: {list(_INTERPOLATION_STRING_TO_MODE.keys())}."
+            )
+        return _INTERPOLATION_STRING_TO_MODE[interpolation]
+    return _check_interpolation(interpolation)
 
 
 def horizontal_flip(inpt: torch.Tensor) -> torch.Tensor:
