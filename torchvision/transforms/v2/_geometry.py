@@ -11,7 +11,6 @@ from torchvision import transforms as _transforms, tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.functional._utils import _FillType, _is_cvcuda_available, _is_cvcuda_tensor
 
 from ._transform import _RandomApplyTransform
@@ -101,10 +100,9 @@ class Resize(Transform):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
-            Default is ``"bilinear"``.
-            If input is Tensor, only ``"nearest"``, ``"nearest-exact"``,
-            ``"bilinear"``, ``"bicubic"`` and ``"lanczos"`` are supported.
+            ``"box"`` and ``"hamming"`` are only supported for PIL images.
             ``"lanczos"`` is only supported on CPU and requires ``antialias=True``.
+            Default is ``"bilinear"``.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         max_size (int, optional): The maximum allowed for the longer edge of
@@ -167,7 +165,7 @@ class Resize(Transform):
             )
         self.size = size
 
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.max_size = max_size
         self.antialias = antialias
 
@@ -235,10 +233,9 @@ class RandomResizedCrop(Transform):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
-            Default is ``"bilinear"``.
-            If input is Tensor, only ``"nearest"``, ``"nearest-exact"``,
-            ``"bilinear"``, ``"bicubic"`` and ``"lanczos"`` are supported.
+            ``"box"`` and ``"hamming"`` are only supported for PIL images.
             ``"lanczos"`` is only supported on CPU and requires ``antialias=True``.
+            Default is ``"bilinear"``.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         antialias (bool, optional): Whether to apply antialiasing.
@@ -283,7 +280,7 @@ class RandomResizedCrop(Transform):
 
         self.scale = scale
         self.ratio = ratio
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
         self._log_ratio = torch.log(torch.tensor(self.ratio))
@@ -599,8 +596,8 @@ class RandomRotation(Transform):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
             Default is ``"nearest"``.
-            If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         expand (bool, optional): Optional expansion flag.
@@ -638,7 +635,7 @@ class RandomRotation(Transform):
     ) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.expand = expand
 
         self.fill = fill
@@ -694,8 +691,8 @@ class RandomAffine(Transform):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
             Default is ``"nearest"``.
-            If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
@@ -742,7 +739,7 @@ class RandomAffine(Transform):
         else:
             self.shear = shear
 
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -962,8 +959,8 @@ class RandomPerspective(_RandomApplyTransform):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
             Default is ``"bilinear"``.
-            If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
@@ -988,7 +985,7 @@ class RandomPerspective(_RandomApplyTransform):
             raise ValueError("Argument distortion_scale value should be between 0 and 1")
 
         self.distortion_scale = distortion_scale
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -1069,8 +1066,8 @@ class ElasticTransform(Transform):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
             Default is ``"bilinear"``.
-            If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (number or tuple or dict, optional): Pixel fill value used when the  ``padding_mode`` is constant.
@@ -1093,7 +1090,7 @@ class ElasticTransform(Transform):
         self.alpha = _setup_number_or_seq(alpha, "alpha")
         self.sigma = _setup_number_or_seq(sigma, "sigma")
 
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -1274,10 +1271,9 @@ class ScaleJitter(Transform):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
-            Default is ``"bilinear"``.
-            If input is Tensor, only ``"nearest"``, ``"nearest-exact"``,
-            ``"bilinear"``, ``"bicubic"`` and ``"lanczos"`` are supported.
+            ``"box"`` and ``"hamming"`` are only supported for PIL images.
             ``"lanczos"`` is only supported on CPU and requires ``antialias=True``.
+            Default is ``"bilinear"``.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         antialias (bool, optional): Whether to apply antialiasing.
@@ -1310,7 +1306,7 @@ class ScaleJitter(Transform):
         super().__init__()
         self.target_size = target_size
         self.scale_range = scale_range
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
@@ -1344,10 +1340,9 @@ class RandomShortestSize(Transform):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
-            Default is ``"bilinear"``.
-            If input is Tensor, only ``"nearest"``, ``"nearest-exact"``,
-            ``"bilinear"``, ``"bicubic"`` and ``"lanczos"`` are supported.
+            ``"box"`` and ``"hamming"`` are only supported for PIL images.
             ``"lanczos"`` is only supported on CPU and requires ``antialias=True``.
+            Default is ``"bilinear"``.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         antialias (bool, optional): Whether to apply antialiasing.
@@ -1380,7 +1375,7 @@ class RandomShortestSize(Transform):
         super().__init__()
         self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
         self.max_size = max_size
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
@@ -1428,10 +1423,9 @@ class RandomResize(Transform):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
-            Default is ``"bilinear"``.
-            If input is Tensor, only ``"nearest"``, ``"nearest-exact"``,
-            ``"bilinear"``, ``"bicubic"`` and ``"lanczos"`` are supported.
+            ``"box"`` and ``"hamming"`` are only supported for PIL images.
             ``"lanczos"`` is only supported on CPU and requires ``antialias=True``.
+            Default is ``"bilinear"``.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         antialias (bool, optional): Whether to apply antialiasing.
@@ -1464,7 +1458,7 @@ class RandomResize(Transform):
         super().__init__()
         self.min_size = min_size
         self.max_size = max_size
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.antialias = antialias
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:

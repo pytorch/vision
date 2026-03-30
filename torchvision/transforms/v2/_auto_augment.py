@@ -8,7 +8,6 @@ from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms import _functional_tensor as _FT
 from torchvision.transforms.v2 import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.functional._meta import get_size
 from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
@@ -26,7 +25,7 @@ class _AutoAugmentBase(Transform):
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = None,
     ) -> None:
         super().__init__()
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -192,7 +191,7 @@ class AutoAugment(_AutoAugmentBase):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
-            If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
@@ -374,7 +373,7 @@ class RandAugment(_AutoAugmentBase):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
-            If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
@@ -459,7 +458,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
-            If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
@@ -537,7 +536,7 @@ class AugMix(_AutoAugmentBase):
             :class:`torchvision.transforms.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
             ``"box"``, ``"hamming"``, and ``"lanczos"``.
-            If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed

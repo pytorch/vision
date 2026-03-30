@@ -137,11 +137,17 @@ class Transform(nn.Module):
         # Overwrite this method on the v2 transform class if the above is not sufficient. For example, this might happen
         # if the v2 transform introduced new parameters that are not support by the v1 transform.
         common_attrs = nn.Module().__dict__.keys()
-        return {
+        params = {
             attr: value
             for attr, value in self.__dict__.items()
             if not attr.startswith("_") and attr not in common_attrs
         }
+        # v1 transforms don't support string interpolation modes, so convert them.
+        if "interpolation" in params and isinstance(params["interpolation"], str):
+            from torchvision.transforms import InterpolationMode
+
+            params["interpolation"] = InterpolationMode(params["interpolation"])
+        return params
 
     def __prepare_scriptable__(self) -> nn.Module:
         # This method is called early on when `torch.jit.script`'ing an `nn.Module` instance. If it succeeds, the return
