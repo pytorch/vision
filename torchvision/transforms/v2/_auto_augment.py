@@ -190,6 +190,8 @@ class AutoAugment(_AutoAugmentBase):
             :class:`torchvision.transforms.autoaugment.AutoAugmentPolicy`. Default is ``AutoAugmentPolicy.IMAGENET``.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
+            Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
+            ``"box"``, ``"hamming"``, and ``"lanczos"``.
             If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
@@ -370,6 +372,8 @@ class RandAugment(_AutoAugmentBase):
         num_magnitude_bins (int, optional): The number of different magnitude values.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
+            Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
+            ``"box"``, ``"hamming"``, and ``"lanczos"``.
             If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
@@ -453,6 +457,8 @@ class TrivialAugmentWide(_AutoAugmentBase):
         num_magnitude_bins (int, optional): The number of different magnitude values.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
+            Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
+            ``"box"``, ``"hamming"``, and ``"lanczos"``.
             If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
@@ -529,6 +535,8 @@ class AugMix(_AutoAugmentBase):
         all_ops (bool, optional): Use all operations (including brightness, contrast, color and sharpness). Default is ``True``.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
+            Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
+            ``"box"``, ``"hamming"``, and ``"lanczos"``.
             If input is Tensor, only ``"nearest"``, ``"bilinear"`` are supported.
             The corresponding ``InterpolationMode`` enum values and Pillow integer
             constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
