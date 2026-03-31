@@ -1,5 +1,6 @@
 #pragma once
 
+#include "box_iou_rotated.h"
 #include "deform_conv2d.h"
 #include "nms.h"
 #include "ps_roi_align.h"

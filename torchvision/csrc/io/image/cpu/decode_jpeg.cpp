@@ -3,6 +3,8 @@
 #include "common_jpeg.h"
 #include "exif.h"
 
+#include <optional>
+
 namespace vision {
 namespace image {
 
@@ -11,7 +13,7 @@ torch::Tensor decode_jpeg(
     const torch::Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       false, "decode_jpeg: torchvision not compiled with libjpeg support");
 }
 #else
@@ -141,17 +143,28 @@ torch::Tensor decode_jpeg(
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
 
+  // NOTE: libjpeg uses setjmp/longjmp for error handling. longjmp does not
+  // unwind C++ stack frames, so destructors of objects created after setjmp
+  // won't run. We use std::optional to declare tensors before setjmp while
+  // deferring construction, and explicitly reset them on the error path.
+  std::optional<torch::Tensor> tensor;
+  std::optional<torch::Tensor> cmyk_line_tensor;
+
   auto datap = data.data_ptr<uint8_t>();
   // Setup decompression structure
   cinfo.err = jpeg_std_error(&jerr.pub);
   jerr.pub.error_exit = torch_jpeg_error_exit;
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(jerr.setjmp_buffer)) {
+    // Release any tensors that may have been allocated after setjmp.
+    cmyk_line_tensor.reset();
+    tensor.reset();
+
     /* If we get here, the JPEG code has signaled an error.
      * We need to clean up the JPEG object.
      */
     jpeg_destroy_decompress(&cinfo);
-    TORCH_CHECK(false, jerr.jpegLastErrorMsg);
+    STD_TORCH_CHECK(false, jerr.jpegLastErrorMsg);
   }
 
   jpeg_create_decompress(&cinfo);
@@ -192,7 +205,8 @@ torch::Tensor decode_jpeg(
        */
       default:
         jpeg_destroy_decompress(&cinfo);
-        TORCH_CHECK(false, "The provided mode is not supported for JPEG files");
+        STD_TORCH_CHECK(
+            false, "The provided mode is not supported for JPEG files");
     }
 
     jpeg_calc_output_dimensions(&cinfo);
@@ -209,10 +223,10 @@ torch::Tensor decode_jpeg(
   int width = cinfo.output_width;
 
   int stride = width * channels;
-  auto tensor =
+  tensor =
       torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
-  auto ptr = tensor.data_ptr<uint8_t>();
-  torch::Tensor cmyk_line_tensor;
+  auto ptr = tensor->data_ptr<uint8_t>();
+
   if (cmyk_to_rgb_or_gray) {
     cmyk_line_tensor = torch::empty({int64_t(width), 4}, torch::kU8);
   }
@@ -223,7 +237,7 @@ torch::Tensor decode_jpeg(
      * more than one scanline at a time if that's more convenient.
      */
     if (cmyk_to_rgb_or_gray) {
-      auto cmyk_line_ptr = cmyk_line_tensor.data_ptr<uint8_t>();
+      auto cmyk_line_ptr = cmyk_line_tensor->data_ptr<uint8_t>();
       jpeg_read_scanlines(&cinfo, &cmyk_line_ptr, 1);
 
       if (channels == 3) {
@@ -239,7 +253,7 @@ torch::Tensor decode_jpeg(
 
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
-  auto output = tensor.permute({2, 0, 1});
+  auto output = tensor->permute({2, 0, 1});
 
   if (apply_exif_orientation) {
     return exif_orientation_transform(output, exif_orientation);
