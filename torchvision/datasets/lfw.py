@@ -54,6 +54,8 @@ class _LFW(VisionDataset):
             raise ValueError(
                 "LFW dataset is no longer available for automatic download."
                 "Please download the dataset manually and place it in the specified directory"
+                "A commonly used mirror is available at: "
+                "https://www.kaggle.com/datasets/jessicali9530/lfw-dataset"
             )
             self.download()
 
