@@ -771,7 +771,7 @@ class TestMultiScaleRoIAlign:
 
 class TestNMS:
     @classmethod
-    def _reference_nms(cls, boxes, scores, iou_threshold):
+    def _reference_aligned_nms(cls, boxes, scores, iou_threshold):
         """
         Args:
             boxes: boxes in corner-form
@@ -819,7 +819,7 @@ class TestNMS:
         torch.random.manual_seed(seed)
         err_msg = "NMS incompatible between CPU and reference implementation for IoU={}"
         boxes, scores = self._create_tensors_with_iou(1000, iou)
-        keep_ref = self._reference_nms(boxes, scores, iou)
+        keep_ref = self._reference_aligned_nms(boxes, scores, iou)
         keep = ops.nms(boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, msg=err_msg.format(iou))
 
@@ -2027,7 +2027,7 @@ class TestNMSRotated:
         rotated_boxes[:, 2] = boxes[:, 2] - boxes[:, 0]
         rotated_boxes[:, 3] = boxes[:, 3] - boxes[:, 1]
 
-        keep_ref = TestNMS._reference_nms(boxes, scores, iou)
+        keep_ref = TestNMS._reference_aligned_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
         keep_non_rotated = ops.nms(boxes, scores, iou)
@@ -2046,7 +2046,7 @@ class TestNMSRotated:
         rotated_boxes[:, 3] = boxes[:, 2] - boxes[:, 0]
         rotated_boxes[:, 4] = 90
 
-        keep_ref = TestNMS._reference_nms(boxes, scores, iou)
+        keep_ref = TestNMS._reference_aligned_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
         keep_non_rotated = ops.nms(boxes, scores, iou)
@@ -2064,7 +2064,7 @@ class TestNMSRotated:
         rotated_boxes[:, 3] = boxes[:, 3] - boxes[:, 1]
         rotated_boxes[:, 4] = 180
 
-        keep_ref = TestNMS._reference_nms(boxes, scores, iou)
+        keep_ref = TestNMS._reference_aligned_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
         keep_non_rotated = ops.nms(boxes, scores, iou)
