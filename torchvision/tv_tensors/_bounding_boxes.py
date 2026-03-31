@@ -124,14 +124,14 @@ class BoundingBoxes(TVTensor):
         format: BoundingBoxFormat | str | None = None,
         canvas_size: tuple[int, int] | None = None,
         clamping_mode: CLAMPING_MODE_TYPE = None,
-        check_dims: bool | None = None,
+        check_dims: bool = True,
     ) -> Self:
         return self._wrap(
             tensor,
             format=format if format is not None else self.format,
             canvas_size=canvas_size if canvas_size is not None else self.canvas_size,
             clamping_mode=clamping_mode if clamping_mode is not None else self.clamping_mode,
-            check_dims=False,
+            check_dims=check_dims,
         )
 
     def __new__(
