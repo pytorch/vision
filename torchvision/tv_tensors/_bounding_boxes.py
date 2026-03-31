@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence
 
 from enum import Enum
 from typing import Any, Optional
+from typing_extensions import Self
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -98,7 +99,7 @@ class BoundingBoxes(TVTensor):
     clamping_mode: CLAMPING_MODE_TYPE
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat | str, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE = "soft", check_dims: bool = True) -> BoundingBoxes:  # type: ignore[override]
+    def _wrap(cls, tensor: torch.Tensor, *, format: BoundingBoxFormat | str, canvas_size: tuple[int, int], clamping_mode: CLAMPING_MODE_TYPE = "soft", check_dims: bool = True) -> Self:  # type: ignore[override]
         if check_dims:
             if tensor.ndim == 1:
                 tensor = tensor.unsqueeze(0)
@@ -124,8 +125,8 @@ class BoundingBoxes(TVTensor):
         canvas_size: tuple[int, int] | None = None,
         clamping_mode: CLAMPING_MODE_TYPE = None,
         check_dims: bool | None = None,
-    ) -> BoundingBoxes:
-        return BoundingBoxes._wrap(
+    ) -> Self:
+        return self._wrap(
             tensor,
             format=format if format is not None else self.format,
             canvas_size=canvas_size if canvas_size is not None else self.canvas_size,
