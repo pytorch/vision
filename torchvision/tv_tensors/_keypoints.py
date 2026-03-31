@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
+from typing_extensions import Self
 
 import torch
 from torch.utils._pytree import tree_flatten
@@ -57,7 +58,7 @@ class KeyPoints(TVTensor):
     canvas_size: tuple[int, int]
 
     @classmethod
-    def _wrap(cls, tensor: torch.Tensor, *, canvas_size: tuple[int, int], check_dims: bool = True) -> KeyPoints:  # type: ignore[override]
+    def _wrap(cls, tensor: torch.Tensor, *, canvas_size: tuple[int, int], check_dims: bool = True) -> Self:  # type: ignore[override]
         if check_dims:
             if tensor.ndim == 1:
                 tensor = tensor.unsqueeze(0)
@@ -67,8 +68,8 @@ class KeyPoints(TVTensor):
         points.canvas_size = canvas_size
         return points
 
-    def __wrap__(self, tensor: torch.Tensor, *, canvas_size: tuple[int, int] | None = None) -> KeyPoints:
-        return KeyPoints._wrap(
+    def __wrap__(self, tensor: torch.Tensor, *, canvas_size: tuple[int, int] | None = None) -> Self:
+        return self._wrap(
             tensor,
             canvas_size=canvas_size if canvas_size is not None else self.canvas_size,
             check_dims=False,
