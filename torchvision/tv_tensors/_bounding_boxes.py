@@ -124,7 +124,7 @@ class BoundingBoxes(TVTensor):
         format: BoundingBoxFormat | str | None = None,
         canvas_size: tuple[int, int] | None = None,
         clamping_mode: CLAMPING_MODE_TYPE = None,
-        check_dims: bool = True,
+        check_dims: bool = False,
     ) -> Self:
         return self._wrap(
             tensor,
