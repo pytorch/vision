@@ -163,11 +163,6 @@ class BoundingBoxes(TVTensor):
         # something like some_xyxy_bbox + some_xywh_bbox; we don't guard against those cases.
         flat_params, _ = tree_flatten(args + (tuple(kwargs.values()) if kwargs else ()))  # type: ignore[operator]
         first_bbox_from_args = next(x for x in flat_params if isinstance(x, BoundingBoxes))
-        format, canvas_size, clamping_mode = (
-            first_bbox_from_args.format,
-            first_bbox_from_args.canvas_size,
-            first_bbox_from_args.clamping_mode,
-        )
 
         if isinstance(output, torch.Tensor) and not isinstance(output, BoundingBoxes):
             output = first_bbox_from_args.__wrap__(output)
