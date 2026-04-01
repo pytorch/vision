@@ -920,19 +920,23 @@ class TestNMS:
         assert_equal(keep32, keep16)
 
     @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.parametrize("rotated", (False, True))
     @pytest.mark.opcheck_only_one()
-    def test_batched_nms_implementations(self, seed):
+    def test_batched_nms_implementations(self, seed, rotated):
         """Make sure that both implementations of batched_nms yield identical results"""
         torch.random.manual_seed(seed)
 
         num_boxes = 1000
         iou_threshold = 0.9
 
-        boxes = torch.cat((torch.rand(num_boxes, 2), torch.rand(num_boxes, 2) + 10), dim=1)
-        assert max(boxes[:, 0]) < min(boxes[:, 2])  # x1 < x2
-        assert max(boxes[:, 1]) < min(boxes[:, 3])  # y1 < y2
+        if rotated:
+            _, boxes, scores = self._create_rotated_boxes(num_boxes)
+        else:
+            boxes = torch.cat((torch.rand(num_boxes, 2), torch.rand(num_boxes, 2) + 10), dim=1)
+            assert max(boxes[:, 0]) < min(boxes[:, 2])  # x1 < x2
+            assert max(boxes[:, 1]) < min(boxes[:, 3])  # y1 < y2
+            scores = torch.rand(num_boxes)
 
-        scores = torch.rand(num_boxes)
         idxs = torch.randint(0, 4, size=(num_boxes,))
         keep_vanilla = ops.boxes._batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
         keep_trick = ops.boxes._batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
