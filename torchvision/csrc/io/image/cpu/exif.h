@@ -58,6 +58,7 @@ direct,
 #include <png.h>
 #endif
 
+#include <torch/headeronly/util/Exception.h>
 #include <torch/types.h>
 
 namespace vision {
@@ -78,7 +79,7 @@ class ExifDataReader {
     return _size;
   }
   const unsigned char& operator[](size_t index) const {
-    TORCH_CHECK(index >= 0 && index < _size);
+    STD_TORCH_CHECK(index >= 0 && index < _size);
     return _ptr[index];
   }
 

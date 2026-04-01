@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 project(torchvision)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 file(STRINGS version.txt TORCHVISION_VERSION)
 
 option(WITH_CUDA "Enable CUDA support" OFF)
@@ -84,9 +84,9 @@ include(CMakePackageConfigHelpers)
 
 set(TVCPP torchvision/csrc)
 list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/io/image/cpu/giflib ${TVCPP}/models ${TVCPP}/ops
-  ${TVCPP}/ops/autograd ${TVCPP}/ops/cpu ${TVCPP}/io/image/cuda)
+  ${TVCPP}/ops/cpu ${TVCPP}/io/image/cuda)
 if(WITH_CUDA)
-    list(APPEND ALLOW_LISTED ${TVCPP}/ops/cuda ${TVCPP}/ops/autocast)
+    list(APPEND ALLOW_LISTED ${TVCPP}/ops/cuda)
 endif()
 if(WITH_MPS)
     list(APPEND ALLOW_LISTED ${TVCPP}/ops/mps)

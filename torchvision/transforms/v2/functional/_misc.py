@@ -428,8 +428,8 @@ def _get_sanitize_bounding_boxes_mask(
         dy12 = bounding_boxes[..., 1] - bounding_boxes[..., 3]
         dx23 = bounding_boxes[..., 3] - bounding_boxes[..., 5]
         dy23 = bounding_boxes[..., 4] - bounding_boxes[..., 6]
-        ws = torch.sqrt(dx12**2 + dy12**2)
-        hs = torch.sqrt(dx23**2 + dy23**2)
+        ws = torch.sqrt(dx12.pow(2) + dy12.pow(2))
+        hs = torch.sqrt(dx23.pow(2) + dy23.pow(2))
     else:
         ws, hs = bounding_boxes[:, 2] - bounding_boxes[:, 0], bounding_boxes[:, 3] - bounding_boxes[:, 1]
     valid = (ws >= min_size) & (hs >= min_size) & (bounding_boxes >= 0).all(dim=-1) & (ws * hs >= min_area)
