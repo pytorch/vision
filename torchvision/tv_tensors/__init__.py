@@ -8,7 +8,6 @@ from ._keypoints import KeyPoints
 from ._mask import Mask
 from ._torch_function_helpers import set_return_type
 from ._tv_tensor import TVTensor
-from torchvision.tv_tensors._tv_tensor import TVTensor
 
 from ._video import Video
 
