@@ -614,8 +614,8 @@ class TestToPil:
         expected_output = img_data_byte.float().div(255.0).numpy()
         yield img_data_byte, expected_output, "L"
 
-        img_data_short = torch.ShortTensor(1, 4, 4).random_()
-        expected_output = img_data_short.numpy().view(np.uint16)
+        img_data_short = torch.ShortTensor(1, 4, 4).random_(0, 32767)
+        expected_output = img_data_short.numpy().astype(np.uint16)
         yield img_data_short, expected_output, "I;16" if sys.byteorder == "little" else "I;16B"
 
         img_data_int = torch.IntTensor(1, 4, 4).random_()
@@ -631,8 +631,8 @@ class TestToPil:
         expected_output = img_data_byte.float().div(255.0).numpy()
         yield img_data_byte, expected_output, "L"
 
-        img_data_short = torch.ShortTensor(4, 4).random_()
-        expected_output = img_data_short.numpy().view(np.uint16)
+        img_data_short = torch.ShortTensor(4, 4).random_(0, 32767)
+        expected_output = img_data_short.numpy().astype(np.uint16)
         yield img_data_short, expected_output, "I;16" if sys.byteorder == "little" else "I;16B"
 
         img_data_int = torch.IntTensor(4, 4).random_()
