@@ -1000,6 +1000,21 @@ class TestNMS:
         assert (keep >= 0).all() and (keep < N).all()
         assert (scores[keep][:-1] >= scores[keep][1:]).all()
 
+    def test_nms_rotated_specific_angles(self):
+        boxes = torch.tensor(
+            [
+                [0, 0, 10, 10, 0],
+                [0, 0, 10, 10, 45],
+                [100, 100, 10, 10, 30],
+            ],
+            dtype=torch.float32,
+        )
+        scores = torch.tensor([0.9, 0.8, 0.7])
+        keep = ops.nms(boxes, scores, iou_threshold=0.5)
+        assert 0 in keep.tolist()
+        assert 1 not in keep.tolist()
+        assert 2 in keep.tolist()
+
 
 optests.generate_opcheck_tests(
     testcase=TestNMS,
