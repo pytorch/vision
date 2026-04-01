@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
-from typing_extensions import Self
 
 import torch
 from torch.utils._pytree import tree_flatten
+from typing_extensions import Self
 
 from ._tv_tensor import TVTensor
 

@@ -4,10 +4,10 @@ from collections.abc import Mapping, Sequence
 
 from enum import Enum
 from typing import Any, Optional
-from typing_extensions import Self
 
 import torch
 from torch.utils._pytree import tree_flatten
+from typing_extensions import Self
 
 from ._tv_tensor import TVTensor
 
