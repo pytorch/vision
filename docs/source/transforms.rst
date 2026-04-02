@@ -99,6 +99,15 @@ have values in ``[0, MAX_DTYPE]`` where ``MAX_DTYPE`` is the largest value
 that can be represented in that dtype. Typically, images of dtype
 ``torch.uint8`` are expected to have values in ``[0, 255]``.
 
+.. note::
+
+    ``torch.uint16``, ``torch.uint32``, and ``torch.uint64`` dtypes are not
+    officially supported by the torchvision transforms. While some operations
+    may work, most transforms expect ``torch.uint8`` or ``torch.float32``
+    inputs. If you're working with uint16 images (e.g. from 16-bit medical or
+    scientific imaging), consider converting to ``float32`` first using
+    :class:`~torchvision.transforms.v2.ToDtype`.
+
 Use :class:`~torchvision.transforms.v2.ToDtype` to convert both the dtype and
 range of the inputs.
 
