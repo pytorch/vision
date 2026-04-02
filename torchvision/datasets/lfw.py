@@ -10,7 +10,7 @@ from .vision import VisionDataset
 class _LFW(VisionDataset):
 
     base_folder = "lfw-py"
-    download_url_prefix = "https://www.kaggle.com/datasets/jessicali9530/lfw-dataset"
+    download_url_prefix = "http://vis-www.cs.umass.edu/lfw/"
 
     file_dict = {
         "original": ("lfw", "lfw.tgz", "a17d05bd522c52d84eca14327a23d494"),
@@ -94,12 +94,13 @@ class _LFW(VisionDataset):
 
 
 class LFWPeople(_LFW):
-    """`LFW <https://www.kaggle.com/datasets/jessicali9530/lfw-dataset>`_ Dataset.
+    """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
     .. warning:
 
         The LFW dataset is no longer available for automatic download. Please
         download it manually and place it in the specified directory.
+        A commonly used mirror is available at: https://www.kaggle.com/datasets/jessicali9530/lfw-dataset
 
     Args:
         root (str or ``pathlib.Path``): Root directory of dataset where directory
@@ -182,12 +183,13 @@ class LFWPeople(_LFW):
 
 
 class LFWPairs(_LFW):
-    """`LFW <https://www.kaggle.com/datasets/jessicali9530/lfw-dataset>`_ Dataset.
+    """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
     .. warning:
 
         The LFW dataset is no longer available for automatic download. Please
         download it manually and place it in the specified directory.
+        A commonly used mirror is available at: https://www.kaggle.com/datasets/jessicali9530/lfw-dataset
 
     Args:
         root (str or ``pathlib.Path``): Root directory of dataset where directory
