@@ -206,10 +206,7 @@ def pil_to_tensor(pic: Any) -> Tensor:
         return torch.as_tensor(nppic)
 
     # handle PIL Image
-    img = np.array(pic, copy=True)
-    if pic.mode == "I;16":
-        img = img.astype(np.uint16)
-    img = torch.as_tensor(img)
+    img = torch.as_tensor(np.array(pic, copy=True))
     img = img.view(pic.size[1], pic.size[0], F_pil.get_image_num_channels(pic))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1))
