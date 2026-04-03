@@ -294,7 +294,7 @@ def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
                 "arm64",
             )
 
-    return interpolation == InterpolationMode.BICUBIC
+    return interpolation == InterpolationMode.BICUBIC or interpolation == InterpolationMode.LANCZOS
 
 
 @_register_kernel_internal(resize, torch.Tensor)
@@ -309,8 +309,14 @@ def resize_image(
     interpolation = _check_interpolation(interpolation)
     antialias = False if antialias is None else antialias
     align_corners: Optional[bool] = None
-    if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
+    if (
+        interpolation == InterpolationMode.BILINEAR
+        or interpolation == InterpolationMode.BICUBIC
+        or interpolation == InterpolationMode.LANCZOS
+    ):
         align_corners = False
+        if interpolation == InterpolationMode.LANCZOS and not antialias:
+            raise ValueError("InterpolationMode.LANCZOS requires antialias=True")
     else:
         # The default of antialias is True from 0.17, so we don't warn or
         # error if other interpolation modes are used. This is documented.
@@ -361,7 +367,9 @@ def resize_image(
         )
 
         if need_cast:
-            if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
+            if (
+                interpolation == InterpolationMode.BICUBIC or interpolation == InterpolationMode.LANCZOS
+            ) and dtype == torch.uint8:
                 # This path is hit on non-AVX archs, or on GPU.
                 image = image.clamp_(min=0, max=255)
             if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
