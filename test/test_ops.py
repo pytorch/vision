@@ -979,11 +979,12 @@ class TestNMS:
         torch.testing.assert_close(keep, keep_non_rotated, atol=0, rtol=0)
 
     @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
-    def test_batched_nms_rotated_0_degree(self, iou):
+    @pytest.mark.parametrize("angle", (0, 90, 180))
+    def test_batched_nms_rotated(self, iou, angle):
         torch.manual_seed(0)
         N = 2000
         num_classes = 50
-        boxes, rotated_boxes, scores = self._create_rotated_boxes(N)
+        boxes, rotated_boxes, scores = self._create_rotated_boxes(N, angle=angle)
         idxs = torch.randint(0, num_classes, (N,))
         backup = rotated_boxes.clone()
         keep_non_rotated = ops.batched_nms(boxes, scores, idxs, iou)
