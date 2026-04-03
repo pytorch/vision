@@ -955,14 +955,7 @@ class TestNMS:
         scores = torch.rand(N, device=device)
         cxcywh = ops.box_convert(boxes, in_fmt="xyxy", out_fmt="cxcywh")
         rotated_boxes = torch.zeros(N, 5, device=device)
-        rotated_boxes[:, 0] = cxcywh[:, 0]
-        rotated_boxes[:, 1] = cxcywh[:, 1]
-        if angle == 90:
-            rotated_boxes[:, 2] = cxcywh[:, 3]
-            rotated_boxes[:, 3] = cxcywh[:, 2]
-        else:
-            rotated_boxes[:, 2] = cxcywh[:, 2]
-            rotated_boxes[:, 3] = cxcywh[:, 3]
+        rotated_boxes[:, :4] = cxcywh
         rotated_boxes[:, 4] = angle
         return boxes, rotated_boxes, scores
 
@@ -972,6 +965,13 @@ class TestNMS:
         torch.manual_seed(0)
         N = 1000
         boxes, rotated_boxes, scores = self._create_rotated_boxes(N, angle=angle)
+        if angle == 90:
+            # widths and heights are intentionally swapped here for 90 degrees case
+            # so that the reference horizontal nms could be used
+            rotated_boxes[:, 2], rotated_boxes[:, 3] = (
+                rotated_boxes[:, 3].clone(),
+                rotated_boxes[:, 2].clone(),
+            )
         keep_ref = self._reference_aligned_nms(boxes, scores, iou)
         keep = ops.nms(rotated_boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
@@ -985,6 +985,13 @@ class TestNMS:
         N = 2000
         num_classes = 50
         boxes, rotated_boxes, scores = self._create_rotated_boxes(N, angle=angle)
+        if angle == 90:
+            # widths and heights are intentionally swapped here for 90 degrees case
+            # so that the reference horizontal nms could be used
+            rotated_boxes[:, 2], rotated_boxes[:, 3] = (
+                rotated_boxes[:, 3].clone(),
+                rotated_boxes[:, 2].clone(),
+            )
         idxs = torch.randint(0, num_classes, (N,))
         backup = rotated_boxes.clone()
         keep_non_rotated = ops.batched_nms(boxes, scores, idxs, iou)
