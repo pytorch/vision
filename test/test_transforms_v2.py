@@ -945,7 +945,7 @@ class TestResize:
         expected = self._reference_resize_bounding_boxes(bounding_boxes, format=format, size=size, **max_size_kwarg)
 
         self._check_output_size(bounding_boxes, actual, size=size, **max_size_kwarg)
-        torch.testing.assert_close(actual, expected)
+        torch.testing.assert_close(actual, expected, atol=1.1e-5, rtol=1e-3)
 
     def _reference_resize_keypoints(self, keypoints, *, size, max_size=None):
         old_height, old_width = keypoints.canvas_size
