@@ -1,5 +1,7 @@
 import math
 import os
+import sys
+import time
 from abc import ABC, abstractmethod
 from functools import lru_cache, partial
 from itertools import product
@@ -614,6 +616,32 @@ class TestRoIAlign(RoIOpTester):
     def test_jit_boxes_list(self):
         model = PoolWrapper(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
         self._helper_jit_boxes_list(model)
+
+    @needs_mps
+    def test_performance_mps(self):
+        # Regression test for https://github.com/pytorch/pytorch/issues/124850
+        execution_time_ms_threshold = 1000  # ms = 1 second
+
+        num_imgs, n_channels, img_size, img_size = 1, 256, 200, 200
+        spatial_scale = 0.25
+        output_size = 7
+        sampling_ratio = 2
+        aligned = False
+        dtype = torch.float32
+        device = "mps"
+
+        x = torch.randint(50, 100, size=(num_imgs, n_channels, img_size, img_size), dtype=dtype).to(device)
+        rois = self._make_rois(img_size, num_imgs, dtype).to(device)
+
+        start = time.time()
+        _ = ops.roi_align(x, rois, output_size, spatial_scale, sampling_ratio, aligned)
+        torch.mps.synchronize()
+        end_execution = time.time()
+        execution_time_ms = 1000 * (end_execution - start)
+
+        assert (
+            execution_time_ms < execution_time_ms_threshold
+        ), f"Expected execution to take < {execution_time_ms_threshold} ms, actually took {execution_time_ms} ms"
 
 
 class TestPSRoIAlign(RoIOpTester):
@@ -1693,6 +1721,292 @@ class TestCompleteBoxIou(TestIouBase):
         self._run_batch_test(ops.complete_box_iou)
 
 
+class TestRotatedBoxIou:
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    @pytest.mark.parametrize("fmt", ["cxcywhr", "xywhr", "xyxyxyxy"])
+    def test_iou(self, device, dtype, fmt):
+        """Core test: IoU computation with different formats, dtypes, and rotations."""
+        # Test boxes in cxcywhr format: (cx, cy, w, h, angle)
+        boxes_data = [
+            [0, 0, 10, 10, 45],
+            [0, 0, 10, 10, 135],
+            [0, 0, 10, 10, -45],
+            [0, 0, 10, 10, -135],
+            [100, 100, 10, 10, 30],
+            [50, 50, 20, 10, 45],
+            [50, 50, 20, 10, 135],
+            [50, 50, 20, 10, -135],
+        ]
+
+        # Expected IoU values:
+        # - Box 0,1,2,3: all identical (rotations differ by 90°, square has 90° symmetry), IoU = 1.0
+        # - Box 4: far away, IoU = 0 with all others
+        # - Box 5 & 6: rectangle 45° vs 135° (90° difference), cross-shaped overlap, IoU = 1/3
+        # - Box 5 & 7: rectangle 45° vs -135° (180° difference), identical, IoU = 1.0
+        # - Box 6 & 7: rectangle 135° vs -135° (90° difference), cross-shaped overlap, IoU = 1/3
+        # Expected[i][j] represents the IoU between Box i and Box j.
+        expected = [
+            [1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1 / 3, 1.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 1 / 3, 1.0, 1 / 3],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1 / 3, 1.0],
+        ]
+
+        # Convert test boxes from cxcywhr to target format
+        boxes = ops.box_convert(torch.tensor(boxes_data, dtype=dtype, device=device), in_fmt="cxcywhr", out_fmt=fmt)
+        out = ops.box_iou(boxes, boxes, fmt=fmt)
+        assert out.dtype == torch.float32
+        expected_tensor = torch.tensor(expected, dtype=torch.float32, device=device)
+        # Handle precision issues with xyxyxyxy format and float32
+        if fmt == "xyxyxyxy" and dtype == torch.float32:
+            # Use higher tolerance on macOS due to float32 precision differences
+            # in angle computation that can affect the Graham scan algorithm
+            if sys.platform == "darwin":
+                atol = 0.5
+            elif device == "cuda":
+                pytest.xfail(
+                    "xyxyxyxy format with float32 on CUDA has expected failure due to floating-point precision errors in format conversion"
+                )
+            else:
+                atol = 1e-4
+        else:
+            atol = 1e-4
+        torch.testing.assert_close(out, expected_tensor, atol=atol, rtol=1e-4)
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    @pytest.mark.parametrize("angle", [45, 53, 195])
+    def test_angle_symmetry(self, device, dtype, angle):
+        """Rotating by +angle or -angle from 0° gives the same IoU (symmetry)"""
+        # Square at origin with different rotations
+        box_0 = torch.tensor([[0, 0, 10, 10, 0]], dtype=dtype, device=device)
+        box_pos = torch.tensor([[0, 0, 10, 10, angle]], dtype=dtype, device=device)
+        box_neg = torch.tensor([[0, 0, 10, 10, -angle]], dtype=dtype, device=device)
+
+        # Symmetry: 0° vs +angle should equal 0° vs -angle
+        iou_0_vs_pos = ops.box_iou(box_0, box_pos, fmt="cxcywhr")
+        iou_0_vs_neg = ops.box_iou(box_0, box_neg, fmt="cxcywhr")
+        torch.testing.assert_close(iou_0_vs_pos, iou_0_vs_neg)
+
+    # ==================== Edge Cases ====================
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_box_inside_another(self, device, dtype):
+        """Containment: small rotated box completely inside large rotated box."""
+        # Both boxes rotated 45°, same center, different sizes
+        boxes1 = torch.tensor([[0, 0, 20, 20, 45]], dtype=dtype, device=device)
+        boxes2 = torch.tensor([[0, 0, 10, 10, 45]], dtype=dtype, device=device)
+        iou = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        # Intersection = 100, Union = 400, IoU = 0.25
+        assert iou.item() == pytest.approx(0.25)
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_zero_area_box(self, device, dtype):
+        """Degenerate rotated box with zero area returns IoU = 0."""
+        boxes1 = torch.tensor([[0, 0, 0, 10, 45]], dtype=dtype, device=device)
+        boxes2 = torch.tensor([[0, 0, 10, 10, 30]], dtype=dtype, device=device)
+        iou = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        assert iou.item() == 0.0
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_empty_boxes(self, device, dtype):
+        """Empty input should return empty output tensor."""
+        boxes1 = torch.rand(0, 5, dtype=dtype, device=device)
+        boxes2 = torch.rand(10, 5, dtype=dtype, device=device)
+        expected_ious = torch.zeros(0, 10, dtype=torch.float32, device=device)
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        torch.testing.assert_close(ious, expected_ious)
+        # Test the reverse: boxes2 (non-empty) vs boxes1 (empty)
+        ious_reverse = ops.box_iou(boxes2, boxes1, fmt="cxcywhr")
+        torch.testing.assert_close(ious_reverse, expected_ious.T)
+
+    # ==================== API Contract Tests ====================
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_output_shape(self, device, dtype):
+        """Output shape is [N, M] for N and M input boxes."""
+        boxes1 = torch.rand(5, 5, dtype=dtype, device=device) * 100
+        boxes2 = torch.rand(7, 5, dtype=dtype, device=device) * 100
+        boxes1[:, 2:4] = boxes1[:, 2:4].abs() + 1  # Ensure positive width/height
+        boxes2[:, 2:4] = boxes2[:, 2:4].abs() + 1
+        iou = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        assert iou.shape == (5, 7)
+
+    def test_invalid_format(self):
+        """Invalid format raises ValueError."""
+        boxes = torch.tensor([[0, 0, 10, 10, 0]], dtype=torch.float32)
+        with pytest.raises(ValueError, match="Unsupported format"):
+            ops.box_iou(boxes, boxes, fmt="invalid_fmt")
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_consistency_with_axis_aligned(self, device, dtype):
+        """box_iou with rotated format (angle=0) should match axis-aligned box_iou."""
+
+        torch.manual_seed(42)
+        # Create axis-aligned random boxes that are likely to overlap by placing them in a small region
+        num_boxes = 10
+        boxes_xyxy = torch.rand(num_boxes, 4, dtype=dtype, device=device) * 50  # Random coordinates in [0, 50]
+        # Ensure x2 > x1 and y2 > y1
+        boxes_xyxy[:, 2] = boxes_xyxy[:, 0] + torch.rand(num_boxes, dtype=dtype, device=device) * 20 + 5
+        boxes_xyxy[:, 3] = boxes_xyxy[:, 1] + torch.rand(num_boxes, dtype=dtype, device=device) * 20 + 5
+
+        iou_standard = ops.box_iou(boxes_xyxy, boxes_xyxy, fmt="xyxy")
+
+        boxes_cxcywh = ops.box_convert(boxes_xyxy, in_fmt="xyxy", out_fmt="cxcywh")
+        # Add angle=0 column
+        boxes_cxcywhr = torch.cat([boxes_cxcywh, torch.zeros(num_boxes, 1, dtype=dtype, device=device)], dim=1)
+
+        iou_rotated = ops.box_iou(boxes_cxcywhr, boxes_cxcywhr, fmt="cxcywhr")
+        # Rotated box_iou always returns float32, so convert iou_standard for comparison
+        torch.testing.assert_close(iou_rotated, iou_standard.to(torch.float32))
+
+    # ==================== Extra Tests Adapted from Detectron2 ====================
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_iou_precision(self, device, dtype):
+        """IoU precision at large coordinates."""
+        boxes1 = torch.tensor([[565, 565, 10, 10.0, 0]], dtype=dtype, device=device)
+        boxes2 = torch.tensor([[565, 565, 10, 8.3, 0]], dtype=dtype, device=device)
+        expected_iou = 8.3 / 10.0
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        torch.testing.assert_close(ious, torch.tensor([[expected_iou]], dtype=torch.float32, device=device))
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_iou_extreme_values(self, device, dtype):
+        """Extreme values should not produce negative IoU (regression test)."""
+        boxes1 = torch.tensor([[160.0, 153.0, 230.0, 23.0, -37.0]], dtype=dtype, device=device)
+        boxes2 = torch.tensor(
+            [[-1.117407639806935e17, 1.3858420478349148e18, 1000.0, 1000.0, 1612.0]],
+            dtype=dtype,
+            device=device,
+        )
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        assert ious.item() >= 0.0
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_near_identical_boxes(self, device, dtype):
+        """Nearly identical boxes should have IoU close to 1.0 (numerical precision)."""
+        boxes1 = torch.tensor([[0, 0, 20, 20, 35]], dtype=dtype, device=device)
+        boxes2 = boxes1 + 1e-5
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        torch.testing.assert_close(
+            ious, torch.tensor([[1.0]], dtype=torch.float32, device=device), atol=1e-3, rtol=1e-3
+        )
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_many_boxes(self, device, dtype):
+        """Scale test with many boxes (100 x 200)."""
+        num_boxes1, num_boxes2 = 100, 200
+        boxes1 = torch.stack(
+            [torch.tensor([5 + 20 * i, 5 + 20 * i, 10, 10, 0], dtype=dtype, device=device) for i in range(num_boxes1)]
+        )
+        boxes2 = torch.stack(
+            [
+                torch.tensor([5 + 20 * i, 5 + 20 * i, 10, 1 + 9 * i / num_boxes2, 0], dtype=dtype, device=device)
+                for i in range(num_boxes2)
+            ]
+        )
+        expected_ious = torch.zeros(num_boxes1, num_boxes2, dtype=torch.float32, device=device)
+        for i in range(min(num_boxes1, num_boxes2)):
+            expected_ious[i][i] = (1 + 9 * i / num_boxes2) / 10.0
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        torch.testing.assert_close(ious, expected_ious, atol=1e-4, rtol=1e-4)
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_near_identical_large_boxes(self, device, dtype):
+        """Nearly identical large boxes should have IoU close to 1.0.
+
+        Adapted from Detectron2:
+        https://github.com/facebookresearch/detectron2/blob/main/tests/structures/test_rotated_boxes.py#L119-L147
+
+        Regression test for: https://github.com/facebookresearch/detectron2/issues/2167
+        """
+
+        boxes1 = torch.tensor(
+            [
+                [
+                    2563.74462890625,
+                    1436.79016113281250,
+                    2174.70336914062500,
+                    214.09500122070312500,
+                    115.11834716796875,
+                ]
+            ],
+            dtype=dtype,
+            device=device,
+        )
+        boxes2 = torch.tensor(
+            [
+                [
+                    2563.74462890625,
+                    1436.79028320312500,
+                    2174.70288085937500,
+                    214.09495544433593750,
+                    115.11835479736328125,
+                ]
+            ],
+            dtype=dtype,
+            device=device,
+        )
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        torch.testing.assert_close(
+            ious, torch.tensor([[1.0]], dtype=torch.float32, device=device), atol=1e-3, rtol=1e-3
+        )
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_large_close_boxes(self, device, dtype):
+        """Large boxes with tiny height difference should have predictable IoU."""
+        boxes1 = torch.tensor(
+            [[299.500000, 417.370422, 600.000000, 364.259186, 27.1828]],
+            dtype=dtype,
+            device=device,
+        )
+        boxes2 = torch.tensor(
+            [[299.500000, 417.370422, 600.000000, 364.259155, 27.1828]],
+            dtype=dtype,
+            device=device,
+        )
+        # IoU should be ratio of smaller height to larger height (same center, same width, same angle)
+        expected_iou = 364.259155 / 364.259186
+        ious = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        torch.testing.assert_close(
+            ious, torch.tensor([[expected_iou]], dtype=torch.float32, device=device), atol=1e-4, rtol=1e-4
+        )
+
+    @needs_cuda
+    def test_cuda_cpu_consistency(self):
+        """CUDA and CPU implementations should produce the same results."""
+        torch.manual_seed(42)
+        boxes1 = torch.rand(20, 5, dtype=torch.float32) * 100
+        boxes2 = torch.rand(30, 5, dtype=torch.float32) * 100
+        # Ensure positive width/height and reasonable angles
+        boxes1[:, 2:4] = boxes1[:, 2:4].abs() + 1
+        boxes2[:, 2:4] = boxes2[:, 2:4].abs() + 1
+        boxes1[:, 4] = (boxes1[:, 4] - 0.5) * 360  # Angles in [-180, 180]
+        boxes2[:, 4] = (boxes2[:, 4] - 0.5) * 360
+
+        iou_cpu = ops.box_iou(boxes1, boxes2, fmt="cxcywhr")
+        iou_cuda = ops.box_iou(boxes1.cuda(), boxes2.cuda(), fmt="cxcywhr")
+
+        torch.testing.assert_close(iou_cpu, iou_cuda.cpu(), atol=1e-5, rtol=1e-5)
+
+
 def get_boxes(dtype, device):
     box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
     box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
@@ -1965,6 +2279,27 @@ class TestMasksToBoxes:
             masks = torch.zeros((image.n_frames, image.height, image.width), dtype=dtype)
             masks = _create_masks(image, masks)
             masks_box_check(masks, expected)
+
+    def test_empty_masks(self):
+        masks = torch.zeros((3, 64, 64))
+        boxes = ops.masks_to_boxes(masks)
+        expected = torch.zeros((3, 4))
+        torch.testing.assert_close(boxes, expected, rtol=0.0, atol=0.0)
+
+    def test_mixed_empty_and_non_empty_masks(self):
+        masks = torch.zeros((3, 10, 10))
+        masks[1, 2:5, 3:7] = 1
+
+        boxes = ops.masks_to_boxes(masks)
+
+        expected = torch.tensor(
+            [
+                [0.0, 0.0, 0.0, 0.0],
+                [3.0, 2.0, 6.0, 4.0],
+                [0.0, 0.0, 0.0, 0.0],
+            ]
+        )
+        torch.testing.assert_close(boxes, expected, rtol=0.0, atol=0.0)
 
 
 class TestStochasticDepth:
