@@ -473,23 +473,23 @@ def _resize_keypoints_dispatch(
 
 
 def _parallelogram_to_bounding_boxes(parallelogram: torch.Tensor) -> torch.Tensor:
-    """
-    Convert a parallelogram to a rectangle while keeping two points unchanged.
-    This function transforms a parallelogram represented by 8 coordinates (4 points) into a rectangle.
-    The two diagonally opposed points of the parallelogram forming the longest diagonal remain fixed.
-    The other points are adjusted to form a proper rectangle.
+   """
+   Convert a parallelogram to a rectangle while keeping two points unchanged.
+   This function transforms a parallelogram represented by 8 coordinates (4 points) into a rectangle.
+   The two diagonally opposed points of the parallelogram forming the longest diagonal remain fixed.
+   The other points are adjusted to form a proper rectangle.
 
-    Note:
-        This function is not applied in-place and will return a copy of the input tensor.
+   Note:
+      This function is not applied in-place and will return a copy of the input tensor.
 
-    Args:
-        parallelogram (torch.Tensor): Tensor of shape (..., 8) containing coordinates of parallelograms.
-                                     Format is [x1, y1, x2, y2, x3, y3, x4, y4].
+   Args:
+    parallelogram (torch.Tensor): Tensor of shape (..., 8) containing coordinates of parallelograms.
+        Format is [x1, y1, x2, y2, x3, y3, x4, y4].
 
-    Returns:
-        torch.Tensor: Tensor of same shape as input containing the rectangle coordinates.
-                     The output maintains the same dtype as the input.
-    """
+   Returns:
+     torch.Tensor: Tensor of same shape as input containing the rectangle coordinates.
+        The output maintains the same dtype as the input.
+"""
     original_shape = parallelogram.shape
     dtype = parallelogram.dtype
     acceptable_dtypes = [torch.float32, torch.float64]
