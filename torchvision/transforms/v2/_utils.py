@@ -16,7 +16,7 @@ from torchvision._utils import sequence_to_str
 
 from torchvision.transforms.transforms import _check_sequence_input, _setup_angle, _setup_size  # noqa: F401
 from torchvision.transforms.v2.functional import get_dimensions, get_size, is_pure_tensor
-from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
+from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT, _is_cvcuda_tensor
 
 
 def _setup_number_or_seq(arg: int | float | Sequence[int | float], name: str) -> Sequence[float]:
@@ -207,6 +207,7 @@ def query_size(flat_inputs: list[Any]) -> tuple[int, int]:
                 tv_tensors.Mask,
                 tv_tensors.BoundingBoxes,
                 tv_tensors.KeyPoints,
+                _is_cvcuda_tensor,
             ),
         )
     }
