@@ -1,9 +1,12 @@
 import functools
 from collections.abc import Sequence
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, TYPE_CHECKING, Union
 
 import torch
 from torchvision import tv_tensors
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 _FillType = Union[int, float, Sequence[int], Sequence[float], None]
 _FillTypeJIT = Optional[list[float]]
@@ -177,3 +180,22 @@ def _is_cvcuda_tensor(inpt: Any) -> bool:
         return isinstance(inpt, cvcuda.Tensor)
     except ImportError:
         return False
+
+
+_pad_mode_to_cvcuda_border: dict[str, "cvcuda.Border"] = {}
+
+
+def _get_cvcuda_border_from_pad_mode(pad_mode: str) -> "cvcuda.Border":
+    if not _pad_mode_to_cvcuda_border:
+        cvcuda = _import_cvcuda()
+        _pad_mode_to_cvcuda_border["constant"] = cvcuda.Border.CONSTANT
+        _pad_mode_to_cvcuda_border["reflect"] = cvcuda.Border.REFLECT101
+        _pad_mode_to_cvcuda_border["replicate"] = cvcuda.Border.REPLICATE
+        _pad_mode_to_cvcuda_border["edge"] = cvcuda.Border.REPLICATE
+        _pad_mode_to_cvcuda_border["symmetric"] = cvcuda.Border.REFLECT
+
+    border_mode = _pad_mode_to_cvcuda_border.get(pad_mode)
+    if border_mode is None:
+        raise ValueError(f"Pad mode {pad_mode} is not supported with CV-CUDA")
+
+    return border_mode
