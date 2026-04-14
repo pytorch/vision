@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING, Union
+from typing import Optional, Union
 
 import PIL.Image
 import torch
@@ -9,14 +9,7 @@ from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE
 
 from torchvision.utils import _log_api_usage_once
 
-from ._utils import _get_kernel, _import_cvcuda, _is_cvcuda_available, _register_kernel_internal, is_pure_tensor
-
-CVCUDA_AVAILABLE = _is_cvcuda_available()
-
-if TYPE_CHECKING:
-    import cvcuda  # type: ignore[import-not-found]
-if CVCUDA_AVAILABLE:
-    cvcuda = _import_cvcuda()  # noqa: F811
+from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
 
 
 def get_dimensions(inpt: torch.Tensor) -> list[int]:
@@ -112,20 +105,6 @@ def get_size_image(image: torch.Tensor) -> list[int]:
 def _get_size_image_pil(image: PIL.Image.Image) -> list[int]:
     width, height = _FP.get_image_size(image)
     return [height, width]
-
-
-def get_size_image_cvcuda(image: "cvcuda.Tensor") -> list[int]:
-    """Get size of `cvcuda.Tensor` with NHWC layout."""
-    hw = list(image.shape[-3:-1])
-    ndims = len(hw)
-    if ndims == 2:
-        return hw
-    else:
-        raise TypeError(f"Input tensor should have at least two dimensions, but got {ndims}")
-
-
-if CVCUDA_AVAILABLE:
-    _get_size_image_cvcuda = _register_kernel_internal(get_size, cvcuda.Tensor)(get_size_image_cvcuda)
 
 
 @_register_kernel_internal(get_size, tv_tensors.Video, tv_tensor_wrapper=False)
