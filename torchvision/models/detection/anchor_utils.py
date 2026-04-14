@@ -12,7 +12,7 @@ class AnchorGenerator(nn.Module):
     Module that generates anchors for a set of feature maps and
     image sizes.
 
-    The module support computing anchors at multiple sizes and aspect ratios
+    The module supports computing anchors at multiple sizes and aspect ratios
     per feature map. This module assumes aspect ratio = height / width for
     each anchor.
 
