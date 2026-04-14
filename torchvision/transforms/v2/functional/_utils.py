@@ -140,32 +140,3 @@ def _register_five_ten_crop_kernel_internal(functional, input_type):
         return kernel
 
     return decorator
-
-
-def _import_cvcuda():
-    """Import CV-CUDA modules with informative error message if not installed.
-
-    Returns:
-        cvcuda module.
-
-    Raises:
-        RuntimeError: If CV-CUDA is not installed.
-    """
-    try:
-        import cvcuda  # type: ignore[import-not-found]
-
-        return cvcuda
-    except ImportError as e:
-        raise ImportError(
-            "CV-CUDA is required but not installed. "
-            "Please install it following the instructions at "
-            "https://github.com/CVCUDA/CV-CUDA."
-        ) from e
-
-
-def _is_cvcuda_available():
-    try:
-        _ = _import_cvcuda()
-        return True
-    except ImportError:
-        return False
