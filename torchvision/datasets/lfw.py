@@ -96,7 +96,7 @@ class _LFW(VisionDataset):
 class LFWPeople(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
-    .. warning:
+    .. warning::
 
         The LFW dataset is no longer available for automatic download. Please
         download it manually and place it in the specified directory.
@@ -185,7 +185,7 @@ class LFWPeople(_LFW):
 class LFWPairs(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
-    .. warning:
+    .. warning::
 
         The LFW dataset is no longer available for automatic download. Please
         download it manually and place it in the specified directory.
