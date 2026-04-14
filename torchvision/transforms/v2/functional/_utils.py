@@ -169,11 +169,3 @@ def _is_cvcuda_available():
         return True
     except ImportError:
         return False
-
-
-def _is_cvcuda_tensor(inpt: Any) -> bool:
-    try:
-        cvcuda = _import_cvcuda()
-        return isinstance(inpt, cvcuda.Tensor)
-    except ImportError:
-        return False
