@@ -129,7 +129,7 @@ def get_macros_and_flags():
         define_macros += [("torchvision_EXPORTS", None)]
         extra_compile_args["cxx"].append("/MP")
         extra_compile_args["cxx"].append("/Zc:preprocessor")
-        if "nvcc" in extra_compile_args:
+        if not IS_ROCM and "nvcc" in extra_compile_args:
             extra_compile_args["nvcc"].append("-Xcompiler")
             extra_compile_args["nvcc"].append("/Zc:preprocessor")
             extra_compile_args["nvcc"].append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING")
