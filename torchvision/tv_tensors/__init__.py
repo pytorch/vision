@@ -26,8 +26,7 @@ def wrap(wrappee: torch.Tensor, *, like: TVTensorType, **kwargs) -> TVTensorType
         like (:class:`~torchvision.tv_tensors.TVTensor`): The reference.
             ``wrappee`` will be converted into the same subclass as ``like``
             maintaining the same metadata as ``like``.
-        kwargs: Optional overrides for metadata. For BoundingBoxes: ``format``, ``canvas_size``, ``clamping_mode``.
-            For KeyPoints: ``canvas_size``.
+        kwargs: Optional overrides for metadata instead of copying them from ``like``. For example, for BoundingBoxes: ``format``, ``canvas_size``, ``clamping_mode``. For KeyPoints: ``canvas_size``.
     """
     if not hasattr(like, "__wrap__"):
         raise TypeError(f"Expected `like` to have a `__wrap__` method, but got {type(like)}")
