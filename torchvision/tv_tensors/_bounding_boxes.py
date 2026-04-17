@@ -168,6 +168,7 @@ class BoundingBoxes(TVTensor):
         if isinstance(output, torch.Tensor) and not isinstance(output, BoundingBoxes):
             output = first_bbox_from_args.__wrap__(output)
         elif isinstance(output, (tuple, list)):
+            # This branch exists for chunk() and unbind()
             output = type(output)(first_bbox_from_args.__wrap__(part) for part in output)
         return output
 
