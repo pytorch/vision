@@ -384,7 +384,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align_forward_kernel(
             channel_mapping.data_ptr<int>());
       });
   AT_CUDA_CHECK(cudaGetLastError());
-  cudaDeviceSynchronize();
+  AT_CUDA_CHECK(cudaDeviceSynchronize());
   return std::make_tuple(output, channel_mapping);
 }
 
