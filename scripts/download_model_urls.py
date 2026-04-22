@@ -35,7 +35,7 @@ if __name__ == "__main__":
     )
     print(f"Downloading model weights to {download_root}")
     start = perf_counter()
-    asyncio.get_event_loop().run_until_complete(main(download_root))
+    asyncio.run(main(download_root))
     stop = perf_counter()
     minutes, seconds = divmod(stop - start, 60)
     print(f"Download took {minutes:2.0f}m {seconds:2.0f}s")
