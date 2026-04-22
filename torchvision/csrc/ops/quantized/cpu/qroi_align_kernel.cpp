@@ -35,7 +35,7 @@ T quantize_val(double scale, int64_t zero_point, float value) {
   // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
   int32_t qvalue;
   // NOLINTNEXTLINE(bugprone-signed-char-misuse)
-  qvalue = fbgemm::Quantize<typename T::underlying, false /*LEGACY*/>(
+  qvalue = fbgemm::Quantize<typename T::underlying>(
       value,
       static_cast<int32_t>(zero_point),
       static_cast<float>(scale),
