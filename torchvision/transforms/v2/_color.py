@@ -140,7 +140,7 @@ class ColorJitter(Transform):
         return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
 
     @staticmethod
-    def _generate_value(left: float, right: float, generator: torch.Generator = None) -> float:
+    def _generate_value(left: float, right: float, generator: Optional[torch.Generator] = None) -> float:
         return float(torch.empty(1).uniform_(left, right, generator=generator).item())
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:

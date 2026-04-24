@@ -39,7 +39,7 @@ class _AutoAugmentBase(Transform):
         return params
 
     def _get_random_item(
-        self, dct: dict[str, tuple[Callable, bool]], generator: torch.Generator = None
+        self, dct: dict[str, tuple[Callable, bool]], generator: Optional[torch.Generator] = None
     ) -> tuple[str, tuple[Callable, bool]]:
         keys = tuple(dct.keys())
         key = keys[int(torch.randint(len(keys), (), generator=generator))]
@@ -577,7 +577,7 @@ class AugMix(_AutoAugmentBase):
         self.alpha = alpha
         self.all_ops = all_ops
 
-    def _sample_dirichlet(self, params: torch.Tensor, generator: torch.Generator = None) -> torch.Tensor:
+    def _sample_dirichlet(self, params: torch.Tensor, generator: Optional[torch.Generator] = None) -> torch.Tensor:
         # Must be on a separate method so that we can overwrite it in tests.
         return torch._sample_dirichlet(params, generator)
 
