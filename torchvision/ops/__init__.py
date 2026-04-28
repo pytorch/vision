@@ -1,3 +1,4 @@
+from ._masks import masks_to_boundaries
 from ._register_onnx_ops import _register_custom_op
 from .boxes import (
     batched_nms,
@@ -32,6 +33,7 @@ _register_custom_op()
 
 __all__ = [
     "masks_to_boxes",
+    "masks_to_boundaries",
     "deform_conv2d",
     "DeformConv2d",
     "nms",
