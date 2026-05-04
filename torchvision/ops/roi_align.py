@@ -99,10 +99,11 @@ def _bilinear_interpolate(
 # TODO: this doesn't actually cache
 # TODO: main library should make this easier to do
 def maybe_cast(tensor):
-    if torch.is_autocast_enabled() and tensor.is_cuda and tensor.dtype != torch.double:
+    if tensor.dtype != torch.double and (
+        (torch.is_autocast_enabled() and tensor.is_cuda) or (torch.is_autocast_enabled("xpu") and tensor.is_xpu)
+    ):
         return tensor.float()
-    else:
-        return tensor
+    return tensor
 
 
 # This is a pure Python and differentiable implementation of roi_align.  When
