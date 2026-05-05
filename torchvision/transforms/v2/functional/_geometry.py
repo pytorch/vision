@@ -3,7 +3,7 @@ import numbers
 import platform
 import warnings
 from collections.abc import Sequence
-from typing import Any, Optional, TYPE_CHECKING, Union
+from typing import Any, Optional, Union
 
 import PIL.Image
 import torch
@@ -27,18 +27,7 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_box_format
 
-from ._utils import (
-    _FillTypeJIT,
-    _get_kernel,
-    _import_cvcuda,
-    _is_cvcuda_available,
-    _register_five_ten_crop_kernel_internal,
-    _register_kernel_internal,
-)
-
-CVCUDA_AVAILABLE = _is_cvcuda_available()
-if TYPE_CHECKING:
-    import cvcuda  # type: ignore[import-not-found]
+from ._utils import _FillTypeJIT, _get_kernel, _register_five_ten_crop_kernel_internal, _register_kernel_internal
 
 
 def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
@@ -72,14 +61,6 @@ def horizontal_flip_image(image: torch.Tensor) -> torch.Tensor:
 @_register_kernel_internal(horizontal_flip, PIL.Image.Image)
 def _horizontal_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.hflip(image)
-
-
-def _horizontal_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
-    return _import_cvcuda().flip(image, flipCode=1)
-
-
-if CVCUDA_AVAILABLE:
-    _register_kernel_internal(horizontal_flip, _import_cvcuda().Tensor)(_horizontal_flip_image_cvcuda)
 
 
 @_register_kernel_internal(horizontal_flip, tv_tensors.Mask)
@@ -168,14 +149,6 @@ def vertical_flip_image(image: torch.Tensor) -> torch.Tensor:
 @_register_kernel_internal(vertical_flip, PIL.Image.Image)
 def _vertical_flip_image_pil(image: PIL.Image.Image) -> PIL.Image.Image:
     return _FP.vflip(image)
-
-
-def _vertical_flip_image_cvcuda(image: "cvcuda.Tensor") -> "cvcuda.Tensor":
-    return _import_cvcuda().flip(image, flipCode=0)
-
-
-if CVCUDA_AVAILABLE:
-    _register_kernel_internal(vertical_flip, _import_cvcuda().Tensor)(_vertical_flip_image_cvcuda)
 
 
 @_register_kernel_internal(vertical_flip, tv_tensors.Mask)
@@ -294,7 +267,7 @@ def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
                 "arm64",
             )
 
-    return interpolation == InterpolationMode.BICUBIC
+    return interpolation == InterpolationMode.BICUBIC or interpolation == InterpolationMode.LANCZOS
 
 
 @_register_kernel_internal(resize, torch.Tensor)
@@ -309,8 +282,14 @@ def resize_image(
     interpolation = _check_interpolation(interpolation)
     antialias = False if antialias is None else antialias
     align_corners: Optional[bool] = None
-    if interpolation == InterpolationMode.BILINEAR or interpolation == InterpolationMode.BICUBIC:
+    if (
+        interpolation == InterpolationMode.BILINEAR
+        or interpolation == InterpolationMode.BICUBIC
+        or interpolation == InterpolationMode.LANCZOS
+    ):
         align_corners = False
+        if interpolation == InterpolationMode.LANCZOS and not antialias:
+            raise ValueError("InterpolationMode.LANCZOS requires antialias=True")
     else:
         # The default of antialias is True from 0.17, so we don't warn or
         # error if other interpolation modes are used. This is documented.
@@ -361,7 +340,9 @@ def resize_image(
         )
 
         if need_cast:
-            if interpolation == InterpolationMode.BICUBIC and dtype == torch.uint8:
+            if (
+                interpolation == InterpolationMode.BICUBIC or interpolation == InterpolationMode.LANCZOS
+            ) and dtype == torch.uint8:
                 # This path is hit on non-AVX archs, or on GPU.
                 image = image.clamp_(min=0, max=255)
             if dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):

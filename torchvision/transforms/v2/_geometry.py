@@ -11,7 +11,7 @@ from torchvision import transforms as _transforms, tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._utils import _FillType, _is_cvcuda_available, _is_cvcuda_tensor
+from torchvision.transforms.v2.functional._utils import _FillType
 
 from ._transform import _RandomApplyTransform
 from ._utils import (
@@ -30,8 +30,6 @@ from ._utils import (
     query_size,
 )
 
-CVCUDA_AVAILABLE = _is_cvcuda_available()
-
 
 class RandomHorizontalFlip(_RandomApplyTransform):
     """Horizontally flip the input with a given probability.
@@ -46,9 +44,6 @@ class RandomHorizontalFlip(_RandomApplyTransform):
     """
 
     _v1_transform_cls = _transforms.RandomHorizontalFlip
-
-    if CVCUDA_AVAILABLE:
-        _transformed_types = _RandomApplyTransform._transformed_types + (_is_cvcuda_tensor,)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.horizontal_flip, inpt)
@@ -67,9 +62,6 @@ class RandomVerticalFlip(_RandomApplyTransform):
     """
 
     _v1_transform_cls = _transforms.RandomVerticalFlip
-
-    if CVCUDA_AVAILABLE:
-        _transformed_types = _RandomApplyTransform._transformed_types + (_is_cvcuda_tensor,)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         return self._call_kernel(F.vertical_flip, inpt)
@@ -99,7 +91,8 @@ class Resize(Transform):
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.BILINEAR``, ``InterpolationMode.BICUBIC`` and ``InterpolationMode.LANCZOS`` are supported.
+            ``InterpolationMode.LANCZOS`` is only supported on CPU and requires ``antialias=True``.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         max_size (int, optional): The maximum allowed for the longer edge of
             the resized image.
@@ -118,13 +111,13 @@ class Resize(Transform):
             sequence.
 
         antialias (bool, optional): Whether to apply antialiasing.
-            It only affects **tensors** with bilinear or bicubic modes and it is
+            It only affects **tensors** with bilinear, bicubic, or lanczos modes and it is
             ignored otherwise: on PIL images, antialiasing is always applied on
             bilinear or bicubic modes; on other modes (for PIL images and
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear, bicubic, or lanczos modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -228,16 +221,17 @@ class RandomResizedCrop(Transform):
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.BILINEAR``, ``InterpolationMode.BICUBIC`` and ``InterpolationMode.LANCZOS`` are supported.
+            ``InterpolationMode.LANCZOS`` is only supported on CPU and requires ``antialias=True``.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         antialias (bool, optional): Whether to apply antialiasing.
-            It only affects **tensors** with bilinear or bicubic modes and it is
+            It only affects **tensors** with bilinear, bicubic, or lanczos modes and it is
             ignored otherwise: on PIL images, antialiasing is always applied on
             bilinear or bicubic modes; on other modes (for PIL images and
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear, bicubic, or lanczos modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -583,7 +577,7 @@ class RandomRotation(Transform):
     Args:
         degrees (sequence or number): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
-            will be [-degrees, +degrees].
+            will be [-degrees, +degrees]. ``[90, 90]`` will rotate the image by 90 degrees anticlockwise.
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -1246,16 +1240,17 @@ class ScaleJitter(Transform):
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.BILINEAR``, ``InterpolationMode.BICUBIC`` and ``InterpolationMode.LANCZOS`` are supported.
+            ``InterpolationMode.LANCZOS`` is only supported on CPU and requires ``antialias=True``.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         antialias (bool, optional): Whether to apply antialiasing.
-            It only affects **tensors** with bilinear or bicubic modes and it is
+            It only affects **tensors** with bilinear, bicubic, or lanczos modes and it is
             ignored otherwise: on PIL images, antialiasing is always applied on
             bilinear or bicubic modes; on other modes (for PIL images and
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear, bicubic, or lanczos modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -1311,16 +1306,17 @@ class RandomShortestSize(Transform):
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.BILINEAR``, ``InterpolationMode.BICUBIC`` and ``InterpolationMode.LANCZOS`` are supported.
+            ``InterpolationMode.LANCZOS`` is only supported on CPU and requires ``antialias=True``.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         antialias (bool, optional): Whether to apply antialiasing.
-            It only affects **tensors** with bilinear or bicubic modes and it is
+            It only affects **tensors** with bilinear, bicubic, or lanczos modes and it is
             ignored otherwise: on PIL images, antialiasing is always applied on
             bilinear or bicubic modes; on other modes (for PIL images and
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear, bicubic, or lanczos modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
@@ -1390,16 +1386,17 @@ class RandomResize(Transform):
         interpolation (InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.NEAREST_EXACT``,
-            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
+            ``InterpolationMode.BILINEAR``, ``InterpolationMode.BICUBIC`` and ``InterpolationMode.LANCZOS`` are supported.
+            ``InterpolationMode.LANCZOS`` is only supported on CPU and requires ``antialias=True``.
             The corresponding Pillow integer constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         antialias (bool, optional): Whether to apply antialiasing.
-            It only affects **tensors** with bilinear or bicubic modes and it is
+            It only affects **tensors** with bilinear, bicubic, or lanczos modes and it is
             ignored otherwise: on PIL images, antialiasing is always applied on
             bilinear or bicubic modes; on other modes (for PIL images and
             tensors), antialiasing makes no sense and this parameter is ignored.
             Possible values are:
 
-            - ``True`` (default): will apply antialiasing for bilinear or bicubic modes.
+            - ``True`` (default): will apply antialiasing for bilinear, bicubic, or lanczos modes.
               Other mode aren't affected. This is probably what you want to use.
             - ``False``: will not apply antialiasing for tensors on any mode. PIL
               images are still antialiased on bilinear or bicubic modes, because
