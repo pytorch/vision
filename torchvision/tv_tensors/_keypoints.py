@@ -68,7 +68,7 @@ class KeyPoints(TVTensor):
         return points
 
     @classmethod
-    def wrap(cls, tensor: torch.Tensor, like: KeyPoints, **kwargs: Any) -> KeyPoints:
+    def wrap(cls, tensor: torch.Tensor, like: KeyPoints, **kwargs: Any) -> KeyPoints:  # type: ignore[override]
         return cls._wrap(
             tensor,
             canvas_size=kwargs.get("canvas_size", like.canvas_size),

@@ -117,7 +117,7 @@ class BoundingBoxes(TVTensor):
         return bounding_boxes
 
     @classmethod
-    def wrap(cls, tensor: torch.Tensor, like: BoundingBoxes, **kwargs: Any) -> BoundingBoxes:
+    def wrap(cls, tensor: torch.Tensor, like: BoundingBoxes, **kwargs: Any) -> BoundingBoxes:  # type: ignore[override]
         return cls._wrap(
             tensor,
             format=kwargs.get("format", like.format),
