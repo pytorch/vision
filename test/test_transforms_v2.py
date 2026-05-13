@@ -3843,6 +3843,10 @@ class TestErase:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_image_correctness(self, param, value, dtype, device, seed):
+        if sys.platform == "darwin" and value == "random" and dtype == torch.uint8:
+            # Mismatched elements: 10 / 561 (1.8%)
+            pytest.skip("Non-deterministic RNG behavior on macOS for random erase with uint8")
+
         transform = transforms.RandomErasing(**{param: value}, p=1)
 
         image = make_image(dtype=dtype, device=device)
