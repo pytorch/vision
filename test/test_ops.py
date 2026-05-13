@@ -1244,6 +1244,20 @@ def xfail_if_mps(x):
     return x
 
 
+def skip_if_mps(x):
+    mps_skip_param = pytest.param("mps", marks=(pytest.mark.needs_mps, pytest.mark.skip(reason="Flaky on MPS")))
+    new_pytestmark = []
+    for mark in x.pytestmark:
+        if isinstance(mark, pytest.Mark) and mark.name == "parametrize":
+            if mark.args[0] == "device":
+                params = cpu_and_cuda() + (mps_skip_param,)
+                new_pytestmark.append(pytest.mark.parametrize("device", params))
+                continue
+        new_pytestmark.append(mark)
+    x.__dict__["pytestmark"] = new_pytestmark
+    return x
+
+
 optests.generate_opcheck_tests(
     testcase=TestDeformConv,
     namespaces=["torchvision"],
@@ -1252,7 +1266,7 @@ optests.generate_opcheck_tests(
     additional_decorators={
         "test_aot_dispatch_dynamic__test_forward": [xfail_if_mps],
         "test_autograd_registration__test_forward": [xfail_if_mps],
-        "test_faketensor__test_forward": [xfail_if_mps],
+        "test_faketensor__test_forward": [skip_if_mps],
     },
     test_utils=OPTESTS,
 )
