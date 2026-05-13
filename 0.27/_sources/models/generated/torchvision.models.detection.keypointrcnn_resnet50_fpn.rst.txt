@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.detection
+
+
+keypointrcnn_resnet50_fpn
+=========================
+
+.. autofunction:: keypointrcnn_resnet50_fpn

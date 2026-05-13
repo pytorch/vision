@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models
+
+
+regnet_y_1_6gf
+==============
+
+.. autofunction:: regnet_y_1_6gf

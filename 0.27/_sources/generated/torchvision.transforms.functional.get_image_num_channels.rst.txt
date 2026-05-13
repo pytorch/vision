@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.transforms.functional
+
+
+get_image_num_channels
+======================
+
+.. autofunction:: get_image_num_channels

@@ -1,0 +1,10 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.tv_tensors
+
+
+set_return_type
+===============
+
+.. autoclass:: set_return_type
+    :members:
