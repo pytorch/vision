@@ -67,6 +67,13 @@ class KeyPoints(TVTensor):
         points.canvas_size = canvas_size
         return points
 
+    @classmethod
+    def wrap(cls, tensor: torch.Tensor, like: KeyPoints, **kwargs: Any) -> KeyPoints:
+        return cls._wrap(
+            tensor,
+            canvas_size=kwargs.get("canvas_size", like.canvas_size),
+        )
+
     def __new__(
         cls,
         data: Any,
