@@ -41,7 +41,7 @@ class ToTensor(Transform):
     def __init__(self) -> None:
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
-            "Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`."
+            "Instead, please use `v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True)])`. "
             "Output is equivalent up to float precision."
         )
         super().__init__()
