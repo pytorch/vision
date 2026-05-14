@@ -117,3 +117,43 @@ def hflip_my_tv_tensor(my_dp):  # noqa
 # ``*args, **kwargs`` in their signature, as done above. This way, your kernel
 # will be able to accept any new parameter that we may add in the future.
 # (Technically, adding `**kwargs` only should be enough).
+
+# %%
+# .. _custom_tv_tensor_with_metadata:
+#
+# Custom TVTensor with metadata
+# ------------------------------
+#
+# The example above shows a simple TVTensor with no metadata. If your TVTensor
+# carries metadata (like :class:`~torchvision.tv_tensors.BoundingBoxes` carries
+# ``format`` and ``canvas_size``), you need to override the
+# :meth:`~torchvision.tv_tensors.TVTensor.wrap` classmethod so that the metadata
+# is preserved when the tensor passes through transforms.
+
+
+class LabeledImage(tv_tensors.TVTensor):
+    def __new__(cls, data, *, label, dtype=None, device=None, requires_grad=False):
+        tensor = cls._to_tensor(data, dtype=dtype, device=device, requires_grad=requires_grad)
+        obj = tensor.as_subclass(cls)
+        obj.label = label
+        return obj
+
+    @classmethod
+    def wrap(cls, tensor, like, **kwargs):
+        obj = tensor.as_subclass(cls)
+        obj.label = kwargs.get("label", like.label)
+        return obj
+
+
+labeled_img = LabeledImage(torch.rand(3, 256, 256), label="cat")
+
+# The ``wrap`` method is called by :func:`~torchvision.tv_tensors.wrap`, which
+# is used internally by the transforms. This ensures metadata is preserved:
+output = labeled_img * 2  # some operation that returns a plain Tensor
+wrapped = tv_tensors.wrap(output, like=labeled_img)
+assert isinstance(wrapped, LabeledImage)
+assert wrapped.label == "cat"
+
+# You can also override specific metadata fields via kwargs:
+wrapped_dog = tv_tensors.wrap(output, like=labeled_img, label="dog")
+assert wrapped_dog.label == "dog"

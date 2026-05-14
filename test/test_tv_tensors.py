@@ -356,6 +356,72 @@ def test_wrap_preserves_subclass():
     assert type(wrapped) is MyKeyPoints
 
 
+def test_wrap_custom_subclass_with_metadata():
+    class MyTVTensor(tv_tensors.TVTensor):
+        def __new__(cls, data, *, label):
+            tensor = cls._to_tensor(data)
+            obj = tensor.as_subclass(cls)
+            obj.label = label
+            return obj
+
+        @classmethod
+        def wrap(cls, tensor, like, **kwargs):
+            obj = tensor.as_subclass(cls)
+            obj.label = kwargs.get("label", like.label)
+            return obj
+
+    original = MyTVTensor(torch.rand(3, 4), label="cat")
+    output = original * 2
+    wrapped = tv_tensors.wrap(output, like=original)
+
+    assert type(wrapped) is MyTVTensor
+    assert wrapped.label == "cat"
+    assert wrapped.data_ptr() == output.data_ptr()
+
+    # Test kwargs override
+    wrapped_override = tv_tensors.wrap(output, like=original, label="dog")
+    assert type(wrapped_override) is MyTVTensor
+    assert wrapped_override.label == "dog"
+
+
+def test_wrap_custom_subclass_no_metadata():
+    class SimpleTVTensor(tv_tensors.TVTensor):
+        def __new__(cls, data):
+            tensor = cls._to_tensor(data)
+            return tensor.as_subclass(cls)
+
+    original = SimpleTVTensor(torch.rand(3, 4))
+    output = original * 2
+    wrapped = tv_tensors.wrap(output, like=original)
+
+    assert type(wrapped) is SimpleTVTensor
+    assert wrapped.data_ptr() == output.data_ptr()
+
+
+def test_wrap_pure_tensor_like():
+    wrappee = torch.rand(3, 4)
+    like = torch.rand(2, 3)
+    wrapped = tv_tensors.wrap(wrappee, like=like)
+    assert type(wrapped) is torch.Tensor
+    assert wrapped.data_ptr() == wrappee.data_ptr()
+
+
+def test_wrap_pure_tensor_wrappee():
+    wrappee = torch.rand(3, 4)
+    like = tv_tensors.Image(torch.rand(3, 8, 8))
+    wrapped = tv_tensors.wrap(wrappee, like=like)
+    assert type(wrapped) is tv_tensors.Image
+    assert wrapped.data_ptr() == wrappee.data_ptr()
+
+    like_bbox = tv_tensors.BoundingBoxes(
+        [[0, 0, 10, 10]], format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=(100, 100)
+    )
+    wrapped_bbox = tv_tensors.wrap(torch.tensor([[1.0, 2, 3, 4]]), like=like_bbox)
+    assert type(wrapped_bbox) is tv_tensors.BoundingBoxes
+    assert wrapped_bbox.format == tv_tensors.BoundingBoxFormat.XYXY
+    assert wrapped_bbox.canvas_size == (100, 100)
+
+
 @pytest.mark.parametrize(
     "make_input", [make_image, make_bounding_boxes, make_segmentation_mask, make_video, make_keypoints]
 )
