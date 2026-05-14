@@ -30,7 +30,17 @@ from ._meta import _get_size_image_pil, clamp_bounding_boxes, convert_bounding_b
 from ._utils import _FillTypeJIT, _get_kernel, _register_five_ten_crop_kernel_internal, _register_kernel_internal
 
 
-def _check_interpolation(interpolation: Union[InterpolationMode, int]) -> InterpolationMode:
+_INTERPOLATION_STRING_TO_MODE: dict[str, InterpolationMode] = {m.value: m for m in InterpolationMode}
+
+
+def _check_interpolation(interpolation: Union[str, InterpolationMode, int]) -> InterpolationMode:
+    if not torch.jit.is_scripting() and isinstance(interpolation, str):
+        if interpolation not in _INTERPOLATION_STRING_TO_MODE:
+            raise ValueError(
+                f"Invalid interpolation mode: '{interpolation}'. "
+                f"Supported string values are: {list(_INTERPOLATION_STRING_TO_MODE.keys())}."
+            )
+        return _INTERPOLATION_STRING_TO_MODE[interpolation]
     if isinstance(interpolation, int):
         interpolation = _interpolation_modes_from_int(interpolation)
     elif not isinstance(interpolation, InterpolationMode):
@@ -239,7 +249,7 @@ def _compute_resized_output_size(
 def resize(
     inpt: torch.Tensor,
     size: Optional[list[int]],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
 ) -> torch.Tensor:
@@ -275,7 +285,7 @@ def _do_native_uint8_resize_on_cpu(interpolation: InterpolationMode) -> bool:
 def resize_image(
     image: torch.Tensor,
     size: Optional[list[int]],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
 ) -> torch.Tensor:
@@ -355,7 +365,7 @@ def resize_image(
 def _resize_image_pil(
     image: PIL.Image.Image,
     size: Union[Sequence[int], int],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
 ) -> PIL.Image.Image:
     old_height, old_width = image.height, image.width
@@ -377,7 +387,7 @@ def _resize_image_pil(
 def __resize_image_pil_dispatch(
     image: PIL.Image.Image,
     size: Union[Sequence[int], int],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
 ) -> PIL.Image.Image:
@@ -580,7 +590,7 @@ def _resize_bounding_boxes_dispatch(
 def resize_video(
     video: torch.Tensor,
     size: Optional[list[int]],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = True,
 ) -> torch.Tensor:
@@ -593,7 +603,7 @@ def affine(
     translate: list[float],
     scale: float,
     shear: list[float],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.NEAREST,
     fill: _FillTypeJIT = None,
     center: Optional[list[float]] = None,
 ) -> torch.Tensor:
@@ -919,7 +929,7 @@ def affine_image(
     translate: list[float],
     scale: float,
     shear: list[float],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.NEAREST,
     fill: _FillTypeJIT = None,
     center: Optional[list[float]] = None,
 ) -> torch.Tensor:
@@ -952,7 +962,7 @@ def _affine_image_pil(
     translate: list[float],
     scale: float,
     shear: list[float],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.NEAREST,
     fill: _FillTypeJIT = None,
     center: Optional[list[float]] = None,
 ) -> PIL.Image.Image:
@@ -1300,7 +1310,7 @@ def affine_video(
     translate: list[float],
     scale: float,
     shear: list[float],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.NEAREST,
     fill: _FillTypeJIT = None,
     center: Optional[list[float]] = None,
 ) -> torch.Tensor:
@@ -1319,7 +1329,7 @@ def affine_video(
 def rotate(
     inpt: torch.Tensor,
     angle: float,
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[list[float]] = None,
     fill: _FillTypeJIT = None,
@@ -1339,7 +1349,7 @@ def rotate(
 def rotate_image(
     image: torch.Tensor,
     angle: float,
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[list[float]] = None,
     fill: _FillTypeJIT = None,
@@ -1387,7 +1397,7 @@ def rotate_image(
 def _rotate_image_pil(
     image: PIL.Image.Image,
     angle: float,
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[list[float]] = None,
     fill: _FillTypeJIT = None,
@@ -1512,7 +1522,7 @@ def _rotate_mask_dispatch(
 def rotate_video(
     video: torch.Tensor,
     angle: float,
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[list[float]] = None,
     fill: _FillTypeJIT = None,
@@ -1911,7 +1921,7 @@ def perspective(
     inpt: torch.Tensor,
     startpoints: Optional[list[list[int]]],
     endpoints: Optional[list[list[int]]],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
     coefficients: Optional[list[float]] = None,
 ) -> torch.Tensor:
@@ -1992,7 +2002,7 @@ def perspective_image(
     image: torch.Tensor,
     startpoints: Optional[list[list[int]]],
     endpoints: Optional[list[list[int]]],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
     coefficients: Optional[list[float]] = None,
 ) -> torch.Tensor:
@@ -2019,7 +2029,7 @@ def _perspective_image_pil(
     image: PIL.Image.Image,
     startpoints: Optional[list[list[int]]],
     endpoints: Optional[list[list[int]]],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
     coefficients: Optional[list[float]] = None,
 ) -> PIL.Image.Image:
@@ -2259,7 +2269,7 @@ def perspective_video(
     video: torch.Tensor,
     startpoints: Optional[list[list[int]]],
     endpoints: Optional[list[list[int]]],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
     coefficients: Optional[list[float]] = None,
 ) -> torch.Tensor:
@@ -2271,7 +2281,7 @@ def perspective_video(
 def elastic(
     inpt: torch.Tensor,
     displacement: torch.Tensor,
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.ElasticTransform` for details."""
@@ -2292,7 +2302,7 @@ elastic_transform = elastic
 def elastic_image(
     image: torch.Tensor,
     displacement: torch.Tensor,
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
     if not isinstance(displacement, torch.Tensor):
@@ -2333,7 +2343,7 @@ def elastic_image(
 def _elastic_image_pil(
     image: PIL.Image.Image,
     displacement: torch.Tensor,
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
 ) -> PIL.Image.Image:
     t_img = pil_to_tensor(image)
@@ -2508,7 +2518,7 @@ def _elastic_mask_dispatch(
 def elastic_video(
     video: torch.Tensor,
     displacement: torch.Tensor,
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     fill: _FillTypeJIT = None,
 ) -> torch.Tensor:
     return elastic_image(video, displacement, interpolation=interpolation, fill=fill)
@@ -2666,7 +2676,7 @@ def resized_crop(
     height: int,
     width: int,
     size: list[int],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     antialias: Optional[bool] = True,
 ) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.RandomResizedCrop` for details."""
@@ -2706,7 +2716,7 @@ def resized_crop_image(
     height: int,
     width: int,
     size: list[int],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     antialias: Optional[bool] = True,
 ) -> torch.Tensor:
     image = crop_image(image, top, left, height, width)
@@ -2720,7 +2730,7 @@ def _resized_crop_image_pil(
     height: int,
     width: int,
     size: list[int],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
 ) -> PIL.Image.Image:
     image = _crop_image_pil(image, top, left, height, width)
     return _resize_image_pil(image, size, interpolation=interpolation)
@@ -2734,7 +2744,7 @@ def _resized_crop_image_pil_dispatch(
     height: int,
     width: int,
     size: list[int],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     antialias: Optional[bool] = True,
 ) -> PIL.Image.Image:
     if antialias is False:
@@ -2837,7 +2847,7 @@ def resized_crop_video(
     height: int,
     width: int,
     size: list[int],
-    interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
     antialias: Optional[bool] = True,
 ) -> torch.Tensor:
     return resized_crop_image(

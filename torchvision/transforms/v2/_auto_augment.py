@@ -8,7 +8,6 @@ from torch.utils._pytree import tree_flatten, tree_unflatten, TreeSpec
 from torchvision import transforms as _transforms, tv_tensors
 from torchvision.transforms import _functional_tensor as _FT
 from torchvision.transforms.v2 import AutoAugmentPolicy, functional as F, InterpolationMode, Transform
-from torchvision.transforms.v2.functional._geometry import _check_interpolation
 from torchvision.transforms.v2.functional._meta import get_size
 from torchvision.transforms.v2.functional._utils import _FillType, _FillTypeJIT
 
@@ -22,11 +21,11 @@ class _AutoAugmentBase(Transform):
     def __init__(
         self,
         *,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        interpolation: Union[str, InterpolationMode, int] = "nearest",
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = None,
     ) -> None:
         super().__init__()
-        self.interpolation = _check_interpolation(interpolation)
+        self.interpolation = interpolation
         self.fill = fill
         self._fill = _setup_fill_arg(fill)
 
@@ -91,7 +90,7 @@ class _AutoAugmentBase(Transform):
         image: ImageOrVideo,
         transform_id: str,
         magnitude: float,
-        interpolation: Union[InterpolationMode, int],
+        interpolation: Union[str, InterpolationMode, int],
         fill: dict[Union[type, str], _FillTypeJIT],
     ) -> ImageOrVideo:
         # Note: this cast is wrong and is only here to make mypy happy (it disagrees with torchscript)
@@ -188,9 +187,13 @@ class AutoAugment(_AutoAugmentBase):
     Args:
         policy (AutoAugmentPolicy, optional): Desired policy enum defined by
             :class:`torchvision.transforms.autoaugment.AutoAugmentPolicy`. Default is ``AutoAugmentPolicy.IMAGENET``.
-        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+        interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
+            :class:`torchvision.transforms.v2.InterpolationMode`.
+            Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
+            ``"box"``, ``"hamming"``, and ``"lanczos"``.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
+            The corresponding ``InterpolationMode`` enum values and Pillow integer
+            constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
     """
@@ -226,7 +229,7 @@ class AutoAugment(_AutoAugmentBase):
     def __init__(
         self,
         policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        interpolation: Union[str, InterpolationMode, int] = "nearest",
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
@@ -366,9 +369,13 @@ class RandAugment(_AutoAugmentBase):
             must be non-negative integer. Default: 2.
         magnitude (int, optional): Magnitude for all the transformations.
         num_magnitude_bins (int, optional): The number of different magnitude values.
-        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+        interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
+            :class:`torchvision.transforms.v2.InterpolationMode`.
+            Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
+            ``"box"``, ``"hamming"``, and ``"lanczos"``.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
+            The corresponding ``InterpolationMode`` enum values and Pillow integer
+            constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
     """
@@ -405,7 +412,7 @@ class RandAugment(_AutoAugmentBase):
         num_ops: int = 2,
         magnitude: int = 9,
         num_magnitude_bins: int = 31,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        interpolation: Union[str, InterpolationMode, int] = "nearest",
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
@@ -447,9 +454,13 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
     Args:
         num_magnitude_bins (int, optional): The number of different magnitude values.
-        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+        interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
+            :class:`torchvision.transforms.v2.InterpolationMode`.
+            Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
+            ``"box"``, ``"hamming"``, and ``"lanczos"``.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
+            The corresponding ``InterpolationMode`` enum values and Pillow integer
+            constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
     """
@@ -478,7 +489,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
     def __init__(
         self,
         num_magnitude_bins: int = 31,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.NEAREST,
+        interpolation: Union[str, InterpolationMode, int] = "nearest",
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = None,
     ):
         super().__init__(interpolation=interpolation, fill=fill)
@@ -521,9 +532,13 @@ class AugMix(_AutoAugmentBase):
             Default is ``-1``.
         alpha (float, optional): The hyperparameter for the probability distributions. Default is ``1.0``.
         all_ops (bool, optional): Use all operations (including brightness, contrast, color and sharpness). Default is ``True``.
-        interpolation (InterpolationMode, optional): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+        interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
+            :class:`torchvision.transforms.v2.InterpolationMode`.
+            Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
+            ``"box"``, ``"hamming"``, and ``"lanczos"``.
+            ``"box"``, ``"hamming"``, and ``"lanczos"`` are only supported for PIL images.
+            The corresponding ``InterpolationMode`` enum values and Pillow integer
+            constants, e.g. ``PIL.Image.BILINEAR`` are accepted as well.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
     """
@@ -559,7 +574,7 @@ class AugMix(_AutoAugmentBase):
         chain_depth: int = -1,
         alpha: float = 1.0,
         all_ops: bool = True,
-        interpolation: Union[InterpolationMode, int] = InterpolationMode.BILINEAR,
+        interpolation: Union[str, InterpolationMode, int] = "bilinear",
         fill: Union[_FillType, dict[Union[type, str], _FillType]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)
