@@ -115,6 +115,11 @@ at::Tensor qnms_kernel(
       " and ",
       scores.size(0));
 
+  TORCH_WARN_ONCE(
+      "Quantized NMS support is deprecated since torchvision 0.27 and will ",
+      "be removed in torchvision 0.28. Please dequantize your tensors before ",
+      "calling NMS.");
+
   auto result = at::empty({0});
 
   AT_DISPATCH_QINT_TYPES(dets.scalar_type(), "qnms_kernel", [&] {

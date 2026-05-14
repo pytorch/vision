@@ -243,6 +243,11 @@ at::Tensor qroi_align_forward_kernel(
       input.size(0) == 1,
       "Only one image per batch is allowed in roi_align when quantized tensors are passed.");
 
+  TORCH_WARN_ONCE(
+      "Quantized roi_align support is deprecated since torchvision 0.27 and ",
+      "will be removed in torchvision 0.28. Please dequantize your tensors ",
+      "before calling roi_align.");
+
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
   at::CheckedFrom c = "qroi_align_forward_kernel";
