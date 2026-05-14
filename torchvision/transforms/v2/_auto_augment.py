@@ -517,7 +517,7 @@ class AugMix(_AutoAugmentBase):
     Args:
         severity (int, optional): The severity of base augmentation operators. Default is ``3``.
         mixture_width (int, optional): The number of augmentation chains. Default is ``3``.
-        chain_depth (int, optional): The depth of augmentation chains. A negative value denotes stochastic depth sampled from the interval [1, 3].
+        chain_depth (int, optional): The depth of augmentation chains. A zero or negative value denotes stochastic depth sampled from the interval [1, 3].
             Default is ``-1``.
         alpha (float, optional): The hyperparameter for the probability distributions. Default is ``1.0``.
         all_ops (bool, optional): Use all operations (including brightness, contrast, color and sharpness). Default is ``True``.
