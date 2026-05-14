@@ -13,6 +13,9 @@ on:
 jobs:
   download:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # JasonEtco/create-an-issue opens a tracking issue on schedule failure
 
     steps:
       - name: Set up python
