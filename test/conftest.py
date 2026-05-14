@@ -5,9 +5,7 @@ import pytest
 import torch
 
 from common_utils import (
-    _is_cvcuda_available,
     CUDA_NOT_AVAILABLE_MSG,
-    CVCUDA_NOT_AVAILABLE_MSG,
     IN_FBCODE,
     IN_OSS_CI,
     IN_RE_WORKER,
@@ -19,7 +17,6 @@ from common_utils import (
 def pytest_configure(config):
     # register an additional marker (see pytest_collection_modifyitems)
     config.addinivalue_line("markers", "needs_cuda: mark for tests that rely on a CUDA device")
-    config.addinivalue_line("markers", "needs_cvcuda: mark for tests that rely on CV-CUDA")
     config.addinivalue_line("markers", "needs_mps: mark for tests that rely on a MPS device")
     config.addinivalue_line("markers", "dont_collect: mark for tests that should not be collected")
     config.addinivalue_line("markers", "opcheck_only_one: only opcheck one parametrization")
@@ -44,9 +41,6 @@ def pytest_collection_modifyitems(items):
         # @pytest.mark.parametrize('device', cpu_and_cuda())
         # the "instances" of the tests where device == 'cuda' will have the 'needs_cuda' mark,
         # and the ones with device == 'cpu' won't have the mark.
-        needs_cvcuda = item.get_closest_marker("needs_cvcuda") is not None
-        if needs_cvcuda:
-            item.add_marker(pytest.mark.needs_cuda)
         needs_cuda = item.get_closest_marker("needs_cuda") is not None
         needs_mps = item.get_closest_marker("needs_mps") is not None
 
@@ -57,9 +51,6 @@ def pytest_collection_modifyitems(items):
 
         if needs_mps and not torch.backends.mps.is_available():
             item.add_marker(pytest.mark.skip(reason=MPS_NOT_AVAILABLE_MSG))
-
-        if needs_cvcuda and not _is_cvcuda_available():
-            item.add_marker(pytest.mark.skip(reason=CVCUDA_NOT_AVAILABLE_MSG))
 
         if IN_FBCODE:
             # fbcode doesn't like skipping tests, so instead we  just don't collect the test

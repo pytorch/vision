@@ -116,6 +116,15 @@ class BoundingBoxes(TVTensor):
         bounding_boxes.clamping_mode = clamping_mode
         return bounding_boxes
 
+    @classmethod
+    def wrap(cls, tensor: torch.Tensor, like: BoundingBoxes, **kwargs: Any) -> BoundingBoxes:  # type: ignore[override]
+        return cls._wrap(
+            tensor,
+            format=kwargs.get("format", like.format),
+            canvas_size=kwargs.get("canvas_size", like.canvas_size),
+            clamping_mode=kwargs.get("clamping_mode", like.clamping_mode),
+        )
+
     def __new__(
         cls,
         data: Any,

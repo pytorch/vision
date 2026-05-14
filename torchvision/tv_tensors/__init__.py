@@ -16,24 +16,20 @@ from ._video import Video
 def wrap(wrappee, *, like, **kwargs):
     """Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.
 
-    If ``like`` is a :class:`~torchvision.tv_tensors.BoundingBoxes`, the ``format`` and ``canvas_size`` of
-    ``like`` are assigned to ``wrappee``, unless they are passed as ``kwargs``.
+    If ``like`` carries metadata (e.g. ``format``, ``canvas_size``), that
+    metadata is copied to the output. Individual metadata fields can be
+    overridden via ``kwargs``.
+
+    Subclass authors can override :meth:`~torchvision.tv_tensors.TVTensor.wrap`
+    to define how their metadata is propagated.
 
     Args:
         wrappee (Tensor): The tensor to convert.
         like (:class:`~torchvision.tv_tensors.TVTensor`): The reference.
             ``wrappee`` will be converted into the same subclass as ``like``.
-        kwargs: Can contain "format", "canvas_size" and "clamping_mode" if ``like`` is a :class:`~torchvision.tv_tensor.BoundingBoxes`.
-            Ignored otherwise.
+        kwargs: Metadata overrides passed to the subclass's
+            :meth:`~torchvision.tv_tensors.TVTensor.wrap` method.
     """
-    if isinstance(like, BoundingBoxes):
-        return type(like)._wrap(
-            wrappee,
-            format=kwargs.get("format", like.format),
-            canvas_size=kwargs.get("canvas_size", like.canvas_size),
-            clamping_mode=kwargs.get("clamping_mode", like.clamping_mode),
-        )
-    elif isinstance(like, KeyPoints):
-        return type(like)._wrap(wrappee, canvas_size=kwargs.get("canvas_size", like.canvas_size))
-    else:
-        return wrappee.as_subclass(type(like))
+    if (wrap_method := getattr(type(like), "wrap", None)) is not None:
+        return wrap_method(wrappee, like, **kwargs)
+    return wrappee.as_subclass(type(like))

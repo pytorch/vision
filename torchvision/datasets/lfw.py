@@ -52,8 +52,10 @@ class _LFW(VisionDataset):
 
         if download:
             raise ValueError(
-                "LFW dataset is no longer available for download."
-                "Please download the dataset manually and place it in the specified directory"
+                "LFW dataset is no longer available for automatic download."
+                "Please download the dataset manually and place it in the specified directory."
+                "A commonly used mirror is available at: "
+                "https://www.kaggle.com/datasets/jessicali9530/lfw-dataset"
             )
             self.download()
 
@@ -94,10 +96,11 @@ class _LFW(VisionDataset):
 class LFWPeople(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
-    .. warning:
+    .. warning::
 
         The LFW dataset is no longer available for automatic download. Please
         download it manually and place it in the specified directory.
+        A commonly used mirror is available at: https://www.kaggle.com/datasets/jessicali9530/lfw-dataset
 
     Args:
         root (str or ``pathlib.Path``): Root directory of dataset where directory
@@ -182,10 +185,11 @@ class LFWPeople(_LFW):
 class LFWPairs(_LFW):
     """`LFW <http://vis-www.cs.umass.edu/lfw/>`_ Dataset.
 
-    .. warning:
+    .. warning::
 
         The LFW dataset is no longer available for automatic download. Please
         download it manually and place it in the specified directory.
+        A commonly used mirror is available at: https://www.kaggle.com/datasets/jessicali9530/lfw-dataset
 
     Args:
         root (str or ``pathlib.Path``): Root directory of dataset where directory
