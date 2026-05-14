@@ -1,4 +1,4 @@
-#include "encode_jpeg.h"
+#include "encode_png.h"
 
 #include <torch/headeronly/util/Exception.h>
 
