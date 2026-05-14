@@ -50,6 +50,10 @@ class TVTensor(torch.Tensor):
         return output
 
     @classmethod
+    def wrap(cls, tensor: torch.Tensor, like: TVTensor, **kwargs: Any) -> TVTensor:
+        return tensor.as_subclass(cls)
+
+    @classmethod
     def __torch_function__(
         cls,
         func: Callable[..., torch.Tensor],
