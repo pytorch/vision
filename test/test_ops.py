@@ -770,7 +770,7 @@ class TestMultiScaleRoIAlign:
 
 
 class TestNMS:
-    def _reference_nms(self, boxes, scores, iou_threshold):
+    def _reference_aligned_nms(cls, boxes, scores, iou_threshold):
         """
         Args:
             boxes: boxes in corner-form
@@ -818,15 +818,15 @@ class TestNMS:
         torch.random.manual_seed(seed)
         err_msg = "NMS incompatible between CPU and reference implementation for IoU={}"
         boxes, scores = self._create_tensors_with_iou(1000, iou)
-        keep_ref = self._reference_nms(boxes, scores, iou)
+        keep_ref = self._reference_aligned_nms(boxes, scores, iou)
         keep = ops.nms(boxes, scores, iou)
         torch.testing.assert_close(keep, keep_ref, msg=err_msg.format(iou))
 
     def test_nms_input_errors(self):
         with pytest.raises(RuntimeError):
             ops.nms(torch.rand(4), torch.rand(3), 0.5)
-        with pytest.raises(RuntimeError):
-            ops.nms(torch.rand(3, 5), torch.rand(3), 0.5)
+        with pytest.raises((RuntimeError, ValueError)):
+            ops.nms(torch.rand(3, 6), torch.rand(3), 0.5)
         with pytest.raises(RuntimeError):
             ops.nms(torch.rand(3, 4), torch.rand(3, 2), 0.5)
         with pytest.raises(RuntimeError):
@@ -920,19 +920,23 @@ class TestNMS:
         assert_equal(keep32, keep16)
 
     @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.parametrize("rotated", (False, True))
     @pytest.mark.opcheck_only_one()
-    def test_batched_nms_implementations(self, seed):
+    def test_batched_nms_implementations(self, seed, rotated):
         """Make sure that both implementations of batched_nms yield identical results"""
         torch.random.manual_seed(seed)
 
         num_boxes = 1000
         iou_threshold = 0.9
 
-        boxes = torch.cat((torch.rand(num_boxes, 2), torch.rand(num_boxes, 2) + 10), dim=1)
-        assert max(boxes[:, 0]) < min(boxes[:, 2])  # x1 < x2
-        assert max(boxes[:, 1]) < min(boxes[:, 3])  # y1 < y2
+        if rotated:
+            _, boxes, scores = self._create_rotated_boxes(num_boxes)
+        else:
+            boxes = torch.cat((torch.rand(num_boxes, 2), torch.rand(num_boxes, 2) + 10), dim=1)
+            assert max(boxes[:, 0]) < min(boxes[:, 2])  # x1 < x2
+            assert max(boxes[:, 1]) < min(boxes[:, 3])  # y1 < y2
+            scores = torch.rand(num_boxes)
 
-        scores = torch.rand(num_boxes)
         idxs = torch.randint(0, 4, size=(num_boxes,))
         keep_vanilla = ops.boxes._batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
         keep_trick = ops.boxes._batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
@@ -944,6 +948,84 @@ class TestNMS:
         # Also make sure an empty tensor is returned if boxes is empty
         empty = torch.empty((0,), dtype=torch.int64)
         torch.testing.assert_close(empty, ops.batched_nms(empty, None, None, None))
+
+    def _create_rotated_boxes(self, N, angle=0, device="cpu"):
+        boxes = torch.rand(N, 4, device=device) * 200
+        boxes[:, 2:] += boxes[:, :2]
+        scores = torch.rand(N, device=device)
+        cxcywh = ops.box_convert(boxes, in_fmt="xyxy", out_fmt="cxcywh")
+        rotated_boxes = torch.zeros(N, 5, device=device)
+        rotated_boxes[:, :4] = cxcywh
+        rotated_boxes[:, 4] = angle
+        return boxes, rotated_boxes, scores
+
+    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    @pytest.mark.parametrize("angle", (0, 90, 180))
+    def test_nms_rotated(self, iou, angle):
+        torch.manual_seed(0)
+        N = 1000
+        boxes, rotated_boxes, scores = self._create_rotated_boxes(N, angle=angle)
+        if angle == 90:
+            # widths and heights are intentionally swapped here for 90 degrees case
+            # so that the reference horizontal nms could be used
+            rotated_boxes[:, 2], rotated_boxes[:, 3] = (
+                rotated_boxes[:, 3].clone(),
+                rotated_boxes[:, 2].clone(),
+            )
+        keep_ref = self._reference_aligned_nms(boxes, scores, iou)
+        keep = ops.nms(rotated_boxes, scores, iou)
+        torch.testing.assert_close(keep, keep_ref, atol=0, rtol=0)
+        keep_non_rotated = ops.nms(boxes, scores, iou)
+        torch.testing.assert_close(keep, keep_non_rotated, atol=0, rtol=0)
+
+    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    @pytest.mark.parametrize("angle", (0, 90, 180))
+    def test_batched_nms_rotated(self, iou, angle):
+        torch.manual_seed(0)
+        N = 2000
+        num_classes = 50
+        boxes, rotated_boxes, scores = self._create_rotated_boxes(N, angle=angle)
+        if angle == 90:
+            # widths and heights are intentionally swapped here for 90 degrees case
+            # so that the reference horizontal nms could be used
+            rotated_boxes[:, 2], rotated_boxes[:, 3] = (
+                rotated_boxes[:, 3].clone(),
+                rotated_boxes[:, 2].clone(),
+            )
+        idxs = torch.randint(0, num_classes, (N,))
+        backup = rotated_boxes.clone()
+        keep_non_rotated = ops.batched_nms(boxes, scores, idxs, iou)
+        keep = ops.batched_nms(rotated_boxes, scores, idxs, iou)
+        torch.testing.assert_close(rotated_boxes, backup)
+        torch.testing.assert_close(keep, keep_non_rotated, atol=0, rtol=0)
+
+    @pytest.mark.parametrize("iou", (0.2, 0.5, 0.8))
+    def test_nms_rotated_different_angles(self, iou):
+        torch.manual_seed(0)
+        N = 1000
+        _, rotated_boxes, scores = self._create_rotated_boxes(N)
+        rotated_boxes[:, 4] = torch.rand(N) * 360
+        keep = ops.nms(rotated_boxes, scores, iou)
+        assert keep.dtype == torch.int64
+        assert keep.dim() == 1
+        assert keep.numel() <= N
+        assert (keep >= 0).all() and (keep < N).all()
+        assert (scores[keep][:-1] >= scores[keep][1:]).all()
+
+    def test_nms_rotated_specific_angles(self):
+        boxes = torch.tensor(
+            [
+                [0, 0, 10, 10, 0],
+                [0, 0, 10, 10, 45],
+                [100, 100, 10, 10, 30],
+            ],
+            dtype=torch.float32,
+        )
+        scores = torch.tensor([0.9, 0.8, 0.7])
+        keep = ops.nms(boxes, scores, iou_threshold=0.5)
+        assert 0 in keep.tolist()
+        assert 1 not in keep.tolist()
+        assert 2 in keep.tolist()
 
 
 optests.generate_opcheck_tests(
