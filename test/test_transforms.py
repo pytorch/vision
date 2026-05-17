@@ -2164,6 +2164,22 @@ def test_random_affine():
     with pytest.raises(ValueError):
         transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10, 0, 10])
 
+    # degrees=None should work when another transform param is given
+    t = transforms.RandomAffine(degrees=None, translate=[0.2, 0.3])
+    assert t.degrees == [0.0, 0.0]
+
+    # omitting degrees positionally should also work
+    t = transforms.RandomAffine(translate=[0.2, 0.3])
+    assert t.degrees == [0.0, 0.0]
+
+    # degrees=None with no other params must raise
+    with pytest.raises(ValueError, match="at least one of translate, scale, or shear"):
+        transforms.RandomAffine(degrees=None)
+
+    # all-defaults (no args) must raise
+    with pytest.raises(ValueError, match="at least one of translate, scale, or shear"):
+        transforms.RandomAffine()
+
     # assert fill being either a Sequence or a Number
     with pytest.raises(TypeError):
         transforms.RandomAffine(0, fill={})

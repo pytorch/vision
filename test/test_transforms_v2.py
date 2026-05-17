@@ -1854,6 +1854,25 @@ class TestAffine:
         with pytest.raises(TypeError, match="Got inappropriate fill arg"):
             transforms.RandomAffine(degrees=0, fill="fill")
 
+    def test_transform_degrees_none(self):
+        # degrees=None disables rotation when another param is given
+        t = transforms.RandomAffine(degrees=None, translate=(0.2, 0.3))
+        assert t.degrees == [0.0, 0.0]
+
+        # positional omission works the same way
+        t = transforms.RandomAffine(translate=(0.2, 0.3))
+        assert t.degrees == [0.0, 0.0]
+
+    def test_transform_degrees_none_no_other_param_error(self):
+        # degrees=None with nothing else enabled must raise
+        with pytest.raises(ValueError, match="at least one of translate, scale, or shear"):
+            transforms.RandomAffine(degrees=None)
+
+    def test_transform_no_args_error(self):
+        # zero arguments must raise
+        with pytest.raises(ValueError, match="at least one of translate, scale, or shear"):
+            transforms.RandomAffine()
+
 
 class TestVerticalFlip:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.uint8])

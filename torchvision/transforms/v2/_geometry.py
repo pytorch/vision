@@ -664,9 +664,10 @@ class RandomAffine(Transform):
     the image can have ``[..., C, H, W]`` shape. A bounding box can have ``[..., 4]`` shape.
 
     Args:
-        degrees (sequence or number): Range of degrees to select from.
+        degrees (sequence or number, optional): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
-            will be (-degrees, +degrees). Set to 0 to deactivate rotations.
+            will be (-degrees, +degrees). Set to 0 or ``None`` to deactivate rotations.
+            If ``None``, at least one of ``translate``, ``scale``, or ``shear`` must be provided.
         translate (tuple, optional): tuple of maximum absolute fraction for horizontal
             and vertical translations. For example translate=(a, b), then horizontal shift
             is randomly sampled in the range -img_width * a < dx < img_width * a and vertical shift is
@@ -703,7 +704,7 @@ class RandomAffine(Transform):
 
     def __init__(
         self,
-        degrees: Union[numbers.Number, Sequence],
+        degrees: Optional[Union[numbers.Number, Sequence]] = None,
         translate: Optional[Sequence[float]] = None,
         scale: Optional[Sequence[float]] = None,
         shear: Optional[Union[int, float, Sequence[float]]] = None,
@@ -712,7 +713,16 @@ class RandomAffine(Transform):
         center: Optional[list[float]] = None,
     ) -> None:
         super().__init__()
-        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
+        # Allow degrees=None to disable rotation, but require at least one
+        # other geometric transform to be specified.
+        if degrees is None:
+            if translate is None and scale is None and shear is None:
+                raise ValueError(
+                    "If degrees is None, at least one of translate, scale, or shear must be provided."
+                )
+            self.degrees = [0.0, 0.0]
+        else:
+            self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
         if translate is not None:
             _check_sequence_input(translate, "translate", req_sizes=(2,))
             for t in translate:
