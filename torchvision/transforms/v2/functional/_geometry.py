@@ -1326,6 +1326,49 @@ def affine_video(
     )
 
 
+def _largest_inscribed_crop_size(width: int, height: int, angle: float) -> tuple[int, int]:
+    """Compute the largest axis-aligned rectangle inscribed in a rotated width x height rectangle.
+
+    Returns ``(crop_height, crop_width)`` as integers.
+
+    Approach taken from https://stackoverflow.com/questions/16702966/rotate-image-and-crop-out-black-borders
+    """
+    angle_rad = math.radians(angle)
+    sin_a = abs(math.sin(angle_rad))
+    cos_a = abs(math.cos(angle_rad))
+
+    # Guard against small values of sin_a or cos_a that will cause us to truncate a pixel
+    # off rotations that introduce no padding (e.g. 90° or 180°).
+    if sin_a < 1e-10:
+        return height, width
+    if cos_a < 1e-10:
+        # 90°/270°: rotated rectangle has dims swapped; clamp to canvas (h, w).
+        return min(width, height), min(height, width)
+
+    width_is_longer = width >= height
+    side_long = width if width_is_longer else height
+    side_short = height if width_is_longer else width
+
+    if side_short <= 2.0 * sin_a * cos_a * side_long or abs(sin_a - cos_a) < 1e-10:
+        # Half-constrained: two crop corners touch the longer side.
+        # Also handles the 45° case where sin_a == cos_a and the denominator
+        # in the fully constrained solution goes to zero.
+        x = 0.5 * side_short
+        if width_is_longer:
+            crop_w, crop_h = x / sin_a, x / cos_a
+        else:
+            crop_w, crop_h = x / cos_a, x / sin_a
+    else:
+        # Fully constrained: crop touches all four sides
+        cos_2a = cos_a * cos_a - sin_a * sin_a
+        crop_w = (width * cos_a - height * sin_a) / cos_2a
+        crop_h = (height * cos_a - width * sin_a) / cos_2a
+
+    # Use floor (int()) to guarantee the crop region contains no fill pixels.
+    # Clamp to image dimensions for edge cases like wide images rotated near 90°.
+    return min(math.floor(crop_h), height), min(math.floor(crop_w), width)
+
+
 def rotate(
     inpt: torch.Tensor,
     angle: float,
