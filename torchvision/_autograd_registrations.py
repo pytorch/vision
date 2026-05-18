@@ -235,6 +235,15 @@ def _autocast_nms(dets, scores, iou_threshold):
         )
 
 
+def _autocast_nms_rotated(dets, scores, iou_threshold):
+    with torch._C._ExcludeDispatchKeyGuard(_all_autocast_keys):
+        return torch.ops.torchvision.nms_rotated(
+            _autocast_cast(dets),
+            _autocast_cast(scores),
+            iou_threshold,
+        )
+
+
 def _autocast_roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned):
     orig_dtype = input.dtype
     with torch._C._ExcludeDispatchKeyGuard(_all_autocast_keys):
@@ -358,6 +367,7 @@ if torchvision.extension._has_ops():
     # nms and roi_align: registered for all autocast device types
     for _key in ("AutocastCUDA", "AutocastCPU", "AutocastXPU"):
         _autocast_lib.impl("nms", _autocast_nms, _key)
+        _autocast_lib.impl("nms_rotated", _autocast_nms_rotated, _key)
         _autocast_lib.impl("roi_align", _autocast_roi_align, _key)
 
     # Other ops: CUDA autocast only
