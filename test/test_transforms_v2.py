@@ -15,11 +15,9 @@ from unittest import mock
 import numpy as np
 import PIL.Image
 import pytest
-
 import torch
 import torchvision.ops
 import torchvision.transforms.v2 as transforms
-
 from common_utils import (
     assert_equal,
     cache,
@@ -38,14 +36,12 @@ from common_utils import (
     needs_cuda,
     set_rng_seed,
 )
-
 from torch import nn
 from torch.testing import assert_close
 from torch.utils._pytree import tree_flatten, tree_map
 from torch.utils.data import DataLoader, default_collate
 from torchvision import tv_tensors
 from torchvision.ops.boxes import box_iou
-
 from torchvision.transforms._functional_tensor import _max_value as get_max_value
 from torchvision.transforms.functional import pil_modes_mapping, to_pil_image
 from torchvision.transforms.v2 import functional as F
@@ -60,7 +56,6 @@ from torchvision.transforms.v2.functional._meta import (
     _xyxy_to_xywh,
 )
 from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
-
 
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
@@ -8033,3 +8028,124 @@ class TestUtils:
     def test_no_valid_input(self, query):
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
+
+
+class TestThreadSafeGenerator:
+    """Test that transforms correctly use torch.thread_safe_generator().
+
+    For multiprocessing workers, thread_safe_generator() returns None,
+    so transforms use the default process global RNG,
+    i.e. for a multiprocessing worker the RNG of that process.
+    For thread workers, it returns a thread-local torch.Generator.
+    """
+
+    TRANSFORMS = [
+        transforms.RandomResizedCrop(size=(24, 24)),
+        transforms.RandomRotation(degrees=10),
+        transforms.RandomAffine(degrees=10),
+        transforms.RandomCrop(size=(24, 24), pad_if_needed=True),
+        transforms.RandomPerspective(p=1.0),
+        transforms.RandomErasing(p=1.0),
+        transforms.ScaleJitter(target_size=(24, 24)),
+        transforms.RandomZoomOut(),
+        transforms.ElasticTransform(),
+        transforms.RandomShortestSize(min_size=(20, 24)),
+        transforms.RandomResize(min_size=20, max_size=28),
+        transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.1),
+        transforms.RandomChannelPermutation(),
+        transforms.RandomPhotometricDistort(),
+        transforms.AutoAugment(),
+        transforms.RandAugment(),
+        transforms.TrivialAugmentWide(),
+        transforms.AugMix(),
+        transforms.JPEG(quality=(1, 100)),
+        transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
+    ]
+
+    class TransformDataset(torch.utils.data.Dataset):
+        def __init__(self, size, transform):
+            self.size = size
+            self.transform = transform
+            self.image = make_image((32, 32))
+
+        def __getitem__(self, idx):
+            return self.transform(self.image)
+
+        def __len__(self):
+            return self.size
+
+    @pytest.mark.parametrize("transform", TRANSFORMS, ids=lambda t: type(t).__name__)
+    def test_multiprocessing_workers(self, transform):
+        """With multiprocessing DataLoader workers, thread_safe_generator()
+        returns None and transforms use the per-process global RNG.
+        Each worker gets a different seed, so results should differ."""
+        dataset = self.TransformDataset(size=2, transform=transform)
+        dl = DataLoader(dataset, batch_size=1, num_workers=2)
+        batch0, batch1 = list(dl)
+        assert not torch.equal(batch0, batch1)
+
+    @pytest.mark.parametrize("transform", TRANSFORMS, ids=lambda t: type(t).__name__)
+    def test_thread_worker_uses_thread_local_generator(self, transform):
+        """In thread workers, thread_safe_generator() returns a thread-local
+        Generator. Mimic two workers with differently seeded generators
+        and verify they produce different results."""
+        image = make_image((32, 32))
+
+        g0 = torch.Generator()
+        g0.manual_seed(0)
+        with mock.patch("torch.thread_safe_generator", return_value=g0):
+            result_worker0 = transform(image)
+
+        g1 = torch.Generator()
+        g1.manual_seed(5)
+        with mock.patch("torch.thread_safe_generator", return_value=g1):
+            result_worker1 = transform(image)
+
+        assert not torch.equal(result_worker0, result_worker1)
+
+    def test_thread_generator_random_iou_crop(self):
+        """RandomIoUCrop requires bounding boxes, so test it separately."""
+        image = make_image((32, 32))
+        bboxes = make_bounding_boxes(canvas_size=(32, 32), format="XYXY", num_boxes=3)
+
+        transform = transforms.RandomIoUCrop()
+
+        results = []
+        for seed in (0, 1):
+            g = torch.Generator()
+            g.manual_seed(seed)
+            with mock.patch("torch.thread_safe_generator", return_value=g):
+                result = transform(image, bboxes)
+            results.append(result)
+
+        # The image output should differ between different seeds
+        assert not torch.equal(results[0][0], results[1][0])
+
+    # Reproducibility test list: includes flips which are excluded from
+    # the divergence tests above.
+    ALL_TRANSFORMS = TRANSFORMS + [
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomVerticalFlip(p=0.5),
+    ]
+
+    @pytest.mark.parametrize("transform", ALL_TRANSFORMS, ids=lambda t: type(t).__name__)
+    def test_thread_generator_reproducibility(self, transform):
+        """Verify transforms use the provided generator, not the global RNG.
+        Same seeded generator should produce identical results even when
+        the global RNG state changes between calls."""
+        image = make_image((32, 32))
+
+        g1 = torch.Generator()
+        g1.manual_seed(42)
+        with mock.patch("torch.thread_safe_generator", return_value=g1):
+            result1 = transform(image)
+
+        # Advance global RNG so it's in a different state
+        torch.rand(100)
+
+        g2 = torch.Generator()
+        g2.manual_seed(42)
+        with mock.patch("torch.thread_safe_generator", return_value=g2):
+            result2 = transform(image)
+
+        torch.testing.assert_close(result1, result2)
