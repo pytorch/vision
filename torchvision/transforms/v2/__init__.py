@@ -1,4 +1,5 @@
-from torchvision.transforms import AutoAugmentPolicy, InterpolationMode  # usort: skip
+from torchvision.transforms import AutoAugmentPolicy  # usort: skip
+from torchvision.transforms.functional import InterpolationMode  # usort: skip
 
 from . import functional  # usort: skip
 
