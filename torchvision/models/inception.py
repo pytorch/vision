@@ -26,6 +26,43 @@ _InceptionOutputs = InceptionOutputs
 
 
 class Inception3(nn.Module):
+    """Inception v3 model architecture from
+    `Rethinking the Inception Architecture for Computer Vision <http://arxiv.org/abs/1512.00567>`_.
+
+    .. note::
+        When loading pretrained weights via :func:`~torchvision.models.inception_v3`
+        (i.e. by passing a non-``None`` ``weights`` argument), ``transform_input``
+        is silently set to ``True`` regardless of the value passed to this
+        constructor. This is required because the pretrained weights expect
+        inputs normalized to ImageNet statistics. See :func:`inception_v3`
+        for details.
+
+    Args:
+        num_classes (int, optional): Number of classes for the classification
+            head. Default is 1000.
+        aux_logits (bool, optional): If ``True``, attach an auxiliary classifier
+            (``AuxLogits``) on top of an intermediate feature map. The auxiliary
+            output is only returned during training. Default is ``True``.
+        transform_input (bool, optional): If ``True``, pre-process the input
+            according to the method used in the original paper (rescale from
+            ``mean=0.5, std=0.5`` to the ImageNet ``mean``/``std``). This option
+            is intended for use with pretrained weights that were trained with
+            this preprocessing. Default is ``False``. Note that this argument
+            is overridden to ``True`` by :func:`inception_v3` when pretrained
+            weights are loaded (see note above).
+        inception_blocks (list of callable, optional): A list of 7 callables
+            used to build the model's inception blocks, in the following order:
+            ``[BasicConv2d, InceptionA, InceptionB, InceptionC, InceptionD,
+            InceptionE, InceptionAux]``. If ``None``, the default torchvision
+            implementations are used.
+        init_weights (bool, optional): If ``True``, initialize the model
+            weights using truncated normal initialization. If ``None``, defaults
+            to ``True`` and emits a ``FutureWarning``: this default will change
+            in a future release.
+        dropout (float, optional): Dropout probability applied before the final
+            fully-connected layer. Default is ``0.5``.
+    """
+
     def __init__(
         self,
         num_classes: int = 1000,
@@ -440,6 +477,15 @@ def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bo
     .. note::
         **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
         N x 3 x 299 x 299, so ensure your images are sized accordingly.
+
+    .. note::
+        When ``weights`` is not ``None`` (i.e. pretrained weights are requested),
+        ``transform_input`` is forced to ``True`` regardless of any value passed
+        via ``kwargs``. The pretrained weights expect inputs normalized to
+        ImageNet statistics, and the input transform inside
+        :class:`Inception3` rescales the input accordingly. If you need to
+        bypass this transform when using pretrained weights, set
+        ``model.transform_input = False`` on the returned model.
 
     Args:
         weights (:class:`~torchvision.models.Inception_V3_Weights`, optional): The
