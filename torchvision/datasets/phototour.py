@@ -11,7 +11,7 @@ from .vision import VisionDataset
 
 
 class PhotoTour(VisionDataset):
-    """`Multi-view Stereo Correspondence <http://matthewalunbrown.com/patchdata/patchdata.html>`_ Dataset.
+    """`Multi-view Stereo Correspondence <https://phototour.cs.washington.edu/patches/default.htm>`_ Dataset.
 
     .. note::
 
