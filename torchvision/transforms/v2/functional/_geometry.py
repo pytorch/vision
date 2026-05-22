@@ -396,14 +396,26 @@ def __resize_image_pil_dispatch(
     return _resize_image_pil(image, size=size, interpolation=interpolation, max_size=max_size)
 
 
-def resize_mask(mask: torch.Tensor, size: Optional[list[int]], max_size: Optional[int] = None) -> torch.Tensor:
+def resize_mask(
+    mask: torch.Tensor,
+    size: Optional[list[int]],
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
+    max_size: Optional[int] = None,
+) -> torch.Tensor:
     if mask.ndim < 3:
         mask = mask.unsqueeze(0)
         needs_squeeze = True
     else:
         needs_squeeze = False
 
-    output = resize_image(mask, size=size, interpolation=InterpolationMode.NEAREST, max_size=max_size)
+    interpolation = _check_interpolation(interpolation)
+    # Masks only support nearest-neighbor interpolations. Any other mode is
+    # silently coerced to NEAREST so the historical behavior of ignoring the
+    # signature-level default (BILINEAR) is preserved.
+    if interpolation != InterpolationMode.NEAREST and interpolation != InterpolationMode.NEAREST_EXACT:
+        interpolation = InterpolationMode.NEAREST
+
+    output = resize_image(mask, size=size, interpolation=interpolation, max_size=max_size)
 
     if needs_squeeze:
         output = output.squeeze(0)
@@ -413,9 +425,13 @@ def resize_mask(mask: torch.Tensor, size: Optional[list[int]], max_size: Optiona
 
 @_register_kernel_internal(resize, tv_tensors.Mask, tv_tensor_wrapper=False)
 def _resize_mask_dispatch(
-    inpt: tv_tensors.Mask, size: list[int], max_size: Optional[int] = None, **kwargs: Any
+    inpt: tv_tensors.Mask,
+    size: list[int],
+    interpolation: Union[str, InterpolationMode, int] = InterpolationMode.BILINEAR,
+    max_size: Optional[int] = None,
+    **kwargs: Any,
 ) -> tv_tensors.Mask:
-    output = resize_mask(inpt.as_subclass(torch.Tensor), size, max_size=max_size)
+    output = resize_mask(inpt.as_subclass(torch.Tensor), size, interpolation=interpolation, max_size=max_size)
     return tv_tensors.wrap(output, like=inpt)
 
 
