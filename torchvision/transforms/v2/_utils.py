@@ -108,7 +108,7 @@ def _find_labels_default_heuristic(inputs: Any) -> torch.Tensor:
        under a label-like (see below) key. This happens for the inputs of detection models.
     3. The input is a dictionary that is structured as the one from 2.
 
-    What is "label-like" key? We first search for an case-insensitive match of 'labels' inside the keys of the
+    What is "label-like" key? We first search for a case-insensitive match of 'labels' inside the keys of the
     dictionary. This is the name our detection models expect. If we can't find that, we look for a case-insensitive
     match of the term 'label' anywhere inside the key, i.e. 'FooLaBeLBar'. If we can't find that either, the dictionary
     contains no "label-like" key.
