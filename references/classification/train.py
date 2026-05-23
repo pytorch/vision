@@ -132,12 +132,24 @@ def load_data(traindir, valdir, args):
     
     # Create a wrapper class to convert HF dataset format to PyTorch format
     class HFImageNetWrapper(torch.utils.data.Dataset):
+# Create a wrapper class to convert HF dataset format to PyTorch format
         def __init__(self, hf_dataset, split, transform=None):
             self.hf_dataset = hf_dataset[split]
             self.transform = transform
-            # Get unique labels for classes
-            self.class_to_idx = {label: idx for idx, label in enumerate(set(item["label"] for item in self.hf_dataset))}
-            self.classes = sorted(self.class_to_idx.keys())
+            
+            # --- ここから修正 ---
+            # 128万枚のループを回避し、HFのメタデータから直接クラス名を取得する
+            # splitに関わらず、元のデータセット全体のfeaturesからクラス情報を参照します
+            label_feature = hf_dataset["train"].features["label"]
+            
+            # クラス名リスト（通常は1000個のID文字列や名前）
+            self.classes = label_feature.names 
+            # ラベル名（またはID）からインデックスへのマッピング
+            self.class_to_idx = {name: idx for idx, name in enumerate(self.classes)}
+            # --- ここまで修正 ---
+            
+        def __len__(self):
+            return len(self.hf_dataset)
             
         def __len__(self):
             return len(self.hf_dataset)
