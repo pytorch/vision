@@ -14,6 +14,9 @@ from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 from transforms import get_mixup_cutmix
+from datasets import load_dataset
+from PIL import Image
+import io
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
@@ -113,7 +116,7 @@ def _get_cache_path(filepath):
 
 def load_data(traindir, valdir, args):
     # Data loading code
-    print("Loading data")
+    print("Loading data from HuggingFace Datasets (ILSVRC/imagenet-1k)")
     val_resize_size, val_crop_size, train_crop_size = (
         args.val_resize_size,
         args.val_crop_size,
@@ -123,69 +126,73 @@ def load_data(traindir, valdir, args):
 
     print("Loading training data")
     st = time.time()
-    cache_path = _get_cache_path(traindir)
-    if args.cache_dataset and os.path.exists(cache_path):
-        # Attention, as the transforms are also cached!
-        print(f"Loading dataset_train from {cache_path}")
-        # TODO: this could probably be weights_only=True
-        dataset, _ = torch.load(cache_path, weights_only=False)
-    else:
-        # We need a default value for the variables below because args may come
-        # from train_quantization.py which doesn't define them.
-        auto_augment_policy = getattr(args, "auto_augment", None)
-        random_erase_prob = getattr(args, "random_erase", 0.0)
-        ra_magnitude = getattr(args, "ra_magnitude", None)
-        augmix_severity = getattr(args, "augmix_severity", None)
-        dataset = torchvision.datasets.ImageFolder(
-            traindir,
-            presets.ClassificationPresetTrain(
-                crop_size=train_crop_size,
-                interpolation=interpolation,
-                auto_augment_policy=auto_augment_policy,
-                random_erase_prob=random_erase_prob,
-                ra_magnitude=ra_magnitude,
-                augmix_severity=augmix_severity,
-                backend=args.backend,
-                use_v2=args.use_v2,
-            ),
-        )
-        if args.cache_dataset:
-            print(f"Saving dataset_train to {cache_path}")
-            utils.mkdir(os.path.dirname(cache_path))
-            utils.save_on_master((dataset, traindir), cache_path)
+    
+    # Load ImageNet-1k dataset from HuggingFace
+    dataset_hf = load_dataset("ILSVRC/imagenet-1k")
+    
+    # Create a wrapper class to convert HF dataset format to PyTorch format
+    class HFImageNetWrapper(torch.utils.data.Dataset):
+        def __init__(self, hf_dataset, split, transform=None):
+            self.hf_dataset = hf_dataset[split]
+            self.transform = transform
+            # Get unique labels for classes
+            self.class_to_idx = {label: idx for idx, label in enumerate(set(item["label"] for item in self.hf_dataset))}
+            self.classes = sorted(self.class_to_idx.keys())
+            
+        def __len__(self):
+            return len(self.hf_dataset)
+        
+        def __getitem__(self, idx):
+            item = self.hf_dataset[idx]
+            image = item["image"]
+            # Ensure image is PIL Image
+            if not isinstance(image, Image.Image):
+                if isinstance(image, bytes):
+                    image = Image.open(io.BytesIO(image))
+                elif isinstance(image, str):
+                    image = Image.open(image)
+            label = item["label"]
+            if self.transform:
+                image = self.transform(image)
+            return image, label
+    
+    # Setup training data transforms
+    auto_augment_policy = getattr(args, "auto_augment", None)
+    random_erase_prob = getattr(args, "random_erase", 0.0)
+    ra_magnitude = getattr(args, "ra_magnitude", None)
+    augmix_severity = getattr(args, "augmix_severity", None)
+    
+    train_transform = presets.ClassificationPresetTrain(
+        crop_size=train_crop_size,
+        interpolation=interpolation,
+        auto_augment_policy=auto_augment_policy,
+        random_erase_prob=random_erase_prob,
+        ra_magnitude=ra_magnitude,
+        augmix_severity=augmix_severity,
+        backend=args.backend,
+        use_v2=args.use_v2,
+    )
+    
+    dataset = HFImageNetWrapper(dataset_hf, "train", transform=train_transform)
     print("Took", time.time() - st)
 
     print("Loading validation data")
-    cache_path = _get_cache_path(valdir)
-    if args.cache_dataset and os.path.exists(cache_path):
-        # Attention, as the transforms are also cached!
-        print(f"Loading dataset_test from {cache_path}")
-        # TODO: this could probably be weights_only=True
-        dataset_test, _ = torch.load(cache_path, weights_only=False)
+    
+    if args.weights and args.test_only:
+        weights = torchvision.models.get_weight(args.weights)
+        preprocessing = weights.transforms(antialias=True)
+        if args.backend == "tensor":
+            preprocessing = torchvision.transforms.Compose([torchvision.transforms.PILToTensor(), preprocessing])
     else:
-        if args.weights and args.test_only:
-            weights = torchvision.models.get_weight(args.weights)
-            preprocessing = weights.transforms(antialias=True)
-            if args.backend == "tensor":
-                preprocessing = torchvision.transforms.Compose([torchvision.transforms.PILToTensor(), preprocessing])
-
-        else:
-            preprocessing = presets.ClassificationPresetEval(
-                crop_size=val_crop_size,
-                resize_size=val_resize_size,
-                interpolation=interpolation,
-                backend=args.backend,
-                use_v2=args.use_v2,
-            )
-
-        dataset_test = torchvision.datasets.ImageFolder(
-            valdir,
-            preprocessing,
+        preprocessing = presets.ClassificationPresetEval(
+            crop_size=val_crop_size,
+            resize_size=val_resize_size,
+            interpolation=interpolation,
+            backend=args.backend,
+            use_v2=args.use_v2,
         )
-        if args.cache_dataset:
-            print(f"Saving dataset_test to {cache_path}")
-            utils.mkdir(os.path.dirname(cache_path))
-            utils.save_on_master((dataset_test, valdir), cache_path)
+    
+    dataset_test = HFImageNetWrapper(dataset_hf, "validation", transform=preprocessing)
 
     print("Creating data loaders")
     if args.distributed:
