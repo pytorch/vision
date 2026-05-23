@@ -163,6 +163,12 @@ def load_data(traindir, valdir, args):
                     image = Image.open(io.BytesIO(image))
                 elif isinstance(image, str):
                     image = Image.open(image)
+                    
+            # --- ここを修正 ---
+            # 白黒画像やRGBA画像を、すべて標準的なRGBカラー画像に強制変換する
+            image = image.convert("RGB")
+            # ------------------
+
             label = item["label"]
             if self.transform:
                 image = self.transform(image)
