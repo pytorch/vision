@@ -18,6 +18,7 @@ name = "project"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "datasets>=4.8.5",
     "torch>=2.11.0",
     "torchvision>=0.26.0",
 ]
