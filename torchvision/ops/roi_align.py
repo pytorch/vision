@@ -248,6 +248,25 @@ def roi_align(
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
+    if not torch.jit.is_scripting() and input.is_quantized:
+        _assert_has_ops()
+        input_scale = input.q_scale()
+        input_zero_point = input.q_zero_point()
+        int_data = input.int_repr()
+        rois_float = rois.dequantize() if rois.is_quantized else rois
+        out_int = torch.ops.torchvision.qroi_align(
+            int_data,
+            rois_float,
+            input_scale,
+            input_zero_point,
+            spatial_scale,
+            output_size[0],
+            output_size[1],
+            sampling_ratio,
+            aligned,
+        )
+        return torch._make_per_tensor_quantized_tensor(out_int, scale=input_scale, zero_point=input_zero_point)
+
     if not torch.jit.is_scripting():
         if (
             not _has_ops()
