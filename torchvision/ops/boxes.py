@@ -46,9 +46,9 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
         _log_api_usage_once(nms)
     _assert_has_ops()
     if not torch.jit.is_scripting() and boxes.is_quantized:
-        return torch.ops.torchvision.nms(
-            boxes.int_repr().to(torch.float32),
-            scores.int_repr().to(torch.float32),
+        return torch.ops.torchvision.qnms(
+            boxes.int_repr(),
+            scores.int_repr(),
             iou_threshold,
         )
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
