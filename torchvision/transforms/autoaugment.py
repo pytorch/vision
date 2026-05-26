@@ -100,7 +100,6 @@ class AutoAugmentPolicy(Enum):
     SVHN = "svhn"
 
 
-# FIXME: Eliminate copy-pasted code for fill standardization and _augmentation_space() by moving stuff on a base class
 class AutoAugment(torch.nn.Module):
     r"""AutoAugment data augmentation method based on
     `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
