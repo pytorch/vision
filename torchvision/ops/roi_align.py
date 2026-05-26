@@ -253,14 +253,11 @@ def roi_align(
         input_scale = input.q_scale()
         input_zero_point = input.q_zero_point()
         int_data = input.int_repr()
-        if rois.is_quantized:
-            rois_scale = rois.q_scale()
-            rois_zero_point = rois.q_zero_point()
-            rois_int = rois.int_repr()
-        else:
-            rois_scale = 1.0
-            rois_zero_point = 0
-            rois_int = rois
+        if not rois.is_quantized:
+            raise ValueError("If input is quantized, rois must also be quantized.")
+        rois_scale = rois.q_scale()
+        rois_zero_point = rois.q_zero_point()
+        rois_int = rois.int_repr()
         out_int = torch.ops.torchvision.qroi_align(
             int_data,
             rois_int,

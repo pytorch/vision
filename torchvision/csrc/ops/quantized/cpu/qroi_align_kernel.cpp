@@ -38,6 +38,7 @@ void qroi_align_forward_kernel_impl(
   const T* input = t_input_cont.data_ptr<T>();
   const R* rois = t_rois_cont.data_ptr<R>();
 
+  float input_scale_f = static_cast<float>(input_scale);
   float rois_scale_f = static_cast<float>(rois_scale);
 
   for (int n = 0; n < n_rois; n++) {
@@ -135,14 +136,13 @@ void qroi_align_forward_kernel_impl(
             }
           }
           // Dequantize here
-          float scale_f = static_cast<float>(input_scale);
-          output_val = scale_f *
+          output_val = input_scale_f *
               (output_val - static_cast<float>(input_zero_point) * sum_w);
 
           output_val /= count; // Average pooling
 
           // Re-quantize
-          float inv_scale = 1.0f / scale_f;
+          float inv_scale = 1.0f / input_scale_f;
           int64_t qval = static_cast<int64_t>(
               input_zero_point + std::nearbyint(output_val * inv_scale));
           constexpr int64_t qmin =
