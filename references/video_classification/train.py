@@ -25,7 +25,7 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
     for video, target, _ in metric_logger.log_every(data_loader, print_freq, header):
         start_time = time.time()
         video, target = video.to(device), target.to(device)
-        with torch.cuda.amp.autocast(enabled=scaler is not None):
+        with torch.amp.autocast("cuda", enabled=scaler is not None):
             output = model(video)
             loss = criterion(output, target)
 
