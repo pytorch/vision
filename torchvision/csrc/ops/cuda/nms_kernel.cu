@@ -1,8 +1,13 @@
-#include <ATen/ATen.h>
-#include <ATen/AccumulateType.h>
-#include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDAGuard.h>
-#include <torch/library.h>
+#include <cuda_runtime.h>
+
+#include <torch/csrc/stable/accelerator.h>
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/macros.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/csrc/stable/tensor.h>
+#include <torch/headeronly/core/Dispatch.h>
+#include <torch/headeronly/core/ScalarType.h>
+#include <torch/headeronly/util/Half.h>
 
 #include "cuda_helpers.h"
 
@@ -10,6 +15,21 @@ namespace vision {
 namespace ops {
 
 namespace {
+
+namespace stable = torch::stable;
+namespace headeronly = torch::headeronly;
+using headeronly::ScalarType;
+using stable::Tensor;
+
+template <typename T>
+struct CudaAccType {
+  using type = T;
+};
+
+template <>
+struct CudaAccType<c10::Half> {
+  using type = float;
+};
 
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
 
@@ -21,7 +41,7 @@ __device__ inline bool devIoU(
   T left = max(a[0], b[0]), right = min(a[2], b[2]);
   T top = max(a[1], b[1]), bottom = min(a[3], b[3]);
   T width = max(right - left, (T)0), height = max(bottom - top, (T)0);
-  using acc_T = at::acc_type<T, /*is_cuda=*/true>;
+  using acc_T = typename CudaAccType<T>::type;
   acc_T interS = (acc_T)width * height;
   acc_T Sa = ((acc_T)a[2] - a[0]) * (a[3] - a[1]);
   acc_T Sb = ((acc_T)b[2] - b[0]) * (b[3] - b[1]);
@@ -122,25 +142,66 @@ __global__ static void gather_keep_from_mask(
   }
 }
 
-at::Tensor nms_kernel(
-    const at::Tensor& dets,
-    const at::Tensor& scores,
-    double iou_threshold) {
-  TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
-  TORCH_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
+inline std::pair<Tensor, Tensor> dispatch_sort(
+    const Tensor& self,
+    bool is_stable,
+    int64_t dim,
+    bool descending) {
+  constexpr int num_args = 4;
+  std::array<StableIValue, num_args> stack{
+      stable::detail::from(self),
+      stable::detail::from(std::optional<bool>(is_stable)),
+      stable::detail::from(dim),
+      stable::detail::from(descending)};
+  STABLE_TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
+      "aten::sort", "stable", stack.data(), TORCH_ABI_VERSION));
+  return {
+      stable::detail::to<Tensor>(stack[0]),
+      stable::detail::to<Tensor>(stack[1])};
+}
 
-  TORCH_CHECK(
+inline Tensor dispatch_index_select(
+    const Tensor& self,
+    int64_t dim,
+    const Tensor& index) {
+  constexpr int num_args = 3;
+  std::array<StableIValue, num_args> stack{
+      stable::detail::from(self),
+      stable::detail::from(dim),
+      stable::detail::from(index)};
+  STABLE_TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
+      "aten::index_select", "", stack.data(), TORCH_ABI_VERSION));
+  return stable::detail::to<Tensor>(stack[0]);
+}
+
+inline Tensor dispatch_masked_select(const Tensor& self, const Tensor& mask) {
+  constexpr int num_args = 2;
+  std::array<StableIValue, num_args> stack{
+      stable::detail::from(self), stable::detail::from(mask)};
+  STABLE_TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
+      "aten::masked_select", "", stack.data(), TORCH_ABI_VERSION));
+  return stable::detail::to<Tensor>(stack[0]);
+}
+
+Tensor nms_kernel(
+    const Tensor& dets,
+    const Tensor& scores,
+    double iou_threshold) {
+  STD_TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
+  STD_TORCH_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
+
+  STD_TORCH_CHECK(
       dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       dets.size(1) == 4,
       "boxes should have 4 elements in dimension 1, got ",
       dets.size(1));
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       scores.dim() == 1,
       "scores should be a 1d tensor, got ",
       scores.dim(),
       "D");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       dets.size(0) == scores.size(0),
       "boxes and scores should have same number of elements in ",
       "dimension 0, got ",
@@ -148,40 +209,59 @@ at::Tensor nms_kernel(
       " and ",
       scores.size(0))
 
-  at::cuda::CUDAGuard device_guard(dets.device());
+  torch::stable::accelerator::DeviceGuard device_guard(dets.get_device_index());
 
   if (dets.numel() == 0) {
-    return at::empty({0}, dets.options().dtype(at::kLong));
+    return stable::new_empty(dets, {0}, ScalarType::Long);
   }
 
-  auto order_t = std::get<1>(
-      scores.sort(/*stable=*/true, /*dim=*/0, /* descending=*/true));
-  auto dets_sorted = dets.index_select(0, order_t).contiguous();
+  auto [values, order_t] = dispatch_sort(scores, true, 0, true);
+  auto dets_sorted =
+      stable::contiguous(dispatch_index_select(dets, 0, order_t));
 
-  int dets_num = dets.size(0);
+  int64_t dets_num = dets.size(0);
 
-  const int col_blocks = ceil_div(dets_num, threadsPerBlock);
+  const int col_blocks = ceil_div(static_cast<int>(dets_num), threadsPerBlock);
 
-  at::Tensor mask =
-      at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));
+  auto mask =
+      stable::new_empty(dets, {dets_num * col_blocks}, ScalarType::Long);
 
   dim3 blocks(col_blocks, col_blocks);
   dim3 threads(threadsPerBlock);
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.scalar_type(), "nms_kernel", [&] {
+  void* stream_ptr = nullptr;
+  STABLE_TORCH_ERROR_CODE_CHECK(
+      aoti_torch_get_current_cuda_stream(dets.get_device_index(), &stream_ptr));
+  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
+
+  THO_DISPATCH_SWITCH(
+      dets_sorted.scalar_type(),
+      "nms_kernel",
+      THO_DISPATCH_CASE(ScalarType::Float, [&] {
         nms_kernel_impl<scalar_t><<<blocks, threads, 0, stream>>>(
             dets_num,
             iou_threshold,
-            dets_sorted.data_ptr<scalar_t>(),
-            (unsigned long long*)mask.data_ptr<int64_t>());
-      });
+            dets_sorted.const_data_ptr<scalar_t>(),
+            reinterpret_cast<unsigned long long*>(
+                mask.mutable_data_ptr<int64_t>()));
+      }) THO_DISPATCH_CASE(ScalarType::Double, [&] {
+        nms_kernel_impl<scalar_t><<<blocks, threads, 0, stream>>>(
+            dets_num,
+            iou_threshold,
+            dets_sorted.const_data_ptr<scalar_t>(),
+            reinterpret_cast<unsigned long long*>(
+                mask.mutable_data_ptr<int64_t>()));
+      }) THO_DISPATCH_CASE(ScalarType::Half, [&] {
+        nms_kernel_impl<scalar_t><<<blocks, threads, 0, stream>>>(
+            dets_num,
+            iou_threshold,
+            dets_sorted.const_data_ptr<scalar_t>(),
+            reinterpret_cast<unsigned long long*>(
+                mask.mutable_data_ptr<int64_t>()));
+      }));
 
-  at::Tensor keep =
-      at::zeros({dets_num}, dets.options().dtype(at::kBool).device(at::kCUDA));
+  auto keep = stable::new_zeros(dets, {dets_num}, ScalarType::Bool);
 
-  // Unwrap the mask to fill keep with proper values
   // Keeping the unwrap on device instead of applying iterative for loops on cpu
   // prevents the device -> cpu -> device transfer that could be bottleneck for
   // large number of boxes.
@@ -191,18 +271,18 @@ at::Tensor nms_kernel(
       min(col_blocks, threadsPerBlock),
       col_blocks * sizeof(unsigned long long),
       stream>>>(
-      keep.data_ptr<bool>(),
-      (unsigned long long*)mask.data_ptr<int64_t>(),
+      keep.mutable_data_ptr<bool>(),
+      reinterpret_cast<unsigned long long*>(mask.mutable_data_ptr<int64_t>()),
       dets_num);
 
-  AT_CUDA_CHECK(cudaGetLastError());
-  return order_t.masked_select(keep);
+  STD_CUDA_KERNEL_LAUNCH_CHECK();
+  return dispatch_masked_select(order_t, keep);
 }
 
 } // namespace
 
-TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
-  m.impl(TORCH_SELECTIVE_NAME("torchvision::nms"), TORCH_FN(nms_kernel));
+STABLE_TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("nms", TORCH_BOX(&nms_kernel));
 }
 
 } // namespace ops
