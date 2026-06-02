@@ -12,16 +12,21 @@ class ConvertBoundingBoxFormat(Transform):
         format (str or tv_tensors.BoundingBoxFormat): output bounding box format.
             Possible values are defined by :class:`~torchvision.tv_tensors.BoundingBoxFormat` and
             string values match the enums, e.g. "XYXY" or "XYWH" etc.
+        inplace (bool, optional): Whether to convert the bounding boxes in-place.
+            Note that conversions from or to the ``XYXYXYXY`` format always
+            allocate a new tensor because they change the size of the last
+            dimension. Default is ``False``.
     """
 
     _transformed_types = (tv_tensors.BoundingBoxes,)
 
-    def __init__(self, format: Union[str, tv_tensors.BoundingBoxFormat]) -> None:
+    def __init__(self, format: Union[str, tv_tensors.BoundingBoxFormat], inplace: bool = False) -> None:
         super().__init__()
         self.format = format
+        self.inplace = inplace
 
     def transform(self, inpt: tv_tensors.BoundingBoxes, params: dict[str, Any]) -> tv_tensors.BoundingBoxes:
-        return F.convert_bounding_box_format(inpt, new_format=self.format)  # type: ignore[return-value, arg-type]
+        return F.convert_bounding_box_format(inpt, new_format=self.format, inplace=self.inplace)  # type: ignore[return-value, arg-type]
 
 
 class ClampBoundingBoxes(Transform):

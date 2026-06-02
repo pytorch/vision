@@ -4371,6 +4371,31 @@ class TestConvertBoundingBoxFormat:
         )
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    def test_transform_inplace(self, old_format, new_format, dtype):
+        if not dtype.is_floating_point and (
+            tv_tensors.is_rotated_bounding_format(old_format) or tv_tensors.is_rotated_bounding_format(new_format)
+        ):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
+
+        input = make_bounding_boxes(format=old_format, dtype=dtype)
+        input_data_ptr = input.data_ptr()
+        input_version = input._version
+
+        out_of_place = transforms.ConvertBoundingBoxFormat(new_format, inplace=False)(input.clone())
+        in_place = transforms.ConvertBoundingBoxFormat(new_format, inplace=True)(input)
+
+        if old_format != tv_tensors.BoundingBoxFormat.XYXYXYXY and new_format != tv_tensors.BoundingBoxFormat.XYXYXYXY:
+            # NOTE: BoundingBox format conversion from and to XYXYXYXY format
+            # cannot modify the input tensor inplace as it requires a dimension
+            # change.
+            assert in_place.data_ptr() == input_data_ptr
+            assert in_place._version > input_version
+
+        assert in_place.format == new_format
+        assert_equal(in_place, out_of_place)
+
+    @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_strings(self, old_format, new_format):
         # Non-regression test for https://github.com/pytorch/vision/issues/8258
         input = make_bounding_boxes(format=old_format, canvas_size=(50, 50))
