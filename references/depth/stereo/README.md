@@ -4,6 +4,9 @@ This folder contains reference training scripts for Stereo Matching.
 They serve as a log of how to train specific models, so as to provide baseline
 training and evaluation scripts to quickly bootstrap research.
 
+Note: this depends on the `prototype` folder which was removed, the latest
+commit with the prototype folder is 8b6ba92ce5c48d6db596f6d415a90c128bc5f77b.
+
 
 ### CREStereo
 
