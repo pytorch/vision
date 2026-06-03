@@ -49,11 +49,9 @@ mod_df[mod_df["enhancement"] & mod_df["module: transforms"]]
 
 
 # In[9]:
-def format_prs(mod_df, exclude_prototype=True):
+def format_prs(mod_df):
     out = []
     for idx, row in mod_df.iterrows():
-        if exclude_prototype and "prototype" in row and row["prototype"]:
-            continue
         modules = idx
         # Put "documentation" and "tests" first for sorting to be dece
         for last_module in ("documentation", "tests"):
