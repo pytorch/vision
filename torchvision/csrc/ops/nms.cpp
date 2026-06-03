@@ -1,7 +1,7 @@
 #include "nms.h"
 
 #include <ATen/core/dispatch/Dispatcher.h>
-#include <torch/library.h>
+#include <torch/csrc/stable/library.h>
 #include <torch/types.h>
 
 namespace vision {
@@ -18,10 +18,9 @@ at::Tensor nms(
   return op.call(dets, scores, iou_threshold);
 }
 
-TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+STABLE_TORCH_LIBRARY_FRAGMENT(torchvision, m) {
   m.set_python_module("torchvision._meta_registrations");
-  m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor"));
+  m.def("nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor");
 }
 
 } // namespace ops
