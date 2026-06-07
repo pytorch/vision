@@ -154,8 +154,7 @@ def handle_legacy_interface(**weights: tuple[str, Union[Optional[W], Callable[[d
 
     In particular this handles two things:
 
-    1. Allows positional parameters again, but emits a deprecation warning in case they are used. See
-        :func:`torchvision.prototype.utils._internal.kwonly_to_pos_or_kw` for details.
+    1. Allows positional parameters again, but emits a deprecation warning in case they are used.
     2. Handles the default value change from ``pretrained=False`` to ``weights=None`` and ``pretrained=True`` to
         ``weights=Weights`` and emits a deprecation warning with instructions for the new interface.
 
