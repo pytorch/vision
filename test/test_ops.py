@@ -643,6 +643,43 @@ class TestRoIAlign(RoIOpTester):
             execution_time_ms < execution_time_ms_threshold
         ), f"Expected execution to take < {execution_time_ms_threshold} ms, actually took {execution_time_ms} ms"
 
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_roi_align_large_index(self, device):
+        """Non-regression test for https://github.com/pytorch/vision/issues/8206"""
+        if device == "cpu":
+            pytest.skip("Too slow on CPU")
+
+        pooled_h, pooled_w = 7, 7
+        channels = 4
+        # 11M * 4 * 7 * 7 = 2,156,000,000 > INT_MAX
+        n_rois = 11_000_000
+        num_imgs = 2
+        height, width = 4, 4
+        spatial_scale = 1.0
+        sampling_ratio = 2
+
+        x = torch.rand(num_imgs, channels, height, width, dtype=torch.float32, device=device, requires_grad=True)
+        rois = torch.zeros(n_rois, 5, dtype=torch.float32, device=device)
+
+        rois[:, 0] = torch.randint(0, num_imgs, (n_rois,))
+        rois[:, 1] = 0
+        rois[:, 2] = 0
+        rois[:, 3] = width - 1
+        rois[:, 4] = height - 1
+
+        # Call the C++ kernel directly, in case that torchvision.ops.roi_align may fall
+        # back to a pure-Python path that doesn't have the int32 overflow bug.
+        result = torch.ops.torchvision.roi_align(x, rois, spatial_scale, pooled_h, pooled_w, sampling_ratio, False)
+
+        # Forward kernel test
+        assert result.shape == (n_rois, channels, pooled_h, pooled_w)
+        assert result.abs().sum() > 0
+
+        # Backward kernel test
+        result.sum().backward()
+        assert x.grad is not None
+        assert x.grad.abs().sum() > 0
+
 
 class TestPSRoIAlign(RoIOpTester):
     mps_backward_atol = 5e-2

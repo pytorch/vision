@@ -26,7 +26,8 @@ void roi_align_forward_kernel_impl(
   // can be parallelized using omp
   // #pragma omp parallel for num_threads(32)
   for (int n = 0; n < n_rois; n++) {
-    int index_n = n * channels * pooled_width * pooled_height;
+    int64_t index_n =
+        static_cast<int64_t>(n) * channels * pooled_width * pooled_height;
 
     const T* offset_rois = rois + n * 5;
     int roi_batch_ind = offset_rois[0];
@@ -78,14 +79,14 @@ void roi_align_forward_kernel_impl(
         pre_calc);
 
     for (int c = 0; c < channels; c++) {
-      int index_n_c = index_n + c * pooled_width * pooled_height;
-      const T* offset_input =
-          input + (roi_batch_ind * channels + c) * height * width;
+      int64_t index_n_c = index_n + c * pooled_width * pooled_height;
+      const T* offset_input = input +
+          (static_cast<int64_t>(roi_batch_ind) * channels + c) * height * width;
       int pre_calc_index = 0;
 
       for (int ph = 0; ph < pooled_height; ph++) {
         for (int pw = 0; pw < pooled_width; pw++) {
-          int index = index_n_c + ph * pooled_width + pw;
+          int64_t index = index_n_c + ph * pooled_width + pw;
 
           T output_val = 0.;
           for (int iy = 0; iy < roi_bin_grid_h; iy++) {
@@ -175,7 +176,7 @@ inline void add(T* address, const T& val) {
 
 template <typename T>
 void roi_align_backward_kernel_impl(
-    int nthreads,
+    int64_t nthreads,
     const T* grad_output,
     const T& spatial_scale,
     int channels,
@@ -191,7 +192,7 @@ void roi_align_backward_kernel_impl(
     int c_stride,
     int h_stride,
     int w_stride) {
-  for (int index = 0; index < nthreads; index++) {
+  for (int64_t index = 0; index < nthreads; index++) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
     int ph = (index / pooled_width) % pooled_height;
@@ -219,10 +220,10 @@ void roi_align_backward_kernel_impl(
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    T* offset_grad_input =
-        grad_input + ((roi_batch_ind * channels + c) * height * width);
+    T* offset_grad_input = grad_input +
+        ((static_cast<int64_t>(roi_batch_ind) * channels + c) * height * width);
 
-    int output_offset = n * n_stride + c * c_stride;
+    int64_t output_offset = static_cast<int64_t>(n) * n_stride + c * c_stride;
     const T* offset_grad_output = grad_output + output_offset;
     const T grad_output_this_bin =
         offset_grad_output[ph * h_stride + pw * w_stride];
