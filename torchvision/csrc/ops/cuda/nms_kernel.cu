@@ -3,6 +3,7 @@
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <torch/library.h>
+#include <algorithm>
 
 #include "cuda_helpers.h"
 
@@ -188,7 +189,7 @@ at::Tensor nms_kernel(
   // See https://github.com/pytorch/vision/issues/8713 for more details.
   gather_keep_from_mask<<<
       1,
-      min(col_blocks, threadsPerBlock),
+      std::min(col_blocks, threadsPerBlock),
       col_blocks * sizeof(unsigned long long),
       stream>>>(
       keep.data_ptr<bool>(),
