@@ -808,8 +808,17 @@ class TestResize:
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
-    def test_kernel_mask(self, make_mask):
-        check_kernel(F.resize_mask, make_mask(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1])
+    @pytest.mark.parametrize(
+        "interpolation",
+        [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.NEAREST_EXACT],
+    )
+    def test_kernel_mask(self, make_mask, interpolation):
+        check_kernel(
+            F.resize_mask,
+            make_mask(self.INPUT_SIZE),
+            size=self.OUTPUT_SIZES[-1],
+            interpolation=interpolation,
+        )
 
     def test_kernel_video(self):
         check_kernel(F.resize_video, make_video(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1], antialias=True)
@@ -7200,12 +7209,8 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     elif data_augmentation == "lsj":
         t = [
             transforms.ScaleJitter(target_size=(1024, 1024), antialias=True),
-            # Note: replaced FixedSizeCrop with RandomCrop, becuase we're
-            # leaving FixedSizeCrop in prototype for now, and it expects Label
-            # classes which we won't release yet.
-            # transforms.FixedSizeCrop(
-            #     size=(1024, 1024), fill=defaultdict(lambda: (123.0, 117.0, 104.0), {tv_tensors.Mask: 0})
-            # ),
+            # Note: replaced FixedSizeCrop with RandomCrop, becuase
+            # FixedSizeCrop was in prototype and never released.
             transforms.RandomCrop((1024, 1024), pad_if_needed=True),
             transforms.RandomHorizontalFlip(p=1),
             to_tensor,
