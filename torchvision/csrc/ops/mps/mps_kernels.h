@@ -486,11 +486,15 @@ kernel void roi_align_backward(
     constant int64_t & c_stride       [[buffer(13)]],
     constant int64_t & h_stride       [[buffer(14)]],
     constant int64_t & w_stride       [[buffer(15)]],
-    uint2     tgid   [[threadgroup_position_in_grid]],
-    uint2     tptg   [[threads_per_threadgroup]],
-    uint2     tid2   [[thread_position_in_threadgroup]]){
+    uint     index   [[thread_position_in_grid]]){
 
-  MPS_1D_KERNEL_LOOP(index, output_size, 1) {
+  // One thread per pooled-output element. Dispatched via dispatchThreads, so
+  // each element is processed exactly once; redundant passes would otherwise
+  // be silently summed by the atomic_add below (overlapping RoIs share pixels).
+  if (index >= static_cast<uint>(output_size)) {
+    return;
+  }
+  {
     // (n, c, ph, pw) is an element in the pooled output
     integer_t pw = index % pooled_width;
     integer_t ph = (index / pooled_width) % pooled_height;
@@ -602,9 +606,7 @@ kernel void roi_align_backward<DTYPE, INT_DTYPE>(          \
     constant int64_t & c_stride       [[buffer(13)]],      \
     constant int64_t & h_stride       [[buffer(14)]],      \
     constant int64_t & w_stride       [[buffer(15)]],      \
-    uint2     tgid   [[threadgroup_position_in_grid]],     \
-    uint2     tptg   [[threads_per_threadgroup]],          \
-    uint2     tid2   [[thread_position_in_threadgroup]]);
+    uint     index   [[thread_position_in_grid]]);
 
 template<typename T, typename integer_t>
 kernel void roi_pool(
