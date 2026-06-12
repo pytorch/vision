@@ -2,8 +2,7 @@
 #include <ATen/native/mps/OperationUtils.h>
 #include "mps_kernels.h"
 
-namespace vision {
-namespace ops {
+namespace vision::ops {
 
 namespace {
 
@@ -105,5 +104,4 @@ TORCH_LIBRARY_IMPL(torchvision, MPS, m) {
   m.impl(TORCH_SELECTIVE_NAME("torchvision::nms"), TORCH_FN(nms_kernel));
 }
 
-} // namespace ops
-} // namespace vision
+} // namespace vision::ops

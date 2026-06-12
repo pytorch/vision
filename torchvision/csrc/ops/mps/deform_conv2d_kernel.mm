@@ -3,8 +3,7 @@
 #include <ATen/native/mps/OperationUtils.h>
 #include "mps_kernels.h"
 
-namespace vision {
-namespace ops {
+namespace vision::ops {
 
 namespace {
 
@@ -61,25 +60,25 @@ at::Tensor deform_conv2d_forward_kernel(
   uint32_t dilation_w_u = static_cast<uint32_t>(dilation_w);
 
   TORCH_CHECK(weight_c.size(1) * n_weight_grps == in_channels,
-    "Input channels (", in_channels, 
+    "Input channels (", in_channels,
     ") must equal weight.size(1) * n_weight_grps (", weight_c.size(1), " * ", n_weight_grps, ")");
   TORCH_CHECK(weight_c.size(0) % n_weight_grps == 0,
-    "Weight tensor's out channels (", weight_c.size(0), 
+    "Weight tensor's out channels (", weight_c.size(0),
     ") must be divisible by n_weight_grps (", n_weight_grps, ")");
   TORCH_CHECK(offset_c.size(1) == n_offset_grps * 2 * weight_h * weight_w,
-    "Offset tensor shape[1] is invalid: got ", offset_c.size(1), 
+    "Offset tensor shape[1] is invalid: got ", offset_c.size(1),
     ", expected ", n_offset_grps * 2 * weight_h * weight_w);
   TORCH_CHECK(!use_mask || mask_c.size(1) == n_offset_grps * weight_h * weight_w,
-    "Mask tensor shape[1] is invalid: got ", mask_c.size(1), 
+    "Mask tensor shape[1] is invalid: got ", mask_c.size(1),
     ", expected ", n_offset_grps * weight_h * weight_w);
   TORCH_CHECK(in_channels % n_offset_grps == 0,
-    "Input tensor channels (", in_channels, 
+    "Input tensor channels (", in_channels,
     ") must be divisible by n_offset_grps (", n_offset_grps, ")");
   TORCH_CHECK(offset_c.size(0) == batch,
     "Offset tensor batch size (", offset_c.size(0),
     ") must match input tensor batch size (", batch, ")");
   TORCH_CHECK(offset_c.size(2) == out_h && offset_c.size(3) == out_w,
-    "Offset tensor spatial dimensions (", offset_c.size(2), ", ", offset_c.size(3), 
+    "Offset tensor spatial dimensions (", offset_c.size(2), ", ", offset_c.size(3),
     ") must match calculated output dimensions (", out_h, ", ", out_w, ")");
   TORCH_CHECK(!use_mask || mask_c.size(0) == batch,
     "Mask tensor batch size (", mask_c.size(0),
@@ -145,5 +144,4 @@ TORCH_LIBRARY_IMPL(torchvision, MPS, m) {
       TORCH_FN(deform_conv2d_forward_kernel));
 }
 
-} // namespace ops
-} // namespace vision
+} // namespace vision::ops
