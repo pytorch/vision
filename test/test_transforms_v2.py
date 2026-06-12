@@ -29,7 +29,6 @@ from common_utils import (
     make_bounding_boxes,
     make_detection_masks,
     make_image,
-    make_image_cvcuda,
     make_image_pil,
     make_image_tensor,
     make_keypoints,
@@ -37,7 +36,6 @@ from common_utils import (
     make_video,
     make_video_tensor,
     needs_cuda,
-    needs_cvcuda,
     set_rng_seed,
 )
 
@@ -53,7 +51,15 @@ from torchvision.transforms.functional import pil_modes_mapping, to_pil_image
 from torchvision.transforms.v2 import functional as F
 from torchvision.transforms.v2._utils import check_type, is_pure_tensor
 from torchvision.transforms.v2.functional._geometry import _get_perspective_coeffs, _parallelogram_to_bounding_boxes
-from torchvision.transforms.v2.functional._utils import _get_kernel, _import_cvcuda, _register_kernel_internal
+from torchvision.transforms.v2.functional._meta import (
+    _cxcywh_to_xywh,
+    _cxcywh_to_xyxy,
+    _xywh_to_cxcywh,
+    _xywh_to_xyxy,
+    _xyxy_to_cxcywh,
+    _xyxy_to_xywh,
+)
+from torchvision.transforms.v2.functional._utils import _get_kernel, _register_kernel_internal
 
 
 # turns all warnings into errors for this module
@@ -487,7 +493,9 @@ INTERPOLATION_MODES = [
     transforms.InterpolationMode.NEAREST_EXACT,
     transforms.InterpolationMode.BILINEAR,
     transforms.InterpolationMode.BICUBIC,
+    transforms.InterpolationMode.LANCZOS,
 ]
+INTERPOLATION_MODES_STR = ["nearest", "nearest-exact", "bilinear", "bicubic", "lanczos"]
 
 
 def reference_affine_bounding_boxes_helper(bounding_boxes, *, affine_matrix, new_canvas_size=None, clamp=True):
@@ -721,9 +729,22 @@ class TestResize:
         if not (max_size_kwarg := self._make_max_size_kwarg(use_max_size=use_max_size, size=size)):
             return
 
+        if interpolation is transforms.InterpolationMode.LANCZOS and str(device) == "cuda":
+            pytest.skip("Lanczos is not supported on CUDA")
+
+        if interpolation is transforms.InterpolationMode.LANCZOS and not antialias:
+            pytest.skip("Lanczos requires antialias=True")
+
         # In contrast to CPU, there is no native `InterpolationMode.BICUBIC` implementation for uint8 images on CUDA.
         # Internally, it uses the float path. Thus, we need to test with an enormous tolerance here to account for that.
-        atol = 30 if (interpolation is transforms.InterpolationMode.BICUBIC and dtype is torch.uint8) else 1
+        atol = (
+            30
+            if (
+                interpolation in (transforms.InterpolationMode.BICUBIC, transforms.InterpolationMode.LANCZOS)
+                and dtype is torch.uint8
+            )
+            else 1
+        )
         check_cuda_vs_cpu_tolerances = dict(rtol=0, atol=atol / 255 if dtype.is_floating_point else atol)
 
         check_kernel(
@@ -787,8 +808,17 @@ class TestResize:
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
-    def test_kernel_mask(self, make_mask):
-        check_kernel(F.resize_mask, make_mask(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1])
+    @pytest.mark.parametrize(
+        "interpolation",
+        [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.NEAREST_EXACT],
+    )
+    def test_kernel_mask(self, make_mask, interpolation):
+        check_kernel(
+            F.resize_mask,
+            make_mask(self.INPUT_SIZE),
+            size=self.OUTPUT_SIZES[-1],
+            interpolation=interpolation,
+        )
 
     def test_kernel_video(self):
         check_kernel(F.resize_video, make_video(self.INPUT_SIZE), size=self.OUTPUT_SIZES[-1], antialias=True)
@@ -865,7 +895,7 @@ class TestResize:
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
     # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
-    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
+    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES_STR) - {"nearest"})
     @pytest.mark.parametrize("use_max_size", [True, False])
     @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
     def test_image_correctness(self, size, interpolation, use_max_size, fn):
@@ -878,7 +908,8 @@ class TestResize:
         expected = F.to_image(F.resize(F.to_pil_image(image), size=size, interpolation=interpolation, **max_size_kwarg))
 
         self._check_output_size(image, actual, size=size, **max_size_kwarg)
-        torch.testing.assert_close(actual, expected, atol=1, rtol=0)
+        atol = 2 if interpolation == "lanczos" else 1
+        torch.testing.assert_close(actual, expected, atol=atol, rtol=0)
 
     def _reference_resize_bounding_boxes(self, bounding_boxes, format, *, size, max_size=None):
         old_height, old_width = bounding_boxes.canvas_size
@@ -985,6 +1016,13 @@ class TestResize:
         with pytest.warns(UserWarning, match="Anti-alias option is always applied for PIL Image input"):
             F.resize(make_image_pil(self.INPUT_SIZE), size=self.OUTPUT_SIZES[0], antialias=False)
 
+    def test_lanczos_antialias_false_error(self):
+        image = make_image(self.INPUT_SIZE)
+        with pytest.raises(ValueError, match="InterpolationMode.LANCZOS requires antialias=True"):
+            F.resize_image(
+                image, size=self.OUTPUT_SIZES[0], interpolation=transforms.InterpolationMode.LANCZOS, antialias=False
+            )
+
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
     @pytest.mark.parametrize(
         "make_input",
@@ -1065,6 +1103,26 @@ class TestResize:
         actual = F.resize(
             input, size=self.OUTPUT_SIZES[0], interpolation=pil_modes_mapping[interpolation], antialias=True
         )
+
+        assert_equal(actual, expected)
+
+    @pytest.mark.parametrize(
+        "interpolation_str, interpolation_enum",
+        [
+            ("nearest", transforms.InterpolationMode.NEAREST),
+            ("nearest-exact", transforms.InterpolationMode.NEAREST_EXACT),
+            ("bilinear", transforms.InterpolationMode.BILINEAR),
+            ("bicubic", transforms.InterpolationMode.BICUBIC),
+            ("lanczos", transforms.InterpolationMode.LANCZOS),
+        ],
+    )
+    @pytest.mark.parametrize("fn", [F.resize, transform_cls_to_functional(transforms.Resize)])
+    @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_video])
+    def test_interpolation_str(self, interpolation_str, interpolation_enum, fn, make_input):
+        input = make_input(self.INPUT_SIZE)
+
+        expected = fn(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation_enum, antialias=True)
+        actual = fn(input, size=self.OUTPUT_SIZES[0], interpolation=interpolation_str, antialias=True)
 
         assert_equal(actual, expected)
 
@@ -1167,6 +1225,11 @@ class TestResize:
     @pytest.mark.parametrize("dtype", [torch.uint8, torch.float32])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_image_memory_format_consistency(self, interpolation, antialias, memory_format, dtype, device):
+        if interpolation is transforms.InterpolationMode.LANCZOS and str(device) == "cuda":
+            pytest.skip("Lanczos is not supported on CUDA")
+        if interpolation is transforms.InterpolationMode.LANCZOS and not antialias:
+            pytest.skip("Lanczos requires antialias=True")
+
         size = self.OUTPUT_SIZES[0]
 
         input = self._make_image(self.INPUT_SIZE, dtype=dtype, device=device, memory_format=memory_format)
@@ -1232,10 +1295,6 @@ class TestHorizontalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.needs_cvcuda,
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -1251,11 +1310,6 @@ class TestHorizontalFlip:
             (F.horizontal_flip_image, torch.Tensor),
             (F._geometry._horizontal_flip_image_pil, PIL.Image.Image),
             (F.horizontal_flip_image, tv_tensors.Image),
-            pytest.param(
-                F._geometry._horizontal_flip_image_cvcuda,
-                None,
-                marks=pytest.mark.needs_cvcuda,
-            ),
             (F.horizontal_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.horizontal_flip_mask, tv_tensors.Mask),
             (F.horizontal_flip_video, tv_tensors.Video),
@@ -1263,8 +1317,6 @@ class TestHorizontalFlip:
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if kernel is F._geometry._horizontal_flip_image_cvcuda:
-            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.horizontal_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
@@ -1273,10 +1325,6 @@ class TestHorizontalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.needs_cvcuda,
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -1290,23 +1338,13 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize(
         "fn", [F.horizontal_flip, transform_cls_to_functional(transforms.RandomHorizontalFlip, p=1)]
     )
-    @pytest.mark.parametrize(
-        "make_input",
-        [
-            make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.needs_cvcuda,
-            ),
-        ],
-    )
-    def test_image_correctness(self, fn, make_input):
-        image = make_input()
+    def test_image_correctness(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
         actual = fn(image)
-        if make_input is make_image_cvcuda:
-            image = F.cvcuda_to_tensor(image)[0].cpu()
-        expected = F.horizontal_flip(F.to_pil_image(image))
-        assert_equal(actual, expected)
+        expected = F.to_image(F.horizontal_flip(F.to_pil_image(image)))
+
+        torch.testing.assert_close(actual, expected)
 
     def _reference_horizontal_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
@@ -1362,10 +1400,6 @@ class TestHorizontalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.needs_cvcuda,
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -1375,8 +1409,11 @@ class TestHorizontalFlip:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform_noop(self, make_input, device):
         input = make_input(device=device)
+
         transform = transforms.RandomHorizontalFlip(p=0)
+
         output = transform(input)
+
         assert_equal(output, input)
 
 
@@ -1547,9 +1584,7 @@ class TestAffine:
     @pytest.mark.parametrize("scale", _CORRECTNESS_AFFINE_KWARGS["scale"])
     @pytest.mark.parametrize("shear", _CORRECTNESS_AFFINE_KWARGS["shear"])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     def test_functional_image_correctness(self, angle, translate, scale, shear, center, interpolation, fill):
         image = make_image(dtype=torch.uint8, device="cpu")
@@ -1580,12 +1615,10 @@ class TestAffine:
         )
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 2 if interpolation is transforms.InterpolationMode.NEAREST else 8
+        assert mae < 2 if interpolation == "nearest" else 8
 
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_image_correctness(self, center, interpolation, fill, seed):
@@ -1604,7 +1637,7 @@ class TestAffine:
         expected = F.to_image(transform(F.to_pil_image(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 2 if interpolation is transforms.InterpolationMode.NEAREST else 8
+        assert mae < 2 if interpolation == "nearest" else 8
 
     def _compute_affine_matrix(self, *, angle, translate, scale, shear, center):
         rot = math.radians(angle)
@@ -1874,10 +1907,6 @@ class TestVerticalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.needs_cvcuda,
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -1893,11 +1922,6 @@ class TestVerticalFlip:
             (F.vertical_flip_image, torch.Tensor),
             (F._geometry._vertical_flip_image_pil, PIL.Image.Image),
             (F.vertical_flip_image, tv_tensors.Image),
-            pytest.param(
-                F._geometry._vertical_flip_image_cvcuda,
-                None,
-                marks=pytest.mark.needs_cvcuda,
-            ),
             (F.vertical_flip_bounding_boxes, tv_tensors.BoundingBoxes),
             (F.vertical_flip_mask, tv_tensors.Mask),
             (F.vertical_flip_video, tv_tensors.Video),
@@ -1905,8 +1929,6 @@ class TestVerticalFlip:
         ],
     )
     def test_functional_signature(self, kernel, input_type):
-        if kernel is F._geometry._vertical_flip_image_cvcuda:
-            input_type = _import_cvcuda().Tensor
         check_functional_kernel_signature_match(F.vertical_flip, kernel=kernel, input_type=input_type)
 
     @pytest.mark.parametrize(
@@ -1915,10 +1937,6 @@ class TestVerticalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.needs_cvcuda,
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -1930,23 +1948,13 @@ class TestVerticalFlip:
         check_transform(transforms.RandomVerticalFlip(p=1), make_input(device=device))
 
     @pytest.mark.parametrize("fn", [F.vertical_flip, transform_cls_to_functional(transforms.RandomVerticalFlip, p=1)])
-    @pytest.mark.parametrize(
-        "make_input",
-        [
-            make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.needs_cvcuda,
-            ),
-        ],
-    )
-    def test_image_correctness(self, fn, make_input):
-        image = make_input()
+    def test_image_correctness(self, fn):
+        image = make_image(dtype=torch.uint8, device="cpu")
+
         actual = fn(image)
-        if make_input is make_image_cvcuda:
-            image = F.cvcuda_to_tensor(image)[0].cpu()
-        expected = F.vertical_flip(F.to_pil_image(image))
-        assert_equal(actual, expected)
+        expected = F.to_image(F.vertical_flip(F.to_pil_image(image)))
+
+        torch.testing.assert_close(actual, expected)
 
     def _reference_vertical_flip_bounding_boxes(self, bounding_boxes: tv_tensors.BoundingBoxes):
         affine_matrix = np.array(
@@ -1998,10 +2006,6 @@ class TestVerticalFlip:
             make_image_tensor,
             make_image_pil,
             make_image,
-            pytest.param(
-                make_image_cvcuda,
-                marks=pytest.mark.needs_cvcuda,
-            ),
             make_bounding_boxes,
             make_segmentation_mask,
             make_video,
@@ -2011,8 +2015,11 @@ class TestVerticalFlip:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_transform_noop(self, make_input, device):
         input = make_input(device=device)
+
         transform = transforms.RandomVerticalFlip(p=0)
+
         output = transform(input)
+
         assert_equal(output, input)
 
 
@@ -2161,9 +2168,7 @@ class TestRotate:
 
     @pytest.mark.parametrize("angle", _CORRECTNESS_AFFINE_KWARGS["angle"])
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     def test_functional_image_correctness(self, angle, center, interpolation, expand, fill):
@@ -2179,12 +2184,10 @@ class TestRotate:
         )
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
+        assert mae < 1 if interpolation == "nearest" else 6
 
     @pytest.mark.parametrize("center", _CORRECTNESS_AFFINE_KWARGS["center"])
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("expand", [False, True])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     @pytest.mark.parametrize("seed", list(range(5)))
@@ -2208,7 +2211,7 @@ class TestRotate:
         expected = F.to_image(transform(F.to_pil_image(image)))
 
         mae = (actual.float() - expected.float()).abs().mean()
-        assert mae < 1 if interpolation is transforms.InterpolationMode.NEAREST else 6
+        assert mae < 1 if interpolation == "nearest" else 6
 
     def _compute_output_canvas_size(self, *, expand, canvas_size, affine_matrix):
         if not expand:
@@ -3315,6 +3318,15 @@ class TestElastic:
             displacement=self._make_displacement(bounding_boxes),
         )
 
+    def test_kernel_bounding_boxes_at_canvas_boundary(self):
+        # Non-regression test for https://github.com/pytorch/vision/issues/9394
+        H, W = 64, 76
+        bbox = tv_tensors.BoundingBoxes([0, 0, W, H], format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=(H, W))
+        displacement = self._make_displacement(bbox)
+        F.elastic_bounding_boxes(
+            bbox.as_subclass(torch.Tensor), format=bbox.format, canvas_size=bbox.canvas_size, displacement=displacement
+        )
+
     @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_kernel_keypoints(self, dtype, device):
@@ -3853,6 +3865,10 @@ class TestErase:
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("seed", list(range(5)))
     def test_transform_image_correctness(self, param, value, dtype, device, seed):
+        if sys.platform == "darwin" and value == "random" and dtype == torch.uint8:
+            # Mismatched elements: 10 / 561 (1.8%)
+            pytest.skip("Non-deterministic RNG behavior on macOS for random erase with uint8")
+
         transform = transforms.RandomErasing(**{param: value}, p=1)
 
         image = make_image(dtype=dtype, device=device)
@@ -4156,6 +4172,9 @@ class TestAutoAugmentTransforms:
     # rotate, are tested in their respective classes. The rest of the tests here are mostly smoke tests.
 
     def _reference_shear_translate(self, image, *, transform_id, magnitude, interpolation, fill):
+        if isinstance(interpolation, str):
+            interpolation = transforms.InterpolationMode(interpolation)
+
         if isinstance(image, PIL.Image.Image):
             input = image
         else:
@@ -4179,9 +4198,7 @@ class TestAutoAugmentTransforms:
 
     @pytest.mark.parametrize("transform_id", ["ShearX", "ShearY", "TranslateX", "TranslateY"])
     @pytest.mark.parametrize("magnitude", [0.3, -0.2, 0.0])
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     @pytest.mark.parametrize("input_type", ["Tensor", "PIL"])
     def test_correctness_shear_translate(self, transform_id, magnitude, interpolation, fill, input_type):
@@ -4214,7 +4231,7 @@ class TestAutoAugmentTransforms:
 
         if "Shear" in transform_id and input_type == "Tensor":
             mae = (actual.float() - expected.float()).abs().mean()
-            assert mae < (12 if interpolation is transforms.InterpolationMode.NEAREST else 5)
+            assert mae < (12 if interpolation == "nearest" else 5)
         else:
             assert_close(actual, expected, rtol=0, atol=1)
 
@@ -4314,8 +4331,14 @@ class TestConvertBoundingBoxFormat:
         assert output._version == input_version
 
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
-    def test_kernel_inplace(self, old_format, new_format):
-        input = make_bounding_boxes(format=old_format).as_subclass(torch.Tensor)
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.int64])
+    def test_kernel_inplace(self, old_format, new_format, dtype):
+        if not dtype.is_floating_point and (
+            tv_tensors.is_rotated_bounding_format(old_format) or tv_tensors.is_rotated_bounding_format(new_format)
+        ):
+            pytest.xfail("Rotated bounding boxes should be floating point tensors")
+
+        input = make_bounding_boxes(format=old_format, dtype=dtype).as_subclass(torch.Tensor)
         input_version = input._version
 
         output_out_of_place = F.convert_bounding_box_format(input, old_format=old_format, new_format=new_format)
@@ -4412,6 +4435,47 @@ class TestConvertBoundingBoxFormat:
                 input_tv_tensor, old_format=input_tv_tensor.format, new_format=input_tv_tensor.format
             )
 
+    @pytest.mark.parametrize(
+        "old_format",
+        [tv_tensors.BoundingBoxFormat.XYWH, tv_tensors.BoundingBoxFormat.CXCYWH],
+    )
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.int32, torch.int64])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_xywh_cxcywh_direct_conversion_parity(self, old_format, dtype, device):
+
+        bounding_boxes = make_bounding_boxes(format=old_format, dtype=dtype, device=device)
+        input_tensor = bounding_boxes.as_subclass(torch.Tensor).clone()
+
+        if old_format == tv_tensors.BoundingBoxFormat.XYWH:
+            actual = _xywh_to_cxcywh(input_tensor.clone(), inplace=False)
+            expected = _xyxy_to_cxcywh(_xywh_to_xyxy(input_tensor.clone(), inplace=False), inplace=False)
+        else:
+            actual = _cxcywh_to_xywh(input_tensor.clone(), inplace=False)
+            expected = _xyxy_to_xywh(_cxcywh_to_xyxy(input_tensor.clone(), inplace=False), inplace=False)
+
+        torch.testing.assert_close(actual, expected)
+
+    def test_cxcywh_to_xyxy_odd_dimensions(self):
+        # Non-regression test for https://github.com/pytorch/vision/issues/8887
+        # Integer bounding boxes with odd width/height produced incorrect results
+        # due to integer division rounding issues (ceil instead of truncation).
+        bounding_boxes = tv_tensors.BoundingBoxes(
+            [[5, 6, 10, 13]],
+            format=tv_tensors.BoundingBoxFormat.CXCYWH,
+            canvas_size=(17, 11),
+            dtype=torch.int64,
+        )
+
+        actual = F.convert_bounding_box_format(bounding_boxes, new_format=tv_tensors.BoundingBoxFormat.XYXY)
+        expected = tv_tensors.BoundingBoxes(
+            [[0, 0, 10, 12]],
+            format=tv_tensors.BoundingBoxFormat.XYXY,
+            canvas_size=(17, 11),
+        )
+
+        assert (actual >= 0).all()
+        torch.testing.assert_close(actual, expected)
+
 
 class TestResizedCrop:
     INPUT_SIZE = (17, 11)
@@ -4496,7 +4560,7 @@ class TestResizedCrop:
 
     # `InterpolationMode.NEAREST` is modeled after the buggy `INTER_NEAREST` interpolation of CV2.
     # The PIL equivalent of `InterpolationMode.NEAREST` is `InterpolationMode.NEAREST_EXACT`
-    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES) - {transforms.InterpolationMode.NEAREST})
+    @pytest.mark.parametrize("interpolation", set(INTERPOLATION_MODES_STR) - {"nearest"})
     def test_functional_image_correctness(self, interpolation):
         image = make_image(self.INPUT_SIZE, dtype=torch.uint8)
 
@@ -4509,7 +4573,7 @@ class TestResizedCrop:
             )
         )
 
-        torch.testing.assert_close(actual, expected, atol=1, rtol=0)
+        torch.testing.assert_close(actual, expected, atol=2 if interpolation == "lanczos" else 1, rtol=0)
 
     def _reference_resized_crop_bounding_boxes(self, bounding_boxes, *, top, left, height, width, size):
         new_height, new_width = size
@@ -5214,9 +5278,7 @@ class TestPerspective:
             transforms.RandomPerspective(distortion_scale=distortion_scale)
 
     @pytest.mark.parametrize("coefficients", COEFFICIENTS)
-    @pytest.mark.parametrize(
-        "interpolation", [transforms.InterpolationMode.NEAREST, transforms.InterpolationMode.BILINEAR]
-    )
+    @pytest.mark.parametrize("interpolation", ["nearest", "bilinear"])
     @pytest.mark.parametrize("fill", CORRECTNESS_FILLS)
     def test_image_functional_correctness(self, coefficients, interpolation, fill):
         image = make_image(dtype=torch.uint8, device="cpu")
@@ -5235,7 +5297,7 @@ class TestPerspective:
             )
         )
 
-        if interpolation is transforms.InterpolationMode.BILINEAR:
+        if interpolation == "bilinear":
             abs_diff = (actual.float() - expected.float()).abs()
             assert (abs_diff > 1).float().mean() < 7e-2
             mae = abs_diff.mean()
@@ -6786,91 +6848,6 @@ class TestPILToTensor:
             F.pil_to_tensor(object())
 
 
-@needs_cvcuda
-class TestToCVCUDATensor:
-    @pytest.mark.parametrize("image_type", (torch.Tensor, tv_tensors.Image))
-    @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
-    @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
-    @pytest.mark.parametrize(
-        "fn",
-        [F.to_cvcuda_tensor, transform_cls_to_functional(transforms.ToCVCUDATensor)],
-    )
-    def test_functional_and_transform(self, image_type, dtype, device, color_space, batch_dims, fn):
-        image = make_image(dtype=dtype, device=device, color_space=color_space, batch_dims=batch_dims)
-        if image_type is torch.Tensor:
-            image = image.as_subclass(torch.Tensor)
-            assert is_pure_tensor(image)
-        output = fn(image)
-
-        assert isinstance(output, _import_cvcuda().Tensor)
-        assert F.get_size(output) == F.get_size(image)
-        assert output is not None
-
-    def test_invalid_input_type(self):
-        with pytest.raises(TypeError, match=r"inpt should be ``torch.Tensor``"):
-            F.to_cvcuda_tensor("invalid_input")
-
-    def test_invalid_dimensions(self):
-        with pytest.raises(ValueError, match=r"pic should be 4 dimensional"):
-            img_data = torch.randint(0, 256, (3, 1, 3), dtype=torch.uint8)
-            img_data = img_data.cuda()
-            F.to_cvcuda_tensor(img_data)
-
-        with pytest.raises(ValueError, match=r"pic should be 4 dimensional"):
-            img_data = torch.randint(0, 256, (4,), dtype=torch.uint8)
-            img_data = img_data.cuda()
-            F.to_cvcuda_tensor(img_data)
-
-        with pytest.raises(ValueError, match=r"pic should be 4 dimensional"):
-            img_data = torch.randint(0, 256, (4, 4), dtype=torch.uint8)
-            img_data = img_data.cuda()
-            F.to_cvcuda_tensor(img_data)
-
-        with pytest.raises(ValueError, match=r"pic should be 4 dimensional"):
-            img_data = torch.randint(0, 256, (1, 1, 3, 4, 4), dtype=torch.uint8)
-            img_data = img_data.cuda()
-            F.to_cvcuda_tensor(img_data)
-
-    @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
-    @pytest.mark.parametrize("batch_size", [1, 2, 4])
-    def test_round_trip(self, dtype, device, color_space, batch_size):
-        original_tensor = make_image_tensor(
-            dtype=dtype, device=device, color_space=color_space, batch_dims=(batch_size,)
-        )
-        cvcuda_tensor = F.to_cvcuda_tensor(original_tensor)
-        result_tensor = F.cvcuda_to_tensor(cvcuda_tensor)
-        torch.testing.assert_close(result_tensor.to(device), original_tensor, rtol=0, atol=0)
-        assert result_tensor.shape[0] == batch_size
-
-
-@needs_cvcuda
-class TestCVCUDAToTensor:
-    @pytest.mark.parametrize("dtype", [torch.uint8, torch.uint16, torch.float32, torch.float64])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("color_space", ["RGB", "GRAY"])
-    @pytest.mark.parametrize("batch_dims", [(1,), (2,), (4,)])
-    @pytest.mark.parametrize(
-        "fn",
-        [F.cvcuda_to_tensor, transform_cls_to_functional(transforms.CVCUDAToTensor)],
-    )
-    def test_functional_and_transform(self, dtype, device, color_space, batch_dims, fn):
-        input = make_image_cvcuda(dtype=dtype, device=device, color_space=color_space, batch_dims=batch_dims)
-
-        output = fn(input)
-
-        assert isinstance(output, torch.Tensor)
-        input_tensor = F.cvcuda_to_tensor(input)
-        assert F.get_size(output) == F.get_size(input_tensor)
-
-    def test_functional_error(self):
-        with pytest.raises(TypeError, match=r"cvcuda_img should be ``cvcuda\.Tensor``\. Got .+\."):
-            F.cvcuda_to_tensor(object())
-
-
 class TestLambda:
     @pytest.mark.parametrize("input", [object(), torch.empty(()), np.empty(()), "string", 1, 0.0])
     @pytest.mark.parametrize("types", [(), (torch.Tensor, np.ndarray)])
@@ -7232,12 +7209,8 @@ def test_detection_preset(image_type, data_augmentation, to_tensor, sanitize):
     elif data_augmentation == "lsj":
         t = [
             transforms.ScaleJitter(target_size=(1024, 1024), antialias=True),
-            # Note: replaced FixedSizeCrop with RandomCrop, becuase we're
-            # leaving FixedSizeCrop in prototype for now, and it expects Label
-            # classes which we won't release yet.
-            # transforms.FixedSizeCrop(
-            #     size=(1024, 1024), fill=defaultdict(lambda: (123.0, 117.0, 104.0), {tv_tensors.Mask: 0})
-            # ),
+            # Note: replaced FixedSizeCrop with RandomCrop, becuase
+            # FixedSizeCrop was in prototype and never released.
             transforms.RandomCrop((1024, 1024), pad_if_needed=True),
             transforms.RandomHorizontalFlip(p=1),
             to_tensor,

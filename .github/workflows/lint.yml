@@ -24,7 +24,7 @@ jobs:
         echo '::group::Setup environment'
         CONDA_PATH=$(which conda)
         eval "$(${CONDA_PATH} shell.bash hook)"
-        conda create --name ci --quiet --yes python=3.9 pip
+        conda create --name ci --quiet --yes python=3.10 pip
         conda activate ci
         echo '::endgroup::'
 

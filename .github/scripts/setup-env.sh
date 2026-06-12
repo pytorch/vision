@@ -29,15 +29,10 @@ conda create \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
   libpng \
-  libwebp
+  libwebp>=1.3.2
 conda activate ci
 conda install --quiet --yes libjpeg-turbo -c pytorch
 pip install --progress-bar=off --upgrade setuptools==72.1.0
-
-# See https://github.com/pytorch/vision/issues/6790
-if [[ "${PYTHON_VERSION}" != "3.11" ]]; then
-  pip install --progress-bar=off av!=10.0.0
-fi
 
 echo '::endgroup::'
 
@@ -81,12 +76,6 @@ echo '::endgroup::'
 echo '::group::Install TorchVision'
 pip install -e . -v --no-build-isolation
 echo '::endgroup::'
-
-if [[ "${CVCUDA:-}" == "1" ]]; then
-  echo '::group::Install CV-CUDA'
-  pip install --progress-bar=off cvcuda-cu12
-  echo '::endgroup::'
-fi
 
 echo '::group::Install torchvision-extra-decoders'
 # This can be done after torchvision was built

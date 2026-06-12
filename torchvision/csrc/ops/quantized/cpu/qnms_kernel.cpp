@@ -50,7 +50,8 @@ at::Tensor qnms_kernel_impl(
     // integral promotion rules will likely prevent it (see
     // https://stackoverflow.com/questions/32959564/subtraction-of-two-unsigned-gives-signed
     // for more details).
-    areas[i] = (x2[i].val_ - x1[i].val_) * (y2[i].val_ - y1[i].val_);
+    areas[i] = (static_cast<float>(x2[i]) - static_cast<float>(x1[i])) *
+        (static_cast<float>(y2[i]) - static_cast<float>(y1[i]));
   }
 
   int64_t num_to_keep = 0;
@@ -64,10 +65,10 @@ at::Tensor qnms_kernel_impl(
 
     // We explicitly cast coordinates to float so that the code can be
     // vectorized.
-    float ix1val = x1[i].val_;
-    float iy1val = y1[i].val_;
-    float ix2val = x2[i].val_;
-    float iy2val = y2[i].val_;
+    float ix1val = static_cast<float>(x1[i]);
+    float iy1val = static_cast<float>(y1[i]);
+    float ix2val = static_cast<float>(x2[i]);
+    float iy2val = static_cast<float>(y2[i]);
     float iarea = areas[i];
 
     for (int64_t _j = _i + 1; _j < ndets; _j++) {
@@ -75,10 +76,10 @@ at::Tensor qnms_kernel_impl(
       if (suppressed[j] == 1) {
         continue;
       }
-      float xx1 = std::max(ix1val, (float)x1[j].val_);
-      float yy1 = std::max(iy1val, (float)y1[j].val_);
-      float xx2 = std::min(ix2val, (float)x2[j].val_);
-      float yy2 = std::min(iy2val, (float)y2[j].val_);
+      float xx1 = std::max(ix1val, static_cast<float>(x1[j]));
+      float yy1 = std::max(iy1val, static_cast<float>(y1[j]));
+      float xx2 = std::min(ix2val, static_cast<float>(x2[j]));
+      float yy2 = std::min(iy2val, static_cast<float>(y2[j]));
 
       auto w = std::max(0.f, xx2 - xx1); // * scale (gets canceled below)
       auto h = std::max(0.f, yy2 - yy1); // * scale (gets canceled below)
@@ -117,7 +118,7 @@ at::Tensor qnms_kernel(
 
   auto result = at::empty({0});
 
-  AT_DISPATCH_QINT_TYPES(dets.scalar_type(), "qnms_kernel", [&] {
+  AT_DISPATCH_INTEGRAL_TYPES(dets.scalar_type(), "qnms_kernel", [&] {
     result = qnms_kernel_impl<scalar_t>(dets, scores, iou_threshold);
   });
   return result;
@@ -125,8 +126,13 @@ at::Tensor qnms_kernel(
 
 } // namespace
 
-TORCH_LIBRARY_IMPL(torchvision, QuantizedCPU, m) {
-  m.impl(TORCH_SELECTIVE_NAME("torchvision::nms"), TORCH_FN(qnms_kernel));
+TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def(TORCH_SELECTIVE_SCHEMA(
+      "torchvision::qnms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor"));
+}
+
+TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
+  m.impl(TORCH_SELECTIVE_NAME("torchvision::qnms"), TORCH_FN(qnms_kernel));
 }
 
 } // namespace ops

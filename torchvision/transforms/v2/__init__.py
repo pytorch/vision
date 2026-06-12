@@ -1,4 +1,5 @@
-from torchvision.transforms import AutoAugmentPolicy, InterpolationMode  # usort: skip
+from torchvision.transforms import AutoAugmentPolicy  # usort: skip
+from torchvision.transforms.functional import InterpolationMode  # usort: skip
 
 from . import functional  # usort: skip
 
@@ -55,7 +56,7 @@ from ._misc import (
     ToDtype,
 )
 from ._temporal import UniformTemporalSubsample
-from ._type_conversion import CVCUDAToTensor, PILToTensor, ToCVCUDATensor, ToImage, ToPILImage, ToPureTensor
+from ._type_conversion import PILToTensor, ToImage, ToPILImage, ToPureTensor
 from ._utils import check_type, get_bounding_boxes, get_keypoints, has_all, has_any, query_chw, query_size
 
 from ._deprecated import ToTensor  # usort: skip

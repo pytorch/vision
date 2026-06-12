@@ -1,5 +1,9 @@
 #include "encode_jpeg.h"
 
+#include <torch/headeronly/util/Exception.h>
+
+#include <optional>
+
 #include "common_jpeg.h"
 
 namespace vision {
@@ -8,7 +12,7 @@ namespace image {
 #if !JPEG_FOUND
 
 torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       false, "encode_jpeg: torchvision not compiled with libjpeg support");
 }
 
@@ -35,6 +39,12 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   JpegSizeType jpegSize = 0;
   uint8_t* jpegBuf = nullptr;
 
+  // NOTE: libjpeg uses setjmp/longjmp for error handling. longjmp does not
+  // unwind C++ stack frames, so destructors of objects created after setjmp
+  // won't run. We use std::optional to declare tensors before setjmp while
+  // deferring construction, and explicitly reset them on the error path.
+  std::optional<torch::Tensor> input;
+
   cinfo.err = jpeg_std_error(&jerr.pub);
   jerr.pub.error_exit = torch_jpeg_error_exit;
 
@@ -43,30 +53,34 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
     /* If we get here, the JPEG code has signaled an error.
      * We need to clean up the JPEG object and the buffer.
      */
+    input.reset();
     jpeg_destroy_compress(&cinfo);
     if (jpegBuf != nullptr) {
       free(jpegBuf);
     }
 
-    TORCH_CHECK(false, (const char*)jerr.jpegLastErrorMsg);
+    STD_TORCH_CHECK(false, (const char*)jerr.jpegLastErrorMsg);
   }
 
   // Check that the input tensor is on CPU
-  TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
+  STD_TORCH_CHECK(
+      data.device() == torch::kCPU, "Input tensor should be on CPU");
 
   // Check that the input tensor dtype is uint8
-  TORCH_CHECK(data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+  STD_TORCH_CHECK(
+      data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
 
   // Check that the input tensor is 3-dimensional
-  TORCH_CHECK(data.dim() == 3, "Input data should be a 3-dimensional tensor");
+  STD_TORCH_CHECK(
+      data.dim() == 3, "Input data should be a 3-dimensional tensor");
 
   // Get image info
   int channels = data.size(0);
   int height = data.size(1);
   int width = data.size(2);
-  auto input = data.permute({1, 2, 0}).contiguous();
+  input = data.permute({1, 2, 0}).contiguous();
 
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       channels == 1 || channels == 3,
       "The number of channels should be 1 or 3, got: ",
       channels);
@@ -90,7 +104,7 @@ torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
   jpeg_start_compress(&cinfo, TRUE);
 
   auto stride = width * channels;
-  auto ptr = input.data_ptr<uint8_t>();
+  auto ptr = input->data_ptr<uint8_t>();
 
   // Encode JPEG file
   while (cinfo.next_scanline < cinfo.image_height) {

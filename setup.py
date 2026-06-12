@@ -8,10 +8,11 @@ import subprocess
 import sys
 import sysconfig
 import warnings
+from importlib.metadata import distribution, PackageNotFoundError
 from pathlib import Path
 
 import torch
-from pkg_resources import DistributionNotFound, get_distribution, parse_version
+from packaging.version import parse as parse_version
 from setuptools import find_packages, setup
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDA_HOME, CUDAExtension, ROCM_HOME
 
@@ -84,8 +85,8 @@ def write_version_file(version, sha):
 def get_requirements():
     def get_dist(pkgname):
         try:
-            return get_distribution(pkgname)
-        except DistributionNotFound:
+            return distribution(pkgname)
+        except PackageNotFoundError:
             return None
 
     pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
@@ -129,6 +130,11 @@ def get_macros_and_flags():
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
         extra_compile_args["cxx"].append("/MP")
+        extra_compile_args["cxx"].append("/Zc:preprocessor")
+        if not IS_ROCM and "nvcc" in extra_compile_args:
+            extra_compile_args["nvcc"].append("-Xcompiler")
+            extra_compile_args["nvcc"].append("/Zc:preprocessor")
+            extra_compile_args["nvcc"].append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING")
         if sysconfig.get_config_var("Py_GIL_DISABLED"):
             extra_compile_args["cxx"].append("-DPy_GIL_DISABLED")
 
@@ -153,8 +159,6 @@ def make_C_extension():
     sources = (
         list(CSRS_DIR.glob("*.cpp"))
         + list(CSRS_DIR.glob("ops/*.cpp"))
-        + list(CSRS_DIR.glob("ops/autocast/*.cpp"))
-        + list(CSRS_DIR.glob("ops/autograd/*.cpp"))
         + list(CSRS_DIR.glob("ops/cpu/*.cpp"))
         + list(CSRS_DIR.glob("ops/quantized/cpu/*.cpp"))
     )
@@ -411,7 +415,7 @@ if __name__ == "__main__":
         long_description_content_type="text/markdown",
         license="BSD",
         packages=find_packages(exclude=("test",)),
-        package_data={package_name: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
+        package_data={package_name: ["*.dll", "*.dylib", "*.so"]},
         zip_safe=False,
         install_requires=get_requirements(),
         extras_require={
