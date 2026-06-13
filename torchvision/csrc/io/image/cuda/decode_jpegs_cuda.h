@@ -1,6 +1,6 @@
 #pragma once
-#include <cstddef>
 #include <torch/types.h>
+#include <cstddef>
 #include <vector>
 #include "../common.h"
 
@@ -72,25 +72,24 @@ class RocJpegDecoder {
 } // namespace image
 } // namespace vision
 
-#define CHECK_ROCJPEG(call)                                                  \
-  {                                                                          \
-    RocJpegStatus rocjpeg_status = (call);                                   \
-    if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {                          \
-      std::cerr << #call << " returned "                                     \
-                << rocJpegGetErrorName(rocjpeg_status) << " at " << __FILE__ \
-                << ":" << __LINE__ << std::endl;                             \
-      exit(1);                                                               \
-    }                                                                        \
+#define CHECK_ROCJPEG(call)                       \
+  {                                               \
+    RocJpegStatus rocjpeg_status = (call);        \
+    TORCH_CHECK(                                  \
+        rocjpeg_status == ROCJPEG_STATUS_SUCCESS, \
+        #call,                                    \
+        " returned ",                             \
+        rocJpegGetErrorName(rocjpeg_status));     \
   }
 
-#define CHECK_HIP(call)                                                    \
-  {                                                                        \
-    hipError_t hip_status = (call);                                        \
-    if (hip_status != hipSuccess) {                                        \
-      std::cout << "HIP failure: 'status: " << hipGetErrorName(hip_status) \
-                << "' at " << __FILE__ << ":" << __LINE__ << std::endl;    \
-      exit(1);                                                             \
-    }                                                                      \
+#define CHECK_HIP(call)               \
+  {                                   \
+    hipError_t hip_status = (call);   \
+    TORCH_CHECK(                      \
+        hip_status == hipSuccess,     \
+        #call,                        \
+        " failed with status: ",      \
+        hipGetErrorName(hip_status)); \
   }
 
 #endif
