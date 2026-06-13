@@ -44,11 +44,8 @@ class CUDAJpegDecoder {
 } // namespace image
 } // namespace vision
 
-#endif
+#elif ROCJPEG_FOUND
 
-#if ROCJPEG_FOUND
-
-#include <c10/cuda/CUDAStream.h>
 #include <rocjpeg/rocjpeg.h>
 
 namespace vision {
@@ -63,9 +60,7 @@ class RocJpegDecoder {
       const RocJpegOutputFormat& output_format,
       bool prune_single_channel);
 
-  const torch::Device original_device;
   const torch::Device target_device;
-  const c10::cuda::CUDAStream stream;
 
  private:
   RocJpegStreamHandle rocjpeg_stream_handles[2];

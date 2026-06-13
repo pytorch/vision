@@ -596,14 +596,10 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
 } // namespace image
 } // namespace vision
 
-#endif
-
-#if ROCJPEG_FOUND
+#elif ROCJPEG_FOUND
 
 #include <ATen/cuda/CUDAContext.h>
-#include <ATen/cuda/CUDAEvent.h>
 #include <c10/cuda/CUDAGuard.h>
-#include <cuda_runtime_api.h>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -685,16 +681,10 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
   }
 
   try {
-    at::cuda::CUDAEvent event;
-    auto result = rocJpegDecoder->decode_images(
+    // rocJPEG owns and synchronizes its internal HIP stream; there is no
+    // caller-visible CUDA stream here to record an event on.
+    return rocJpegDecoder->decode_images(
         contig_images, output_format, prune_single_channel);
-    auto current_stream{
-        device.has_index() ? at::cuda::getCurrentCUDAStream(
-                                 rocJpegDecoder->original_device.index())
-                           : at::cuda::getCurrentCUDAStream()};
-    event.record(rocJpegDecoder->stream);
-    event.block(current_stream);
-    return result;
   } catch (const std::exception& e) {
     if (typeid(e) != typeid(std::runtime_error)) {
       TORCH_CHECK(false, "Error while decoding JPEG images: ", e.what());
@@ -705,12 +695,7 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
 }
 
 RocJpegDecoder::RocJpegDecoder(const torch::Device& target_device)
-    : original_device{torch::kCUDA, c10::cuda::current_device()},
-      target_device{target_device},
-      stream{
-          target_device.has_index()
-              ? at::cuda::getStreamFromPool(false, target_device.index())
-              : at::cuda::getStreamFromPool(false)} {
+    : target_device{target_device} {
   int device_id =
       target_device.has_index() ? target_device.index()
                                 : c10::cuda::current_device();
@@ -939,16 +924,9 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
   int num_images = encoded_images.size();
   std::vector<torch::Tensor> output_tensors{num_images};
   RocJpegStatus rocjpeg_status;
-  cudaError_t cudaStatus;
 
   // baseline JPEGs can be batch decoded with hardware support
   std::vector<int> channels(num_images);
-
-  cudaStatus = cudaStreamSynchronize(stream);
-  TORCH_CHECK(
-      cudaStatus == cudaSuccess,
-      "Failed to synchronize CUDA stream: ",
-      cudaStatus);
 
   constexpr int batch_size = 2;
   std::string chroma_sub_sampling = "";
@@ -1051,12 +1029,6 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
 
     current_batch_size = 0;
   }
-
-  cudaStatus = cudaStreamSynchronize(stream);
-  TORCH_CHECK(
-      cudaStatus == cudaSuccess,
-      "Failed to synchronize CUDA stream: ",
-      cudaStatus);
 
   if (prune_single_channel) {
     for (std::vector<at::Tensor>::size_type i = 0; i < output_tensors.size();

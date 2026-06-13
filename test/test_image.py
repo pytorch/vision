@@ -423,7 +423,7 @@ def test_decode_jpegs_cuda(mode, scripted):
     num_workers = 10
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-        futures = [executor.submit(decode_fn, encoded_images, mode, f"cuda:{torch.cuda.current_device()}") for _ in range(num_workers)]
+        futures = [executor.submit(decode_fn, encoded_images, mode, "cuda") for _ in range(num_workers)]
     decoded_images_threaded = [future.result() for future in futures]
     assert len(decoded_images_threaded) == num_workers
     for decoded_images in decoded_images_threaded:
