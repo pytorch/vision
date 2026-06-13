@@ -665,8 +665,16 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
   }
 
   RocJpegOutputFormat output_format;
+  bool prune_single_channel = false;
 
   switch (mode) {
+    case vision::image::IMAGE_READ_MODE_UNCHANGED:
+      output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
+      prune_single_channel = true;
+      break;
+    case vision::image::IMAGE_READ_MODE_GRAY:
+      output_format = ROCJPEG_OUTPUT_Y;
+      break;
     case vision::image::IMAGE_READ_MODE_RGB:
       output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
       break;
@@ -678,7 +686,8 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
 
   try {
     at::cuda::CUDAEvent event;
-    auto result = rocJpegDecoder->decode_images(contig_images, output_format);
+    auto result = rocJpegDecoder->decode_images(
+        contig_images, output_format, prune_single_channel);
     auto current_stream{
         device.has_index() ? at::cuda::getCurrentCUDAStream(
                                  rocJpegDecoder->original_device.index())
@@ -702,7 +711,9 @@ RocJpegDecoder::RocJpegDecoder(const torch::Device& target_device)
           target_device.has_index()
               ? at::cuda::getStreamFromPool(false, target_device.index())
               : at::cuda::getStreamFromPool(false)} {
-  int device_id = target_device.index();
+  int device_id =
+      target_device.has_index() ? target_device.index()
+                                : c10::cuda::current_device();
   CHECK_HIP(hipSetDevice(device_id));
   RocJpegStatus status;
   RocJpegBackend rocjpeg_backend = ROCJPEG_BACKEND_HARDWARE;
@@ -909,7 +920,8 @@ int getChannelPitchAndSizes(
 
 std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     const std::vector<torch::Tensor>& encoded_images,
-    const RocJpegOutputFormat& output_format) {
+    const RocJpegOutputFormat& output_format,
+    bool prune_single_channel) {
   /*
     This function decodes a batch of jpeg bitstreams.
 
@@ -1015,7 +1027,7 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       auto output_tensor = torch::empty(
           {int64_t(num_channels), int64_t(height), int64_t(width)},
           torch::dtype(torch::kU8).device(target_device));
-      channels[j] = num_channels;
+      channels[j] = num_components;
 
       // allocate memory for each channel and reuse them if the sizes remain
       // unchanged for a new image.
@@ -1045,6 +1057,15 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       cudaStatus == cudaSuccess,
       "Failed to synchronize CUDA stream: ",
       cudaStatus);
+
+  if (prune_single_channel) {
+    for (std::vector<at::Tensor>::size_type i = 0; i < output_tensors.size();
+         ++i) {
+      if (channels[i] == 1) {
+        output_tensors[i] = output_tensors[i][0].unsqueeze(0).clone();
+      }
+    }
+  }
 
   return output_tensors;
 }

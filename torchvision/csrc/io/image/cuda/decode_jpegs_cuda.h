@@ -60,7 +60,8 @@ class RocJpegDecoder {
 
   std::vector<torch::Tensor> decode_images(
       const std::vector<torch::Tensor>& encoded_images,
-      const RocJpegOutputFormat& output_format);
+      const RocJpegOutputFormat& output_format,
+      bool prune_single_channel);
 
   const torch::Device original_device;
   const torch::Device target_device;
