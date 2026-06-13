@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <torch/types.h>
 #include <vector>
 #include "../common.h"
@@ -63,7 +64,9 @@ class RocJpegDecoder {
   const torch::Device target_device;
 
  private:
-  RocJpegStreamHandle rocjpeg_stream_handles[2];
+  void ensure_stream_handles(std::size_t num_handles);
+
+  std::vector<RocJpegStreamHandle> rocjpeg_stream_handles;
   RocJpegHandle rocjpeg_handle;
 };
 } // namespace image

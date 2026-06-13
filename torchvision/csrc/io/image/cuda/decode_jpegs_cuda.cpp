@@ -707,20 +707,24 @@ RocJpegDecoder::RocJpegDecoder(const torch::Device& target_device)
   TORCH_CHECK(
       status == ROCJPEG_STATUS_SUCCESS,
       "Failed to initialize rocjpeg with hardware backend");
-
-  status = rocJpegStreamCreate(&rocjpeg_stream_handles[0]);
-  TORCH_CHECK(
-      status == ROCJPEG_STATUS_SUCCESS, "Failed to initialize rocjpeg stream");
-
-  status = rocJpegStreamCreate(&rocjpeg_stream_handles[1]);
-  TORCH_CHECK(
-      status == ROCJPEG_STATUS_SUCCESS, "Failed to initialize rocjpeg stream");
 }
 
 RocJpegDecoder::~RocJpegDecoder() {
   rocJpegDestroy(rocjpeg_handle);
-  rocJpegStreamDestroy(rocjpeg_stream_handles[0]);
-  rocJpegStreamDestroy(rocjpeg_stream_handles[1]);
+  for (auto stream_handle : rocjpeg_stream_handles) {
+    rocJpegStreamDestroy(stream_handle);
+  }
+}
+
+void RocJpegDecoder::ensure_stream_handles(std::size_t num_handles) {
+  while (rocjpeg_stream_handles.size() < num_handles) {
+    RocJpegStreamHandle stream_handle;
+    RocJpegStatus status = rocJpegStreamCreate(&stream_handle);
+    TORCH_CHECK(
+        status == ROCJPEG_STATUS_SUCCESS,
+        "Failed to initialize rocjpeg stream");
+    rocjpeg_stream_handles.push_back(stream_handle);
+  }
 }
 
 static constexpr int mem_alignment = 16;
@@ -928,7 +932,8 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
   // baseline JPEGs can be batch decoded with hardware support
   std::vector<int> channels(num_images);
 
-  constexpr int batch_size = 2;
+  const int batch_size = num_images;
+  ensure_stream_handles(static_cast<std::size_t>(batch_size));
   std::string chroma_sub_sampling = "";
   uint8_t num_components;
   RocJpegChromaSubsampling temp_subsampling;
@@ -943,9 +948,6 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
   int current_batch_size = 0;
   uint32_t channel_sizes[ROCJPEG_MAX_COMPONENT] = {};
   uint32_t num_channels = 0;
-  std::vector<std::vector<uint32_t>> prior_channel_sizes;
-  prior_channel_sizes.resize(
-      batch_size, std::vector<uint32_t>(ROCJPEG_MAX_COMPONENT, 0));
 
   for (int i = 0; i < num_images; i += batch_size) {
     int batch_end = std::min(i + batch_size, num_images);
@@ -1017,11 +1019,10 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
                               .narrow(2, 0, temp_widths[0]);
     }
 
-    // if (current_batch_size == 2) {
     if (current_batch_size > 0) {
       CHECK_ROCJPEG(rocJpegDecodeBatched(
           rocjpeg_handle,
-          rocjpeg_stream_handles,
+          rocjpeg_stream_handles.data(),
           current_batch_size,
           decode_params_batch.data(),
           output_images.data()));
