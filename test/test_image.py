@@ -431,7 +431,7 @@ def test_decode_jpegs_cuda(mode, scripted):
         for decoded_image_cuda, decoded_image_cpu in zip(decoded_images, decoded_images_cpu):
             assert decoded_image_cuda.shape == decoded_image_cpu.shape
             assert decoded_image_cuda.dtype == decoded_image_cpu.dtype == torch.uint8
-            assert (decoded_image_cuda.cpu().float() - decoded_image_cpu.cpu().float()).abs().mean() < 2
+            assert (decoded_image_cuda.cpu().float() - decoded_image_cpu.cpu().float()).abs().mean() < 2.5
 
 
 @needs_cuda

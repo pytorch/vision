@@ -1,9 +1,11 @@
 #pragma once
 #include <torch/types.h>
+#include <cstddef>
 #include <vector>
 #include "../common.h"
 
 #if NVJPEG_FOUND
+
 #include <c10/cuda/CUDAStream.h>
 #include <nvjpeg.h>
 
@@ -42,4 +44,52 @@ class CUDAJpegDecoder {
 };
 } // namespace image
 } // namespace vision
+
+#elif ROCJPEG_FOUND
+
+#include <rocjpeg/rocjpeg.h>
+
+namespace vision {
+namespace image {
+class RocJpegDecoder {
+ public:
+  RocJpegDecoder(const torch::Device& target_device);
+  ~RocJpegDecoder();
+
+  std::vector<torch::Tensor> decode_images(
+      const std::vector<torch::Tensor>& encoded_images,
+      const RocJpegOutputFormat& output_format,
+      bool prune_single_channel);
+
+  const torch::Device target_device;
+
+ private:
+  void ensure_stream_handles(std::size_t num_handles);
+
+  std::vector<RocJpegStreamHandle> rocjpeg_stream_handles;
+  RocJpegHandle rocjpeg_handle;
+};
+} // namespace image
+} // namespace vision
+
+#define CHECK_ROCJPEG(call)                       \
+  {                                               \
+    RocJpegStatus rocjpeg_status = (call);        \
+    TORCH_CHECK(                                  \
+        rocjpeg_status == ROCJPEG_STATUS_SUCCESS, \
+        #call,                                    \
+        " returned ",                             \
+        rocJpegGetErrorName(rocjpeg_status));     \
+  }
+
+#define CHECK_HIP(call)               \
+  {                                   \
+    hipError_t hip_status = (call);   \
+    TORCH_CHECK(                      \
+        hip_status == hipSuccess,     \
+        #call,                        \
+        " failed with status: ",      \
+        hipGetErrorName(hip_status)); \
+  }
+
 #endif
