@@ -32,6 +32,10 @@ if _load_library("_C"):
         return True
 
 
+# Stable-ABI extension (migrated ops)
+_load_library("_C_stable")
+
+
 def _assert_has_ops():
     if not _has_ops():
         raise RuntimeError(
