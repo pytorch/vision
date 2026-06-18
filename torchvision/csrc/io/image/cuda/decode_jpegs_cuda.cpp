@@ -723,8 +723,8 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
           num_components == 1 ? ROCJPEG_OUTPUT_Y : ROCJPEG_OUTPUT_RGB_PLANAR;
     }
 
-    // rocJPEG writes rows at a 16-byte-aligned pitch, so allocate a buffer padded
-    // to that alignment and return a view of the valid region.
+    // rocJPEG writes rows at a 16-byte-aligned pitch, so allocate a buffer
+    // padded to that alignment and return a view of the valid region.
     uint32_t pitch = align_up(width, kRocJpegPitchAlignment);
     uint32_t num_channels;
     switch (image_output_format) {
