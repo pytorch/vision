@@ -680,7 +680,6 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
   std::vector<RocJpegDecodeParams> decode_params(num_images);
   std::vector<RocJpegImage> output_images(num_images);
   std::vector<torch::Tensor> output_tensors(num_images);
-  std::vector<int> source_channels(num_images);
 
   for (std::size_t i = 0; i < num_images; ++i) {
     CHECK_ROCJPEG(rocJpegStreamParse(
@@ -708,49 +707,10 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
         width,
         "x",
         height,
-        " is below the VCN hardware JPEG decoder minimum of 64x64");
+        " is below the rocJPEG hardware JPEG decoder minimum of 64x64");
     STD_TORCH_CHECK(
         subsampling != ROCJPEG_CSS_411 && subsampling != ROCJPEG_CSS_UNKNOWN,
-        "The image chroma subsampling is not supported by the VCN hardware JPEG decoder");
-
-    // VCN writes rows at a 16-byte-aligned pitch, so allocate a buffer padded
-    // to that alignment and return a view of the valid region.
-    uint32_t pitch = align_up(width, kRocJpegPitchAlignment);
-    uint32_t num_channels;
-    switch (output_format) {
-      case ROCJPEG_OUTPUT_NATIVE:
-        switch (subsampling) {
-          case ROCJPEG_CSS_444:
-          case ROCJPEG_CSS_440:
-          case ROCJPEG_CSS_420:
-            num_channels = 3;
-            break;
-          case ROCJPEG_CSS_422:
-            num_channels = 1;
-            pitch = align_up(width * 2, kRocJpegPitchAlignment);
-            break;
-          case ROCJPEG_CSS_400:
-            num_channels = 1;
-            break;
-          default:
-            TORCH_CHECK(false, "Unsupported rocJPEG native chroma subsampling");
-        }
-        break;
-      case ROCJPEG_OUTPUT_Y:
-        num_channels = 1;
-        break;
-      case ROCJPEG_OUTPUT_RGB_PLANAR:
-        num_channels = 3;
-        break;
-      default:
-        TORCH_CHECK(false, "Unsupported rocJPEG output format");
-    }
-
-    auto buffer = torch::empty(
-        {int64_t(num_channels),
-         int64_t(align_up(height, kRocJpegPitchAlignment)),
-         int64_t(pitch)},
-        torch::dtype(torch::kU8).device(target_device));
+        "The image chroma subsampling is not supported by the rocJPEG hardware JPEG decoder");
 
     auto image_output_format = output_format;
     if (output_format == ROCJPEG_OUTPUT_NATIVE) {
@@ -762,12 +722,33 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       image_output_format =
           num_components == 1 ? ROCJPEG_OUTPUT_Y : ROCJPEG_OUTPUT_RGB_PLANAR;
     }
+
+    // rocJPEG writes rows at a 16-byte-aligned pitch, so allocate a buffer padded
+    // to that alignment and return a view of the valid region.
+    uint32_t pitch = align_up(width, kRocJpegPitchAlignment);
+    uint32_t num_channels;
+    switch (image_output_format) {
+      case ROCJPEG_OUTPUT_Y:
+        num_channels = 1;
+        break;
+      case ROCJPEG_OUTPUT_RGB_PLANAR:
+        num_channels = 3;
+        break;
+      default:
+        STD_TORCH_CHECK(false, "Unsupported rocJPEG output format");
+    }
+
+    auto buffer = torch::empty(
+        {int64_t(num_channels),
+         int64_t(align_up(height, kRocJpegPitchAlignment)),
+         int64_t(pitch)},
+        torch::dtype(torch::kU8).device(target_device));
+
     decode_params[i].output_format = image_output_format;
     for (uint32_t c = 0; c < num_channels; ++c) {
       output_images[i].channel[c] = buffer[c].data_ptr<uint8_t>();
       output_images[i].pitch[c] = pitch;
     }
-    source_channels[i] = num_components;
     output_tensors[i] = buffer.narrow(1, 0, height).narrow(2, 0, width);
   }
 
@@ -779,6 +760,11 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       static_cast<int>(num_images),
       decode_params.data(),
       output_images.data()));
+
+  // rocJPEG owns its internal HIP stream and does not expose it to callers.
+  // Synchronize before copying the padded views below so the copies cannot race
+  // with device writes from rocJpegDecodeBatched().
+  CHECK_HIP(hipDeviceSynchronize());
 
   for (std::size_t i = 0; i < num_images; ++i) {
     output_tensors[i] = output_tensors[i].contiguous();
