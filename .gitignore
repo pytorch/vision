@@ -46,3 +46,6 @@ xcuserdata/
 
 scripts/release_notes/data.json
 .aider*
+
+__pycache__/
+.pytest_cache/
