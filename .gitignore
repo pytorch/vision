@@ -45,3 +45,4 @@ xcuserdata/
 .envrc
 
 scripts/release_notes/data.json
+.aider*
