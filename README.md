@@ -1,5 +1,11 @@
 # torchvision
 
+## Fork Notice
+
+Maintained by [Nueramarcos](https://github.com/Nueramarcos). See [FORK.md](FORK.md).
+
+
+
 [![total torchvision downloads](https://pepy.tech/badge/torchvision)](https://pepy.tech/project/torchvision)
 [![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchvision%2Fjson&query=%24.info.version&colorB=brightgreen&prefix=v)](https://pytorch.org/vision/stable/index.html)
 
