@@ -88,11 +88,7 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
 #include <c10/cuda/CUDAGuard.h>
 #include <cuda_runtime_api.h>
 #include <algorithm>
-#include <fstream>
-#include <iostream>
 #include <memory>
-#include <mutex>
-#include <sstream>
 #include <string>
 #include <typeinfo>
 namespace vision {
@@ -751,14 +747,16 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
          int64_t(align_up(height, kRocJpegPitchAlignment)),
          int64_t(pitch)},
         torch::dtype(torch::kU8).device(target_device));
-    
+
     auto image_output_format = output_format;
     if (output_format == ROCJPEG_OUTPUT_NATIVE) {
-      // ROCJPEG_OUTPUT_NATIVE returns YUV/native layouts whose channel count and
-      // plane sizes depend on chroma subsampling. torchvision's UNCHANGED mode is
-      // expected to match the CPU/nvJPEG behavior: grayscale JPEGs return one
-      // channel, while color JPEGs return RGB. Decode to that compatible layout.
-      image_output_format = num_components == 1 ? ROCJPEG_OUTPUT_Y : ROCJPEG_OUTPUT_RGB_PLANAR;
+      // ROCJPEG_OUTPUT_NATIVE returns YUV/native layouts whose channel count
+      // and plane sizes depend on chroma subsampling. torchvision's UNCHANGED
+      // mode is expected to match the CPU/nvJPEG behavior: grayscale JPEGs
+      // return one channel, while color JPEGs return RGB. Decode to that
+      // compatible layout.
+      image_output_format =
+          num_components == 1 ? ROCJPEG_OUTPUT_Y : ROCJPEG_OUTPUT_RGB_PLANAR;
     }
     decode_params[i].output_format = image_output_format;
     for (uint32_t c = 0; c < num_channels; ++c) {
@@ -769,6 +767,8 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     output_tensors[i] = buffer.narrow(1, 0, height).narrow(2, 0, width);
   }
 
+  // Choosing a batch size that is a multiple of the available JPEG cores is
+  // recommended.
   CHECK_ROCJPEG(rocJpegDecodeBatched(
       rocjpeg_handle,
       rocjpeg_stream_handles.data(),
