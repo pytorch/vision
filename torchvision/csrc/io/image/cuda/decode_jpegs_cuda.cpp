@@ -659,13 +659,9 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     const std::vector<torch::Tensor>& encoded_images,
     vision::image::ImageReadMode mode) {
   RocJpegOutputFormat output_format;
-  bool prune_single_channel = false;
   switch (mode) {
     case vision::image::IMAGE_READ_MODE_UNCHANGED:
-      // rocJPEG has no "unchanged" output; decode to RGB and drop the extra
-      // channels from grayscale images afterwards, matching the nvJPEG path.
-      output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
-      prune_single_channel = true;
+      output_format = ROCJPEG_OUTPUT_NATIVE;
       break;
     case vision::image::IMAGE_READ_MODE_GRAY:
       output_format = ROCJPEG_OUTPUT_Y;
@@ -677,7 +673,6 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       STD_TORCH_CHECK(
           false, "The provided mode is not supported for JPEG decoding on GPU");
   }
-  const uint32_t num_channels = output_format == ROCJPEG_OUTPUT_Y ? 1 : 3;
 
   const std::size_t num_images = encoded_images.size();
   ensure_stream_handles(num_images);
@@ -720,14 +715,52 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
 
     // VCN writes rows at a 16-byte-aligned pitch, so allocate a buffer padded
     // to that alignment and return a view of the valid region.
-    const uint32_t pitch = align_up(width, kRocJpegPitchAlignment);
+    uint32_t pitch = align_up(width, kRocJpegPitchAlignment);
+    uint32_t num_channels;
+    switch (output_format) {
+      case ROCJPEG_OUTPUT_NATIVE:
+        switch (subsampling) {
+          case ROCJPEG_CSS_444:
+          case ROCJPEG_CSS_440:
+          case ROCJPEG_CSS_420:
+            num_channels = 3;
+            break;
+          case ROCJPEG_CSS_422:
+            num_channels = 1;
+            pitch = align_up(width * 2, kRocJpegPitchAlignment);
+            break;
+          case ROCJPEG_CSS_400:
+            num_channels = 1;
+            break;
+          default:
+            TORCH_CHECK(false, "Unsupported rocJPEG native chroma subsampling");
+        }
+        break;
+      case ROCJPEG_OUTPUT_Y:
+        num_channels = 1;
+        break;
+      case ROCJPEG_OUTPUT_RGB_PLANAR:
+        num_channels = 3;
+        break;
+      default:
+        TORCH_CHECK(false, "Unsupported rocJPEG output format");
+    }
+
     auto buffer = torch::empty(
         {int64_t(num_channels),
          int64_t(align_up(height, kRocJpegPitchAlignment)),
          int64_t(pitch)},
         torch::dtype(torch::kU8).device(target_device));
-
-    decode_params[i].output_format = output_format;
+    
+    auto image_output_format = output_format;
+    if (output_format == ROCJPEG_OUTPUT_NATIVE) {
+      // ROCJPEG_OUTPUT_NATIVE returns YUV/native layouts whose channel count and
+      // plane sizes depend on chroma subsampling. torchvision's UNCHANGED mode is
+      // expected to match the CPU/nvJPEG behavior: grayscale JPEGs return one
+      // channel, while color JPEGs return RGB. Decode to that compatible layout.
+      image_output_format = num_components == 1 ? ROCJPEG_OUTPUT_Y : ROCJPEG_OUTPUT_RGB_PLANAR;
+    }
+    decode_params[i].output_format = image_output_format;
     for (uint32_t c = 0; c < num_channels; ++c) {
       output_images[i].channel[c] = buffer[c].data_ptr<uint8_t>();
       output_images[i].pitch[c] = pitch;
@@ -744,11 +777,7 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       output_images.data()));
 
   for (std::size_t i = 0; i < num_images; ++i) {
-    if (prune_single_channel && source_channels[i] == 1) {
-      output_tensors[i] = output_tensors[i][0].unsqueeze(0).clone();
-    } else {
-      output_tensors[i] = output_tensors[i].contiguous();
-    }
+    output_tensors[i] = output_tensors[i].contiguous();
   }
 
   return output_tensors;
