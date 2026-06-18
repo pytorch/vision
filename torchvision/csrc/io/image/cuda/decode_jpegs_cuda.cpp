@@ -88,7 +88,11 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
 #include <c10/cuda/CUDAGuard.h>
 #include <cuda_runtime_api.h>
 #include <algorithm>
+#include <fstream>
+#include <iostream>
 #include <memory>
+#include <mutex>
+#include <sstream>
 #include <string>
 #include <typeinfo>
 namespace vision {
