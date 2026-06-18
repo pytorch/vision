@@ -18,13 +18,16 @@ class CUDAJpegDecoder {
 
   std::vector<torch::Tensor> decode_images(
       const std::vector<torch::Tensor>& encoded_images,
-      const nvjpegOutputFormat_t& output_format);
+      vision::image::ImageReadMode mode);
 
   const torch::Device original_device;
   const torch::Device target_device;
   const c10::cuda::CUDAStream stream;
 
  private:
+  std::vector<torch::Tensor> decode_images(
+      const std::vector<torch::Tensor>& encoded_images,
+      const nvjpegOutputFormat_t& output_format);
   std::tuple<
       std::vector<nvjpegImage_t>,
       std::vector<torch::Tensor>,
@@ -42,11 +45,13 @@ class CUDAJpegDecoder {
   bool hw_decode_available{false};
   nvjpegHandle_t nvjpeg_handle;
 };
+using GpuJpegDecoder = CUDAJpegDecoder;
 } // namespace image
 } // namespace vision
 
 #elif ROCJPEG_FOUND
 
+#include <hip/hip_runtime.h>
 #include <rocjpeg/rocjpeg.h>
 
 namespace vision {
@@ -58,8 +63,7 @@ class RocJpegDecoder {
 
   std::vector<torch::Tensor> decode_images(
       const std::vector<torch::Tensor>& encoded_images,
-      const RocJpegOutputFormat& output_format,
-      bool prune_single_channel);
+      vision::image::ImageReadMode mode);
 
   const torch::Device target_device;
 
@@ -69,13 +73,14 @@ class RocJpegDecoder {
   std::vector<RocJpegStreamHandle> rocjpeg_stream_handles;
   RocJpegHandle rocjpeg_handle;
 };
+using GpuJpegDecoder = RocJpegDecoder;
 } // namespace image
 } // namespace vision
 
 #define CHECK_ROCJPEG(call)                       \
   {                                               \
     RocJpegStatus rocjpeg_status = (call);        \
-    TORCH_CHECK(                                  \
+    STD_TORCH_CHECK(                              \
         rocjpeg_status == ROCJPEG_STATUS_SUCCESS, \
         #call,                                    \
         " returned ",                             \
@@ -85,7 +90,7 @@ class RocJpegDecoder {
 #define CHECK_HIP(call)               \
   {                                   \
     hipError_t hip_status = (call);   \
-    TORCH_CHECK(                      \
+    STD_TORCH_CHECK(                  \
         hip_status == hipSuccess,     \
         #call,                        \
         " failed with status: ",      \

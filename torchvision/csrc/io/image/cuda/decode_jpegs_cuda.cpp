@@ -13,6 +13,75 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
 } // namespace vision
 #endif
 
+#if NVJPEG_FOUND || ROCJPEG_FOUND
+#include <c10/cuda/CUDAGuard.h>
+#include <cstdlib>
+#include <memory>
+#include <mutex>
+
+namespace vision {
+namespace image {
+namespace {
+std::mutex decoderMutex;
+std::unique_ptr<GpuJpegDecoder> gpuJpegDecoder;
+
+std::vector<torch::Tensor> validate_and_make_contiguous(
+    const std::vector<torch::Tensor>& encoded_images) {
+  std::vector<torch::Tensor> contig_images;
+  contig_images.reserve(encoded_images.size());
+  for (auto& encoded_image : encoded_images) {
+    STD_TORCH_CHECK(
+        encoded_image.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
+    STD_TORCH_CHECK(
+        !encoded_image.is_cuda(), "The input tensor must be on CPU");
+    STD_TORCH_CHECK(
+        encoded_image.dim() == 1 && encoded_image.numel() > 0,
+        "Expected a non empty 1-dimensional tensor");
+    // The decoder backends require contiguous input; contiguous() is a no-op
+    // when the tensor already is.
+    contig_images.push_back(encoded_image.contiguous());
+  }
+  return contig_images;
+}
+} // namespace
+
+std::vector<torch::Tensor> decode_jpegs_cuda(
+    const std::vector<torch::Tensor>& encoded_images,
+    vision::image::ImageReadMode mode,
+    torch::Device device) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.image.cuda.decode_jpegs_cuda.decode_jpegs_cuda");
+
+  std::lock_guard<std::mutex> lock(decoderMutex);
+
+  STD_TORCH_CHECK(
+      device.is_cuda(), "Expected the device parameter to be a cuda device");
+
+  std::vector<torch::Tensor> contig_images =
+      validate_and_make_contiguous(encoded_images);
+
+  at::cuda::CUDAGuard device_guard(device);
+
+  if (gpuJpegDecoder == nullptr || device != gpuJpegDecoder->target_device) {
+    if (gpuJpegDecoder != nullptr) {
+      gpuJpegDecoder.reset(new GpuJpegDecoder(device));
+    } else {
+      gpuJpegDecoder = std::make_unique<GpuJpegDecoder>(device);
+      std::atexit([]() { gpuJpegDecoder.reset(); });
+    }
+  }
+
+  try {
+    return gpuJpegDecoder->decode_images(contig_images, mode);
+  } catch (const std::exception& e) {
+    STD_TORCH_CHECK(false, "Error while decoding JPEG images: ", e.what());
+  }
+}
+
+} // namespace image
+} // namespace vision
+#endif
+
 #if NVJPEG_FOUND
 #include <ATen/cuda/CUDAContext.h>
 #include <ATen/cuda/CUDAEvent.h>
@@ -29,43 +98,9 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
 namespace vision {
 namespace image {
 
-std::mutex decoderMutex;
-std::unique_ptr<CUDAJpegDecoder> cudaJpegDecoder;
-
-std::vector<torch::Tensor> decode_jpegs_cuda(
+std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
     const std::vector<torch::Tensor>& encoded_images,
-    vision::image::ImageReadMode mode,
-    torch::Device device) {
-  C10_LOG_API_USAGE_ONCE(
-      "torchvision.csrc.io.image.cuda.decode_jpegs_cuda.decode_jpegs_cuda");
-
-  std::lock_guard<std::mutex> lock(decoderMutex);
-  std::vector<torch::Tensor> contig_images;
-  contig_images.reserve(encoded_images.size());
-
-  STD_TORCH_CHECK(
-      device.is_cuda(), "Expected the device parameter to be a cuda device");
-
-  for (auto& encoded_image : encoded_images) {
-    STD_TORCH_CHECK(
-        encoded_image.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
-
-    STD_TORCH_CHECK(
-        !encoded_image.is_cuda(),
-        "The input tensor must be on CPU when decoding with nvjpeg")
-
-    STD_TORCH_CHECK(
-        encoded_image.dim() == 1 && encoded_image.numel() > 0,
-        "Expected a non empty 1-dimensional tensor");
-
-    // nvjpeg requires images to be contiguous
-    if (encoded_image.is_contiguous()) {
-      contig_images.push_back(encoded_image);
-    } else {
-      contig_images.push_back(encoded_image.contiguous());
-    }
-  }
-
+    vision::image::ImageReadMode mode) {
   int major_version;
   int minor_version;
   nvjpegStatus_t get_major_property_status =
@@ -85,17 +120,6 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
     TORCH_WARN_ONCE(
         "There is a memory leak issue in the nvjpeg library for CUDA versions < 11.6. "
         "Make sure to rely on CUDA 11.6 or above before using decode_jpeg(..., device='cuda').");
-  }
-
-  at::cuda::CUDAGuard device_guard(device);
-
-  if (cudaJpegDecoder == nullptr || device != cudaJpegDecoder->target_device) {
-    if (cudaJpegDecoder != nullptr) {
-      cudaJpegDecoder.reset(new CUDAJpegDecoder(device));
-    } else {
-      cudaJpegDecoder = std::make_unique<CUDAJpegDecoder>(device);
-      std::atexit([]() { cudaJpegDecoder.reset(); });
-    }
   }
 
   nvjpegOutputFormat_t output_format;
@@ -119,19 +143,15 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
           false, "The provided mode is not supported for JPEG decoding on GPU");
   }
 
-  try {
-    at::cuda::CUDAEvent event;
-    auto result = cudaJpegDecoder->decode_images(contig_images, output_format);
-    auto current_stream{
-        device.has_index() ? at::cuda::getCurrentCUDAStream(
-                                 cudaJpegDecoder->original_device.index())
-                           : at::cuda::getCurrentCUDAStream()};
-    event.record(cudaJpegDecoder->stream);
-    event.block(current_stream);
-    return result;
-  } catch (const std::exception& e) {
-    STD_TORCH_CHECK(false, "Error while decoding JPEG images: ", e.what());
-  }
+  at::cuda::CUDAEvent event;
+  auto result = decode_images(encoded_images, output_format);
+  auto current_stream{
+      target_device.has_index()
+          ? at::cuda::getCurrentCUDAStream(original_device.index())
+          : at::cuda::getCurrentCUDAStream()};
+  event.record(stream);
+  event.block(current_stream);
+  return result;
 }
 
 CUDAJpegDecoder::CUDAJpegDecoder(const torch::Device& target_device)
@@ -599,113 +619,25 @@ std::vector<torch::Tensor> CUDAJpegDecoder::decode_images(
 #elif ROCJPEG_FOUND
 
 #include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDAGuard.h>
-#include <algorithm>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <mutex>
-#include <sstream>
-#include <string>
-#include <typeinfo>
 
 namespace vision {
 namespace image {
 
-std::mutex decoderMutex;
-std::unique_ptr<RocJpegDecoder> rocJpegDecoder;
+namespace {
+constexpr uint32_t kRocJpegPitchAlignment = 16;
 
-std::vector<torch::Tensor> decode_jpegs_cuda(
-    const std::vector<torch::Tensor>& encoded_images,
-    vision::image::ImageReadMode mode,
-    torch::Device device) {
-  C10_LOG_API_USAGE_ONCE(
-      "torchvision.csrc.io.image.cuda.decode_jpegs_cuda.decode_jpegs_cuda");
-
-  std::lock_guard<std::mutex> lock(decoderMutex);
-  std::vector<torch::Tensor> contig_images;
-  contig_images.reserve(encoded_images.size());
-
-  TORCH_CHECK(
-      device.is_cuda(), "Expected the device parameter to be a cuda device");
-
-  for (auto& encoded_image : encoded_images) {
-    TORCH_CHECK(
-        encoded_image.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
-
-    TORCH_CHECK(
-        !encoded_image.is_cuda(),
-        "The input tensor must be on CPU when decoding with rocJPEG")
-
-    TORCH_CHECK(
-        encoded_image.dim() == 1 && encoded_image.numel() > 0,
-        "Expected a non empty 1-dimensional tensor");
-
-    // rocJPEG requires images to be contiguous
-    if (encoded_image.is_contiguous()) {
-      contig_images.push_back(encoded_image);
-    } else {
-      contig_images.push_back(encoded_image.contiguous());
-    }
-  }
-
-  at::cuda::CUDAGuard device_guard(device);
-
-  if (rocJpegDecoder == nullptr || device != rocJpegDecoder->target_device) {
-    if (rocJpegDecoder != nullptr) {
-      rocJpegDecoder.reset(new RocJpegDecoder(device));
-    } else {
-      rocJpegDecoder = std::make_unique<RocJpegDecoder>(device);
-      std::atexit([]() { rocJpegDecoder.reset(); });
-    }
-  }
-
-  RocJpegOutputFormat output_format;
-  bool prune_single_channel = false;
-
-  switch (mode) {
-    case vision::image::IMAGE_READ_MODE_UNCHANGED:
-      output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
-      prune_single_channel = true;
-      break;
-    case vision::image::IMAGE_READ_MODE_GRAY:
-      output_format = ROCJPEG_OUTPUT_Y;
-      break;
-    case vision::image::IMAGE_READ_MODE_RGB:
-      output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
-      break;
-    default:
-      TORCH_CHECK(
-          false,
-          "The provided mode is not supported for ROCJPEG decoding on GPU");
-  }
-
-  try {
-    // rocJPEG owns and synchronizes its internal HIP stream; there is no
-    // caller-visible CUDA stream here to record an event on.
-    return rocJpegDecoder->decode_images(
-        contig_images, output_format, prune_single_channel);
-  } catch (const std::exception& e) {
-    if (typeid(e) != typeid(std::runtime_error)) {
-      TORCH_CHECK(false, "Error while decoding JPEG images: ", e.what());
-    } else {
-      throw;
-    }
-  }
+uint32_t align_up(uint32_t value, uint32_t alignment) {
+  return (value + alignment - 1) & ~(alignment - 1);
 }
+} // namespace
 
 RocJpegDecoder::RocJpegDecoder(const torch::Device& target_device)
     : target_device{target_device} {
   int device_id = target_device.has_index() ? target_device.index()
                                             : c10::cuda::current_device();
   CHECK_HIP(hipSetDevice(device_id));
-  RocJpegStatus status;
-  RocJpegBackend rocjpeg_backend = ROCJPEG_BACKEND_HARDWARE;
-
-  status = rocJpegCreate(rocjpeg_backend, device_id, &rocjpeg_handle);
-  TORCH_CHECK(
-      status == ROCJPEG_STATUS_SUCCESS,
-      "Failed to initialize rocjpeg with hardware backend");
+  CHECK_ROCJPEG(
+      rocJpegCreate(ROCJPEG_BACKEND_HARDWARE, device_id, &rocjpeg_handle));
 }
 
 RocJpegDecoder::~RocJpegDecoder() {
@@ -718,174 +650,101 @@ RocJpegDecoder::~RocJpegDecoder() {
 void RocJpegDecoder::ensure_stream_handles(std::size_t num_handles) {
   while (rocjpeg_stream_handles.size() < num_handles) {
     RocJpegStreamHandle stream_handle;
-    RocJpegStatus status = rocJpegStreamCreate(&stream_handle);
-    TORCH_CHECK(
-        status == ROCJPEG_STATUS_SUCCESS,
-        "Failed to initialize rocjpeg stream");
+    CHECK_ROCJPEG(rocJpegStreamCreate(&stream_handle));
     rocjpeg_stream_handles.push_back(stream_handle);
-  }
-}
-
-static constexpr int mem_alignment = 16;
-
-static inline int align(int value, int alignment) {
-  return (value + alignment - 1) & ~(alignment - 1);
-}
-
-void setOutputChannelPitches(
-    RocJpegDecodeParams decode_params,
-    uint32_t* widths,
-    uint32_t* heights,
-    uint32_t& num_channels,
-    RocJpegImage& output_image) {
-  bool is_roi_valid = false;
-  uint32_t roi_width;
-  uint32_t roi_height;
-  roi_width =
-      decode_params.crop_rectangle.right - decode_params.crop_rectangle.left;
-  roi_height =
-      decode_params.crop_rectangle.bottom - decode_params.crop_rectangle.top;
-  if (roi_width > 0 && roi_height > 0 && roi_width <= widths[0] &&
-      roi_height <= heights[0]) {
-    is_roi_valid = true;
-  }
-  switch (decode_params.output_format) {
-    case ROCJPEG_OUTPUT_Y:
-      num_channels = 1;
-      output_image.pitch[0] = is_roi_valid ? align(roi_width, mem_alignment)
-                                           : align(widths[0], mem_alignment);
-      break;
-    case ROCJPEG_OUTPUT_RGB_PLANAR:
-      num_channels = 3;
-      output_image.pitch[2] = output_image.pitch[1] = output_image.pitch[0] =
-          is_roi_valid ? align(roi_width, mem_alignment)
-                       : align(widths[0], mem_alignment);
-      break;
-    default:
-      TORCH_CHECK(false, "Unsupported rocJPEG output format");
   }
 }
 
 std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     const std::vector<torch::Tensor>& encoded_images,
-    const RocJpegOutputFormat& output_format,
-    bool prune_single_channel) {
-  /*
-    This function decodes a batch of jpeg bitstreams.
+    vision::image::ImageReadMode mode) {
+  RocJpegOutputFormat output_format;
+  bool prune_single_channel = false;
+  switch (mode) {
+    case vision::image::IMAGE_READ_MODE_UNCHANGED:
+      // rocJPEG has no "unchanged" output; decode to RGB and drop the extra
+      // channels from grayscale images afterwards, matching the nvJPEG path.
+      output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
+      prune_single_channel = true;
+      break;
+    case vision::image::IMAGE_READ_MODE_GRAY:
+      output_format = ROCJPEG_OUTPUT_Y;
+      break;
+    case vision::image::IMAGE_READ_MODE_RGB:
+      output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
+      break;
+    default:
+      STD_TORCH_CHECK(
+          false, "The provided mode is not supported for JPEG decoding on GPU");
+  }
+  const uint32_t num_channels = output_format == ROCJPEG_OUTPUT_Y ? 1 : 3;
 
-    Args:
-    - encoded_images (std::vector<torch::Tensor>): a vector of tensors
-    containing the jpeg bitstreams to be decoded
-    - output_format (RocJpegOutputFormat): ROCJPEG_OUTPUT_Y or
-    ROCJPEG_OUTPUT_RGB_PLANAR
+  const std::size_t num_images = encoded_images.size();
+  ensure_stream_handles(num_images);
 
-    Returns:
-    - output_tensors (std::vector<torch::Tensor>): a vector of Tensors
-    containing the decoded images
-  */
+  std::vector<RocJpegDecodeParams> decode_params(num_images);
+  std::vector<RocJpegImage> output_images(num_images);
+  std::vector<torch::Tensor> output_tensors(num_images);
+  std::vector<int> source_channels(num_images);
 
-  int num_images = encoded_images.size();
-  std::vector<torch::Tensor> output_tensors{num_images};
-  RocJpegStatus rocjpeg_status;
+  for (std::size_t i = 0; i < num_images; ++i) {
+    CHECK_ROCJPEG(rocJpegStreamParse(
+        static_cast<const unsigned char*>(encoded_images[i].data_ptr()),
+        encoded_images[i].numel(),
+        rocjpeg_stream_handles[i]));
 
-  // baseline JPEGs can be batch decoded with hardware support
-  std::vector<int> channels(num_images);
+    uint8_t num_components = 0;
+    RocJpegChromaSubsampling subsampling = ROCJPEG_CSS_UNKNOWN;
+    uint32_t widths[ROCJPEG_MAX_COMPONENT] = {};
+    uint32_t heights[ROCJPEG_MAX_COMPONENT] = {};
+    CHECK_ROCJPEG(rocJpegGetImageInfo(
+        rocjpeg_handle,
+        rocjpeg_stream_handles[i],
+        &num_components,
+        &subsampling,
+        widths,
+        heights));
 
-  const int batch_size = num_images;
-  ensure_stream_handles(static_cast<std::size_t>(batch_size));
-  uint8_t num_components;
-  RocJpegChromaSubsampling temp_subsampling;
-  std::vector<uint32_t> temp_widths(ROCJPEG_MAX_COMPONENT, 0);
-  std::vector<uint32_t> temp_heights(ROCJPEG_MAX_COMPONENT, 0);
-  RocJpegDecodeParams decode_params = {};
-  decode_params.output_format = output_format;
-  std::vector<RocJpegDecodeParams> decode_params_batch;
-  decode_params_batch.resize(batch_size, decode_params);
-  std::vector<RocJpegImage> output_images;
-  output_images.resize(batch_size);
-  int current_batch_size = 0;
-  uint32_t num_channels = 0;
+    const uint32_t width = widths[0];
+    const uint32_t height = heights[0];
+    STD_TORCH_CHECK(
+        width >= 64 && height >= 64,
+        "Image resolution ",
+        width,
+        "x",
+        height,
+        " is below the VCN hardware JPEG decoder minimum of 64x64");
+    STD_TORCH_CHECK(
+        subsampling != ROCJPEG_CSS_411 && subsampling != ROCJPEG_CSS_UNKNOWN,
+        "The image chroma subsampling is not supported by the VCN hardware JPEG decoder");
 
-  for (int i = 0; i < num_images; i += batch_size) {
-    int batch_end = std::min(i + batch_size, num_images);
-    for (int j = i; j < batch_end; j++) {
-      int index = j - i;
-      rocjpeg_status = rocJpegStreamParse(
-          (unsigned char*)encoded_images[j].data_ptr(),
-          encoded_images[j].numel(),
-          rocjpeg_stream_handles[index]);
-      if (rocjpeg_status != ROCJPEG_STATUS_SUCCESS) {
-        TORCH_CHECK(
-            false,
-            "ERROR: Failed to parse the input jpeg stream with ",
-            rocJpegGetErrorName(rocjpeg_status));
-      }
-      CHECK_ROCJPEG(rocJpegGetImageInfo(
-          rocjpeg_handle,
-          rocjpeg_stream_handles[index],
-          &num_components,
-          &temp_subsampling,
-          temp_widths.data(),
-          temp_heights.data()));
-      if (temp_widths[0] < 64 || temp_heights[0] < 64) {
-        TORCH_CHECK(
-            false, "The image resolution is not supported by VCN Hardware");
-      }
-      if (temp_subsampling == ROCJPEG_CSS_411 ||
-          temp_subsampling == ROCJPEG_CSS_UNKNOWN) {
-        TORCH_CHECK(
-            false, "The chroma sub-sampling is not supported by VCN Hardware");
-      }
-      setOutputChannelPitches(
-          decode_params_batch[index],
-          temp_widths.data(),
-          temp_heights.data(),
-          num_channels,
-          output_images[index]);
+    // VCN writes rows at a 16-byte-aligned pitch, so allocate a buffer padded
+    // to that alignment and return a view of the valid region.
+    const uint32_t pitch = align_up(width, kRocJpegPitchAlignment);
+    auto buffer = torch::empty(
+        {int64_t(num_channels),
+         int64_t(align_up(height, kRocJpegPitchAlignment)),
+         int64_t(pitch)},
+        torch::dtype(torch::kU8).device(target_device));
 
-      uint32_t roi_width = decode_params_batch[index].crop_rectangle.right -
-          decode_params_batch[index].crop_rectangle.left;
-      uint32_t roi_height = decode_params_batch[index].crop_rectangle.bottom -
-          decode_params_batch[index].crop_rectangle.top;
-      bool is_roi_valid =
-          (roi_width > 0 && roi_height > 0 && roi_width <= temp_widths[0] &&
-           roi_height <= temp_heights[0])
-          ? true
-          : false;
-      uint32_t width = is_roi_valid ? align(roi_width, mem_alignment)
-                                    : align(temp_widths[0], mem_alignment);
-      uint32_t height = is_roi_valid ? align(roi_height, mem_alignment)
-                                     : align(temp_heights[0], mem_alignment);
-      auto output_tensor = torch::empty(
-          {int64_t(num_channels), int64_t(height), int64_t(width)},
-          torch::dtype(torch::kU8).device(target_device));
-      channels[j] = num_components;
-
-      // allocate memory for each channel and reuse them if the sizes remain
-      // unchanged for a new image.
-      for (int c = 0; c < (int)num_channels; c++) {
-        output_images[index].channel[c] = output_tensor[c].data_ptr<uint8_t>();
-      }
-      current_batch_size++;
-      output_tensors[j] = output_tensor.narrow(1, 0, temp_heights[0])
-                              .narrow(2, 0, temp_widths[0]);
+    decode_params[i].output_format = output_format;
+    for (uint32_t c = 0; c < num_channels; ++c) {
+      output_images[i].channel[c] = buffer[c].data_ptr<uint8_t>();
+      output_images[i].pitch[c] = pitch;
     }
-
-    if (current_batch_size > 0) {
-      CHECK_ROCJPEG(rocJpegDecodeBatched(
-          rocjpeg_handle,
-          rocjpeg_stream_handles.data(),
-          current_batch_size,
-          decode_params_batch.data(),
-          output_images.data()));
-    }
-
-    current_batch_size = 0;
+    source_channels[i] = num_components;
+    output_tensors[i] = buffer.narrow(1, 0, height).narrow(2, 0, width);
   }
 
-  for (std::vector<at::Tensor>::size_type i = 0; i < output_tensors.size();
-       ++i) {
-    if (prune_single_channel && channels[i] == 1) {
+  CHECK_ROCJPEG(rocJpegDecodeBatched(
+      rocjpeg_handle,
+      rocjpeg_stream_handles.data(),
+      static_cast<int>(num_images),
+      decode_params.data(),
+      output_images.data()));
+
+  for (std::size_t i = 0; i < num_images; ++i) {
+    if (prune_single_channel && source_channels[i] == 1) {
       output_tensors[i] = output_tensors[i][0].unsqueeze(0).clone();
     } else {
       output_tensors[i] = output_tensors[i].contiguous();
