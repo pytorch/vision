@@ -762,13 +762,9 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       output_images.data()));
 
   // rocJPEG owns its internal HIP stream and does not expose it to callers.
-  // Synchronize before copying the padded views below so the copies cannot race
-  // with device writes from rocJpegDecodeBatched().
+  // Synchronize before returning the padded CHW views so subsequent PyTorch
+  // operations cannot race with device writes from rocJpegDecodeBatched().
   CHECK_HIP(hipDeviceSynchronize());
-
-  for (std::size_t i = 0; i < num_images; ++i) {
-    output_tensors[i] = output_tensors[i].contiguous();
-  }
 
   return output_tensors;
 }
