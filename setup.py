@@ -346,23 +346,31 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without WEBP support")
 
-    if (USE_NVJPEG or USE_ROCJPEG) and (torch.cuda.is_available() or FORCE_CUDA):
-        nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
-        rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
-        if nvjpeg_found and USE_NVJPEG:
-            print("Building torchvision with NVJPEG image support")
-            libraries.append("nvjpeg")
-            define_macros += [("NVJPEG_FOUND", 1)]
-            Extension = CUDAExtension
-        elif rocjpeg_found and USE_ROCJPEG:
-            print("Building torchvision with ROCJPEG image support")
-            libraries.append("rocjpeg")
-            define_macros += [("ROCJPEG_FOUND", 1)]
-            Extension = CUDAExtension
+    if IS_ROCM:
+        if USE_ROCJPEG and (torch.cuda.is_available() or FORCE_CUDA):
+            rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
+            if rocjpeg_found:
+                print("Building torchvision with ROCJPEG image support")
+                libraries.append("rocjpeg")
+                define_macros += [("ROCJPEG_FOUND", 1)]
+                Extension = CUDAExtension
+            else:
+                warnings.warn("Building torchvision without ROCJPEG support")
         else:
-            warnings.warn("Building torchvision without NVJPEG or ROCJPEG support")
-    elif (USE_NVJPEG or USE_ROCJPEG):
-        warnings.warn("Building torchvision without NVJPEG or ROCJPEG support")
+            warnings.warn("Building torchvision without ROCJPEG support")
+    else:
+        if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
+            nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
+
+            if nvjpeg_found:
+                print("Building torchvision with NVJPEG image support")
+                libraries.append("nvjpeg")
+                define_macros += [("NVJPEG_FOUND", 1)]
+                Extension = CUDAExtension
+            else:
+                warnings.warn("Building torchvision without NVJPEG support")
+        elif USE_NVJPEG:
+            warnings.warn("Building torchvision without NVJPEG support")
 
     return Extension(
         name="torchvision.image",
