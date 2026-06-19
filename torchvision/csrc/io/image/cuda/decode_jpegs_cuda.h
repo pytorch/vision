@@ -70,8 +70,8 @@ class RocJpegDecoder {
  private:
   void ensure_stream_handles(std::size_t num_handles);
 
-  std::vector<RocJpegStreamHandle> rocjpeg_stream_handles;
-  RocJpegHandle rocjpeg_handle;
+  std::vector<RocJpegStreamHandle> rocjpeg_stream_handles_;
+  RocJpegHandle rocjpeg_handle_;
 };
 using GpuJpegDecoder = RocJpegDecoder;
 } // namespace image

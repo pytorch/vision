@@ -637,21 +637,21 @@ RocJpegDecoder::RocJpegDecoder(const torch::Device& target_device)
                                             : c10::cuda::current_device();
   CHECK_HIP(hipSetDevice(device_id));
   CHECK_ROCJPEG(
-      rocJpegCreate(ROCJPEG_BACKEND_HARDWARE, device_id, &rocjpeg_handle));
+      rocJpegCreate(ROCJPEG_BACKEND_HARDWARE, device_id, &rocjpeg_handle_));
 }
 
 RocJpegDecoder::~RocJpegDecoder() {
-  rocJpegDestroy(rocjpeg_handle);
-  for (auto stream_handle : rocjpeg_stream_handles) {
+  rocJpegDestroy(rocjpeg_handle_);
+  for (auto stream_handle : rocjpeg_stream_handles_) {
     rocJpegStreamDestroy(stream_handle);
   }
 }
 
 void RocJpegDecoder::ensure_stream_handles(std::size_t num_handles) {
-  while (rocjpeg_stream_handles.size() < num_handles) {
+  while (rocjpeg_stream_handles_.size() < num_handles) {
     RocJpegStreamHandle stream_handle;
     CHECK_ROCJPEG(rocJpegStreamCreate(&stream_handle));
-    rocjpeg_stream_handles.push_back(stream_handle);
+    rocjpeg_stream_handles_.push_back(stream_handle);
   }
 }
 
@@ -685,15 +685,15 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     CHECK_ROCJPEG(rocJpegStreamParse(
         static_cast<const unsigned char*>(encoded_images[i].data_ptr()),
         encoded_images[i].numel(),
-        rocjpeg_stream_handles[i]));
+        rocjpeg_stream_handles_[i]));
 
     uint8_t num_components = 0;
     RocJpegChromaSubsampling subsampling = ROCJPEG_CSS_UNKNOWN;
     uint32_t widths[ROCJPEG_MAX_COMPONENT] = {};
     uint32_t heights[ROCJPEG_MAX_COMPONENT] = {};
     CHECK_ROCJPEG(rocJpegGetImageInfo(
-        rocjpeg_handle,
-        rocjpeg_stream_handles[i],
+        rocjpeg_handle_,
+        rocjpeg_stream_handles_[i],
         &num_components,
         &subsampling,
         widths,
@@ -755,8 +755,8 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
   // Choosing a batch size that is a multiple of the available JPEG cores is
   // recommended.
   CHECK_ROCJPEG(rocJpegDecodeBatched(
-      rocjpeg_handle,
-      rocjpeg_stream_handles.data(),
+      rocjpeg_handle_,
+      rocjpeg_stream_handles_.data(),
       static_cast<int>(num_images),
       decode_params.data(),
       output_images.data()));
