@@ -6,7 +6,7 @@ Maintained by [Nueramarcos](https://github.com/Nueramarcos). See [FORK.md](FORK.
 
 [![License](https://img.shields.io/github/license/pytorch/vision)](https://github.com/pytorch/vision/blob/main/LICENSE)
 [![Language](https://img.shields.io/github/languages/top/pytorch/vision?color=blue)](https://github.com/pytorch/vision/search?q=language:)
-[![CI Status](https://img.shields.io/badge/ci-pending-brightgreen)](https://github.com/pytorch/vision/actions)
+[![Fork Smoke](https://github.com/Nueramarcos/vision/actions/workflows/fork-smoke.yml/badge.svg)](https://github.com/Nueramarcos/vision/actions/workflows/fork-smoke.yml)
 
 [![total torchvision downloads](https://pepy.tech/badge/torchvision)](https://pepy.tech/project/torchvision)
 [![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchvision%2Fjson&query=%24.info.version&colorB=brightgreen&prefix=v)](https://pytorch.org/vision/stable/index.html)
