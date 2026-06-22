@@ -54,6 +54,9 @@ using GpuJpegDecoder = CUDAJpegDecoder;
 #include <hip/hip_runtime.h>
 #include <rocjpeg/rocjpeg.h>
 
+// rocJPEG decode API documentation:
+// https://rocm.docs.amd.com/projects/rocJPEG/en/latest/how-to/rocjpeg-decoding-a-jpeg-stream.html
+
 namespace vision {
 namespace image {
 class RocJpegDecoder {
