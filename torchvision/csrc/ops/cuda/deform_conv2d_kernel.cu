@@ -236,6 +236,7 @@ void deformable_im2col(
 
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
+  const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   // Checks if we should use 64bits indexing
   // https://github.com/pytorch/vision/issues/4269
@@ -250,7 +251,7 @@ void deformable_im2col(
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(), "deformable_im2col", ([&] {
-          deformable_im2col_kernel<scalar_t, int64_t><<<blocks, threads>>>(
+          deformable_im2col_kernel<scalar_t, int64_t><<<blocks, threads, 0, stream>>>(
               num_kernels,
               input.data_ptr<scalar_t>(),
               data_offset.data_ptr<scalar_t>(),
@@ -277,7 +278,7 @@ void deformable_im2col(
   } else {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(), "deformable_im2col", ([&] {
-          deformable_im2col_kernel<scalar_t, int><<<blocks, threads>>>(
+          deformable_im2col_kernel<scalar_t, int><<<blocks, threads, 0, stream>>>(
               num_kernels,
               input.data_ptr<scalar_t>(),
               data_offset.data_ptr<scalar_t>(),
@@ -427,6 +428,7 @@ void compute_grad_input(
 
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
+  const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   // Checks if we should use 64bits indexing
   // https://github.com/pytorch/vision/issues/4269
@@ -439,7 +441,7 @@ void compute_grad_input(
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_input", ([&] {
-          deformable_col2im_kernel<scalar_t, int64_t><<<blocks, threads>>>(
+          deformable_col2im_kernel<scalar_t, int64_t><<<blocks, threads, 0, stream>>>(
               num_kernels,
               columns.data_ptr<scalar_t>(),
               offset.data_ptr<scalar_t>(),
@@ -465,7 +467,7 @@ void compute_grad_input(
   } else {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_input", ([&] {
-          deformable_col2im_kernel<scalar_t, int><<<blocks, threads>>>(
+          deformable_col2im_kernel<scalar_t, int><<<blocks, threads, 0, stream>>>(
               num_kernels,
               columns.data_ptr<scalar_t>(),
               offset.data_ptr<scalar_t>(),
@@ -668,6 +670,7 @@ void compute_grad_offset_and_mask(
 
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
+  const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   // Checks if we should use 64bits indexing
   // https://github.com/pytorch/vision/issues/4269
@@ -682,7 +685,7 @@ void compute_grad_offset_and_mask(
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
           deformable_col2im_coord_kernel<scalar_t, int64_t>
-              <<<blocks, threads>>>(
+              <<<blocks, threads, 0, stream>>>(
                   num_kernels,
                   columns.data_ptr<scalar_t>(),
                   input.data_ptr<scalar_t>(),
@@ -711,7 +714,7 @@ void compute_grad_offset_and_mask(
   } else {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
-          deformable_col2im_coord_kernel<scalar_t, int><<<blocks, threads>>>(
+          deformable_col2im_coord_kernel<scalar_t, int><<<blocks, threads, 0, stream>>>(
               num_kernels,
               columns.data_ptr<scalar_t>(),
               input.data_ptr<scalar_t>(),
