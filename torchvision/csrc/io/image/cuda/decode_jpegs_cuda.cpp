@@ -760,11 +760,8 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
       static_cast<int>(num_images),
       decode_params.data(),
       output_images.data()));
-
-  // rocJPEG owns its internal HIP stream and does not expose it to callers.
-  // Synchronize before returning the padded CHW views so subsequent PyTorch
-  // operations cannot race with device writes from rocJpegDecodeBatched().
-  CHECK_HIP(hipDeviceSynchronize());
+  // rocJpegDecodeBatched synchronizes rocJPEG's internal HIP stream before
+  // returning, so the decoded output tensors are ready for PyTorch streams.
 
   return output_tensors;
 }
