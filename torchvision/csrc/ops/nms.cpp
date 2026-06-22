@@ -8,12 +8,6 @@
 
 #include <array>
 
-#if !defined(MOBILE) && defined(_WIN32)
-void* PyInit__C_stable(void) {
-  return nullptr;
-}
-#endif
-
 namespace vision {
 namespace ops {
 

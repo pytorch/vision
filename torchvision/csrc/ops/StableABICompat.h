@@ -1,4 +1,5 @@
-// Copyright (c) Soumith Chintala 2016, All rights reserved.
+// Copyright (c) Meta Platforms, Inc. and affiliates.
+// All rights reserved.
 //
 // This source code is licensed under the BSD-style license found in the
 // LICENSE file in the root directory of this source tree.
@@ -20,8 +21,8 @@
 // Some ATen ops our kernels use have no torch::stable wrapper in
 // <torch/csrc/stable/ops.h> yet. The officially recommended approach is to call
 // them through torch_call_dispatcher -- an ABI-stable call into an op outside the
-// stable surface (the same pattern used by meta-pytorch/torchcodec's
-// StableABICompat.h and facebookresearch/xformers' pt_stable_utils.h).
+// stable surface (the same pattern used by
+// https://github.com/meta-pytorch/torchcodec/blob/8bbce656797c4f2b00feb2784ffe76e408be1e4c/src/torchcodec/_core/StableABICompat.h).
 //
 // This file GROWS as operators migrate: add a helper the first time an op needs
 // an ATen call with no stable wrapper. Each is a thin shim -- delete it once an

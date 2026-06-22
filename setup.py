@@ -155,8 +155,9 @@ TORCH_TARGET_VERSION = "0x020b000000000000"
 
 # Files migrated to the stable ABI: subtracted from make_C_extension()'s globs and
 # built into _C_stable instead. Add an op's files here as it migrates.
-# TODO: when all ops migrate, drop make_C_extension()/STABLE_SOURCES and glob _C_stable.
+# TODO(stable-abi): when all ops migrate, drop make_C_extension()/STABLE_SOURCES and glob _C_stable.
 STABLE_SOURCES = {
+    CSRS_DIR / "vision_stable.cpp",
     CSRS_DIR / "ops/nms.cpp",
     CSRS_DIR / "ops/cpu/nms_kernel.cpp",
     CSRS_DIR / "ops/mps/nms_kernel.mm",
@@ -233,6 +234,7 @@ def make_C_extension():
 
 
 def get_stable_macros_and_flags():
+    # TODO(stable-abi): merge into get_macros_and_flags() once the migration is done.
     define_macros, extra_compile_args = get_macros_and_flags()
     tv = f"-DTORCH_TARGET_VERSION={TORCH_TARGET_VERSION}"
     extra_compile_args["cxx"].append(tv)

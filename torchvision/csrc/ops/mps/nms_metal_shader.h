@@ -7,11 +7,8 @@
 // mps_kernels.h opens with #include <ATen/native/mps/OperationUtils.h> and
 // instantiates at::native::mps::MetalShaderLibrary, both unavailable under
 // -DTORCH_TARGET_VERSION. This header carries only the nms Metal source as a
-// plain string, handed to aoti_torch_mps_create_shader_library at runtime --
+// plain string, handed to aoti_torch_mps_create_shader_library at runtime,
 // the same shape PyTorch's AOTInductor MPS backend emits.
-//
-// The kernel bodies below are copied verbatim from mps_kernels.h; keep them in
-// sync if that file changes.
 
 namespace vision {
 namespace ops {

@@ -25,6 +25,10 @@ using torch::stable::Tensor;
 
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
 
+// Accumulate type for IoU. Only correct for the types we dispatch (float,
+// double, Half), not general: BFloat16 should accumulate in float but maps to
+// itself. Safe here since THO_DISPATCH_V2 controls the inputs.
+// TODO(stable-abi): drop once torch/headeronly ships an acc_type trait.
 template <typename T>
 struct AccType {
   using type = T;
@@ -143,7 +147,8 @@ __global__ static void gather_keep_from_mask(
   }
 }
 
-// Wrap the launch so the THO_DISPATCH_V2 body has no unprotected (launch-config) commas.
+// THO_DISPATCH_V2 splits its body on commas outside parens. The commas in
+// kernel<<<blocks, threads, 0, stream>>> would break it, so it goes through this wrapper.
 template <typename scalar_t>
 void launch_nms_kernel_impl(
     dim3 blocks,

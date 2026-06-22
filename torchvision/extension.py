@@ -26,14 +26,10 @@ def _has_ops():
     return False
 
 
-if _load_library("_C"):
+if _load_library("_C") and _load_library("_C_stable"):
 
     def _has_ops():  # noqa: F811
         return True
-
-
-# Stable-ABI extension (migrated ops)
-_load_library("_C_stable")
 
 
 def _assert_has_ops():
