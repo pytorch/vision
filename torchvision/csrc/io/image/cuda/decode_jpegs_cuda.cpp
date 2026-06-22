@@ -647,7 +647,8 @@ RocJpegDecoder::~RocJpegDecoder() {
   }
 }
 
-void RocJpegDecoder::ensure_stream_handles(std::size_t num_handles) {
+// Reuse existing rocJPEG stream handles and create only the missing ones.
+void RocJpegDecoder::ensure_stream_handle_count(std::size_t num_handles) {
   while (rocjpeg_stream_handles_.size() < num_handles) {
     RocJpegStreamHandle stream_handle;
     CHECK_ROCJPEG(rocJpegStreamCreate(&stream_handle));
@@ -658,24 +659,8 @@ void RocJpegDecoder::ensure_stream_handles(std::size_t num_handles) {
 std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     const std::vector<torch::Tensor>& encoded_images,
     vision::image::ImageReadMode mode) {
-  RocJpegOutputFormat output_format;
-  switch (mode) {
-    case vision::image::IMAGE_READ_MODE_UNCHANGED:
-      output_format = ROCJPEG_OUTPUT_NATIVE;
-      break;
-    case vision::image::IMAGE_READ_MODE_GRAY:
-      output_format = ROCJPEG_OUTPUT_Y;
-      break;
-    case vision::image::IMAGE_READ_MODE_RGB:
-      output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
-      break;
-    default:
-      STD_TORCH_CHECK(
-          false, "The provided mode is not supported for JPEG decoding on GPU");
-  }
-
   const std::size_t num_images = encoded_images.size();
-  ensure_stream_handles(num_images);
+  ensure_stream_handle_count(num_images);
 
   std::vector<RocJpegDecodeParams> decode_params(num_images);
   std::vector<RocJpegImage> output_images(num_images);
@@ -712,32 +697,38 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
         subsampling != ROCJPEG_CSS_411 && subsampling != ROCJPEG_CSS_UNKNOWN,
         "The image chroma subsampling is not supported by the rocJPEG hardware JPEG decoder");
 
-    auto image_output_format = output_format;
-    if (output_format == ROCJPEG_OUTPUT_NATIVE) {
-      // ROCJPEG_OUTPUT_NATIVE returns YUV/native layouts whose channel count
-      // and plane sizes depend on chroma subsampling. torchvision's UNCHANGED
-      // mode is expected to match the CPU/nvJPEG behavior: grayscale JPEGs
-      // return one channel, while color JPEGs return RGB. Decode to that
-      // compatible layout.
-      image_output_format =
-          num_components == 1 ? ROCJPEG_OUTPUT_Y : ROCJPEG_OUTPUT_RGB_PLANAR;
+    RocJpegOutputFormat image_output_format;
+    uint32_t num_channels;
+    switch (mode) {
+      case vision::image::IMAGE_READ_MODE_UNCHANGED:
+        // torchvision's UNCHANGED mode is expected to match the CPU/nvJPEG
+        // behavior: grayscale JPEGs return one channel, while color JPEGs
+        // return RGB.
+        if (num_components == 1) {
+          image_output_format = ROCJPEG_OUTPUT_Y;
+          num_channels = 1;
+        } else {
+          image_output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
+          num_channels = 3;
+        }
+        break;
+      case vision::image::IMAGE_READ_MODE_GRAY:
+        image_output_format = ROCJPEG_OUTPUT_Y;
+        num_channels = 1;
+        break;
+      case vision::image::IMAGE_READ_MODE_RGB:
+        image_output_format = ROCJPEG_OUTPUT_RGB_PLANAR;
+        num_channels = 3;
+        break;
+      default:
+        STD_TORCH_CHECK(
+            false,
+            "The provided mode is not supported for JPEG decoding on GPU");
     }
 
     // rocJPEG writes rows at a 16-byte-aligned pitch, so allocate a buffer
     // padded to that alignment and return a view of the valid region.
     uint32_t pitch = align_up(width, kRocJpegPitchAlignment);
-    uint32_t num_channels;
-    switch (image_output_format) {
-      case ROCJPEG_OUTPUT_Y:
-        num_channels = 1;
-        break;
-      case ROCJPEG_OUTPUT_RGB_PLANAR:
-        num_channels = 3;
-        break;
-      default:
-        STD_TORCH_CHECK(false, "Unsupported rocJPEG output format");
-    }
-
     auto buffer = torch::empty(
         {int64_t(num_channels),
          int64_t(align_up(height, kRocJpegPitchAlignment)),

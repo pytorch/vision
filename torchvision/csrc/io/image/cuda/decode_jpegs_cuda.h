@@ -68,7 +68,7 @@ class RocJpegDecoder {
   const torch::Device target_device;
 
  private:
-  void ensure_stream_handles(std::size_t num_handles);
+  void ensure_stream_handle_count(std::size_t num_handles);
 
   std::vector<RocJpegStreamHandle> rocjpeg_stream_handles_;
   RocJpegHandle rocjpeg_handle_;
