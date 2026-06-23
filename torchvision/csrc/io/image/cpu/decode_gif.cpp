@@ -25,7 +25,9 @@ int read_from_tensor(GifFileType* gifFile, GifByteType* buf, int len) {
       (size_t)len,
       reader_helper->encoded_data_size - reader_helper->num_bytes_read);
   std::memcpy(
-      buf, reader_helper->encoded_data + reader_helper->num_bytes_read, len);
+      buf,
+      reader_helper->encoded_data + reader_helper->num_bytes_read,
+      num_bytes_to_read);
   reader_helper->num_bytes_read += num_bytes_to_read;
   return num_bytes_to_read;
 }
@@ -145,16 +147,29 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
       }
     }
 
+    // Clip the frame to the output canvas. The output tensor is allocated from
+    // the canvas (SHeight/SWidth) and the first frame dimensions, but
+    // desc.{Top,Left,Height,Width} of any frame may place pixels outside it (a
+    // later frame larger than the first, or any frame with a non-zero offset).
+    // We just drop the pixels that would land outside of the allocated tensor.
     for (int h = 0; h < desc.Height; h++) {
+      const auto y = static_cast<int64_t>(desc.Top) + h;
+      if (y < 0 || y >= out_h) {
+        continue;
+      }
       for (int w = 0; w < desc.Width; w++) {
+        const auto x = static_cast<int64_t>(desc.Left) + w;
+        if (x < 0 || x >= out_w) {
+          continue;
+        }
         auto c = img.RasterBits[h * desc.Width + w];
         if (c == gcb.TransparentColor) {
           continue;
         }
         GifColorType rgb = cmap->Colors[c];
-        out_a[i][0][h + desc.Top][w + desc.Left] = rgb.Red;
-        out_a[i][1][h + desc.Top][w + desc.Left] = rgb.Green;
-        out_a[i][2][h + desc.Top][w + desc.Left] = rgb.Blue;
+        out_a[i][0][y][x] = rgb.Red;
+        out_a[i][1][y][x] = rgb.Green;
+        out_a[i][2][y][x] = rgb.Blue;
       }
     }
   }
