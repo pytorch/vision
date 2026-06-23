@@ -24,25 +24,6 @@ namespace image {
 namespace {
 std::mutex decoderMutex;
 std::unique_ptr<GpuJpegDecoder> gpuJpegDecoder;
-
-std::vector<torch::Tensor> validate_and_make_contiguous(
-    const std::vector<torch::Tensor>& encoded_images) {
-  std::vector<torch::Tensor> contig_images;
-  contig_images.reserve(encoded_images.size());
-  for (auto& encoded_image : encoded_images) {
-    STD_TORCH_CHECK(
-        encoded_image.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
-    STD_TORCH_CHECK(
-        !encoded_image.is_cuda(), "The input tensor must be on CPU");
-    STD_TORCH_CHECK(
-        encoded_image.dim() == 1 && encoded_image.numel() > 0,
-        "Expected a non empty 1-dimensional tensor");
-    // The decoder backends require contiguous input; contiguous() is a no-op
-    // when the tensor already is.
-    contig_images.push_back(encoded_image.contiguous());
-  }
-  return contig_images;
-}
 } // namespace
 
 std::vector<torch::Tensor> decode_jpegs_cuda(
@@ -57,8 +38,20 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
   STD_TORCH_CHECK(
       device.is_cuda(), "Expected the device parameter to be a cuda device");
 
-  std::vector<torch::Tensor> contig_images =
-      validate_and_make_contiguous(encoded_images);
+  std::vector<torch::Tensor> contig_images;
+  contig_images.reserve(encoded_images.size());
+  for (auto& encoded_image : encoded_images) {
+    STD_TORCH_CHECK(
+        encoded_image.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
+    STD_TORCH_CHECK(
+        !encoded_image.is_cuda(), "The input tensor must be on CPU");
+    STD_TORCH_CHECK(
+        encoded_image.dim() == 1 && encoded_image.numel() > 0,
+        "Expected a non empty 1-dimensional tensor");
+    // The decoder backends require contiguous input; contiguous() is a no-op
+    // when the tensor already is.
+    contig_images.push_back(encoded_image.contiguous());
+  }
 
   at::cuda::CUDAGuard device_guard(device);
 
@@ -624,10 +617,9 @@ namespace vision {
 namespace image {
 
 namespace {
-constexpr uint32_t kRocJpegPitchAlignment = 16;
-
-uint32_t align_up(uint32_t value, uint32_t alignment) {
-  return (value + alignment - 1) & ~(alignment - 1);
+uint32_t align_up(uint32_t value) {
+  constexpr uint32_t kRocJpegPitchAlignment = 16;
+  return (value + kRocJpegPitchAlignment - 1) & ~(kRocJpegPitchAlignment - 1);
 }
 } // namespace
 
@@ -647,20 +639,16 @@ RocJpegDecoder::~RocJpegDecoder() {
   }
 }
 
-// Reuse existing rocJPEG stream handles and create only the missing ones.
-void RocJpegDecoder::ensure_stream_handle_count(std::size_t num_handles) {
-  while (rocjpeg_stream_handles_.size() < num_handles) {
-    RocJpegStreamHandle stream_handle;
-    CHECK_ROCJPEG(rocJpegStreamCreate(&stream_handle));
-    rocjpeg_stream_handles_.push_back(stream_handle);
-  }
-}
-
 std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     const std::vector<torch::Tensor>& encoded_images,
     vision::image::ImageReadMode mode) {
   const std::size_t num_images = encoded_images.size();
-  ensure_stream_handle_count(num_images);
+  // Reuse existing rocJPEG stream handles and create only the missing ones.
+  while (rocjpeg_stream_handles_.size() < num_images) {
+    RocJpegStreamHandle stream_handle;
+    CHECK_ROCJPEG(rocJpegStreamCreate(&stream_handle));
+    rocjpeg_stream_handles_.push_back(stream_handle);
+  }
 
   std::vector<RocJpegDecodeParams> decode_params(num_images);
   std::vector<RocJpegImage> output_images(num_images);
@@ -728,11 +716,9 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
 
     // rocJPEG writes rows at a 16-byte-aligned pitch, so allocate a buffer
     // padded to that alignment and return a view of the valid region.
-    uint32_t pitch = align_up(width, kRocJpegPitchAlignment);
+    uint32_t pitch = align_up(width);
     auto buffer = torch::empty(
-        {int64_t(num_channels),
-         int64_t(align_up(height, kRocJpegPitchAlignment)),
-         int64_t(pitch)},
+        {int64_t(num_channels), int64_t(align_up(height)), int64_t(pitch)},
         torch::dtype(torch::kU8).device(target_device));
 
     decode_params[i].output_format = image_output_format;
