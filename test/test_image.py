@@ -893,6 +893,64 @@ def test_decode_gif(tmpdir, name, scripted):
             torch.testing.assert_close(tv_frame, pil_frame, atol=0, rtol=0)
 
 
+@pytest.mark.parametrize("scripted", (True, False))
+@pytest.mark.parametrize(
+    "frame1_left, frame1_top, is_out_of_bounds",
+    [
+        (0, 0, False),  # in-bounds control (verifies the crafted bytes decode)
+        (10, 10, True),  # frame fully outside the 1x1 canvas
+        (0, 30000, True),  # large Top offset
+    ],
+)
+def test_decode_gif_frame_outside_canvas(scripted, frame1_left, frame1_top, is_out_of_bounds):
+    # Non-regression test: a frame whose Image Descriptor places it (partly) outside
+    # the logical screen must be clipped to the output tensor, not written past
+    # its allocation.
+    # Before the fix the (10,10) and (0,30000) cases wrote to
+    # out[1][c][top][left] on a 1x1 allocation -> heap OOB write (SIGSEGV /
+    # glibc heap corruption).
+    def le16(v):
+        return bytes([v & 0xFF, (v >> 8) & 0xFF])
+
+    # Hand-crafted 2-frame GIF: 1x1 logical screen, 2-color global colormap,
+    # frame 0 = 1x1 @ (0,0) white, frame 1 = 1x1 @ (frame1_left, frame1_top) black.
+    encoded = (
+        b"GIF89a"
+        + le16(1)
+        + le16(1)
+        + bytes([0x80, 0, 0])  # LSD: 1x1, GCT present (2 colors)
+        + bytes([0, 0, 0, 255, 255, 255])  # GCT: black, white
+        # frame 0: 1x1 @ (0,0), pixel = color 1 (white)
+        + bytes([0x2C])
+        + le16(0)
+        + le16(0)
+        + le16(1)
+        + le16(1)
+        + bytes([0])
+        + bytes([2, 2, 0x4C, 0x01, 0])  # LZW min=2, [Clear, 1, EOI]
+        # frame 1: 1x1 @ (frame1_left, frame1_top), pixel = color 0 (black)
+        + bytes([0x2C])
+        + le16(frame1_left)
+        + le16(frame1_top)
+        + le16(1)
+        + le16(1)
+        + bytes([0])
+        + bytes([2, 2, 0x44, 0x01, 0])  # LZW min=2, [Clear, 0, EOI]
+        + bytes([0x3B])  # trailer
+    )
+    f = torch.jit.script(decode_gif) if scripted else decode_gif
+    out = f(torch.frombuffer(bytearray(encoded), dtype=torch.uint8))
+
+    assert out.shape == (2, 3, 1, 1)
+    assert (out[0] == 255).all()  # frame 0 is in-bounds and white
+    # frame 1 (black) lands on the canvas only when in-bounds; otherwise it's
+    # clipped away and the previous frame (white) shows through.
+    if is_out_of_bounds:
+        assert (out[1] == 255).all()
+    else:
+        assert (out[1] == 0).all()
+
+
 @pytest.mark.parametrize(
     "decode_fun, match",
     [
