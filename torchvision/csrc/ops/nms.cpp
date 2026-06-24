@@ -1,27 +1,30 @@
 #include "nms.h"
 
-#include <ATen/core/dispatch/Dispatcher.h>
-#include <torch/library.h>
-#include <torch/types.h>
+#include <torch/csrc/stable/c/shim.h>
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/stableivalue_conversions.h>
+#include <torch/headeronly/util/shim_utils.h>
+#include <torch/headeronly/version.h>
+
+#include <array>
 
 namespace vision {
 namespace ops {
 
-at::Tensor nms(
-    const at::Tensor& dets,
-    const at::Tensor& scores,
-    double iou_threshold) {
-  C10_LOG_API_USAGE_ONCE("torchvision.csrc.ops.nms.nms");
-  static auto op = c10::Dispatcher::singleton()
-                       .findSchemaOrThrow("torchvision::nms", "")
-                       .typed<decltype(nms)>();
-  return op.call(dets, scores, iou_threshold);
+using torch::stable::Tensor;
+
+Tensor nms(const Tensor& dets, const Tensor& scores, double iou_threshold) {
+  std::array<StableIValue, 3> stack{
+      torch::stable::detail::from(dets),
+      torch::stable::detail::from(scores),
+      torch::stable::detail::from(iou_threshold)};
+  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
+      "torchvision::nms", "", stack.data(), TORCH_ABI_VERSION));
+  return torch::stable::detail::to<Tensor>(stack[0]);
 }
 
-TORCH_LIBRARY_FRAGMENT(torchvision, m) {
-  m.set_python_module("torchvision._meta_registrations");
-  m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor"));
+STABLE_TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def("nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor");
 }
 
 } // namespace ops
