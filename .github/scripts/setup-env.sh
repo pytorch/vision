@@ -26,6 +26,7 @@ echo '::group::Create build environment'
 conda create \
   --name ci \
   --quiet --yes \
+  -c defaults \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
   libpng \
