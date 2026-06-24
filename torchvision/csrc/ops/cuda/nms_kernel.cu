@@ -148,7 +148,8 @@ __global__ static void gather_keep_from_mask(
 }
 
 // THO_DISPATCH_V2 splits its body on commas outside parens. The commas in
-// kernel<<<blocks, threads, 0, stream>>> would break it, so it goes through this wrapper.
+// kernel<<<blocks, threads, 0, stream>>> would break it, so it goes through
+// this wrapper.
 template <typename scalar_t>
 void launch_nms_kernel_impl(
     dim3 blocks,
@@ -158,8 +159,8 @@ void launch_nms_kernel_impl(
     double iou_threshold,
     const scalar_t* boxes,
     unsigned long long* mask) {
-  nms_kernel_impl<scalar_t><<<blocks, threads, 0, stream>>>(
-      dets_num, iou_threshold, boxes, mask);
+  nms_kernel_impl<scalar_t>
+      <<<blocks, threads, 0, stream>>>(dets_num, iou_threshold, boxes, mask);
 }
 
 Tensor nms_kernel(
@@ -176,7 +177,10 @@ Tensor nms_kernel(
       "boxes should have 4 elements in dimension 1, got ",
       dets.size(1));
   STD_TORCH_CHECK(
-      scores.dim() == 1, "scores should be a 1d tensor, got ", scores.dim(), "D");
+      scores.dim() == 1,
+      "scores should be a 1d tensor, got ",
+      scores.dim(),
+      "D");
   STD_TORCH_CHECK(
       dets.size(0) == scores.size(0),
       "boxes and scores should have same number of elements in ",
@@ -188,11 +192,12 @@ Tensor nms_kernel(
   torch::stable::accelerator::DeviceGuard device_guard(dets.get_device_index());
 
   if (dets.numel() == 0) {
-    return torch::stable::new_empty(dets, {0}, torch::headeronly::ScalarType::Long);
+    return torch::stable::new_empty(
+        dets, {0}, torch::headeronly::ScalarType::Long);
   }
 
-  auto order_t = std::get<1>(
-      stable_helpers::sort(scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
+  auto order_t = std::get<1>(stable_helpers::sort(
+      scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
   auto dets_sorted =
       torch::stable::contiguous(stable_helpers::index_select(dets, 0, order_t));
 
@@ -229,9 +234,10 @@ Tensor nms_kernel(
       torch::headeronly::ScalarType::Half);
   STD_CUDA_KERNEL_LAUNCH_CHECK();
 
-  Tensor keep =
-      torch::stable::new_zeros(dets, {static_cast<int64_t>(dets_num)},
-                               torch::headeronly::ScalarType::Bool);
+  Tensor keep = torch::stable::new_zeros(
+      dets,
+      {static_cast<int64_t>(dets_num)},
+      torch::headeronly::ScalarType::Bool);
 
   // Unwrap the mask to fill keep with proper values
   // Keeping the unwrap on device instead of applying iterative for loops on cpu

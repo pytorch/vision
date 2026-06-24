@@ -96,8 +96,29 @@ FOREACH(DIR ${ALLOW_LISTED})
     file(GLOB ALL_SOURCES ${ALL_SOURCES} ${DIR}/*.*)
 ENDFOREACH()
 
+# These ops have been migrated to the stable ABI (torch::stable), the same set
+# setup.py builds into the _C_stable extension. It grows as each op is ported.
+set(TORCHVISION_STABLE_SOURCES
+  ${TVCPP}/ops/nms.cpp
+  ${TVCPP}/ops/cpu/nms_kernel.cpp
+  ${TVCPP}/ops/cuda/nms_kernel.cu
+  ${TVCPP}/vision_stable.cpp)
+# Pin them to torch 2.11. Per source, not library-wide: the pin makes ATen headers
+# error, and the legacy ops sharing this library still include them.
+# TODO(stable-abi): once every op is ported, drop this list and pin the whole
+# library target instead.
+set_source_files_properties(${TORCHVISION_STABLE_SOURCES} PROPERTIES
+  COMPILE_DEFINITIONS TORCH_TARGET_VERSION=0x020b000000000000)
+
 add_library(${PROJECT_NAME} SHARED ${ALL_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
+
+if(WITH_CUDA)
+  # Some torch APIs like aoti_torch_get_current_cuda_stream (used by
+  # ops/cuda/nms_kernel.cu) are only exposed when USE_CUDA is defined.
+  # https://github.com/pytorch/pytorch/blob/98e36864e640023a716e058d894ea2d20e76e5f7/torch/csrc/inductor/aoti_torch/c/shim.h#L573-L602
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_CUDA)
+endif()
 
 if(WITH_MPS)
   find_library(metal NAMES Metal)

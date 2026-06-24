@@ -20,8 +20,8 @@
 //
 // Some ATen ops our kernels use have no torch::stable wrapper in
 // <torch/csrc/stable/ops.h> yet. The officially recommended approach is to call
-// them through torch_call_dispatcher -- an ABI-stable call into an op outside the
-// stable surface (the same pattern used by
+// them through torch_call_dispatcher -- an ABI-stable call into an op outside
+// the stable surface (the same pattern used by
 // https://github.com/meta-pytorch/torchcodec/blob/8bbce656797c4f2b00feb2784ffe76e408be1e4c/src/torchcodec/_core/StableABICompat.h).
 //
 // This file GROWS as operators migrate: add a helper the first time an op needs
@@ -36,7 +36,8 @@ namespace stable_helpers {
 
 using torch::stable::Tensor;
 
-// aten::sort.stable(Tensor self, bool? stable, int dim=-1, bool descending=False)
+// aten::sort.stable(Tensor self, bool? stable, int dim=-1, bool
+// descending=False)
 //     -> (Tensor values, Tensor indices)
 inline std::tuple<Tensor, Tensor> sort(
     const Tensor& self,
@@ -56,7 +57,10 @@ inline std::tuple<Tensor, Tensor> sort(
 }
 
 // aten::index_select(Tensor self, int dim, Tensor index) -> Tensor
-inline Tensor index_select(const Tensor& self, int64_t dim, const Tensor& index) {
+inline Tensor index_select(
+    const Tensor& self,
+    int64_t dim,
+    const Tensor& index) {
   std::array<StableIValue, 3> stack{
       torch::stable::detail::from(self),
       torch::stable::detail::from(dim),
@@ -69,8 +73,7 @@ inline Tensor index_select(const Tensor& self, int64_t dim, const Tensor& index)
 // aten::masked_select(Tensor self, Tensor mask) -> Tensor
 inline Tensor masked_select(const Tensor& self, const Tensor& mask) {
   std::array<StableIValue, 2> stack{
-      torch::stable::detail::from(self),
-      torch::stable::detail::from(mask)};
+      torch::stable::detail::from(self), torch::stable::detail::from(mask)};
   TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
       "aten::masked_select", "", stack.data(), TORCH_ABI_VERSION));
   return torch::stable::detail::to<Tensor>(stack[0]);

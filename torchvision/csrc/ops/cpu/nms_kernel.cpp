@@ -1,7 +1,7 @@
-#include "../StableABICompat.h"
 #include <torch/csrc/stable/library.h>
 #include <torch/csrc/stable/ops.h>
 #include <torch/headeronly/core/Dispatch_v2.h>
+#include "../StableABICompat.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -26,7 +26,8 @@ Tensor nms_kernel_impl(
       "dets should have the same type as scores");
 
   if (dets.numel() == 0) {
-    return torch::stable::new_empty(dets, {0}, torch::headeronly::ScalarType::Long);
+    return torch::stable::new_empty(
+        dets, {0}, torch::headeronly::ScalarType::Long);
   }
 
   auto x1_t = torch::stable::contiguous(torch::stable::select(dets, 1, 0));
@@ -34,14 +35,14 @@ Tensor nms_kernel_impl(
   auto x2_t = torch::stable::contiguous(torch::stable::select(dets, 1, 2));
   auto y2_t = torch::stable::contiguous(torch::stable::select(dets, 1, 3));
 
-  auto order_t = std::get<1>(
-      stable_helpers::sort(scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
+  auto order_t = std::get<1>(stable_helpers::sort(
+      scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
 
   auto ndets = dets.size(0);
-  Tensor suppressed_t =
-      torch::stable::new_zeros(dets, {ndets}, torch::headeronly::ScalarType::Byte);
-  Tensor keep_t =
-      torch::stable::new_zeros(dets, {ndets}, torch::headeronly::ScalarType::Long);
+  Tensor suppressed_t = torch::stable::new_zeros(
+      dets, {ndets}, torch::headeronly::ScalarType::Byte);
+  Tensor keep_t = torch::stable::new_zeros(
+      dets, {ndets}, torch::headeronly::ScalarType::Long);
   Tensor areas_t = torch::stable::new_empty(dets, {ndets}, dets.scalar_type());
 
   auto suppressed = suppressed_t.mutable_data_ptr<uint8_t>();
@@ -89,7 +90,8 @@ Tensor nms_kernel_impl(
       }
     }
   }
-  return torch::stable::narrow(keep_t, /*dim=*/0, /*start=*/0, /*length=*/num_to_keep);
+  return torch::stable::narrow(
+      keep_t, /*dim=*/0, /*start=*/0, /*length=*/num_to_keep);
 }
 
 Tensor nms_kernel(
@@ -103,7 +105,10 @@ Tensor nms_kernel(
       "boxes should have 4 elements in dimension 1, got ",
       dets.size(1));
   STD_TORCH_CHECK(
-      scores.dim() == 1, "scores should be a 1d tensor, got ", scores.dim(), "D");
+      scores.dim() == 1,
+      "scores should be a 1d tensor, got ",
+      scores.dim(),
+      "D");
   STD_TORCH_CHECK(
       dets.size(0) == scores.size(0),
       "boxes and scores should have same number of elements in ",
