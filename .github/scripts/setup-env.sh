@@ -3,9 +3,7 @@
 set -euxo pipefail
 
 # Prepare conda
-# Use the job-provided conda (CONDA_EXE) rather than `which conda`, which can
-# resolve to a stray Homebrew Miniconda on contaminated self-hosted runners.
-set +x && eval "$("${CONDA_EXE:-$(which conda)}" shell.bash hook)" && set -x
+set +x && eval "$($(which conda) shell.bash hook)" && set -x
 
 # Setup the OS_TYPE environment variable that should be used for conditions involving the OS below.
 case $(uname) in
@@ -28,6 +26,7 @@ echo '::group::Create build environment'
 conda create \
   --name ci \
   --quiet --yes \
+  -c defaults \
   python="${PYTHON_VERSION}" pip \
   ninja cmake \
   libpng \

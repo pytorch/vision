@@ -5,9 +5,7 @@ set -euo pipefail
 ./.github/scripts/setup-env.sh
 
 # Activate conda environment
-# Use the job-provided conda (CONDA_EXE) rather than `which conda`, which can
-# resolve to a stray Homebrew Miniconda on contaminated self-hosted runners.
-eval "$("${CONDA_EXE:-$(which conda)}" shell.bash hook)" && conda deactivate && conda activate ci
+eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci
 
 echo '::group::Install testing utilities'
 # TODO: remove the <8 constraint on pytest when https://github.com/pytorch/vision/issues/8238 is closed
