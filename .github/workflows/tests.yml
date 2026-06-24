@@ -62,6 +62,11 @@ jobs:
       runner: ${{ matrix.runner }}
       gpu-arch-type: ${{ matrix.gpu-arch-type }}
       gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      # ROCm self-hosted runners are not on EC2, so they can't pull the default
+      # ECR-hosted docker image (no AWS credentials). Use a Docker Hub image and
+      # run without sudo, matching pytorch/ao and pytorch/kineto ROCm jobs.
+      docker-image: pytorch/manylinux2_28-builder:rocm7.1
+      no-sudo: true
       timeout: 120
       test-infra-ref: main
       script: |
