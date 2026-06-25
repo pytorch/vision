@@ -1,14 +1,14 @@
 #pragma once
 
-#include <ATen/ATen.h>
+#include <torch/csrc/stable/tensor.h>
 #include "../macros.h"
 
 namespace vision {
 namespace ops {
 
-VISION_API at::Tensor nms(
-    const at::Tensor& dets,
-    const at::Tensor& scores,
+VISION_API torch::stable::Tensor nms(
+    const torch::stable::Tensor& dets,
+    const torch::stable::Tensor& scores,
     double iou_threshold);
 
 } // namespace ops
