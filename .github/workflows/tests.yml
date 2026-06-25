@@ -45,6 +45,11 @@ jobs:
         ./.github/scripts/unittest.sh
 
   unittests-rocm:
+    # ROCm runners are not on EC2 and authenticate to AWS (ECR) via GitHub OIDC.
+    # Fork PRs don't get an OIDC id-token from GitHub, so the job can't pull the
+    # docker image and always fails. Skip it for fork PRs; it still runs on
+    # same-repo PRs, push, and workflow_dispatch.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       matrix:
         python-version:
