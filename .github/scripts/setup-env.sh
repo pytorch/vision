@@ -61,6 +61,9 @@ case $GPU_ARCH_TYPE in
     VERSION_WITHOUT_DOT=$(echo "${GPU_ARCH_VERSION}" | sed 's/\.//')
     GPU_ARCH_ID="cu${VERSION_WITHOUT_DOT}"
     ;;
+  rocm)
+    GPU_ARCH_ID="rocm${GPU_ARCH_VERSION}"
+    ;;
   *)
     echo "Unknown GPU_ARCH_TYPE=${GPU_ARCH_TYPE}"
     exit 1
@@ -69,7 +72,7 @@ esac
 PYTORCH_WHEEL_INDEX="https://download.pytorch.org/whl/${CHANNEL}/${GPU_ARCH_ID}"
 pip install --progress-bar=off --pre torch --index-url="${PYTORCH_WHEEL_INDEX}"
 
-if [[ $GPU_ARCH_TYPE == 'cuda' ]]; then
+if [[ $GPU_ARCH_TYPE == 'cuda' || $GPU_ARCH_TYPE == 'rocm' ]]; then
   python -c "import torch; exit(not torch.cuda.is_available())"
 fi
 echo '::endgroup::'
