@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
+from urllib.error import URLError
 
 from .folder import default_loader
 
@@ -26,8 +27,11 @@ class SUN397(VisionDataset):
             ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
-    _DATASET_URL = "http://vision.princeton.edu/projects/2010/SUN/SUN397.tar.gz"
     _DATASET_MD5 = "8ca2778205c41d23104230ba66911c7a"
+    _DATASET_MIRRORS = (
+        "https://vision.princeton.edu/projects/2010/SUN/SUN397.tar.gz",
+        "http://vision.princeton.edu/projects/2010/SUN/SUN397.tar.gz",
+    )
 
     def __init__(
         self,
@@ -78,4 +82,22 @@ class SUN397(VisionDataset):
     def _download(self) -> None:
         if self._check_exists():
             return
-        download_and_extract_archive(self._DATASET_URL, download_root=self.root, md5=self._DATASET_MD5)
+
+        errors: list[BaseException] = []
+        for url in self._DATASET_MIRRORS:
+            try:
+                download_and_extract_archive(url, download_root=self.root, md5=self._DATASET_MD5)
+                return
+            except (RuntimeError, URLError) as err:
+                errors.append(err)
+
+        msg = "Error downloading SUN397:\n"
+        for url, err in zip(self._DATASET_MIRRORS, errors):
+            msg += f"Tried {url}, got:\n{err}\n"
+        msg += (
+            "The Princeton and MIT mirrors for SUN397 are currently unavailable. "
+            "Download the archive manually and extract it under <root>/SUN397/. "
+            "See https://github.com/pytorch/vision/issues/9348 and "
+            "https://github.com/pytorch/vision/issues/7637 (dataset mirroring)."
+        )
+        raise RuntimeError(msg)
