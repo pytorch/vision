@@ -1,34 +1,36 @@
 #pragma once
-#include <torch/types.h>
+#include <torch/csrc/stable/device.h>
+#include <torch/csrc/stable/tensor.h>
+#include <tuple>
 #include <vector>
-#include "../common.h"
+#include "../common_stable.h"
 
 #if NVJPEG_FOUND
-#include <c10/cuda/CUDAStream.h>
+#include <cuda_runtime.h>
 #include <nvjpeg.h>
 
 namespace vision {
 namespace image {
 class CUDAJpegDecoder {
  public:
-  CUDAJpegDecoder(const torch::Device& target_device);
+  CUDAJpegDecoder(const torch::stable::Device& target_device);
   ~CUDAJpegDecoder();
 
-  std::vector<torch::Tensor> decode_images(
-      const std::vector<torch::Tensor>& encoded_images,
+  std::vector<torch::stable::Tensor> decode_images(
+      const std::vector<torch::stable::Tensor>& encoded_images,
       const nvjpegOutputFormat_t& output_format);
 
-  const torch::Device original_device;
-  const torch::Device target_device;
-  const c10::cuda::CUDAStream stream;
+  const torch::stable::Device original_device;
+  const torch::stable::Device target_device;
+  cudaStream_t stream;
 
  private:
   std::tuple<
       std::vector<nvjpegImage_t>,
-      std::vector<torch::Tensor>,
+      std::vector<torch::stable::Tensor>,
       std::vector<int>>
   prepare_buffers(
-      const std::vector<torch::Tensor>& encoded_images,
+      const std::vector<torch::stable::Tensor>& encoded_images,
       const nvjpegOutputFormat_t& output_format);
   nvjpegJpegState_t nvjpeg_state;
   nvjpegJpegState_t nvjpeg_decoupled_state;
@@ -40,6 +42,12 @@ class CUDAJpegDecoder {
   bool hw_decode_available{false};
   nvjpegHandle_t nvjpeg_handle;
 };
+
+std::vector<torch::stable::Tensor> decode_jpegs_cuda(
+    const std::vector<torch::stable::Tensor>& encoded_images,
+    ImageReadMode mode,
+    torch::stable::Device device);
+
 } // namespace image
 } // namespace vision
 #endif
