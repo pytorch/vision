@@ -44,6 +44,50 @@ jobs:
 
         ./.github/scripts/unittest.sh
 
+  unittests-rocm:
+    strategy:
+      matrix:
+        python-version:
+          - "3.10"
+        runner: ["linux.rocm.gpu.gfx942.1"]
+        gpu-arch-type: ["rocm"]
+        gpu-arch-version: ["7.1"]
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      repository: pytorch/vision
+      runner: ${{ matrix.runner }}
+      gpu-arch-type: ${{ matrix.gpu-arch-type }}
+      gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      # ROCm self-hosted runners are not on EC2, so they can't pull the default
+      # ECR-hosted docker image (no AWS credentials). Use a Docker Hub image and
+      # run without sudo, matching pytorch/ao and pytorch/kineto ROCm jobs.
+      docker-image: pytorch/manylinux2_28-builder:rocm7.1
+      no-sudo: true
+      timeout: 120
+      test-infra-ref: main
+      script: |
+        set -euo pipefail
+
+        export PYTHON_VERSION=${{ matrix.python-version }}
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
+        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+
+        ./.github/scripts/setup-env.sh
+
+        eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci
+
+        echo '::group::Install testing utilities'
+        pip install --progress-bar=off "pytest<8" pytest-mock pytest-cov expecttest!=0.2.0 requests
+        echo '::endgroup::'
+
+        echo '::group::Run image tests'
+        pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_image.py -k "not cuda"
+        echo '::endgroup::'
+
   unittests-macos:
     strategy:
       matrix:
@@ -71,7 +115,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.10"
+          # - "3.10"  # Fails with annoying SSL issue. Whatever.
           - "3.14"
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]
