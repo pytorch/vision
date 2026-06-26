@@ -164,6 +164,8 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/cpu/nms_kernel.cpp",
     CSRS_DIR / "ops/mps/nms_kernel.mm",
     CSRS_DIR / "ops/quantized/cpu/qnms_kernel.cpp",
+    CSRS_DIR / "io/image/cuda/decode_jpegs_cuda.cpp",
+    CSRS_DIR / "io/image/common_stable.cpp",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 
@@ -243,7 +245,13 @@ def get_stable_macros_and_flags():
     if "nvcc" in extra_compile_args:
         extra_compile_args["nvcc"].append(tv)
         if not IS_ROCM:
+            # Some torch APIs like aoti_torch_get_current_cuda_stream (used by
+            # ops/cuda/nms_kernel.cu) are only exposed when USE_CUDA is defined.
+            # https://github.com/pytorch/pytorch/blob/98e36864e640023a716e058d894ea2d20e76e5f7/torch/csrc/inductor/aoti_torch/c/shim.h#L573-L602
             extra_compile_args["nvcc"].append("-DUSE_CUDA")
+            # The jpeg decode .cpp also calls these shims (incl.
+            # torch_get_cuda_stream_from_pool), so cxx needs USE_CUDA too.
+            extra_compile_args["cxx"].append("-DUSE_CUDA")
     return define_macros, extra_compile_args
 
 
@@ -375,14 +383,18 @@ def make_image_extension():
     define_macros, extra_compile_args = get_macros_and_flags()
 
     image_dir = CSRS_DIR / "io/image"
-    sources = list(image_dir.glob("*.cpp")) + list(image_dir.glob("cpu/*.cpp")) + list(image_dir.glob("cpu/giflib/*.c"))
+    sources = (
+        _not_stable(image_dir.glob("*.cpp"))
+        + _not_stable(image_dir.glob("cpu/*.cpp"))
+        + _not_stable(image_dir.glob("cpu/giflib/*.c"))
+    )
 
     if IS_ROCM:
-        sources += list(image_dir.glob("hip/*.cpp"))
+        sources += _not_stable(image_dir.glob("hip/*.cpp"))
         # we need to exclude this in favor of the hipified source
         sources.remove(image_dir / "image.cpp")
     else:
-        sources += list(image_dir.glob("cuda/*.cpp"))
+        sources += _not_stable(image_dir.glob("cuda/*.cpp"))
 
     Extension = CppExtension
 
@@ -467,6 +479,41 @@ def make_image_extension():
     )
 
 
+def make_image_stable_extension():
+    # Stable-ABI sibling of make_image_extension(): only the migrated (_stable) image TUs.
+    print("Building image_stable extension")
+
+    include_dirs = TORCHVISION_INCLUDE.copy()
+    library_dirs = TORCHVISION_LIBRARY.copy()
+    libraries = []
+    define_macros, extra_compile_args = get_stable_macros_and_flags()
+
+    image_dir = CSRS_DIR / "io/image"
+    sources = (
+        _stable(image_dir.glob("*.cpp"))
+        + _stable(image_dir.glob("cpu/*.cpp"))
+        + _stable(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
+    )
+
+    Extension = CppExtension
+    if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
+        nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
+        if nvjpeg_found:
+            libraries.append("nvjpeg")
+            define_macros += [("NVJPEG_FOUND", 1)]
+            Extension = CUDAExtension
+
+    return Extension(
+        name="torchvision.image_stable",
+        sources=sorted(str(s) for s in sources),
+        include_dirs=include_dirs,
+        library_dirs=library_dirs,
+        define_macros=define_macros,
+        libraries=libraries,
+        extra_compile_args=extra_compile_args,
+    )
+
+
 class clean(distutils.command.clean.clean):
     def run(self):
         with open(".gitignore") as f:
@@ -495,6 +542,7 @@ if __name__ == "__main__":
         make_C_extension(),
         make_C_stable_extension(),
         make_image_extension(),
+        make_image_stable_extension(),
     ]
 
     setup(
