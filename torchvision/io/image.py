@@ -17,6 +17,10 @@ if _load_library("image"):
         return True
 
 
+# Stable-ABI image extension (migrated ops)
+_load_library("image_stable")
+
+
 def _assert_has_image_ops():
     if not _has_image_ops():
         raise RuntimeError(
