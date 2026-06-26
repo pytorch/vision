@@ -237,6 +237,66 @@ CUDAJpegDecoder::~CUDAJpegDecoder() {
   that the CUDA runtime handles cleanup for us.
   Please send a PR if you have a solution for this problem.
   */
+
+  // nvjpegStatus_t status;
+
+  // status = nvjpegDecodeParamsDestroy(nvjpeg_decode_params);
+  // STD_TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy nvjpeg decode params: ",
+  //     status);
+
+  // status = nvjpegJpegStreamDestroy(jpeg_streams[0]);
+  // STD_TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy jpeg stream: ",
+  //     status);
+
+  // status = nvjpegJpegStreamDestroy(jpeg_streams[1]);
+  // STD_TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy jpeg stream: ",
+  //     status);
+
+  // status = nvjpegBufferPinnedDestroy(pinned_buffers[0]);
+  // STD_TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy pinned buffer[0]: ",
+  //     status);
+
+  // status = nvjpegBufferPinnedDestroy(pinned_buffers[1]);
+  // STD_TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy pinned buffer[1]: ",
+  //     status);
+
+  // status = nvjpegBufferDeviceDestroy(device_buffer);
+  // STD_TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy device buffer: ",
+  //     status);
+
+  // status = nvjpegJpegStateDestroy(nvjpeg_decoupled_state);
+  // STD_TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy nvjpeg decoupled state: ",
+  //     status);
+
+  // status = nvjpegDecoderDestroy(nvjpeg_decoder);
+  // STD_TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy nvjpeg decoder: ",
+  //     status);
+
+  // status = nvjpegJpegStateDestroy(nvjpeg_state);
+  // STD_TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS,
+  //     "Failed to destroy nvjpeg state: ",
+  //     status);
+
+  // status = nvjpegDestroy(nvjpeg_handle);
+  // STD_TORCH_CHECK(
+  //     status == NVJPEG_STATUS_SUCCESS, "nvjpegDestroy failed: ", status);
 }
 
 std::tuple<
