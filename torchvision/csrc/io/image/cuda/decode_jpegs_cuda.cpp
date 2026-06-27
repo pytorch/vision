@@ -596,8 +596,9 @@ std::vector<torch::stable::Tensor> CUDAJpegDecoder::decode_images(
          i < output_tensors.size();
          ++i) {
       if (channels[i] == 1) {
-        output_tensors[i] = torch::stable::clone(torch::stable::unsqueeze(
-            torch::stable::select(output_tensors[i], 0, 0), 0));
+        output_tensors[i] = torch::stable::clone(
+            torch::stable::unsqueeze(
+                torch::stable::select(output_tensors[i], 0, 0), 0));
       }
     }
   }
@@ -618,9 +619,13 @@ STABLE_TORCH_LIBRARY_FRAGMENT(image, m) {
       "decode_jpegs_cuda(Tensor[] encoded_images, int mode, Device device) -> Tensor[]");
 }
 
+// In ROCm builds, the hand-written rocJPEG implementation registers this op.
+// Keep this registration for nvJPEG and the no-GPU-JPEG fallback only.
+#if !ROCJPEG_FOUND
 STABLE_TORCH_LIBRARY_IMPL(image, CompositeExplicitAutograd, m) {
   m.impl("decode_jpegs_cuda", TORCH_BOX(&decode_jpegs_cuda));
 }
+#endif
 
 } // namespace image
 } // namespace vision

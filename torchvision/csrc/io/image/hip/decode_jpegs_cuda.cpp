@@ -1,13 +1,18 @@
 #include "decode_jpegs_cuda.h"
 
-#if ROCJPEG_FOUND
+#include <torch/csrc/stable/library.h>
+#include <torch/headeronly/util/Exception.h>
 
-#include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDAGuard.h>
+#if ROCJPEG_FOUND
+#include <torch/csrc/stable/accelerator.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/headeronly/core/DeviceType.h>
+#include <torch/headeronly/core/ScalarType.h>
 #include <cstdlib>
 #include <exception>
 #include <memory>
 #include <mutex>
+#include <optional>
 
 namespace vision {
 namespace image {
@@ -22,23 +27,21 @@ std::mutex decoderMutex;
 std::unique_ptr<RocJpegDecoder> rocJpegDecoder;
 } // namespace
 
-std::vector<torch::Tensor> decode_jpegs_cuda(
-    const std::vector<torch::Tensor>& encoded_images,
+std::vector<torch::stable::Tensor> decode_jpegs_cuda(
+    const std::vector<torch::stable::Tensor>& encoded_images,
     vision::image::ImageReadMode mode,
-    torch::Device device) {
-  C10_LOG_API_USAGE_ONCE(
-      "torchvision.csrc.io.image.cuda.decode_jpegs_cuda.decode_jpegs_cuda");
-
+    torch::stable::Device device) {
   std::lock_guard<std::mutex> lock(decoderMutex);
 
   STD_TORCH_CHECK(
       device.is_cuda(), "Expected the device parameter to be a cuda device");
 
-  std::vector<torch::Tensor> contig_images;
+  std::vector<torch::stable::Tensor> contig_images;
   contig_images.reserve(encoded_images.size());
   for (auto& encoded_image : encoded_images) {
     STD_TORCH_CHECK(
-        encoded_image.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
+        encoded_image.scalar_type() == torch::headeronly::ScalarType::Byte,
+        "Expected a torch.uint8 tensor");
     STD_TORCH_CHECK(
         !encoded_image.is_cuda(), "The input tensor must be on CPU");
     STD_TORCH_CHECK(
@@ -46,16 +49,22 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
         "Expected a non empty 1-dimensional tensor");
     // rocJPEG requires contiguous input; contiguous() is a no-op when it
     // already is.
-    contig_images.push_back(encoded_image.contiguous());
+    contig_images.push_back(torch::stable::contiguous(encoded_image));
   }
 
-  at::cuda::CUDAGuard device_guard(device);
+  auto target_device = device.index() >= 0
+      ? device
+      : torch::stable::Device(
+            torch::headeronly::DeviceType::CUDA,
+            torch::stable::accelerator::getCurrentDeviceIndex());
+  torch::stable::accelerator::DeviceGuard device_guard(target_device.index());
 
-  if (rocJpegDecoder == nullptr || device != rocJpegDecoder->target_device) {
+  if (rocJpegDecoder == nullptr ||
+      target_device != rocJpegDecoder->target_device) {
     if (rocJpegDecoder != nullptr) {
-      rocJpegDecoder.reset(new RocJpegDecoder(device));
+      rocJpegDecoder.reset(new RocJpegDecoder(target_device));
     } else {
-      rocJpegDecoder = std::make_unique<RocJpegDecoder>(device);
+      rocJpegDecoder = std::make_unique<RocJpegDecoder>(target_device);
       std::atexit([]() { rocJpegDecoder.reset(); });
     }
   }
@@ -67,13 +76,12 @@ std::vector<torch::Tensor> decode_jpegs_cuda(
   }
 }
 
-RocJpegDecoder::RocJpegDecoder(const torch::Device& target_device)
+RocJpegDecoder::RocJpegDecoder(const torch::stable::Device& target_device)
     : target_device{target_device} {
-  int device_id = target_device.has_index() ? target_device.index()
-                                            : c10::cuda::current_device();
-  CHECK_HIP(hipSetDevice(device_id));
-  CHECK_ROCJPEG(
-      rocJpegCreate(ROCJPEG_BACKEND_HARDWARE, device_id, &rocjpeg_handle_));
+  torch::stable::accelerator::DeviceGuard device_guard(target_device.index());
+  CHECK_HIP(hipSetDevice(target_device.index()));
+  CHECK_ROCJPEG(rocJpegCreate(
+      ROCJPEG_BACKEND_HARDWARE, target_device.index(), &rocjpeg_handle_));
 }
 
 RocJpegDecoder::~RocJpegDecoder() {
@@ -83,8 +91,8 @@ RocJpegDecoder::~RocJpegDecoder() {
   }
 }
 
-std::vector<torch::Tensor> RocJpegDecoder::decode_images(
-    const std::vector<torch::Tensor>& encoded_images,
+std::vector<torch::stable::Tensor> RocJpegDecoder::decode_images(
+    const std::vector<torch::stable::Tensor>& encoded_images,
     vision::image::ImageReadMode mode) {
   const std::size_t num_images = encoded_images.size();
   // Reuse existing rocJPEG stream handles and create only the missing ones.
@@ -96,11 +104,12 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
 
   std::vector<RocJpegDecodeParams> decode_params(num_images);
   std::vector<RocJpegImage> output_images(num_images);
-  std::vector<torch::Tensor> output_tensors(num_images);
+  std::vector<torch::stable::Tensor> output_tensors;
+  output_tensors.reserve(num_images);
 
   for (std::size_t i = 0; i < num_images; ++i) {
     CHECK_ROCJPEG(rocJpegStreamParse(
-        static_cast<const unsigned char*>(encoded_images[i].data_ptr()),
+        encoded_images[i].const_data_ptr<uint8_t>(),
         encoded_images[i].numel(),
         rocjpeg_stream_handles_[i]));
 
@@ -161,16 +170,20 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
     // rocJPEG writes rows at a 16-byte-aligned pitch, so allocate a buffer
     // padded to that alignment and return a view of the valid region.
     uint32_t pitch = align_up(width);
-    auto buffer = torch::empty(
+    auto buffer = torch::stable::empty(
         {int64_t(num_channels), int64_t(align_up(height)), int64_t(pitch)},
-        torch::dtype(torch::kU8).device(target_device));
+        torch::headeronly::ScalarType::Byte,
+        std::nullopt,
+        target_device);
 
     decode_params[i].output_format = image_output_format;
     for (uint32_t c = 0; c < num_channels; ++c) {
-      output_images[i].channel[c] = buffer[c].data_ptr<uint8_t>();
+      output_images[i].channel[c] =
+          torch::stable::select(buffer, 0, c).mutable_data_ptr<uint8_t>();
       output_images[i].pitch[c] = pitch;
     }
-    output_tensors[i] = buffer.narrow(1, 0, height).narrow(2, 0, width);
+    auto valid_height = torch::stable::narrow(buffer, 1, 0, height);
+    output_tensors.push_back(torch::stable::narrow(valid_height, 2, 0, width));
   }
 
   // Choosing a batch size that is a multiple of the available JPEG cores is
@@ -185,6 +198,10 @@ std::vector<torch::Tensor> RocJpegDecoder::decode_images(
   // returning, so the decoded output tensors are ready for PyTorch streams.
 
   return output_tensors;
+}
+
+STABLE_TORCH_LIBRARY_IMPL(image, CompositeExplicitAutograd, m) {
+  m.impl("decode_jpegs_cuda", TORCH_BOX(&decode_jpegs_cuda));
 }
 
 } // namespace image
