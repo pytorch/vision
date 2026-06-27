@@ -444,7 +444,19 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without WEBP support")
 
-    if not IS_ROCM:
+    if IS_ROCM:
+        if USE_ROCJPEG and (torch.cuda.is_available() or FORCE_CUDA):
+            rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
+            if rocjpeg_found:
+                print("Building torchvision with ROCJPEG image support")
+                libraries.append("rocjpeg")
+                define_macros += [("ROCJPEG_FOUND", 1)]
+                Extension = CUDAExtension
+            else:
+                warnings.warn("Building torchvision without ROCJPEG support")
+        elif USE_ROCJPEG:
+            warnings.warn("Building torchvision without ROCJPEG support")
+    else:
         if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
             nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
 
