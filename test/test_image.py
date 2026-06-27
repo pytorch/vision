@@ -43,6 +43,9 @@ TOOSMALL_PNG = os.path.join(IMAGE_ROOT, "toosmall_png")
 IS_WINDOWS = sys.platform in ("win32", "cygwin")
 IS_MACOS = sys.platform == "darwin"
 IS_LINUX = sys.platform == "linux"
+# rocJPEG (the ROCm GPU JPEG backend) is decode-only: AMD provides no GPU JPEG
+# encoder, so the CUDA encode tests can't pass on ROCm.
+IS_ROCM = torch.version.hip is not None
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 WEBP_TEST_IMAGES_DIR = os.environ.get("WEBP_TEST_IMAGES_DIR", "")
 # See https://github.com/pytorch/vision/pull/8724#issuecomment-2503964558
@@ -579,6 +582,7 @@ def test_encode_jpeg(img_path, scripted):
 
 
 @needs_cuda
+@pytest.mark.skipif(IS_ROCM, reason="rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
 def test_encode_jpeg_cuda_device_param():
     path = next(path for path in get_images(IMAGE_ROOT, ".jpg") if "cmyk" not in path)
 
@@ -599,6 +603,7 @@ def test_encode_jpeg_cuda_device_param():
 
 
 @needs_cuda
+@pytest.mark.skipif(IS_ROCM, reason="rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(IMAGE_ROOT, ".jpg")],
@@ -628,6 +633,7 @@ def test_encode_jpeg_cuda(img_path, scripted, contiguous):
 
 
 @needs_cuda
+@pytest.mark.skipif(IS_ROCM, reason="rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
 def test_encode_jpeg_cuda_sync():
     """
     Non-regression test for https://github.com/pytorch/vision/issues/8587.
@@ -669,6 +675,8 @@ def test_encode_jpeg_cuda_sync():
 def test_encode_jpegs_batch(scripted, contiguous, device):
     if device == "cpu" and IS_MACOS:
         pytest.skip("https://github.com/pytorch/vision/issues/8031")
+    if device == "cuda" and IS_ROCM:
+        pytest.skip("rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
     decoded_images_tv = []
     for jpeg_path in get_images(IMAGE_ROOT, ".jpg"):
         if "cmyk" in jpeg_path:
@@ -714,6 +722,7 @@ def test_encode_jpegs_batch(scripted, contiguous, device):
 
 
 @needs_cuda
+@pytest.mark.skipif(IS_ROCM, reason="rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
 def test_single_encode_jpeg_cuda_errors():
     with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.float32, device="cuda"))
@@ -732,6 +741,7 @@ def test_single_encode_jpeg_cuda_errors():
 
 
 @needs_cuda
+@pytest.mark.skipif(IS_ROCM, reason="rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
 def test_batch_encode_jpegs_cuda_errors():
     with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
         encode_jpeg(
