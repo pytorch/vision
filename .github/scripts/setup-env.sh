@@ -77,6 +77,16 @@ if [[ $GPU_ARCH_TYPE == 'cuda' || $GPU_ARCH_TYPE == 'rocm' ]]; then
 fi
 echo '::endgroup::'
 
+if [[ $GPU_ARCH_TYPE == 'rocm' ]]; then
+  echo '::group::Install rocJPEG SDK'
+  # rocJPEG is shipped as a separate SDK package and isn't in the base ROCm
+  # builder image. Without its header ($ROCM_HOME/include/rocjpeg/rocjpeg.h)
+  # setup.py silently builds the HIP jpeg ops as stubs ("not compiled with
+  # nvJPEG support"), so install it before building torchvision.
+  dnf install -y rocjpeg-devel || yum install -y rocjpeg-devel
+  echo '::endgroup::'
+fi
+
 echo '::group::Install TorchVision'
 pip install -e . -v --no-build-isolation
 echo '::endgroup::'
