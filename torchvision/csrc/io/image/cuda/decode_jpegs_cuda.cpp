@@ -596,9 +596,8 @@ std::vector<torch::stable::Tensor> CUDAJpegDecoder::decode_images(
          i < output_tensors.size();
          ++i) {
       if (channels[i] == 1) {
-        output_tensors[i] = torch::stable::clone(
-            torch::stable::unsqueeze(
-                torch::stable::select(output_tensors[i], 0, 0), 0));
+        output_tensors[i] = torch::stable::clone(torch::stable::unsqueeze(
+            torch::stable::select(output_tensors[i], 0, 0), 0));
       }
     }
   }
