@@ -444,19 +444,11 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without WEBP support")
 
-    if IS_ROCM:
-        if USE_ROCJPEG and (torch.cuda.is_available() or FORCE_CUDA):
-            rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
-            if rocjpeg_found:
-                print("Building torchvision with ROCJPEG image support")
-                libraries.append("rocjpeg")
-                define_macros += [("ROCJPEG_FOUND", 1)]
-                Extension = CUDAExtension
-            else:
-                warnings.warn("Building torchvision without ROCJPEG support")
-        elif USE_ROCJPEG:
-            warnings.warn("Building torchvision without ROCJPEG support")
-    else:
+    # NVJPEG is needed here for the GPU JPEG *encoder* (encode_jpegs_cuda.cpp). The
+    # GPU decoder lives in the stable extension (see make_image_stable_extension).
+    # ROCm has no rocJPEG equivalent for encoding, so the HIP encoder is always a
+    # stub and this extension needs nothing from rocJPEG.
+    if not IS_ROCM:
         if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
             nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
 
@@ -497,21 +489,27 @@ def make_image_stable_extension():
         + _stable(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
     )
 
+    # This extension holds the GPU JPEG *decoder*, which is the only consumer of
+    # nvJPEG decoding / rocJPEG (rocJPEG is decode-only). IS_ROCM and CUDA are
+    # mutually exclusive, so these two blocks are independent.
     Extension = CppExtension
-    if IS_ROCM:
-        if USE_ROCJPEG and (torch.cuda.is_available() or FORCE_CUDA):
-            rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
-            if rocjpeg_found:
-                libraries.append("rocjpeg")
-                define_macros += [("ROCJPEG_FOUND", 1)]
-                Extension = CUDAExtension
-    else:
-        if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
-            nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
-            if nvjpeg_found:
-                libraries.append("nvjpeg")
-                define_macros += [("NVJPEG_FOUND", 1)]
-                Extension = CUDAExtension
+    if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
+        nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
+        if nvjpeg_found:
+            print("Building torchvision with NVJPEG image support")
+            libraries.append("nvjpeg")
+            define_macros += [("NVJPEG_FOUND", 1)]
+            Extension = CUDAExtension
+
+    if USE_ROCJPEG and IS_ROCM and (torch.cuda.is_available() or FORCE_CUDA):
+        rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
+        if rocjpeg_found:
+            print("Building torchvision with ROCJPEG image support")
+            libraries.append("rocjpeg")
+            define_macros += [("ROCJPEG_FOUND", 1)]
+            Extension = CUDAExtension
+        else:
+            warnings.warn("Building torchvision without ROCJPEG support")
 
     return Extension(
         name="torchvision.image_stable",
