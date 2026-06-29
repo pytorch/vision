@@ -103,6 +103,7 @@ set(TORCHVISION_STABLE_SOURCES
   ${TVCPP}/ops/cpu/nms_kernel.cpp
   ${TVCPP}/ops/cuda/nms_kernel.cu
   ${TVCPP}/io/image/cuda/decode_jpegs_cuda.cpp
+  ${TVCPP}/io/image/cuda/encode_jpegs_cuda.cpp
   ${TVCPP}/io/image/common_stable.cpp
   ${TVCPP}/vision_stable.cpp)
 # Pin them to torch 2.11. Per source, not library-wide: the pin makes ATen headers
