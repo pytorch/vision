@@ -193,14 +193,13 @@ def decode_jpeg(
             for available modes.
         device (str or torch.device): The device on which the decoded image will
             be stored. If a cuda device is specified, the image will be decoded
-            with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
-            supported for CUDA version >= 10.1
+            with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_ on NVIDIA GPUs,
+            or with `rocJPEG
+            <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/>`_ on AMD
+            (ROCm) GPUs. On both, pass ``device="cuda"``.
 
             .. betastatus:: device parameter
 
-            .. warning::
-                There is a memory leak in the nvjpeg library for CUDA versions < 11.6.
-                Make sure to rely on CUDA 11.6 or above before using ``device="cuda"``.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
             Default: False. Only implemented for JPEG format on CPU.
 

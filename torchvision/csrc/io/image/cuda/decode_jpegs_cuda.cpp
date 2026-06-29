@@ -618,9 +618,13 @@ STABLE_TORCH_LIBRARY_FRAGMENT(image, m) {
       "decode_jpegs_cuda(Tensor[] encoded_images, int mode, Device device) -> Tensor[]");
 }
 
+// In ROCm builds, the rocJPEG implementation will register this op.
+// So we keep this registration for nvJPEG and the no-GPU builds only.
+#if !ROCJPEG_FOUND
 STABLE_TORCH_LIBRARY_IMPL(image, CompositeExplicitAutograd, m) {
   m.impl("decode_jpegs_cuda", TORCH_BOX(&decode_jpegs_cuda));
 }
+#endif
 
 } // namespace image
 } // namespace vision

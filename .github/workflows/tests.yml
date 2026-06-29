@@ -90,7 +90,7 @@ jobs:
         echo '::endgroup::'
 
         echo '::group::Run image tests'
-        pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_image.py -k "not cuda"
+        pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_image.py
         echo '::endgroup::'
 
   unittests-macos:
