@@ -43,8 +43,6 @@ TOOSMALL_PNG = os.path.join(IMAGE_ROOT, "toosmall_png")
 IS_WINDOWS = sys.platform in ("win32", "cygwin")
 IS_MACOS = sys.platform == "darwin"
 IS_LINUX = sys.platform == "linux"
-# rocJPEG (the ROCm GPU JPEG backend) is decode-only: AMD provides no GPU JPEG
-# encoder, so the CUDA encode tests can't pass on ROCm.
 IS_ROCM = torch.version.hip is not None
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 WEBP_TEST_IMAGES_DIR = os.environ.get("WEBP_TEST_IMAGES_DIR", "")
@@ -429,9 +427,7 @@ def test_decode_jpegs_cuda(mode, scripted):
         futures = [executor.submit(decode_fn, encoded_images, mode, "cuda") for _ in range(num_workers)]
     decoded_images_threaded = [future.result() for future in futures]
     assert len(decoded_images_threaded) == num_workers
-    # rocJPEG's color conversion differs slightly from nvJPEG, so it needs a
-    # looser tolerance against the CPU reference.
-    tol = 2.5 if torch.version.hip is not None else 2
+    tol = 2.5 if IS_ROCM else 2
     for decoded_images in decoded_images_threaded:
         assert len(decoded_images) == len(encoded_images)
         for decoded_image_cuda, decoded_image_cpu in zip(decoded_images, decoded_images_cpu):

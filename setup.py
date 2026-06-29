@@ -444,23 +444,19 @@ def make_image_extension():
         else:
             warnings.warn("Building torchvision without WEBP support")
 
-    # NVJPEG is needed here for the GPU JPEG *encoder* (encode_jpegs_cuda.cpp). The
-    # GPU decoder lives in the stable extension (see make_image_stable_extension).
-    # ROCm has no rocJPEG equivalent for encoding, so the HIP encoder is always a
-    # stub and this extension needs nothing from rocJPEG.
-    if not IS_ROCM:
-        if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
-            nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
+    # NVJPEG is needed here for the GPU JPEG *encoder*, not supported by ROCM.
+    if USE_NVJPEG and not IS_ROCM and (torch.cuda.is_available() or FORCE_CUDA):
+        nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
 
-            if nvjpeg_found:
-                print("Building torchvision with NVJPEG image support")
-                libraries.append("nvjpeg")
-                define_macros += [("NVJPEG_FOUND", 1)]
-                Extension = CUDAExtension
-            else:
-                warnings.warn("Building torchvision without NVJPEG support")
-        elif USE_NVJPEG:
+        if nvjpeg_found:
+            print("Building torchvision with NVJPEG image support")
+            libraries.append("nvjpeg")
+            define_macros += [("NVJPEG_FOUND", 1)]
+            Extension = CUDAExtension
+        else:
             warnings.warn("Building torchvision without NVJPEG support")
+    elif USE_NVJPEG and not IS_ROCM:
+        warnings.warn("Building torchvision without NVJPEG support")
 
     return Extension(
         name="torchvision.image",
@@ -489,9 +485,6 @@ def make_image_stable_extension():
         + _stable(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
     )
 
-    # This extension holds the GPU JPEG *decoder*, which is the only consumer of
-    # nvJPEG decoding / rocJPEG (rocJPEG is decode-only). IS_ROCM and CUDA are
-    # mutually exclusive, so these two blocks are independent.
     Extension = CppExtension
     if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
