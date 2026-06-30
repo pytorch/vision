@@ -77,6 +77,35 @@ if [[ $GPU_ARCH_TYPE == 'cuda' || $GPU_ARCH_TYPE == 'rocm' ]]; then
 fi
 echo '::endgroup::'
 
+if [[ $GPU_ARCH_TYPE == 'rocm' ]]; then
+  echo '::group::Install rocJPEG SDK'
+  # rocJPEG is shipped as a separate SDK package and isn't in the base ROCm
+  # builder image. Without its header ($ROCM_HOME/include/rocjpeg/rocjpeg.h)
+  # setup.py silently builds the HIP jpeg ops as stubs ("not compiled with
+  # nvJPEG support"), so install it before building torchvision.
+  #
+  # rocjpeg-devel requires libva-devel >= 2.16.0 or libva-amdgpu-devel. The base
+  # image's libva-devel is too old and libva-amdgpu-devel lives in AMD's separate
+  # "graphics" repo (not the rocm repo), so add that repo first. Derive the ROCm
+  # version from the existing rocm repo config, falling back to 7.1.1.
+  rocm_ver=$(grep -rhoE 'repo\.radeon\.com/rocm/[^/]+/[0-9][0-9.]*' /etc/yum.repos.d/ \
+    | grep -oE '[0-9][0-9.]*$' | head -1)
+  rocm_ver=${rocm_ver:-7.1.1}
+  cat > /etc/yum.repos.d/amdgpu-graphics.repo <<EOF
+[amdgpu-graphics]
+name=AMD Graphics ${rocm_ver} repository
+baseurl=https://repo.radeon.com/graphics/${rocm_ver}/el/8/main/x86_64/
+enabled=1
+priority=50
+gpgcheck=1
+gpgkey=https://repo.radeon.com/rocm/rocm.gpg.key
+EOF
+  dnf clean all
+  dnf install -y libva-amdgpu-devel rocjpeg-devel \
+    || yum install -y libva-amdgpu-devel rocjpeg-devel
+  echo '::endgroup::'
+fi
+
 echo '::group::Install TorchVision'
 pip install -e . -v --no-build-isolation
 echo '::endgroup::'
