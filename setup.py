@@ -170,6 +170,7 @@ STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cud
 STABLE_SOURCES.add(
     CSRS_DIR / ("io/image/hip/decode_jpegs_cuda.cpp" if IS_ROCM else "io/image/cuda/decode_jpegs_cuda.cpp")
 )
+STABLE_SOURCES.add(CSRS_DIR / "io/image/cuda/encode_jpegs_cuda.cpp")
 
 
 def _not_stable(paths):

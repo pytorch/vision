@@ -20,7 +20,6 @@ static auto registry =
         .op("image::write_file", &write_file)
         .op("image::decode_image(Tensor data, int mode, bool apply_exif_orientation=False) -> Tensor",
             &decode_image)
-        .op("image::encode_jpegs_cuda", &encode_jpegs_cuda)
         .op("image::_jpeg_version", &_jpeg_version)
         .op("image::_is_compiled_against_turbo", &_is_compiled_against_turbo);
 
