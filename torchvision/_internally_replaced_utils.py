@@ -23,6 +23,41 @@ except ImportError:
     from torch.utils.model_zoo import load_url as load_state_dict_from_url  # noqa: 401
 
 
+def _preload_image_stable_cuda_libs():
+    # image_stable links nvjpeg, which torch does not bundle, so on a wheel install without a
+    # system CUDA it may not be on the loader path and image_stable fails to load. We try to
+    # locate nvjpeg in the CUDA toolkit (CUDA_PATH/CUDA_HOME, then nvcc) and preload it; on
+    # Windows a .pyd import does not search PATH, so we also scan PATH, where the CUDA
+    # installer's DLL dir lands. No-op if already loaded or not found.
+    import ctypes
+    import glob
+    import shutil
+
+    win = os.name == "nt"
+    subdirs = ("bin", os.path.join("bin", "x64")) if win else ("lib64", "lib")
+    pattern = "nvjpeg64_*.dll" if win else "libnvjpeg.so*"
+
+    def _load(path):
+        return ctypes.WinDLL(path) if win else ctypes.CDLL(path, mode=ctypes.RTLD_GLOBAL)
+
+    cuda_homes = [os.environ.get("CUDA_PATH"), os.environ.get("CUDA_HOME")]
+    if nvcc := shutil.which("nvcc"):
+        cuda_homes.append(os.path.dirname(os.path.dirname(nvcc)))
+    lib_dirs = []
+    for cuda_home in filter(None, cuda_homes):
+        lib_dirs += [os.path.join(cuda_home, d) for d in subdirs]
+        lib_dirs += glob.glob(os.path.join(cuda_home, "targets", "*", "lib"))
+    if win:
+        lib_dirs += os.environ.get("PATH", "").split(os.pathsep)
+    for lib_dir in lib_dirs:
+        for path in sorted(glob.glob(os.path.join(lib_dir, pattern)), reverse=True):
+            try:
+                _load(path)
+                return
+            except OSError:
+                continue
+
+
 def _get_extension_path(lib_name):
 
     lib_dir = os.path.dirname(__file__)
@@ -40,6 +75,8 @@ def _get_extension_path(lib_name):
         os.add_dll_directory(lib_dir)
 
         kernel32.SetErrorMode(prev_error_mode)
+    if lib_name == "image_stable":
+        _preload_image_stable_cuda_libs()
 
     loader_details = (importlib.machinery.ExtensionFileLoader, importlib.machinery.EXTENSION_SUFFIXES)
 
