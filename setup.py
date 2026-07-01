@@ -394,8 +394,6 @@ def make_image_extension():
 
     if IS_ROCM:
         sources += _not_stable(image_dir.glob("hip/*.cpp"))
-        # we need to exclude this in favor of the hipified source
-        sources.remove(image_dir / "image.cpp")
     else:
         sources += _not_stable(image_dir.glob("cuda/*.cpp"))
 
@@ -444,20 +442,6 @@ def make_image_extension():
             define_macros += [("WEBP_FOUND", 1)]
         else:
             warnings.warn("Building torchvision without WEBP support")
-
-    # NVJPEG is needed here for the GPU JPEG *encoder*, not supported by ROCM.
-    if USE_NVJPEG and not IS_ROCM and (torch.cuda.is_available() or FORCE_CUDA):
-        nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
-
-        if nvjpeg_found:
-            print("Building torchvision with NVJPEG image support")
-            libraries.append("nvjpeg")
-            define_macros += [("NVJPEG_FOUND", 1)]
-            Extension = CUDAExtension
-        else:
-            warnings.warn("Building torchvision without NVJPEG support")
-    elif USE_NVJPEG and not IS_ROCM:
-        warnings.warn("Building torchvision without NVJPEG support")
 
     return Extension(
         name="torchvision.image",
