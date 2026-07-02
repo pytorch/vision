@@ -1,10 +1,12 @@
 #pragma once
-#include <torch/types.h>
+
+#include <torch/csrc/stable/device.h>
+#include <torch/csrc/stable/tensor.h>
 #include <vector>
+
 #if NVJPEG_FOUND
 
-#include <c10/cuda/CUDAGuard.h>
-#include <c10/cuda/CUDAStream.h>
+#include <cuda_runtime.h>
 #include <nvjpeg.h>
 
 namespace vision {
@@ -12,23 +14,28 @@ namespace image {
 
 class CUDAJpegEncoder {
  public:
-  CUDAJpegEncoder(const torch::Device& device);
+  CUDAJpegEncoder(const torch::stable::Device& target_device);
   ~CUDAJpegEncoder();
 
-  torch::Tensor encode_jpeg(const torch::Tensor& src_image);
+  torch::stable::Tensor encode_jpeg(const torch::stable::Tensor& src_image);
 
   void set_quality(const int64_t quality);
 
-  const torch::Device original_device;
-  const torch::Device target_device;
-  const c10::cuda::CUDAStream stream;
-  const c10::cuda::CUDAStream current_stream;
+  const torch::stable::Device original_device;
+  const torch::stable::Device target_device;
+  cudaStream_t stream;
+  cudaStream_t current_stream;
 
  protected:
   nvjpegEncoderState_t nv_enc_state;
   nvjpegEncoderParams_t nv_enc_params;
   nvjpegHandle_t nvjpeg_handle;
 };
+
+std::vector<torch::stable::Tensor> encode_jpegs_cuda(
+    const std::vector<torch::stable::Tensor>& decoded_images,
+    const int64_t quality);
+
 } // namespace image
 } // namespace vision
 #endif
