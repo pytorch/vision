@@ -165,6 +165,7 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/mps/nms_kernel.mm",
     CSRS_DIR / "ops/quantized/cpu/qnms_kernel.cpp",
     CSRS_DIR / "io/image/common_stable.cpp",
+    CSRS_DIR / "io/image/cpu/encode_png.cpp",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 STABLE_SOURCES.add(
@@ -471,6 +472,18 @@ def make_image_stable_extension():
     )
 
     Extension = CppExtension
+
+    if USE_PNG:
+        png_found, png_include_dir, png_library_dir, png_library = find_libpng()
+        if png_found:
+            print("Building torchvision with PNG image support")
+            include_dirs.append(png_include_dir)
+            library_dirs.append(png_library_dir)
+            libraries.append(png_library)
+            define_macros += [("PNG_FOUND", 1)]
+        else:
+            warnings.warn("Building torchvision without PNG support")
+
     if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
         if nvjpeg_found:
