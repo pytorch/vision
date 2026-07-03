@@ -6,5 +6,4 @@
 #include "cpu/decode_png.h"
 #include "cpu/decode_webp.h"
 #include "cpu/encode_jpeg.h"
-#include "cpu/encode_png.h"
 #include "cpu/read_write_file.h"
