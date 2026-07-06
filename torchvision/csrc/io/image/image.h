@@ -5,5 +5,4 @@
 #include "cpu/decode_jpeg.h"
 #include "cpu/decode_png.h"
 #include "cpu/decode_webp.h"
-#include "cpu/encode_jpeg.h"
 #include "cpu/read_write_file.h"
