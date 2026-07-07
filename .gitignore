@@ -45,3 +45,7 @@ xcuserdata/
 .envrc
 
 scripts/release_notes/data.json
+.aider*
+
+__pycache__/
+.pytest_cache/

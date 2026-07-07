@@ -1,5 +1,13 @@
 # torchvision
 
+## Fork Notice
+
+Maintained by [Nueramarcos](https://github.com/Nueramarcos). See [FORK.md](FORK.md).
+
+[![License](https://img.shields.io/github/license/pytorch/vision)](https://github.com/pytorch/vision/blob/main/LICENSE)
+[![Language](https://img.shields.io/github/languages/top/pytorch/vision?color=blue)](https://github.com/pytorch/vision/search?q=language:)
+[![Fork Smoke](https://github.com/Nueramarcos/vision/actions/workflows/fork-smoke.yml/badge.svg)](https://github.com/Nueramarcos/vision/actions/workflows/fork-smoke.yml)
+
 [![total torchvision downloads](https://pepy.tech/badge/torchvision)](https://pepy.tech/project/torchvision)
 [![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchvision%2Fjson&query=%24.info.version&colorB=brightgreen&prefix=v)](https://pytorch.org/vision/stable/index.html)
 
@@ -27,7 +35,6 @@ versions.
 | `2.9`              | `0.24`             | `>=3.10`, `<=3.14`  |
 | `2.8`              | `0.23`             | `>=3.9`, `<=3.13`   |
 | `2.7`              | `0.22`             | `>=3.9`, `<=3.13`   |
-| `2.6`              | `0.21`             | `>=3.9`, `<=3.12`   |
 
 <details>
     <summary>older versions</summary>
@@ -66,7 +73,7 @@ Torchvision currently supports the following image backends:
     - [Pillow](https://python-pillow.org/)
     - [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - a **much faster** drop-in replacement for Pillow with SIMD.
 
-Read more in in our [docs](https://pytorch.org/vision/stable/transforms.html).
+Read more in our [docs](https://pytorch.org/vision/stable/transforms.html).
 
 ## Documentation
 
@@ -108,4 +115,5 @@ If you find TorchVision useful in your work, please consider citing the followin
     publisher    = {GitHub},
     howpublished = {\url{https://github.com/pytorch/vision}}
 }
+```
 ```
