@@ -166,6 +166,7 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/quantized/cpu/qnms_kernel.cpp",
     CSRS_DIR / "io/image/common_stable.cpp",
     CSRS_DIR / "io/image/cpu/encode_png.cpp",
+    CSRS_DIR / "io/image/cpu/encode_jpeg.cpp",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 STABLE_SOURCES.add(
@@ -470,6 +471,8 @@ def make_image_stable_extension():
         + _stable(image_dir.glob("cpu/*.cpp"))
         + _stable(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
     )
+    # Shared libjpeg glue. Legacy decode_jpeg still needs it, so it builds into both extensions.
+    sources.append(image_dir / "cpu/common_jpeg.cpp")
 
     Extension = CppExtension
 
@@ -483,6 +486,18 @@ def make_image_stable_extension():
             define_macros += [("PNG_FOUND", 1)]
         else:
             warnings.warn("Building torchvision without PNG support")
+
+    if USE_JPEG:
+        jpeg_found, jpeg_include_dir, jpeg_library_dir = find_library(header="jpeglib.h")
+        if jpeg_found:
+            print("Building torchvision with JPEG image support")
+            if jpeg_include_dir is not None and jpeg_library_dir is not None:
+                include_dirs.append(jpeg_include_dir)
+                library_dirs.append(jpeg_library_dir)
+            libraries.append("jpeg")
+            define_macros += [("JPEG_FOUND", 1)]
+        else:
+            warnings.warn("Building torchvision without JPEG support")
 
     if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
