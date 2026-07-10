@@ -14,8 +14,6 @@ static auto registry =
             &decode_jpeg)
         .op("image::decode_webp(Tensor encoded_data, int mode) -> Tensor",
             &decode_webp)
-        .op("image::read_file", &read_file)
-        .op("image::write_file", &write_file)
         .op("image::decode_image(Tensor data, int mode, bool apply_exif_orientation=False) -> Tensor",
             &decode_image)
         .op("image::_jpeg_version", &_jpeg_version)
