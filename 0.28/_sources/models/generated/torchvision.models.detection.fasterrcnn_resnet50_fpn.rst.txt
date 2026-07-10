@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.detection
+
+
+fasterrcnn_resnet50_fpn
+=======================
+
+.. autofunction:: fasterrcnn_resnet50_fpn

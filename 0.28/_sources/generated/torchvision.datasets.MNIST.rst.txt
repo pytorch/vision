@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+MNIST
+=====
+
+.. autoclass:: MNIST
+    :members:
+        __getitem__,
+        
+    :special-members:

@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+Flickr8k
+========
+
+.. autoclass:: Flickr8k
+    :members:
+        __getitem__,
+        
+    :special-members:
