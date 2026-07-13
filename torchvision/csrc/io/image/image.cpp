@@ -14,8 +14,6 @@ static auto registry =
             &decode_jpeg)
         .op("image::decode_webp(Tensor encoded_data, int mode) -> Tensor",
             &decode_webp)
-        .op("image::decode_image(Tensor data, int mode, bool apply_exif_orientation=False) -> Tensor",
-            &decode_image)
         .op("image::_jpeg_version", &_jpeg_version)
         .op("image::_is_compiled_against_turbo", &_is_compiled_against_turbo);
 
