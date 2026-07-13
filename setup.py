@@ -167,6 +167,8 @@ STABLE_SOURCES = {
     CSRS_DIR / "io/image/common_stable.cpp",
     CSRS_DIR / "io/image/cpu/encode_png.cpp",
     CSRS_DIR / "io/image/cpu/encode_jpeg.cpp",
+    CSRS_DIR / "io/image/cpu/read_write_file.cpp",
+    CSRS_DIR / "io/image/cpu/decode_image.cpp",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 STABLE_SOURCES.add(
