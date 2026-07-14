@@ -1,195 +1,262 @@
-#include <ATen/mps/MPSProfiler.h>
-#include <ATen/native/mps/OperationUtils.h>
-#include "mps_helpers.h"
-#include "mps_kernels.h"
+#include <torch/csrc/inductor/aoti_torch/c/shim_mps.h>
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/csrc/stable/tensor.h>
+#include <torch/headeronly/core/DeviceType.h>
+#include <torch/headeronly/core/ScalarType.h>
+#include <torch/headeronly/util/Exception.h>
+
+#include <cstdint>
+#include <string>
+#include <tuple>
+
+#include "../StableABICompat.h"
+#include "roi_pool_metal_shader.h"
 
 namespace vision {
 namespace ops {
 
 namespace {
 
-std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(const at::Tensor& input,
-                                                           const at::Tensor& rois,
-                                                           double spatial_scale,
-                                                           int64_t pooled_height,
-                                                           int64_t pooled_width) {
-  using namespace at::native::mps;
-  TORCH_CHECK(input.is_mps(), "input must be a MPS tensor");
-  TORCH_CHECK(rois.is_mps(), "rois must be a MPS tensor");
-  TORCH_CHECK(rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
+using torch::stable::Tensor;
 
-  at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
+AOTIMetalShaderLibraryHandle roi_pool_shader_library() {
+  static AOTIMetalShaderLibraryHandle library = []() {
+    AOTIMetalShaderLibraryHandle handle = nullptr;
+    TORCH_ERROR_CODE_CHECK(
+        aoti_torch_mps_create_shader_library(roi_pool_metal_shader, &handle));
+    return handle;
+  }();
+  return library;
+}
 
-  at::CheckedFrom c = "roi_pool_forward_kernel";
-  at::checkAllSameGPU(c, {input_t, rois_t});
-  at::checkAllSameType(c, {input_t, rois_t});
+const char* metal_type_string(torch::headeronly::ScalarType scalar_type) {
+  if (scalar_type == torch::headeronly::ScalarType::Float) {
+    return "float";
+  }
+  if (scalar_type == torch::headeronly::ScalarType::Half) {
+    return "half";
+  }
+  return "";
+}
+
+// spatial_scale rides in as a 1-element float32 tensor: the MPS shim has no
+// scalar-float arg setter yet (same workaround as nms's iou_threshold).
+Tensor make_scalar_tensor(const Tensor& ref, double value) {
+  Tensor t = torch::stable::new_empty(
+      ref, {1}, torch::headeronly::ScalarType::Float);
+  torch::stable::fill_(t, value);
+  return t;
+}
+
+struct RoiPoolForwardArgs {
+  AtenTensorHandle input;
+  AtenTensorHandle rois;
+  AtenTensorHandle output;
+  AtenTensorHandle argmax;
+  int64_t output_size;
+  int64_t channels;
+  int64_t height;
+  int64_t width;
+  int64_t pooled_height;
+  int64_t pooled_width;
+  AtenTensorHandle spatial_scale;
+};
+
+void roi_pool_forward_encode(
+    AOTIMetalKernelFunctionHandle func,
+    void* user_data) {
+  const auto* a = static_cast<const RoiPoolForwardArgs*>(user_data);
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_start_encoding(func));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_tensor(func, 0, a->input));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_tensor(func, 1, a->rois));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_tensor(func, 2, a->output));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_tensor(func, 3, a->argmax));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 4, a->output_size));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 5, a->channels));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 6, a->height));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 7, a->width));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 8, a->pooled_height));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 9, a->pooled_width));
+  TORCH_ERROR_CODE_CHECK(
+      aoti_torch_mps_set_arg_tensor(func, 10, a->spatial_scale));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_dispatch_single(
+      func, static_cast<uint64_t>(a->output_size)));
+}
+
+struct RoiPoolBackwardArgs {
+  AtenTensorHandle grad;
+  AtenTensorHandle rois;
+  AtenTensorHandle argmax;
+  AtenTensorHandle grad_input;
+  int64_t output_size;
+  int64_t channels;
+  int64_t height;
+  int64_t width;
+  int64_t pooled_height;
+  int64_t pooled_width;
+  AtenTensorHandle spatial_scale;
+  int64_t n_stride;
+  int64_t c_stride;
+  int64_t h_stride;
+  int64_t w_stride;
+};
+
+void roi_pool_backward_encode(
+    AOTIMetalKernelFunctionHandle func,
+    void* user_data) {
+  const auto* a = static_cast<const RoiPoolBackwardArgs*>(user_data);
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_start_encoding(func));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_tensor(func, 0, a->grad));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_tensor(func, 1, a->rois));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_tensor(func, 2, a->argmax));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_tensor(func, 3, a->grad_input));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 4, a->output_size));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 5, a->channels));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 6, a->height));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 7, a->width));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 8, a->pooled_height));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 9, a->pooled_width));
+  TORCH_ERROR_CODE_CHECK(
+      aoti_torch_mps_set_arg_tensor(func, 10, a->spatial_scale));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 11, a->n_stride));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 12, a->c_stride));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 13, a->h_stride));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_set_arg_int(func, 14, a->w_stride));
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_dispatch_single(
+      func, static_cast<uint64_t>(a->output_size)));
+}
+
+std::tuple<Tensor, Tensor> roi_pool_forward_kernel(
+    const Tensor& input,
+    const Tensor& rois,
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width) {
+  STD_TORCH_CHECK(
+      input.device().type() == torch::headeronly::DeviceType::MPS,
+      "input must be a MPS tensor");
+  STD_TORCH_CHECK(
+      rois.device().type() == torch::headeronly::DeviceType::MPS,
+      "rois must be a MPS tensor");
+  STD_TORCH_CHECK(rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
 
   int64_t num_rois = rois.size(0);
   int64_t channels = input.size(1);
   int64_t height = input.size(2);
   int64_t width = input.size(3);
-  float spatial_scale_f = static_cast<float>(spatial_scale);
 
-  at::Tensor output = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.options());
-  at::Tensor argmax = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.options().dtype(at::kLong));
-
-  int64_t output_size = num_rois * pooled_height * pooled_width * channels;
-
-  if (output.numel() == 0) {
+  Tensor output = torch::stable::new_empty(
+      input, {num_rois, channels, pooled_height, pooled_width});
+  Tensor argmax = torch::stable::new_empty(
+      input,
+      {num_rois, channels, pooled_height, pooled_width},
+      torch::headeronly::ScalarType::Long);
+  int64_t output_size = output.numel();
+  if (output_size == 0) {
     return std::make_tuple(output, argmax);
   }
 
-  auto input_ = input.contiguous();
-  auto rois_ = rois.contiguous();
+  Tensor input_ = torch::stable::contiguous(input);
+  Tensor rois_ = torch::stable::contiguous(rois);
+  Tensor spatial_scale_t = make_scalar_tensor(input_, spatial_scale);
 
-  id<MTLBuffer> inputBuffer = getMTLBufferStorage(input_);
-  id<MTLBuffer> roisBuffer = getMTLBufferStorage(rois_);
-  id<MTLBuffer> outputBuffer = getMTLBufferStorage(output);
-  id<MTLBuffer> argmaxBuffer = getMTLBufferStorage(argmax);
-  id<MTLDevice> device = MPSDevice::getInstance()->device();
-  MPSStream* mpsStream = getCurrentMPSStream();
-  dispatch_sync(mpsStream->queue(), ^() {
-    @autoreleasepool {
-      id<MTLComputeCommandEncoder> computeEncoder = mpsStream->commandEncoder();
-      MTLSize threadgroupsPerGrid = MTLSizeMake(
-          std::min(ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)), static_cast<int64_t>(4096)),
-          1,
-          1);
+  const std::string kernel =
+      "roi_pool_" + std::string(metal_type_string(input_.scalar_type()));
+  AOTIMetalKernelFunctionHandle func = nullptr;
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
+      roi_pool_shader_library(), kernel.c_str(), &func));
 
-      const std::string kernel = "roi_pool_" + scalarToMetalTypeString(input.scalar_type());
-      id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
-
-      // this function call is a no-op if MPS Profiler is not enabled
-      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input_, rois_});
-
-      [computeEncoder setComputePipelineState:visionPSO];
-      // [N, C, H, W]
-      [computeEncoder setBuffer:inputBuffer offset:input_.storage_offset() * input_.element_size() atIndex:0];
-      [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
-      [computeEncoder setBuffer:outputBuffer offset:output.storage_offset() * output.element_size() atIndex:2];
-      [computeEncoder setBuffer:argmaxBuffer offset:argmax.storage_offset() * argmax.element_size() atIndex:3];
-
-      [computeEncoder setBytes:&output_size length:sizeof(int64_t) atIndex:4];
-      [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:5];
-      [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:6];
-      [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:7];
-      [computeEncoder setBytes:&pooled_height length:sizeof(int64_t) atIndex:8];
-      [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:9];
-      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:10];
-
-      // A threadGroup is equivalent to a cuda's block.
-      NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
-      if (tgSize > threadsPerBlock) {
-        tgSize = threadsPerBlock;
-      }
-
-      MTLSize threadGroupSize = MTLSizeMake(tgSize, 1, 1);
-      [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
-
-      getMPSProfiler().endProfileKernel(visionPSO);
-    }
-  });
+  RoiPoolForwardArgs args{
+      input_.get(),
+      rois_.get(),
+      output.get(),
+      argmax.get(),
+      output_size,
+      channels,
+      height,
+      width,
+      pooled_height,
+      pooled_width,
+      spatial_scale_t.get()};
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_run_command_block(
+      func, &roi_pool_forward_encode, &args));
   return std::make_tuple(output, argmax);
 }
 
-at::Tensor roi_pool_backward_kernel(const at::Tensor& grad,
-                                    const at::Tensor& rois,
-                                    const at::Tensor& argmax,
-                                    double spatial_scale,
-                                    int64_t pooled_height,
-                                    int64_t pooled_width,
-                                    int64_t batch_size,
-                                    int64_t channels,
-                                    int64_t height,
-                                    int64_t width) {
-  using namespace at::native::mps;
-  TORCH_CHECK(grad.is_mps(), "grad must be a MPS tensor");
-  TORCH_CHECK(rois.is_mps(), "rois must be a MPS tensor");
-  TORCH_CHECK(grad.scalar_type() != at::kHalf, "MPS does not support roi_pool backward with float16 inputs.");
-  TORCH_CHECK(argmax.is_mps(), "argmax must be a MPS tensor");
+Tensor roi_pool_backward_kernel(
+    const Tensor& grad,
+    const Tensor& rois,
+    const Tensor& argmax,
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t batch_size,
+    int64_t channels,
+    int64_t height,
+    int64_t width) {
+  STD_TORCH_CHECK(
+      grad.device().type() == torch::headeronly::DeviceType::MPS,
+      "grad must be a MPS tensor");
+  STD_TORCH_CHECK(
+      rois.device().type() == torch::headeronly::DeviceType::MPS,
+      "rois must be a MPS tensor");
+  STD_TORCH_CHECK(
+      argmax.device().type() == torch::headeronly::DeviceType::MPS,
+      "argmax must be a MPS tensor");
+  STD_TORCH_CHECK(
+      grad.scalar_type() != torch::headeronly::ScalarType::Half,
+      "MPS does not support roi_pool backward with float16 inputs.");
 
-  at::TensorArg grad_t{grad, "input", 1}, rois_t{rois, "rois", 2}, argmax_t{argmax, "argmax", 3};
-
-  at::CheckedFrom c = "roi_pool_backward_kernel";
-  at::checkAllSameGPU(c, {grad_t, rois_t, argmax_t});
-  at::checkAllSameType(c, {grad_t, rois_t});
-
-  float spatial_scale_f = static_cast<float>(spatial_scale);
-
-  at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
-
+  Tensor grad_input = torch::stable::new_zeros(
+      grad, {batch_size, channels, height, width});
   if (grad.numel() == 0) {
     return grad_input;
   }
 
-  int64_t n_stride = grad.stride(0);
-  int64_t c_stride = grad.stride(1);
-  int64_t h_stride = grad.stride(2);
-  int64_t w_stride = grad.stride(3);
-  int64_t output_size = grad.numel();
+  Tensor grad_ = torch::stable::contiguous(grad);
+  Tensor rois_ = torch::stable::contiguous(rois);
+  Tensor argmax_ = torch::stable::contiguous(argmax);
+  Tensor spatial_scale_t = make_scalar_tensor(grad_, spatial_scale);
 
-  at::globalContext().alertNotDeterministic("roi_pool_backward_kernel");
-  auto argmax_ = argmax.contiguous(), rois_ = rois.contiguous();
+  int64_t output_size = grad_.numel();
+  int64_t w_stride = 1;
+  int64_t h_stride = pooled_width;
+  int64_t c_stride = pooled_height * pooled_width;
+  int64_t n_stride = channels * pooled_height * pooled_width;
 
-  id<MTLBuffer> inputBuffer = getMTLBufferStorage(grad);
-  id<MTLBuffer> roisBuffer = getMTLBufferStorage(rois_);
-  id<MTLBuffer> argmaxBuffer = getMTLBufferStorage(argmax_);
-  id<MTLBuffer> outputBuffer = getMTLBufferStorage(grad_input);
-  id<MTLDevice> device = MPSDevice::getInstance()->device();
-  MPSStream* mpsStream = getCurrentMPSStream();
-  dispatch_sync(mpsStream->queue(), ^() {
-    @autoreleasepool {
-      id<MTLComputeCommandEncoder> computeEncoder = mpsStream->commandEncoder();
-      MTLSize threadgroupsPerGrid = MTLSizeMake(
-          std::min(ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)), static_cast<int64_t>(4096)),
-          1,
-          1);
+  const std::string kernel = "roi_pool_backward_" +
+      std::string(metal_type_string(grad_.scalar_type()));
+  AOTIMetalKernelFunctionHandle func = nullptr;
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
+      roi_pool_shader_library(), kernel.c_str(), &func));
 
-      const std::string kernel = "roi_pool_backward_" + scalarToMetalTypeString(grad.scalar_type());
-      id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
-
-      // this function call is a no-op if MPS Profiler is not enabled
-      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {grad, rois_, argmax_});
-
-      [computeEncoder setComputePipelineState:visionPSO];
-      // [N, C, H, W]
-      [computeEncoder setBuffer:inputBuffer offset:grad.storage_offset() * grad.element_size() atIndex:0];
-      [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
-      [computeEncoder setBuffer:argmaxBuffer offset:argmax_.storage_offset() * argmax_.element_size() atIndex:2];
-      [computeEncoder setBuffer:outputBuffer offset:grad_input.storage_offset() * grad_input.element_size() atIndex:3];
-
-      [computeEncoder setBytes:&output_size length:sizeof(int64_t) atIndex:4];
-      [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:5];
-      [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:6];
-      [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:7];
-      [computeEncoder setBytes:&pooled_height length:sizeof(int64_t) atIndex:8];
-      [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:9];
-      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:10];
-      [computeEncoder setBytes:&n_stride length:sizeof(int64_t) atIndex:11];
-      [computeEncoder setBytes:&c_stride length:sizeof(int64_t) atIndex:12];
-      [computeEncoder setBytes:&h_stride length:sizeof(int64_t) atIndex:13];
-      [computeEncoder setBytes:&w_stride length:sizeof(int64_t) atIndex:14];
-
-      // A threadGroup is equivalent to a cuda's block.
-      NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
-      if (tgSize > threadsPerBlock) {
-        tgSize = threadsPerBlock;
-      }
-
-      MTLSize threadGroupSize = MTLSizeMake(tgSize, 1, 1);
-      [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
-
-      getMPSProfiler().endProfileKernel(visionPSO);
-    }
-  });
+  RoiPoolBackwardArgs args{
+      grad_.get(),
+      rois_.get(),
+      argmax_.get(),
+      grad_input.get(),
+      output_size,
+      channels,
+      height,
+      width,
+      pooled_height,
+      pooled_width,
+      spatial_scale_t.get(),
+      n_stride,
+      c_stride,
+      h_stride,
+      w_stride};
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_run_command_block(
+      func, &roi_pool_backward_encode, &args));
   return grad_input;
 }
 
 } // namespace
 
-TORCH_LIBRARY_IMPL(torchvision, MPS, m) {
-  m.impl(TORCH_SELECTIVE_NAME("torchvision::roi_pool"), TORCH_FN(roi_pool_forward_kernel));
-  m.impl(TORCH_SELECTIVE_NAME("torchvision::_roi_pool_backward"), TORCH_FN(roi_pool_backward_kernel));
+STABLE_TORCH_LIBRARY_IMPL(torchvision, MPS, m) {
+  m.impl("roi_pool", TORCH_BOX(&roi_pool_forward_kernel));
+  m.impl("_roi_pool_backward", TORCH_BOX(&roi_pool_backward_kernel));
 }
 
 } // namespace ops
