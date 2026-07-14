@@ -8,27 +8,10 @@
 #include "decode_gif.h"
 #include "decode_jpeg.h"
 #include "decode_png.h"
+#include "decode_webp.h"
 
 namespace vision {
 namespace image {
-
-namespace {
-
-// Shim over the legacy image::decode_webp op
-// not yet on the stable ABI.
-// TODO(stable-abi): remove the shim once the decoder is ported.
-torch::stable::Tensor decode_webp(
-    const torch::stable::Tensor& data,
-    ImageReadMode mode) {
-  const auto num_args = 2;
-  std::array<StableIValue, num_args> stack{
-      torch::stable::detail::from(data), torch::stable::detail::from(mode)};
-  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
-      "image::decode_webp", "", stack.data(), TORCH_ABI_VERSION));
-  return torch::stable::detail::to<torch::stable::Tensor>(stack[0]);
-}
-
-} // namespace
 
 torch::stable::Tensor decode_image(
     const torch::stable::Tensor& data,
