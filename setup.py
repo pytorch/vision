@@ -163,6 +163,7 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/nms.cpp",
     CSRS_DIR / "ops/cpu/nms_kernel.cpp",
     CSRS_DIR / "ops/mps/nms_kernel.mm",
+    CSRS_DIR / "ops/mps/ps_roi_pool_kernel.mm",
     CSRS_DIR / "ops/quantized/cpu/qnms_kernel.cpp",
     CSRS_DIR / "io/image/common_stable.cpp",
     CSRS_DIR / "io/image/cpu/encode_png.cpp",
