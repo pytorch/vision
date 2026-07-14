@@ -5,13 +5,15 @@
 
 #include <cstring>
 
+#include "decode_png.h"
+
 namespace vision {
 namespace image {
 
 namespace {
 
-// Shims over the legacy image::decode_jpeg, decode_png, decode_gif and
-// decode_webp ops not yet on the stable ABI.
+// Shims over the legacy image::decode_jpeg, decode_gif and decode_webp ops
+// not yet on the stable ABI.
 // TODO(stable-abi): remove each shim once its decoder is ported.
 torch::stable::Tensor decode_jpeg(
     const torch::stable::Tensor& data,
@@ -24,20 +26,6 @@ torch::stable::Tensor decode_jpeg(
       torch::stable::detail::from(apply_exif_orientation)};
   TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
       "image::decode_jpeg", "", stack.data(), TORCH_ABI_VERSION));
-  return torch::stable::detail::to<torch::stable::Tensor>(stack[0]);
-}
-
-torch::stable::Tensor decode_png(
-    const torch::stable::Tensor& data,
-    ImageReadMode mode,
-    bool apply_exif_orientation) {
-  const auto num_args = 3;
-  std::array<StableIValue, num_args> stack{
-      torch::stable::detail::from(data),
-      torch::stable::detail::from(mode),
-      torch::stable::detail::from(apply_exif_orientation)};
-  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
-      "image::decode_png", "", stack.data(), TORCH_ABI_VERSION));
   return torch::stable::detail::to<torch::stable::Tensor>(stack[0]);
 }
 

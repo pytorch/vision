@@ -8,8 +8,6 @@ namespace image {
 static auto registry =
     torch::RegisterOperators()
         .op("image::decode_gif", &decode_gif)
-        .op("image::decode_png(Tensor data, int mode, bool apply_exif_orientation=False) -> Tensor",
-            &decode_png)
         .op("image::decode_jpeg(Tensor data, int mode, bool apply_exif_orientation=False) -> Tensor",
             &decode_jpeg)
         .op("image::decode_webp(Tensor encoded_data, int mode) -> Tensor",
