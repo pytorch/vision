@@ -169,6 +169,7 @@ STABLE_SOURCES = {
     CSRS_DIR / "io/image/cpu/encode_jpeg.cpp",
     CSRS_DIR / "io/image/cpu/read_write_file.cpp",
     CSRS_DIR / "io/image/cpu/decode_image.cpp",
+    CSRS_DIR / "io/image/cpu/decode_png.cpp",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 STABLE_SOURCES.add(
@@ -402,19 +403,6 @@ def make_image_extension():
         sources += _not_stable(image_dir.glob("cuda/*.cpp"))
 
     Extension = CppExtension
-
-    if USE_PNG:
-        png_found, png_include_dir, png_library_dir, png_library = find_libpng()
-        if png_found:
-            print("Building torchvision with PNG support")
-            print(f"{png_include_dir = }")
-            print(f"{png_library_dir = }")
-            include_dirs.append(png_include_dir)
-            library_dirs.append(png_library_dir)
-            libraries.append(png_library)
-            define_macros += [("PNG_FOUND", 1)]
-        else:
-            warnings.warn("Building torchvision without PNG support")
 
     if USE_JPEG:
         jpeg_found, jpeg_include_dir, jpeg_library_dir = find_library(header="jpeglib.h")

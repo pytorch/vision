@@ -29,5 +29,21 @@ inline torch::stable::Tensor stable_permute(
   return torch::stable::detail::to<torch::stable::Tensor>(stack[0]);
 }
 
+// Stable-ABI missing flip op, shimmed with the same dispatcher idiom as
+// stable_permute.
+// TODO(stable-abi): remove once flip lands in the stable ABI upstream.
+inline torch::stable::Tensor stable_flip(
+    const torch::stable::Tensor& self,
+    std::vector<int64_t> dims) {
+  const auto num_args = 2;
+  std::array<StableIValue, num_args> stack{
+      torch::stable::detail::from(self), torch::stable::detail::from(dims)};
+  TORCH_ERROR_CODE_CHECK(
+      torch_call_dispatcher("aten::flip", "", stack.data(), TORCH_ABI_VERSION));
+  return torch::stable::detail::to<torch::stable::Tensor>(stack[0]);
+}
+
+void validate_encoded_data(const torch::stable::Tensor& encoded_data);
+
 } // namespace image
 } // namespace vision
