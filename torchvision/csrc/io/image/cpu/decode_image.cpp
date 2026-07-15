@@ -5,6 +5,8 @@
 
 #include <cstring>
 
+#include "decode_gif.h"
+#include "decode_jpeg.h"
 #include "decode_png.h"
 
 namespace vision {
@@ -12,31 +14,9 @@ namespace image {
 
 namespace {
 
-// Shims over the legacy image::decode_jpeg, decode_gif and decode_webp ops
+// Shim over the legacy image::decode_webp op
 // not yet on the stable ABI.
-// TODO(stable-abi): remove each shim once its decoder is ported.
-torch::stable::Tensor decode_jpeg(
-    const torch::stable::Tensor& data,
-    ImageReadMode mode,
-    bool apply_exif_orientation) {
-  const auto num_args = 3;
-  std::array<StableIValue, num_args> stack{
-      torch::stable::detail::from(data),
-      torch::stable::detail::from(mode),
-      torch::stable::detail::from(apply_exif_orientation)};
-  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
-      "image::decode_jpeg", "", stack.data(), TORCH_ABI_VERSION));
-  return torch::stable::detail::to<torch::stable::Tensor>(stack[0]);
-}
-
-torch::stable::Tensor decode_gif(const torch::stable::Tensor& data) {
-  const auto num_args = 1;
-  std::array<StableIValue, num_args> stack{torch::stable::detail::from(data)};
-  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
-      "image::decode_gif", "", stack.data(), TORCH_ABI_VERSION));
-  return torch::stable::detail::to<torch::stable::Tensor>(stack[0]);
-}
-
+// TODO(stable-abi): remove the shim once the decoder is ported.
 torch::stable::Tensor decode_webp(
     const torch::stable::Tensor& data,
     ImageReadMode mode) {

@@ -60,15 +60,8 @@ direct,
 
 #include <torch/headeronly/util/Exception.h>
 
-// Header-only code compiles per-TU, so stable TUs (which both build systems
-// compile with the TORCH_TARGET_VERSION pin) get stable-typed torch pieces.
-// TODO(stable-abi): drop the legacy branch once decode_jpeg migrates.
-#ifdef TORCH_TARGET_VERSION
 #include <torch/csrc/stable/ops.h>
 #include "../common_stable.h"
-#else
-#include <torch/types.h>
-#endif
 
 namespace vision {
 namespace image {
@@ -237,9 +230,6 @@ constexpr uint16_t IMAGE_ORIENTATION_RB =
     7; // mirrored horizontal & rotate 90 CW
 constexpr uint16_t IMAGE_ORIENTATION_LB = 8; // needs 270 CW rotation
 
-// Stable-typed twin of the legacy transform below for stable TUs.
-// TODO(stable-abi): drop the legacy branch once decode_jpeg migrates.
-#ifdef TORCH_TARGET_VERSION
 inline torch::stable::Tensor exif_orientation_transform(
     const torch::stable::Tensor& image,
     int orientation) {
@@ -264,32 +254,6 @@ inline torch::stable::Tensor exif_orientation_transform(
   }
   return image;
 }
-#else
-inline torch::Tensor exif_orientation_transform(
-    const torch::Tensor& image,
-    int orientation) {
-  if (orientation == IMAGE_ORIENTATION_TL) {
-    return image;
-  } else if (orientation == IMAGE_ORIENTATION_TR) {
-    return image.flip(-1);
-  } else if (orientation == IMAGE_ORIENTATION_BR) {
-    // needs 180 rotation equivalent to
-    // flip both horizontally and vertically
-    return image.flip({-2, -1});
-  } else if (orientation == IMAGE_ORIENTATION_BL) {
-    return image.flip(-2);
-  } else if (orientation == IMAGE_ORIENTATION_LT) {
-    return image.transpose(-1, -2);
-  } else if (orientation == IMAGE_ORIENTATION_RT) {
-    return image.transpose(-1, -2).flip(-1);
-  } else if (orientation == IMAGE_ORIENTATION_RB) {
-    return image.transpose(-1, -2).flip({-2, -1});
-  } else if (orientation == IMAGE_ORIENTATION_LB) {
-    return image.transpose(-1, -2).flip(-2);
-  }
-  return image;
-}
-#endif
 
 } // namespace exif_private
 } // namespace image

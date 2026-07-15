@@ -170,6 +170,13 @@ STABLE_SOURCES = {
     CSRS_DIR / "io/image/cpu/read_write_file.cpp",
     CSRS_DIR / "io/image/cpu/decode_image.cpp",
     CSRS_DIR / "io/image/cpu/decode_png.cpp",
+    CSRS_DIR / "io/image/cpu/decode_jpeg.cpp",
+    CSRS_DIR / "io/image/cpu/common_jpeg.cpp",
+    CSRS_DIR / "io/image/cpu/decode_gif.cpp",
+    CSRS_DIR / "io/image/cpu/giflib/dgif_lib.c",
+    CSRS_DIR / "io/image/cpu/giflib/gif_hash.c",
+    CSRS_DIR / "io/image/cpu/giflib/gifalloc.c",
+    CSRS_DIR / "io/image/cpu/giflib/openbsd-reallocarray.c",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 STABLE_SOURCES.add(
@@ -404,21 +411,6 @@ def make_image_extension():
 
     Extension = CppExtension
 
-    if USE_JPEG:
-        jpeg_found, jpeg_include_dir, jpeg_library_dir = find_library(header="jpeglib.h")
-        if jpeg_found:
-            print("Building torchvision with JPEG support")
-            print(f"{jpeg_include_dir = }")
-            print(f"{jpeg_library_dir = }")
-            if jpeg_include_dir is not None and jpeg_library_dir is not None:
-                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
-                include_dirs.append(jpeg_include_dir)
-                library_dirs.append(jpeg_library_dir)
-            libraries.append("jpeg")
-            define_macros += [("JPEG_FOUND", 1)]
-        else:
-            warnings.warn("Building torchvision without JPEG support")
-
     if USE_WEBP:
         webp_found, webp_include_dir, webp_library_dir = find_library(header="webp/decode.h")
         if webp_found:
@@ -459,10 +451,9 @@ def make_image_stable_extension():
     sources = (
         _stable(image_dir.glob("*.cpp"))
         + _stable(image_dir.glob("cpu/*.cpp"))
+        + _stable(image_dir.glob("cpu/giflib/*.c"))
         + _stable(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
     )
-    # Shared libjpeg glue. Legacy decode_jpeg still needs it, so it builds into both extensions.
-    sources.append(image_dir / "cpu/common_jpeg.cpp")
 
     Extension = CppExtension
 
