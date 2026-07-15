@@ -172,6 +172,11 @@ STABLE_SOURCES = {
     CSRS_DIR / "io/image/cpu/decode_png.cpp",
     CSRS_DIR / "io/image/cpu/decode_jpeg.cpp",
     CSRS_DIR / "io/image/cpu/common_jpeg.cpp",
+    CSRS_DIR / "io/image/cpu/decode_gif.cpp",
+    CSRS_DIR / "io/image/cpu/giflib/dgif_lib.c",
+    CSRS_DIR / "io/image/cpu/giflib/gif_hash.c",
+    CSRS_DIR / "io/image/cpu/giflib/gifalloc.c",
+    CSRS_DIR / "io/image/cpu/giflib/openbsd-reallocarray.c",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 STABLE_SOURCES.add(
@@ -446,6 +451,7 @@ def make_image_stable_extension():
     sources = (
         _stable(image_dir.glob("*.cpp"))
         + _stable(image_dir.glob("cpu/*.cpp"))
+        + _stable(image_dir.glob("cpu/giflib/*.c"))
         + _stable(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
     )
 
