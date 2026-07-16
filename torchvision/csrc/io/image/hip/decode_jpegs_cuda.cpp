@@ -200,6 +200,11 @@ std::vector<torch::stable::Tensor> RocJpegDecoder::decode_images(
   return output_tensors;
 }
 
+STABLE_TORCH_LIBRARY_FRAGMENT(image, m) {
+  m.def(
+      "decode_jpegs_cuda(Tensor[] encoded_images, int mode, Device device) -> Tensor[]");
+}
+
 STABLE_TORCH_LIBRARY_IMPL(image, CompositeExplicitAutograd, m) {
   m.impl("decode_jpegs_cuda", TORCH_BOX(&decode_jpegs_cuda));
 }

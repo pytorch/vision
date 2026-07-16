@@ -164,25 +164,8 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/cpu/nms_kernel.cpp",
     CSRS_DIR / "ops/mps/nms_kernel.mm",
     CSRS_DIR / "ops/quantized/cpu/qnms_kernel.cpp",
-    CSRS_DIR / "io/image/common_stable.cpp",
-    CSRS_DIR / "io/image/cpu/encode_png.cpp",
-    CSRS_DIR / "io/image/cpu/encode_jpeg.cpp",
-    CSRS_DIR / "io/image/cpu/read_write_file.cpp",
-    CSRS_DIR / "io/image/cpu/decode_image.cpp",
-    CSRS_DIR / "io/image/cpu/decode_png.cpp",
-    CSRS_DIR / "io/image/cpu/decode_jpeg.cpp",
-    CSRS_DIR / "io/image/cpu/common_jpeg.cpp",
-    CSRS_DIR / "io/image/cpu/decode_gif.cpp",
-    CSRS_DIR / "io/image/cpu/giflib/dgif_lib.c",
-    CSRS_DIR / "io/image/cpu/giflib/gif_hash.c",
-    CSRS_DIR / "io/image/cpu/giflib/gifalloc.c",
-    CSRS_DIR / "io/image/cpu/giflib/openbsd-reallocarray.c",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
-STABLE_SOURCES.add(
-    CSRS_DIR / ("io/image/hip/decode_jpegs_cuda.cpp" if IS_ROCM else "io/image/cuda/decode_jpegs_cuda.cpp")
-)
-STABLE_SOURCES.add(CSRS_DIR / "io/image/cuda/encode_jpegs_cuda.cpp")
 
 
 def _not_stable(paths):
@@ -388,58 +371,7 @@ def find_library(header):
     return False, None, None
 
 
-def make_image_extension():
-    print("Building image extension")
-
-    include_dirs = TORCHVISION_INCLUDE.copy()
-    library_dirs = TORCHVISION_LIBRARY.copy()
-
-    libraries = []
-    define_macros, extra_compile_args = get_macros_and_flags()
-
-    image_dir = CSRS_DIR / "io/image"
-    sources = (
-        _not_stable(image_dir.glob("*.cpp"))
-        + _not_stable(image_dir.glob("cpu/*.cpp"))
-        + _not_stable(image_dir.glob("cpu/giflib/*.c"))
-    )
-
-    if IS_ROCM:
-        sources += _not_stable(image_dir.glob("hip/*.cpp"))
-    else:
-        sources += _not_stable(image_dir.glob("cuda/*.cpp"))
-
-    Extension = CppExtension
-
-    if USE_WEBP:
-        webp_found, webp_include_dir, webp_library_dir = find_library(header="webp/decode.h")
-        if webp_found:
-            print("Building torchvision with WEBP support")
-            print(f"{webp_include_dir = }")
-            print(f"{webp_library_dir = }")
-            if webp_include_dir is not None and webp_library_dir is not None:
-                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
-                include_dirs.append(webp_include_dir)
-                library_dirs.append(webp_library_dir)
-            webp_library = "libwebp" if sys.platform == "win32" else "webp"
-            libraries.append(webp_library)
-            define_macros += [("WEBP_FOUND", 1)]
-        else:
-            warnings.warn("Building torchvision without WEBP support")
-
-    return Extension(
-        name="torchvision.image",
-        sources=sorted(str(s) for s in sources),
-        include_dirs=include_dirs,
-        library_dirs=library_dirs,
-        define_macros=define_macros,
-        libraries=libraries,
-        extra_compile_args=extra_compile_args,
-    )
-
-
 def make_image_stable_extension():
-    # Stable-ABI sibling of make_image_extension(): only the migrated (_stable) image TUs.
     print("Building image_stable extension")
 
     include_dirs = TORCHVISION_INCLUDE.copy()
@@ -449,10 +381,10 @@ def make_image_stable_extension():
 
     image_dir = CSRS_DIR / "io/image"
     sources = (
-        _stable(image_dir.glob("*.cpp"))
-        + _stable(image_dir.glob("cpu/*.cpp"))
-        + _stable(image_dir.glob("cpu/giflib/*.c"))
-        + _stable(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
+        list(image_dir.glob("*.cpp"))
+        + list(image_dir.glob("cpu/*.cpp"))
+        + list(image_dir.glob("cpu/giflib/*.c"))
+        + list(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
     )
 
     Extension = CppExtension
@@ -479,6 +411,22 @@ def make_image_stable_extension():
             define_macros += [("JPEG_FOUND", 1)]
         else:
             warnings.warn("Building torchvision without JPEG support")
+
+    if USE_WEBP:
+        webp_found, webp_include_dir, webp_library_dir = find_library(header="webp/decode.h")
+        if webp_found:
+            print("Building torchvision with WEBP support")
+            print(f"{webp_include_dir = }")
+            print(f"{webp_library_dir = }")
+            if webp_include_dir is not None and webp_library_dir is not None:
+                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
+                include_dirs.append(webp_include_dir)
+                library_dirs.append(webp_library_dir)
+            webp_library = "libwebp" if sys.platform == "win32" else "webp"
+            libraries.append(webp_library)
+            define_macros += [("WEBP_FOUND", 1)]
+        else:
+            warnings.warn("Building torchvision without WEBP support")
 
     if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
@@ -536,7 +484,6 @@ if __name__ == "__main__":
     extensions = [
         make_C_extension(),
         make_C_stable_extension(),
-        make_image_extension(),
         make_image_stable_extension(),
     ]
 
