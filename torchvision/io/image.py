@@ -11,14 +11,10 @@ def _has_image_ops():
     return False
 
 
-if _load_library("image"):
+if _load_library("image_stable"):
 
     def _has_image_ops():  # noqa: F811
         return True
-
-
-# Stable-ABI image extension (migrated ops)
-_load_library("image_stable")
 
 
 def _assert_has_image_ops():

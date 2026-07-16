@@ -112,6 +112,7 @@ set(TORCHVISION_STABLE_SOURCES
   ${TVCPP}/io/image/cpu/decode_jpeg.cpp
   ${TVCPP}/io/image/cpu/common_jpeg.cpp
   ${TVCPP}/io/image/cpu/decode_gif.cpp
+  ${TVCPP}/io/image/cpu/decode_webp.cpp
   ${TVCPP}/io/image/common_stable.cpp
   ${TVCPP}/vision_stable.cpp)
 # Pin them to torch 2.11. Per source, not library-wide: the pin makes ATen headers
