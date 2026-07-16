@@ -102,6 +102,9 @@ set(TORCHVISION_STABLE_SOURCES
   ${TVCPP}/ops/nms.cpp
   ${TVCPP}/ops/cpu/nms_kernel.cpp
   ${TVCPP}/ops/cuda/nms_kernel.cu
+  ${TVCPP}/ops/box_iou_rotated.cpp
+  ${TVCPP}/ops/cpu/box_iou_rotated_kernel.cpp
+  ${TVCPP}/ops/cuda/box_iou_rotated_kernel.cu
   ${TVCPP}/io/image/cuda/decode_jpegs_cuda.cpp
   ${TVCPP}/io/image/cuda/encode_jpegs_cuda.cpp
   ${TVCPP}/io/image/cpu/encode_png.cpp
