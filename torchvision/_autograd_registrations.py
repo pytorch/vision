@@ -23,6 +23,13 @@ def _roi_align_setup_context(ctx, inputs, output):
 
 
 def _roi_align_backward(ctx, grad_output):
+    # The CUDA and MPS backwards accumulate with atomicAdd (nondeterministic).
+    # The stable ABI can't call at::globalContext().alertNotDeterministic from
+    # the kernel, so we honor the determinism contract here in Python, where
+    # autograd lives, for the devices whose kernels alerted. The CPU backward
+    # is deterministic and must not alert.
+    if grad_output.device.type in ("cuda", "mps"):
+        torch._prims_common.alert_not_deterministic("roi_align_backward_kernel")
     (rois,) = ctx.saved_tensors
     batch_size, channels, height, width = ctx.input_shape
     grad_input = torch.ops.torchvision._roi_align_backward(
