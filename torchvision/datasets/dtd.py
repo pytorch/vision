@@ -46,7 +46,7 @@ class DTD(VisionDataset):
         loader: Callable[[Union[str, pathlib.Path]], Any] = default_loader,
     ) -> None:
         self._split = verify_str_arg(split, "split", ("train", "val", "test"))
-        if not isinstance(partition, int) and not (1 <= partition <= 10):
+        if not isinstance(partition, int) or not (1 <= partition <= 10):
             raise ValueError(
                 f"Parameter 'partition' should be an integer with `1 <= partition <= 10`, "
                 f"but got {partition} instead"
