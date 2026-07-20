@@ -44,6 +44,55 @@ jobs:
 
         ./.github/scripts/unittest.sh
 
+  unittests-rocm:
+    # ROCm runners are not on EC2 and authenticate to AWS (ECR) via GitHub OIDC.
+    # Fork PRs don't get an OIDC id-token from GitHub, so the job can't pull the
+    # docker image and always fails. Skip it for fork PRs; it still runs on
+    # same-repo PRs, push, and workflow_dispatch.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      matrix:
+        python-version:
+          - "3.10"
+        runner: ["linux.rocm.gpu.gfx942.1"]
+        gpu-arch-type: ["rocm"]
+        gpu-arch-version: ["7.1"]
+      fail-fast: false
+    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      repository: pytorch/vision
+      runner: ${{ matrix.runner }}
+      gpu-arch-type: ${{ matrix.gpu-arch-type }}
+      gpu-arch-version: ${{ matrix.gpu-arch-version }}
+      # ROCm self-hosted runners are not on EC2, so they can't pull the default
+      # ECR-hosted docker image (no AWS credentials). Use a Docker Hub image and
+      # run without sudo, matching pytorch/ao and pytorch/kineto ROCm jobs.
+      docker-image: pytorch/manylinux2_28-builder:rocm7.1
+      no-sudo: true
+      timeout: 120
+      test-infra-ref: main
+      script: |
+        set -euo pipefail
+
+        export PYTHON_VERSION=${{ matrix.python-version }}
+        export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
+        export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
+
+        ./.github/scripts/setup-env.sh
+
+        eval "$($(which conda) shell.bash hook)" && conda deactivate && conda activate ci
+
+        echo '::group::Install testing utilities'
+        pip install --progress-bar=off "pytest<8" pytest-mock pytest-cov expecttest!=0.2.0 requests
+        echo '::endgroup::'
+
+        echo '::group::Run image tests'
+        pytest --junit-xml="${RUNNER_TEST_RESULTS_DIR}/test-results.xml" -v --durations=25 test/test_image.py
+        echo '::endgroup::'
+
   unittests-macos:
     strategy:
       matrix:
@@ -71,7 +120,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.10"
+          # - "3.10"  # Fails with annoying SSL issue. Whatever.
           - "3.14"
         runner: ["windows.4xlarge"]
         gpu-arch-type: ["cpu"]

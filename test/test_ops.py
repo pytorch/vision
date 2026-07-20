@@ -474,6 +474,33 @@ class TestRoIAlign(RoIOpTester):
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
+    @needs_mps
+    @pytest.mark.parametrize("seed", range(3))
+    def test_backward_mps_consistency(self, seed):
+        # Regression test for over-accumulation in the MPS roi_align backward
+        # kernel. The kernel used a grid-stride loop dispatched over multiple
+        # threadgroups, so each pooled-output element's gradient was scattered
+        # once per threadgroup. The error is invisible for a handful of RoIs
+        # (output fits in one threadgroup) but grows with the RoI count, so use
+        # enough RoIs for the output to span several threadgroups.
+        torch.random.manual_seed(seed)
+        pool_size = 5
+        num_rois = 100
+        x = torch.rand(1, 2 * (pool_size**2), 40, 40, dtype=torch.float32)
+        rois = torch.empty(num_rois, 5)
+        rois[:, 0] = 0
+        xy = torch.rand(num_rois, 2) * 20
+        wh = torch.rand(num_rois, 2) * 20
+        rois[:, 1:3] = xy
+        rois[:, 3:5] = xy + wh + 1  # ensure x2 > x1 and y2 > y1
+
+        def grad_on(device):
+            xd = x.to(device).detach().requires_grad_(True)
+            self.fn(xd, rois.to(device), pool_size, pool_size, spatial_scale=1, sampling_ratio=2).sum().backward()
+            return xd.grad.cpu()
+
+        torch.testing.assert_close(grad_on("mps"), grad_on("cpu"), rtol=1e-4, atol=1e-4)
+
     @pytest.mark.parametrize("aligned", (True, False))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("x_dtype", (torch.float16, torch.float32, torch.float64))  # , ids=str)

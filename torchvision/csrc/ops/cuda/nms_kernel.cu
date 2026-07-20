@@ -1,9 +1,19 @@
-#include <ATen/ATen.h>
-#include <ATen/AccumulateType.h>
-#include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDAGuard.h>
-#include <torch/library.h>
+#include <torch/csrc/inductor/aoti_torch/c/shim.h>
+#include <torch/csrc/stable/accelerator.h>
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/macros.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/csrc/stable/tensor.h>
+#include <torch/headeronly/core/Dispatch_v2.h>
+#include <torch/headeronly/core/ScalarType.h>
+#include <torch/headeronly/util/Exception.h>
+#include <torch/headeronly/util/Half.h>
 
+#include <cuda_runtime.h>
+
+#include <algorithm>
+
+#include "../StableABICompat.h"
 #include "cuda_helpers.h"
 
 namespace vision {
@@ -11,7 +21,22 @@ namespace ops {
 
 namespace {
 
+using torch::stable::Tensor;
+
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
+
+// Accumulate type for IoU. Only correct for the types we dispatch (float,
+// double, Half), not general: BFloat16 should accumulate in float but maps to
+// itself. Safe here since THO_DISPATCH_V2 controls the inputs.
+// TODO(stable-abi): drop once torch/headeronly ships an acc_type trait.
+template <typename T>
+struct AccType {
+  using type = T;
+};
+template <>
+struct AccType<torch::headeronly::Half> {
+  using type = float;
+};
 
 template <typename T>
 __device__ inline bool devIoU(
@@ -21,7 +46,7 @@ __device__ inline bool devIoU(
   T left = max(a[0], b[0]), right = min(a[2], b[2]);
   T top = max(a[1], b[1]), bottom = min(a[3], b[3]);
   T width = max(right - left, (T)0), height = max(bottom - top, (T)0);
-  using acc_T = at::acc_type<T, /*is_cuda=*/true>;
+  using acc_T = typename AccType<T>::type;
   acc_T interS = (acc_T)width * height;
   acc_T Sa = ((acc_T)a[2] - a[0]) * (a[3] - a[1]);
   acc_T Sb = ((acc_T)b[2] - b[0]) * (b[3] - b[1]);
@@ -122,64 +147,97 @@ __global__ static void gather_keep_from_mask(
   }
 }
 
-at::Tensor nms_kernel(
-    const at::Tensor& dets,
-    const at::Tensor& scores,
-    double iou_threshold) {
-  TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
-  TORCH_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
+// THO_DISPATCH_V2 splits its body on commas outside parens. The commas in
+// kernel<<<blocks, threads, 0, stream>>> would break it, so it goes through
+// this wrapper.
+template <typename scalar_t>
+void launch_nms_kernel_impl(
+    dim3 blocks,
+    dim3 threads,
+    cudaStream_t stream,
+    int dets_num,
+    double iou_threshold,
+    const scalar_t* boxes,
+    unsigned long long* mask) {
+  nms_kernel_impl<scalar_t>
+      <<<blocks, threads, 0, stream>>>(dets_num, iou_threshold, boxes, mask);
+}
 
-  TORCH_CHECK(
+Tensor nms_kernel(
+    const Tensor& dets,
+    const Tensor& scores,
+    double iou_threshold) {
+  STD_TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
+  STD_TORCH_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
+
+  STD_TORCH_CHECK(
       dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       dets.size(1) == 4,
       "boxes should have 4 elements in dimension 1, got ",
       dets.size(1));
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       scores.dim() == 1,
       "scores should be a 1d tensor, got ",
       scores.dim(),
       "D");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       dets.size(0) == scores.size(0),
       "boxes and scores should have same number of elements in ",
       "dimension 0, got ",
       dets.size(0),
       " and ",
-      scores.size(0))
+      scores.size(0));
 
-  at::cuda::CUDAGuard device_guard(dets.device());
+  torch::stable::accelerator::DeviceGuard device_guard(dets.get_device_index());
 
   if (dets.numel() == 0) {
-    return at::empty({0}, dets.options().dtype(at::kLong));
+    return torch::stable::new_empty(
+        dets, {0}, torch::headeronly::ScalarType::Long);
   }
 
-  auto order_t = std::get<1>(
-      scores.sort(/*stable=*/true, /*dim=*/0, /* descending=*/true));
-  auto dets_sorted = dets.index_select(0, order_t).contiguous();
+  auto order_t = std::get<1>(stable_helpers::sort(
+      scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
+  auto dets_sorted =
+      torch::stable::contiguous(stable_helpers::index_select(dets, 0, order_t));
 
-  int dets_num = dets.size(0);
-
+  int dets_num = static_cast<int>(dets.size(0));
   const int col_blocks = ceil_div(dets_num, threadsPerBlock);
 
-  at::Tensor mask =
-      at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));
+  Tensor mask = torch::stable::new_empty(
+      dets,
+      {static_cast<int64_t>(dets_num) * col_blocks},
+      torch::headeronly::ScalarType::Long);
 
   dim3 blocks(col_blocks, col_blocks);
   dim3 threads(threadsPerBlock);
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.scalar_type(), "nms_kernel", [&] {
-        nms_kernel_impl<scalar_t><<<blocks, threads, 0, stream>>>(
+  void* stream_ptr = nullptr;
+  TORCH_ERROR_CODE_CHECK(
+      aoti_torch_get_current_cuda_stream(dets.get_device_index(), &stream_ptr));
+  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
+
+  THO_DISPATCH_V2(
+      dets_sorted.scalar_type(),
+      "nms_kernel",
+      AT_WRAP([&]() {
+        launch_nms_kernel_impl<scalar_t>(
+            blocks,
+            threads,
+            stream,
             dets_num,
             iou_threshold,
-            dets_sorted.data_ptr<scalar_t>(),
-            (unsigned long long*)mask.data_ptr<int64_t>());
-      });
+            dets_sorted.const_data_ptr<scalar_t>(),
+            (unsigned long long*)mask.mutable_data_ptr<int64_t>());
+      }),
+      AT_EXPAND(AT_FLOATING_TYPES),
+      torch::headeronly::ScalarType::Half);
+  STD_CUDA_KERNEL_LAUNCH_CHECK();
 
-  at::Tensor keep =
-      at::zeros({dets_num}, dets.options().dtype(at::kBool).device(at::kCUDA));
+  Tensor keep = torch::stable::new_zeros(
+      dets,
+      {static_cast<int64_t>(dets_num)},
+      torch::headeronly::ScalarType::Bool);
 
   // Unwrap the mask to fill keep with proper values
   // Keeping the unwrap on device instead of applying iterative for loops on cpu
@@ -188,21 +246,21 @@ at::Tensor nms_kernel(
   // See https://github.com/pytorch/vision/issues/8713 for more details.
   gather_keep_from_mask<<<
       1,
-      min(col_blocks, threadsPerBlock),
+      std::min(col_blocks, threadsPerBlock),
       col_blocks * sizeof(unsigned long long),
       stream>>>(
-      keep.data_ptr<bool>(),
-      (unsigned long long*)mask.data_ptr<int64_t>(),
+      keep.mutable_data_ptr<bool>(),
+      (unsigned long long*)mask.mutable_data_ptr<int64_t>(),
       dets_num);
+  STD_CUDA_KERNEL_LAUNCH_CHECK();
 
-  AT_CUDA_CHECK(cudaGetLastError());
-  return order_t.masked_select(keep);
+  return stable_helpers::masked_select(order_t, keep);
 }
 
 } // namespace
 
-TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
-  m.impl(TORCH_SELECTIVE_NAME("torchvision::nms"), TORCH_FN(nms_kernel));
+STABLE_TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("nms", TORCH_BOX(&nms_kernel));
 }
 
 } // namespace ops

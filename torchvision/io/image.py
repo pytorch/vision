@@ -11,7 +11,7 @@ def _has_image_ops():
     return False
 
 
-if _load_library("image"):
+if _load_library("image_stable"):
 
     def _has_image_ops():  # noqa: F811
         return True
@@ -73,18 +73,21 @@ def read_file(path: str) -> torch.Tensor:
     return data
 
 
-def write_file(filename: str, data: torch.Tensor) -> None:
+def write_file(filename: str, data: torch.Tensor) -> torch.Tensor:
     """
     Write the content of an uint8 1D tensor to a file.
 
     Args:
         filename (str or ``pathlib.Path``): the path to the file to be written
         data (Tensor): the contents to be written to the output file
+
+    Returns:
+        data (Tensor): the input data, returned as-is.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_file)
     _assert_has_image_ops()
-    torch.ops.image.write_file(str(filename), data)
+    return torch.ops.image.write_file(str(filename), data)
 
 
 def decode_png(
@@ -146,7 +149,7 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
     return output
 
 
-def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
+def write_png(input: torch.Tensor, filename: str, compression_level: int = 6) -> torch.Tensor:
     """
     Takes an input tensor in CHW layout (or HW in the case of grayscale images)
     and saves it in a PNG file.
@@ -157,11 +160,14 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
         filename (str or ``pathlib.Path``): Path to save the image.
         compression_level (int): Compression factor for the resulting file, it must be a number
             between 0 and 9. Default: 6
+
+    Returns:
+        output (Tensor): the PNG-encoded data that was written to the file.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_png)
     output = encode_png(input, compression_level)
-    write_file(filename, output)
+    return write_file(filename, output)
 
 
 def decode_jpeg(
@@ -189,14 +195,13 @@ def decode_jpeg(
             for available modes.
         device (str or torch.device): The device on which the decoded image will
             be stored. If a cuda device is specified, the image will be decoded
-            with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
-            supported for CUDA version >= 10.1
+            with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_ on NVIDIA GPUs,
+            or with `rocJPEG
+            <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/>`_ on AMD
+            (ROCm) GPUs. On both, pass ``device="cuda"``.
 
             .. betastatus:: device parameter
 
-            .. warning::
-                There is a memory leak in the nvjpeg library for CUDA versions < 11.6.
-                Make sure to rely on CUDA 11.6 or above before using ``device="cuda"``.
         apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.
             Default: False. Only implemented for JPEG format on CPU.
 
@@ -273,7 +278,7 @@ def encode_jpeg(
             return torch.ops.image.encode_jpeg(input, quality)
 
 
-def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
+def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75) -> torch.Tensor:
     """
     Takes an input tensor in CHW layout and saves it in a JPEG file.
 
@@ -283,12 +288,15 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
         filename (str or ``pathlib.Path``): Path to save the image.
         quality (int): Quality of the resulting JPEG file, it must be a number
             between 1 and 100. Default: 75
+
+    Returns:
+        output (Tensor): the JPEG-encoded data that was written to the file.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_jpeg)
     output = encode_jpeg(input, quality)
     assert isinstance(output, torch.Tensor)  # Needed for torchscript
-    write_file(filename, output)
+    return write_file(filename, output)
 
 
 def decode_image(
