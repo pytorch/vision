@@ -67,6 +67,7 @@ pytestmark = [pytest.mark.filterwarnings("error")]
 
 # Since torchscript is deprecated, we are explicitly ignoring those warnings.
 # Otherwise we'd error on warnings due to the pytestmark filter above.
+pytestmark.append(pytest.mark.filterwarnings("ignore::DeprecationWarning"))
 pytestmark.append(pytest.mark.filterwarnings("ignore::FutureWarning"))
 
 
