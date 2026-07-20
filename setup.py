@@ -164,8 +164,13 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/cpu/nms_kernel.cpp",
     CSRS_DIR / "ops/mps/nms_kernel.mm",
     CSRS_DIR / "ops/quantized/cpu/qnms_kernel.cpp",
+    CSRS_DIR / "ops/box_iou_rotated.cpp",
+    CSRS_DIR / "ops/cpu/box_iou_rotated_kernel.cpp",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
+STABLE_SOURCES.add(
+    CSRS_DIR / ("ops/hip/box_iou_rotated_kernel.hip" if IS_ROCM else "ops/cuda/box_iou_rotated_kernel.cu")
+)
 
 
 def _not_stable(paths):
