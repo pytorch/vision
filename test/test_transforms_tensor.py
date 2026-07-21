@@ -562,6 +562,25 @@ def test_convert_image_dtype_save_load(tmpdir):
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
+@pytest.mark.parametrize("in_dtype", [torch.float16, torch.bfloat16])
+@pytest.mark.parametrize("out_dtype", [torch.uint8, torch.int8, torch.int16, torch.int32])
+def test_convert_image_dtype_half_precision(device, in_dtype, out_dtype):
+    image = torch.tensor([0.0, 0.5, 1.0], dtype=in_dtype, device=device).reshape(1, 1, 3)
+    result = F.convert_image_dtype(image, out_dtype)
+    max_val = torch.iinfo(out_dtype).max
+    assert result[0, 0, 0] == 0, f"0.0 should map to 0, got {result[0, 0, 0]}"
+    assert result[0, 0, 2] == max_val, f"1.0 should map to {max_val}, got {result[0, 0, 2]}"
+
+
+@pytest.mark.parametrize("device", cpu_and_cuda())
+def test_convert_image_dtype_int_to_float16_raises(device):
+    for in_dtype in (torch.int32, torch.int64):
+        image = torch.tensor([0, 1, 2], dtype=in_dtype, device=device).reshape(1, 1, 3)
+        with pytest.raises(RuntimeError, match=r"cannot be performed safely"):
+            F.convert_image_dtype(image, torch.float16)
+
+
+@pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("policy", [policy for policy in T.AutoAugmentPolicy])
 @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_autoaugment(device, policy, fill):
