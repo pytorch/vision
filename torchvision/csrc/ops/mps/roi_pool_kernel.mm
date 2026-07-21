@@ -42,6 +42,10 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(const at::Tensor& inp
   auto input_ = input.contiguous();
   auto rois_ = rois.contiguous();
 
+  id<MTLBuffer> inputBuffer = getMTLBufferStorage(input_);
+  id<MTLBuffer> roisBuffer = getMTLBufferStorage(rois_);
+  id<MTLBuffer> outputBuffer = getMTLBufferStorage(output);
+  id<MTLBuffer> argmaxBuffer = getMTLBufferStorage(argmax);
   id<MTLDevice> device = MPSDevice::getInstance()->device();
   MPSStream* mpsStream = getCurrentMPSStream();
   dispatch_sync(mpsStream->queue(), ^() {
@@ -56,17 +60,17 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(const at::Tensor& inp
 
       [computeEncoder setComputePipelineState:visionPSO];
       // [N, C, H, W]
-      mtl_setArgs(computeEncoder,
-                  input_,
-                  rois_,
-                  output,
-                  argmax,
-                  channels,
-                  height,
-                  width,
-                  pooled_height,
-                  pooled_width,
-                  spatial_scale_f);
+      [computeEncoder setBuffer:inputBuffer offset:input_.storage_offset() * input_.element_size() atIndex:0];
+      [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
+      [computeEncoder setBuffer:outputBuffer offset:output.storage_offset() * output.element_size() atIndex:2];
+      [computeEncoder setBuffer:argmaxBuffer offset:argmax.storage_offset() * argmax.element_size() atIndex:3];
+
+      [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:4];
+      [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:5];
+      [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:6];
+      [computeEncoder setBytes:&pooled_height length:sizeof(int64_t) atIndex:7];
+      [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:8];
+      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:9];
 
       MTLSize threadsPerGrid = MTLSizeMake(output_size, 1, 1);
       NSUInteger tgSize = std::min(static_cast<int64_t>(visionPSO.maxTotalThreadsPerThreadgroup), output_size);
@@ -118,6 +122,10 @@ at::Tensor roi_pool_backward_kernel(const at::Tensor& grad,
   at::globalContext().alertNotDeterministic("roi_pool_backward_kernel");
   auto argmax_ = argmax.contiguous(), rois_ = rois.contiguous();
 
+  id<MTLBuffer> inputBuffer = getMTLBufferStorage(grad);
+  id<MTLBuffer> roisBuffer = getMTLBufferStorage(rois_);
+  id<MTLBuffer> argmaxBuffer = getMTLBufferStorage(argmax_);
+  id<MTLBuffer> outputBuffer = getMTLBufferStorage(grad_input);
   id<MTLDevice> device = MPSDevice::getInstance()->device();
   MPSStream* mpsStream = getCurrentMPSStream();
   dispatch_sync(mpsStream->queue(), ^() {
@@ -132,21 +140,21 @@ at::Tensor roi_pool_backward_kernel(const at::Tensor& grad,
 
       [computeEncoder setComputePipelineState:visionPSO];
       // [N, C, H, W]
-      mtl_setArgs(computeEncoder,
-                  grad,
-                  rois_,
-                  argmax_,
-                  grad_input,
-                  channels,
-                  height,
-                  width,
-                  pooled_height,
-                  pooled_width,
-                  spatial_scale_f,
-                  n_stride,
-                  c_stride,
-                  h_stride,
-                  w_stride);
+      [computeEncoder setBuffer:inputBuffer offset:grad.storage_offset() * grad.element_size() atIndex:0];
+      [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
+      [computeEncoder setBuffer:argmaxBuffer offset:argmax_.storage_offset() * argmax_.element_size() atIndex:2];
+      [computeEncoder setBuffer:outputBuffer offset:grad_input.storage_offset() * grad_input.element_size() atIndex:3];
+
+      [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:4];
+      [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:5];
+      [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:6];
+      [computeEncoder setBytes:&pooled_height length:sizeof(int64_t) atIndex:7];
+      [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:8];
+      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:9];
+      [computeEncoder setBytes:&n_stride length:sizeof(int64_t) atIndex:10];
+      [computeEncoder setBytes:&c_stride length:sizeof(int64_t) atIndex:11];
+      [computeEncoder setBytes:&h_stride length:sizeof(int64_t) atIndex:12];
+      [computeEncoder setBytes:&w_stride length:sizeof(int64_t) atIndex:13];
 
       MTLSize threadsPerGrid = MTLSizeMake(output_size, 1, 1);
       NSUInteger tgSize = std::min(static_cast<int64_t>(visionPSO.maxTotalThreadsPerThreadgroup), output_size);
