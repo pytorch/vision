@@ -729,6 +729,34 @@ class TestPSRoIAlign(RoIOpTester):
 
 
 @pytest.mark.parametrize(
+    "device",
+    (
+        pytest.param("cuda", marks=pytest.mark.needs_cuda),
+        pytest.param("mps", marks=pytest.mark.needs_mps),
+    ),
+)
+@pytest.mark.parametrize(
+    "op", (ops.roi_pool, ops.ps_roi_pool, ops.ps_roi_align), ids=("roi_pool", "ps_roi_pool", "ps_roi_align")
+)
+def test_roi_pooling_grad_sum(device, op):
+    pool_size = 4
+
+    def run(device):
+        x = torch.ones(1, 64, 8, 8, dtype=torch.float32, device=device, requires_grad=True)
+        # 17 RoIs make the PS outputs 1,088 elements, forcing a partial tail threadgroup.
+        rois = torch.tensor([[0.0, 0, 0, 7, 7]], device=device).repeat(17, 1)
+        output = op(x, rois, [pool_size, pool_size])
+        output.sum().backward()
+        return output.detach().cpu(), x.grad.detach().cpu()
+
+    output, grad = run(device)
+    _, expected_grad = run("cpu")
+    torch.testing.assert_close(output, torch.ones_like(output))
+    torch.testing.assert_close(grad, expected_grad)
+    torch.testing.assert_close(grad.sum(), output.new_tensor(output.numel()))
+
+
+@pytest.mark.parametrize(
     "op",
     (
         torch.ops.torchvision.roi_pool,
