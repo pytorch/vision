@@ -2344,6 +2344,85 @@ class TestMasksToBoxes:
         torch.testing.assert_close(boxes, expected, rtol=0.0, atol=0.0)
 
 
+def reference_masks_to_boundaries(masks, kernel_size):
+    masks_bool = masks.bool()
+    padding = kernel_size // 2
+    padded_masks = F.pad(masks_bool, [padding, padding, padding, padding])
+    eroded_masks = torch.zeros_like(masks_bool)
+
+    _, height, width = masks_bool.shape
+    for y in range(height):
+        for x in range(width):
+            neighborhood = padded_masks[:, y : y + kernel_size, x : x + kernel_size]
+            eroded_masks[:, y, x] = neighborhood.flatten(1).all(dim=1)
+
+    return torch.logical_xor(masks_bool, eroded_masks)
+
+
+class TestMasksToBoundaries:
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("kernel_size", [3, 5])
+    def test_masks_to_boundaries(self, device, kernel_size):
+        masks = torch.zeros((4, 12, 14), dtype=torch.bool, device=device)
+        masks[0, 1:5, 1:5] = True
+        masks[0, 7:11, 9:13] = True
+        masks[1, 2:8, 3:11] = True
+        masks[1, 4:6, 5:8] = False
+        masks[2, 0:4, 0:4] = True
+        masks[3, 6, 1:12] = True
+
+        boundaries = ops.masks_to_boundaries(masks, kernel_size=kernel_size)
+        expected = reference_masks_to_boundaries(masks, kernel_size=kernel_size)
+
+        assert boundaries.dtype == torch.bool
+        torch.testing.assert_close(boundaries, expected)
+
+    def test_numeric_masks(self):
+        masks = torch.zeros((1, 5, 5), dtype=torch.float32)
+        masks[:, 1:4, 1:4] = 2
+
+        boundaries = ops.masks_to_boundaries(masks)
+        expected = torch.tensor(
+            [
+                [
+                    [False, False, False, False, False],
+                    [False, True, True, True, False],
+                    [False, True, False, True, False],
+                    [False, True, True, True, False],
+                    [False, False, False, False, False],
+                ]
+            ]
+        )
+
+        assert boundaries.dtype == torch.bool
+        torch.testing.assert_close(boundaries, expected)
+
+    def test_empty_masks(self):
+        masks = torch.empty((0, 8, 8), dtype=torch.uint8)
+        boundaries = ops.masks_to_boundaries(masks)
+
+        assert boundaries.shape == masks.shape
+        assert boundaries.dtype == torch.bool
+
+    @pytest.mark.parametrize("kernel_size", [0, 2, -1])
+    def test_invalid_kernel_size(self, kernel_size):
+        masks = torch.zeros((1, 5, 5), dtype=torch.bool)
+        with pytest.raises(ValueError, match="positive odd integer"):
+            ops.masks_to_boundaries(masks, kernel_size=kernel_size)
+
+    def test_invalid_shape(self):
+        masks = torch.zeros((5, 5), dtype=torch.bool)
+        with pytest.raises(ValueError, match="shape"):
+            ops.masks_to_boundaries(masks)
+
+    def test_script(self):
+        masks = torch.zeros((1, 5, 5), dtype=torch.bool)
+        masks[:, 1:4, 1:4] = True
+
+        scripted = torch.jit.script(ops.masks_to_boundaries)
+        torch.testing.assert_close(scripted(masks, 3), ops.masks_to_boundaries(masks, 3))
+
+
 class TestStochasticDepth:
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("p", [0.2, 0.5, 0.8])
