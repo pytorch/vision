@@ -34,7 +34,7 @@ TORCHVISION_LIBRARY = TORCHVISION_LIBRARY.split(os.pathsep) if TORCHVISION_LIBRA
 ROOT_DIR = Path(__file__).absolute().parent
 CSRS_DIR = ROOT_DIR / "torchvision/csrc"
 IS_ROCM = (torch.version.hip is not None) and (ROCM_HOME is not None)
-BUILD_CUDA_SOURCES = (torch.cuda.is_available() and ((CUDA_HOME is not None) or IS_ROCM)) or FORCE_CUDA
+BUILD_CUDA_SOURCES = IS_ROCM or (torch.cuda.is_available() and CUDA_HOME is not None) or FORCE_CUDA
 
 package_name = os.getenv("TORCHVISION_PACKAGE_NAME", "torchvision")
 
