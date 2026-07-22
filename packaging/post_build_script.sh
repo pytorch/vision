@@ -13,4 +13,11 @@ else
     extra_decoders_channel=""
 fi
 
-pip install torchvision-extra-decoders $extra_decoders_channel
+# torchvision-extra-decoders is not yet published for Python 3.15 / 3.15t
+# (both the standard and free-threaded builds report version 3.15), so skip
+# installing it there until wheels are available.
+if python -c "import sys; sys.exit(0 if sys.version_info[:2] == (3, 15) else 1)"; then
+    echo "Skipping torchvision-extra-decoders: no Python 3.15 wheel published yet"
+else
+    pip install torchvision-extra-decoders $extra_decoders_channel
+fi
