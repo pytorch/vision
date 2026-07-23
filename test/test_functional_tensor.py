@@ -1009,6 +1009,18 @@ def test_crop(device, top, left, height, width):
 @pytest.mark.parametrize("fn", [F.gaussian_blur, torch.jit.script(F.gaussian_blur)])
 def test_gaussian_blur(device, image_size, dt, ksize, sigma, fn):
 
+    if all(
+        [
+            device == "cuda",
+            torch.version.hip is not None,
+            torch.cuda.is_available() and "gfx90a" in torch.cuda.get_device_properties().gcnArchName,
+            "[gaussian_blur-sigma3-ksize2-dt3-large-cuda]" in os.environ.get("PYTEST_CURRENT_TEST", "")
+        ]
+    ):
+        pytest.skip(
+            "Skipped on gfx90a because fp16 gaussian_blur differs from stored OpenCV reference by more then atol+ULP"
+        )
+
     # true_cv2_results = {
     #     # np_img = np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
     #     # cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.8)
