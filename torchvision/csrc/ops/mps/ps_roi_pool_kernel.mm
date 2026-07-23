@@ -144,10 +144,6 @@ at::Tensor ps_roi_pool_backward_kernel(const at::Tensor& grad,
   dispatch_sync(mpsStream->queue(), ^() {
     @autoreleasepool {
       id<MTLComputeCommandEncoder> computeEncoder = mpsStream->commandEncoder();
-      MTLSize threadgroupsPerGrid = MTLSizeMake(
-          std::min(ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)), static_cast<int64_t>(4096)),
-          1,
-          1);
 
       const std::string kernel = "ps_roi_pool_backward_" + scalarToMetalTypeString(grad.scalar_type());
       id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
@@ -173,14 +169,13 @@ at::Tensor ps_roi_pool_backward_kernel(const at::Tensor& grad,
       [computeEncoder setBytes:&channels_out length:sizeof(int64_t) atIndex:10];
       [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:11];
 
-      // A threadGroup is equivalent to a cuda's block.
-      NSUInteger tgSize = visionPSO.maxTotalThreadsPerThreadgroup;
-      if (tgSize > threadsPerBlock) {
-        tgSize = threadsPerBlock;
-      }
-
-      MTLSize threadGroupSize = MTLSizeMake(tgSize, 1, 1);
-      [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
+      // One thread per pooled-output element. dispatchThreads guarantees each
+      // index is handled exactly once; the kernel scatters into grad_input with
+      // atomic_add for overlapping RoIs.
+      MTLSize threadsPerGrid = MTLSizeMake(output_size, 1, 1);
+      NSUInteger tgSize = std::min(static_cast<int64_t>(visionPSO.maxTotalThreadsPerThreadgroup), output_size);
+      MTLSize threadGroupSize = MTLSizeMake(std::max<NSUInteger>(tgSize, 1), 1, 1);
+      [computeEncoder dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadGroupSize];
 
       getMPSProfiler().endProfileKernel(visionPSO);
     }
