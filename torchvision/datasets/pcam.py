@@ -6,7 +6,16 @@ from PIL import Image
 from .utils import _decompress, download_file_from_google_drive, verify_str_arg
 from .vision import VisionDataset
 
-
+def _get_h5py():
+    """Import h5py on demand with a clear error message."""
+    try:
+        import h5py
+        return h5py
+    except ImportError:
+        raise RuntimeError(
+            "h5py is not found. This dataset needs to have h5py installed: please run pip install h5py"
+        )
+    
 class PCAM(VisionDataset):
     """`PCAM Dataset   <https://github.com/basveeling/pcam>`_.
 
@@ -78,14 +87,6 @@ class PCAM(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = False,
     ):
-        try:
-            import h5py
-
-            self.h5py = h5py
-        except ImportError:
-            raise RuntimeError(
-                "h5py is not found. This dataset needs to have h5py installed: please run pip install h5py"
-            )
 
         self._split = verify_str_arg(split, "split", ("train", "test", "val"))
 
@@ -100,16 +101,18 @@ class PCAM(VisionDataset):
 
     def __len__(self) -> int:
         images_file = self._FILES[self._split]["images"][0]
-        with self.h5py.File(self._base_folder / images_file) as images_data:
+        h5py = _get_h5py()
+        with h5py.File(self._base_folder / images_file) as images_data:
             return images_data["x"].shape[0]
 
     def __getitem__(self, idx: int) -> tuple[Any, Any]:
         images_file = self._FILES[self._split]["images"][0]
-        with self.h5py.File(self._base_folder / images_file) as images_data:
+        h5py = _get_h5py()
+        with h5py.File(self._base_folder / images_file) as images_data:
             image = Image.fromarray(images_data["x"][idx]).convert("RGB")
 
         targets_file = self._FILES[self._split]["targets"][0]
-        with self.h5py.File(self._base_folder / targets_file) as targets_data:
+        with h5py.File(self._base_folder / targets_file) as targets_data:
             target = int(targets_data["y"][idx, 0, 0, 0])  # shape is [num_images, 1, 1, 1]
 
         if self.transform:
