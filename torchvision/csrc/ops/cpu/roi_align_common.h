@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ATen/ATen.h>
+#include <cmath>
 
 namespace vision {
 namespace ops {
@@ -57,7 +58,13 @@ void pre_calc_for_bilinear_interpolate(
           T x = xx;
           T y = yy;
           // deal with: inverse elements are out of feature map boundary
-          if (y < -1.0 || y > height || x < -1.0 || x > width) {
+          // NaN coordinates must be treated as out of bounds too, since every
+          // comparison against NaN is false and would otherwise fall through
+          // this check, get truncated to an undefined int value below, and
+          // produce an out-of-bounds pos1/pos2/pos3/pos4 index.
+          if (std::isnan(static_cast<double>(x)) ||
+              std::isnan(static_cast<double>(y)) || y < -1.0 || y > height ||
+              x < -1.0 || x > width) {
             // empty
             PreCalc<T> pc;
             pc.pos1 = 0;

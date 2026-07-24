@@ -502,6 +502,31 @@ class TestRoIAlign(RoIOpTester):
         torch.testing.assert_close(grad_on("mps"), grad_on("cpu"), rtol=1e-4, atol=1e-4)
 
     @pytest.mark.parametrize("aligned", (True, False))
+    @pytest.mark.parametrize("sampling_ratio", (-1, 1))
+    def test_nan_roi_coordinates_do_not_crash(self, aligned, sampling_ratio):
+        # Non-regression test: a ROI with NaN coordinates used to bypass the
+        # out-of-bounds check in the CPU kernel (every comparison against NaN
+        # is False), get truncated to an undefined int index, and read out of
+        # bounds from the input feature map (can segfault under ASAN).
+        x = torch.zeros(2, 10, 15, 19, dtype=torch.float32)
+        rois = torch.tensor(
+            [[0.0, float("nan"), 0.0, float("nan"), 1.0]],
+            dtype=torch.float32,
+        )
+
+        y = ops.roi_align(
+            x,
+            rois,
+            output_size=(7, 7),
+            spatial_scale=0.1,
+            sampling_ratio=sampling_ratio,
+            aligned=aligned,
+        )
+
+        assert y.shape == (1, 10, 7, 7)
+        assert torch.isfinite(y).all() or torch.isnan(y).all()
+
+    @pytest.mark.parametrize("aligned", (True, False))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("x_dtype", (torch.float16, torch.float32, torch.float64))  # , ids=str)
     @pytest.mark.parametrize("contiguous", (True, False))
