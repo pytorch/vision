@@ -72,10 +72,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_pool_forward_kernel(const at::Tensor& 
                   channels_out,
                   spatial_scale_f);
 
-      MTLSize threadsPerGrid = MTLSizeMake(output_size, 1, 1);
-      NSUInteger tgSize = std::min(static_cast<int64_t>(visionPSO.maxTotalThreadsPerThreadgroup), output_size);
-      MTLSize threadGroupSize = MTLSizeMake(std::max<NSUInteger>(tgSize, 1), 1, 1);
-      [computeEncoder dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadGroupSize];
+      mtl_dispatch1DJob(computeEncoder, visionPSO, output_size);
 
       getMPSProfiler().endProfileKernel(visionPSO);
     }
@@ -147,10 +144,10 @@ at::Tensor ps_roi_pool_backward_kernel(const at::Tensor& grad,
                   channels_out,
                   spatial_scale_f);
 
-      MTLSize threadsPerGrid = MTLSizeMake(output_size, 1, 1);
-      NSUInteger tgSize = std::min(static_cast<int64_t>(visionPSO.maxTotalThreadsPerThreadgroup), output_size);
-      MTLSize threadGroupSize = MTLSizeMake(std::max<NSUInteger>(tgSize, 1), 1, 1);
-      [computeEncoder dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadGroupSize];
+      // One thread per pooled-output element. dispatchThreads guarantees each
+      // index is handled exactly once; the kernel scatters into grad_input with
+      // atomic_add for overlapping RoIs.
+      mtl_dispatch1DJob(computeEncoder, visionPSO, output_size);
 
       getMPSProfiler().endProfileKernel(visionPSO);
     }
