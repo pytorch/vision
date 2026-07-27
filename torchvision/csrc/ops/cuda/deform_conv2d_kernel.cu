@@ -251,55 +251,57 @@ void deformable_im2col(
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(), "deformable_im2col", ([&] {
-          deformable_im2col_kernel<scalar_t, int64_t><<<blocks, threads, 0, stream>>>(
-              num_kernels,
-              input.data_ptr<scalar_t>(),
-              data_offset.data_ptr<scalar_t>(),
-              data_mask.data_ptr<scalar_t>(),
-              height,
-              width,
-              weight_h,
-              weight_w,
-              pad_h,
-              pad_w,
-              stride_h,
-              stride_w,
-              dilation_h,
-              dilation_w,
-              parallel_imgs,
-              n_in_channels,
-              deformable_group,
-              out_h,
-              out_w,
-              use_mask,
-              data_col.data_ptr<scalar_t>());
+          deformable_im2col_kernel<scalar_t, int64_t>
+              <<<blocks, threads, 0, stream>>>(
+                  num_kernels,
+                  input.data_ptr<scalar_t>(),
+                  data_offset.data_ptr<scalar_t>(),
+                  data_mask.data_ptr<scalar_t>(),
+                  height,
+                  width,
+                  weight_h,
+                  weight_w,
+                  pad_h,
+                  pad_w,
+                  stride_h,
+                  stride_w,
+                  dilation_h,
+                  dilation_w,
+                  parallel_imgs,
+                  n_in_channels,
+                  deformable_group,
+                  out_h,
+                  out_w,
+                  use_mask,
+                  data_col.data_ptr<scalar_t>());
         }));
 
   } else {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(), "deformable_im2col", ([&] {
-          deformable_im2col_kernel<scalar_t, int><<<blocks, threads, 0, stream>>>(
-              num_kernels,
-              input.data_ptr<scalar_t>(),
-              data_offset.data_ptr<scalar_t>(),
-              data_mask.data_ptr<scalar_t>(),
-              height,
-              width,
-              weight_h,
-              weight_w,
-              pad_h,
-              pad_w,
-              stride_h,
-              stride_w,
-              dilation_h,
-              dilation_w,
-              parallel_imgs,
-              n_in_channels,
-              deformable_group,
-              out_h,
-              out_w,
-              use_mask,
-              data_col.data_ptr<scalar_t>());
+          deformable_im2col_kernel<scalar_t, int>
+              <<<blocks, threads, 0, stream>>>(
+                  num_kernels,
+                  input.data_ptr<scalar_t>(),
+                  data_offset.data_ptr<scalar_t>(),
+                  data_mask.data_ptr<scalar_t>(),
+                  height,
+                  width,
+                  weight_h,
+                  weight_w,
+                  pad_h,
+                  pad_w,
+                  stride_h,
+                  stride_w,
+                  dilation_h,
+                  dilation_w,
+                  parallel_imgs,
+                  n_in_channels,
+                  deformable_group,
+                  out_h,
+                  out_w,
+                  use_mask,
+                  data_col.data_ptr<scalar_t>());
         }));
   }
   C10_CUDA_KERNEL_LAUNCH_CHECK();
@@ -441,54 +443,56 @@ void compute_grad_input(
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_input", ([&] {
-          deformable_col2im_kernel<scalar_t, int64_t><<<blocks, threads, 0, stream>>>(
-              num_kernels,
-              columns.data_ptr<scalar_t>(),
-              offset.data_ptr<scalar_t>(),
-              mask.data_ptr<scalar_t>(),
-              channels,
-              height,
-              width,
-              weight_h,
-              weight_w,
-              pad_h,
-              pad_w,
-              stride_h,
-              stride_w,
-              dilation_h,
-              dilation_w,
-              parallel_imgs,
-              n_offset_grps,
-              out_h,
-              out_w,
-              use_mask,
-              grad_im.data_ptr<scalar_t>());
+          deformable_col2im_kernel<scalar_t, int64_t>
+              <<<blocks, threads, 0, stream>>>(
+                  num_kernels,
+                  columns.data_ptr<scalar_t>(),
+                  offset.data_ptr<scalar_t>(),
+                  mask.data_ptr<scalar_t>(),
+                  channels,
+                  height,
+                  width,
+                  weight_h,
+                  weight_w,
+                  pad_h,
+                  pad_w,
+                  stride_h,
+                  stride_w,
+                  dilation_h,
+                  dilation_w,
+                  parallel_imgs,
+                  n_offset_grps,
+                  out_h,
+                  out_w,
+                  use_mask,
+                  grad_im.data_ptr<scalar_t>());
         }));
   } else {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_input", ([&] {
-          deformable_col2im_kernel<scalar_t, int><<<blocks, threads, 0, stream>>>(
-              num_kernels,
-              columns.data_ptr<scalar_t>(),
-              offset.data_ptr<scalar_t>(),
-              mask.data_ptr<scalar_t>(),
-              channels,
-              height,
-              width,
-              weight_h,
-              weight_w,
-              pad_h,
-              pad_w,
-              stride_h,
-              stride_w,
-              dilation_h,
-              dilation_w,
-              parallel_imgs,
-              n_offset_grps,
-              out_h,
-              out_w,
-              use_mask,
-              grad_im.data_ptr<scalar_t>());
+          deformable_col2im_kernel<scalar_t, int>
+              <<<blocks, threads, 0, stream>>>(
+                  num_kernels,
+                  columns.data_ptr<scalar_t>(),
+                  offset.data_ptr<scalar_t>(),
+                  mask.data_ptr<scalar_t>(),
+                  channels,
+                  height,
+                  width,
+                  weight_h,
+                  weight_w,
+                  pad_h,
+                  pad_w,
+                  stride_h,
+                  stride_w,
+                  dilation_h,
+                  dilation_w,
+                  parallel_imgs,
+                  n_offset_grps,
+                  out_h,
+                  out_w,
+                  use_mask,
+                  grad_im.data_ptr<scalar_t>());
         }));
   }
   C10_CUDA_KERNEL_LAUNCH_CHECK();
@@ -714,31 +718,32 @@ void compute_grad_offset_and_mask(
   } else {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
-          deformable_col2im_coord_kernel<scalar_t, int><<<blocks, threads, 0, stream>>>(
-              num_kernels,
-              columns.data_ptr<scalar_t>(),
-              input.data_ptr<scalar_t>(),
-              offset.data_ptr<scalar_t>(),
-              mask.data_ptr<scalar_t>(),
-              channels,
-              height,
-              width,
-              weight_h,
-              weight_w,
-              pad_h,
-              pad_w,
-              stride_h,
-              stride_w,
-              dilation_h,
-              dilation_w,
-              parallel_imgs,
-              2 * weight_h * weight_w * n_offset_grps,
-              n_offset_grps,
-              out_h,
-              out_w,
-              use_mask,
-              grad_offset.data_ptr<scalar_t>(),
-              grad_mask.data_ptr<scalar_t>());
+          deformable_col2im_coord_kernel<scalar_t, int>
+              <<<blocks, threads, 0, stream>>>(
+                  num_kernels,
+                  columns.data_ptr<scalar_t>(),
+                  input.data_ptr<scalar_t>(),
+                  offset.data_ptr<scalar_t>(),
+                  mask.data_ptr<scalar_t>(),
+                  channels,
+                  height,
+                  width,
+                  weight_h,
+                  weight_w,
+                  pad_h,
+                  pad_w,
+                  stride_h,
+                  stride_w,
+                  dilation_h,
+                  dilation_w,
+                  parallel_imgs,
+                  2 * weight_h * weight_w * n_offset_grps,
+                  n_offset_grps,
+                  out_h,
+                  out_w,
+                  use_mask,
+                  grad_offset.data_ptr<scalar_t>(),
+                  grad_mask.data_ptr<scalar_t>());
         }));
   }
   C10_CUDA_KERNEL_LAUNCH_CHECK();
