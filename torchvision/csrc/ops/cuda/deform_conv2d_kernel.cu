@@ -247,10 +247,11 @@ void deformable_im2col(
            out_w >
        std::numeric_limits<int32_t>::max());
 
+  const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(), "deformable_im2col", ([&] {
-          deformable_im2col_kernel<scalar_t, int64_t><<<blocks, threads>>>(
+          deformable_im2col_kernel<scalar_t, int64_t><<<blocks, threads, 0, stream>>>(
               num_kernels,
               input.data_ptr<scalar_t>(),
               data_offset.data_ptr<scalar_t>(),
@@ -277,7 +278,7 @@ void deformable_im2col(
   } else {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         input.scalar_type(), "deformable_im2col", ([&] {
-          deformable_im2col_kernel<scalar_t, int><<<blocks, threads>>>(
+          deformable_im2col_kernel<scalar_t, int><<<blocks, threads, 0, stream>>>(
               num_kernels,
               input.data_ptr<scalar_t>(),
               data_offset.data_ptr<scalar_t>(),
@@ -436,10 +437,11 @@ void compute_grad_input(
 
   at::globalContext().alertNotDeterministic("compute_grad_input");
 
+  const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_input", ([&] {
-          deformable_col2im_kernel<scalar_t, int64_t><<<blocks, threads>>>(
+          deformable_col2im_kernel<scalar_t, int64_t><<<blocks, threads, 0, stream>>>(
               num_kernels,
               columns.data_ptr<scalar_t>(),
               offset.data_ptr<scalar_t>(),
@@ -465,7 +467,7 @@ void compute_grad_input(
   } else {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_input", ([&] {
-          deformable_col2im_kernel<scalar_t, int><<<blocks, threads>>>(
+          deformable_col2im_kernel<scalar_t, int><<<blocks, threads, 0, stream>>>(
               num_kernels,
               columns.data_ptr<scalar_t>(),
               offset.data_ptr<scalar_t>(),
@@ -678,11 +680,12 @@ void compute_grad_offset_and_mask(
       ((int64_t)channels * weight_h * weight_w * parallel_imgs * out_h * out_w >
        std::numeric_limits<int32_t>::max());
 
+  const cudaStream_t stream = at::cuda::getCurrentCUDAStream();
   if (use_64bits_indexing) {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
           deformable_col2im_coord_kernel<scalar_t, int64_t>
-              <<<blocks, threads>>>(
+              <<<blocks, threads, 0, stream>>>(
                   num_kernels,
                   columns.data_ptr<scalar_t>(),
                   input.data_ptr<scalar_t>(),
@@ -711,7 +714,7 @@ void compute_grad_offset_and_mask(
   } else {
     AT_DISPATCH_FLOATING_TYPES_AND_HALF(
         columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
-          deformable_col2im_coord_kernel<scalar_t, int><<<blocks, threads>>>(
+          deformable_col2im_coord_kernel<scalar_t, int><<<blocks, threads, 0, stream>>>(
               num_kernels,
               columns.data_ptr<scalar_t>(),
               input.data_ptr<scalar_t>(),
