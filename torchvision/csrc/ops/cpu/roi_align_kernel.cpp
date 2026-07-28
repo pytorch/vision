@@ -1,6 +1,8 @@
 #include <ATen/ATen.h>
 #include <torch/library.h>
 
+#include <cmath>
+
 #include "./roi_align_common.h"
 
 namespace vision {
@@ -123,7 +125,12 @@ void bilinear_interpolate_gradient(
     int& y_high,
     int index /* index for debug only*/) {
   // deal with cases that inverse elements are out of feature map boundary
-  if (y < -1.0 || y > height || x < -1.0 || x > width) {
+  // NaN coordinates must be treated as out of bounds too, since every
+  // comparison against NaN is false and would otherwise fall through this
+  // check and get truncated to an undefined int value below.
+  if (std::isnan(static_cast<double>(x)) ||
+      std::isnan(static_cast<double>(y)) || y < -1.0 || y > height ||
+      x < -1.0 || x > width) {
     // empty
     w1 = w2 = w3 = w4 = 0.;
     x_low = x_high = y_low = y_high = -1;
