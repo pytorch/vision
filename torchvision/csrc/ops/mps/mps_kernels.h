@@ -5,6 +5,10 @@ namespace ops {
 
 namespace mps {
 
+// Ops migrating to the stable ABI carve their Metal source out into
+// per op <op>_metal_shader.h headers. The copies left behind here go
+// unused once the op's legacy .mm is gone.
+// TODO(stable-abi): drop this header once every MPS op has moved.
 static at::native::mps::MetalShaderLibrary lib(R"VISION_METAL(
 
 #include <metal_atomic>

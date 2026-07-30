@@ -126,12 +126,12 @@ set(TORCHVISION_STABLE_SOURCES
   ${TVCPP}/io/image/cpu/decode_webp.cpp
   ${TVCPP}/io/image/common_stable.cpp
   ${TVCPP}/vision_stable.cpp)
-# Pin them to torch 2.11. Per source, not library-wide: the pin makes ATen headers
+# Pin them to torch 2.14. Per source, not library-wide: the pin makes ATen headers
 # error, and the legacy ops sharing this library still include them.
 # TODO(stable-abi): once every op is ported, drop this list and pin the whole
 # library target instead.
 set_source_files_properties(${TORCHVISION_STABLE_SOURCES} PROPERTIES
-  COMPILE_DEFINITIONS TORCH_TARGET_VERSION=0x020b000000000000)
+  COMPILE_DEFINITIONS TORCH_TARGET_VERSION=0x020e000000000000)
 
 add_library(${PROJECT_NAME} SHARED ${ALL_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
