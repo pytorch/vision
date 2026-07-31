@@ -793,6 +793,49 @@ def test_roi_opcheck(op, dtype, device, requires_grad):
     optests.opcheck(op, args=(x,), kwargs=kwargs)
 
 
+def _check_symint(f, inputs):
+    torch._dynamo.reset()
+    # Duck shapes would guard on incidental equalities between the size args and
+    # unrelated tensor dims, causing recompiles that have nothing to do with SymInt.
+    with torch.fx.experimental._config.patch(use_duck_shape=False):
+        cf = torch.compile(f, dynamic=True, fullgraph=True)
+        # Dynamo's 0/1/many specialization: the size args only become symbolic on
+        # the second call. From then on the graph must be reused, which is what
+        # tells us they really are SymInts and not baked-in ints.
+        for inp in inputs[:2]:
+            cf(inp)
+        with torch._dynamo.config.patch(error_on_recompile=True):
+            for inp in inputs[2:]:
+                torch.testing.assert_close(cf(inp), f(inp))
+
+
+@pytest.mark.skipif(not is_compile_supported("cpu"), reason="torch.compile not supported")
+@pytest.mark.parametrize("op", (ops.roi_align, ops.roi_pool, ops.ps_roi_align, ops.ps_roi_pool))
+def test_roi_pooled_size_symint(op):
+    # The ps_roi_* ops need the channels to be divisible by pooled_height *
+    # pooled_width, and 24 // (h * w) stays > 1 for every size below, which keeps
+    # dynamo from specializing on a single-channel output being contiguous.
+    x = torch.rand(2, 24, 10, 10)
+    rois = torch.tensor([[0.0, 0.0, 0.0, 9.0, 9.0], [1.0, 0.0, 0.0, 9.0, 9.0]])
+
+    def f(sizer):
+        return op(x, rois, (sizer.shape[0], sizer.shape[1]))
+
+    _check_symint(f, [torch.empty(h, w) for h, w in ((2, 2), (2, 3), (3, 2), (3, 4))])
+
+
+@pytest.mark.skipif(not is_compile_supported("cpu"), reason="torch.compile not supported")
+def test_deform_conv2d_padding_symint():
+    x, weight = torch.rand(1, 2, 8, 8), torch.rand(3, 2, 3, 3)
+
+    def f(sizer):
+        pad = sizer.shape[0]
+        out_size = 8 + 2 * pad - 2  # 3x3 kernel, unit stride and dilation
+        return ops.deform_conv2d(x, torch.zeros(1, 18, out_size, out_size), weight, padding=(pad, pad))
+
+    _check_symint(f, [torch.empty(pad) for pad in (2, 3, 4, 5)])
+
+
 class TestMultiScaleRoIAlign:
     def make_obj(self, fmap_names=None, output_size=(7, 7), sampling_ratio=2, wrap=False):
         if fmap_names is None:
