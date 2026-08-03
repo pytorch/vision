@@ -3413,16 +3413,17 @@ class TestElastic:
         ],
     )
     # ElasticTransform needs larger images to avoid the needed internal padding being larger than the actual image
-    @pytest.mark.parametrize("size", [(163, 163), (72, 333), (313, 95)])
+    @pytest.mark.parametrize("size", [(163, 163), (72, 333), (313, 95), (423, 617), (1008, 1008)])
+    @pytest.mark.parametrize("sigma", [0.5, 5.0, 15.0])
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    def test_transform(self, make_input, size, device):
+    def test_transform(self, make_input, size, sigma, device):
         # We have to skip that test on M1 because it's flaky: Mismatched elements: 35 / 89205 (0.0%)
         # See https://github.com/pytorch/vision/issues/8154
         # All other platforms are fine, so the differences do not come from something we own in torchvision
         check_v1_compatibility = False if sys.platform == "darwin" else dict(rtol=0, atol=1)
 
         check_transform(
-            transforms.ElasticTransform(),
+            transforms.ElasticTransform(sigma=sigma),
             make_input(size, device=device),
             check_v1_compatibility=check_v1_compatibility,
         )
