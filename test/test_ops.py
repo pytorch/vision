@@ -23,6 +23,8 @@ from torchvision import models, ops
 from torchvision.models.feature_extraction import get_graph_node_names
 
 
+IS_WINDOWS = sys.platform in ("win32", "cygwin")
+
 OPTESTS = [
     "test_schema",
     "test_autograd_registration",
@@ -809,6 +811,7 @@ def _check_symint(f, inputs):
                 torch.testing.assert_close(cf(inp), f(inp))
 
 
+@pytest.mark.skipif(IS_WINDOWS, reason="torch.compile is flaky on Windows")
 @pytest.mark.skipif(not is_compile_supported("cpu"), reason="torch.compile not supported")
 @pytest.mark.parametrize("op", (ops.roi_align, ops.roi_pool, ops.ps_roi_align, ops.ps_roi_pool))
 def test_roi_pooled_size_symint(op):
@@ -824,6 +827,7 @@ def test_roi_pooled_size_symint(op):
     _check_symint(f, [torch.empty(h, w) for h, w in ((2, 2), (2, 3), (3, 2), (3, 4))])
 
 
+@pytest.mark.skipif(IS_WINDOWS, reason="torch.compile is flaky on Windows")
 @pytest.mark.skipif(not is_compile_supported("cpu"), reason="torch.compile not supported")
 def test_deform_conv2d_padding_symint():
     x, weight = torch.rand(1, 2, 8, 8), torch.rand(3, 2, 3, 3)
