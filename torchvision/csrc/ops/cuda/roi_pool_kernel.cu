@@ -1,9 +1,20 @@
-#include <ATen/ATen.h>
-#include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDAGuard.h>
 #include <float.h>
-#include <torch/library.h>
-#include <ATen/native/cuda/KernelUtils.cuh>
+
+#include <torch/csrc/inductor/aoti_torch/c/shim.h>
+#include <torch/csrc/stable/accelerator.h>
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/macros.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/csrc/stable/tensor.h>
+#include <torch/headeronly/core/Dispatch_v2.h>
+#include <torch/headeronly/core/ScalarType.h>
+#include <torch/headeronly/cuda/AtomicAdd.h>
+#include <torch/headeronly/util/Exception.h>
+
+#include <cuda_runtime.h>
+
+#include <algorithm>
+#include <tuple>
 
 #include "cuda_helpers.h"
 
@@ -11,6 +22,8 @@ namespace vision {
 namespace ops {
 
 namespace {
+
+using torch::stable::Tensor;
 
 template <typename T>
 __global__ void roi_pool_forward_kernel_impl(
@@ -113,7 +126,7 @@ __global__ void roi_pool_backward_kernel_impl(
     const int offset = (roi_batch_ind * channels + c) * height * width;
 
     if (argmax != -1) {
-      at::native::fastAtomicAdd(
+      torch::headeronly::fastAtomicAdd(
           grad_input,
           offset + argmax,
           memory_span,
@@ -124,38 +137,119 @@ __global__ void roi_pool_backward_kernel_impl(
   }
 }
 
-std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(
-    const at::Tensor& input,
-    const at::Tensor& rois,
+// THO_DISPATCH_V2 splits its body on commas outside parens. The commas in
+// kernel<<<grid, block, 0, stream>>> would break it, so it goes through this
+// wrapper.
+template <typename scalar_t>
+void launch_roi_pool_forward_kernel_impl(
+    dim3 grid,
+    dim3 block,
+    cudaStream_t stream,
+    int output_size,
+    const scalar_t* input,
+    double spatial_scale,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
+    const scalar_t* rois,
+    scalar_t* output,
+    int* argmax_data) {
+  roi_pool_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
+      output_size,
+      input,
+      spatial_scale,
+      channels,
+      height,
+      width,
+      pooled_height,
+      pooled_width,
+      rois,
+      output,
+      argmax_data);
+}
+
+template <typename scalar_t>
+void launch_roi_pool_backward_kernel_impl(
+    dim3 grid,
+    dim3 block,
+    cudaStream_t stream,
+    int nthreads,
+    const scalar_t* grad_output,
+    const int* argmax_data,
+    int num_rois,
+    double spatial_scale,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
+    scalar_t* grad_input,
+    const scalar_t* rois,
+    int n_stride,
+    int c_stride,
+    int h_stride,
+    int w_stride,
+    int memory_span) {
+  roi_pool_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
+      nthreads,
+      grad_output,
+      argmax_data,
+      num_rois,
+      spatial_scale,
+      channels,
+      height,
+      width,
+      pooled_height,
+      pooled_width,
+      grad_input,
+      rois,
+      n_stride,
+      c_stride,
+      h_stride,
+      w_stride,
+      memory_span);
+}
+
+std::tuple<Tensor, Tensor> roi_pool_forward_kernel(
+    const Tensor& input,
+    const Tensor& rois,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width) {
-  TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
-  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
+  STD_TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  STD_TORCH_CHECK(
       rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
+  STD_TORCH_CHECK(
+      input.get_device_index() == rois.get_device_index(),
+      "input should be on the same device as rois");
+  STD_TORCH_CHECK(
+      input.scalar_type() == rois.scalar_type(),
+      "input should have the same type as rois");
 
-  at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
-
-  at::CheckedFrom c = "roi_pool_forward_kernel";
-  at::checkAllSameGPU(c, {input_t, rois_t});
-  at::checkAllSameType(c, {input_t, rois_t});
-
-  at::cuda::CUDAGuard device_guard(input.device());
+  torch::stable::accelerator::DeviceGuard device_guard(
+      input.get_device_index());
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
   auto height = input.size(2);
   auto width = input.size(3);
 
-  at::Tensor output = at::zeros(
-      {num_rois, channels, pooled_height, pooled_width}, input.options());
-  at::Tensor argmax = at::zeros(
+  Tensor output = torch::stable::new_zeros(
+      input, {num_rois, channels, pooled_height, pooled_width});
+  Tensor argmax = torch::stable::new_zeros(
+      input,
       {num_rois, channels, pooled_height, pooled_width},
-      input.options().dtype(at::kInt));
+      torch::headeronly::ScalarType::Int);
 
   auto output_size = num_rois * pooled_height * pooled_width * channels;
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+
+  void* stream_ptr = nullptr;
+  TORCH_ERROR_CODE_CHECK(aoti_torch_get_current_cuda_stream(
+      input.get_device_index(), &stream_ptr));
+  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
 
   dim3 grid(std::min(
       ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
@@ -163,34 +257,42 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(
   dim3 block(512);
 
   if (output.numel() == 0) {
-    AT_CUDA_CHECK(cudaGetLastError());
+    STD_CUDA_KERNEL_LAUNCH_CHECK();
     return std::make_tuple(output, argmax);
   }
 
-  auto input_ = input.contiguous(), rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "roi_pool_forward_kernel", [&] {
-        roi_pool_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
+  auto input_ = torch::stable::contiguous(input);
+  auto rois_ = torch::stable::contiguous(rois);
+  THO_DISPATCH_V2(
+      input.scalar_type(),
+      "roi_pool_forward_kernel",
+      AT_WRAP([&]() {
+        launch_roi_pool_forward_kernel_impl<scalar_t>(
+            grid,
+            block,
+            stream,
             output_size,
-            input_.data_ptr<scalar_t>(),
+            input_.const_data_ptr<scalar_t>(),
             spatial_scale,
             channels,
             height,
             width,
             pooled_height,
             pooled_width,
-            rois_.data_ptr<scalar_t>(),
-            output.data_ptr<scalar_t>(),
-            argmax.data_ptr<int>());
-      });
-  AT_CUDA_CHECK(cudaGetLastError());
+            rois_.const_data_ptr<scalar_t>(),
+            output.mutable_data_ptr<scalar_t>(),
+            argmax.mutable_data_ptr<int>());
+      }),
+      AT_EXPAND(AT_FLOATING_TYPES),
+      torch::headeronly::ScalarType::Half);
+  STD_CUDA_KERNEL_LAUNCH_CHECK();
   return std::make_tuple(output, argmax);
 }
 
-at::Tensor roi_pool_backward_kernel(
-    const at::Tensor& grad,
-    const at::Tensor& rois,
-    const at::Tensor& argmax,
+Tensor roi_pool_backward_kernel(
+    const Tensor& grad,
+    const Tensor& rois,
+    const Tensor& argmax,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width,
@@ -199,25 +301,30 @@ at::Tensor roi_pool_backward_kernel(
     int64_t height,
     int64_t width) {
   // Check if input tensors are CUDA tensors
-  TORCH_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
-  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
-  TORCH_CHECK(argmax.is_cuda(), "argmax must be a CUDA tensor");
+  STD_TORCH_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
+  STD_TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  STD_TORCH_CHECK(argmax.is_cuda(), "argmax must be a CUDA tensor");
+  STD_TORCH_CHECK(
+      grad.get_device_index() == rois.get_device_index(),
+      "grad should be on the same device as rois");
+  STD_TORCH_CHECK(
+      grad.get_device_index() == argmax.get_device_index(),
+      "grad should be on the same device as argmax");
+  STD_TORCH_CHECK(
+      grad.scalar_type() == rois.scalar_type(),
+      "grad should have the same type as rois");
 
-  at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},
-      argmax_t{argmax, "argmax", 3};
-
-  at::CheckedFrom c = "roi_pool_backward_kernel";
-  at::checkAllSameGPU(c, {grad_t, rois_t, argmax_t});
-  at::checkAllSameType(c, {grad_t, rois_t});
-
-  at::cuda::CUDAGuard device_guard(grad.device());
+  torch::stable::accelerator::DeviceGuard device_guard(grad.get_device_index());
 
   auto num_rois = rois.size(0);
 
-  at::Tensor grad_input =
-      at::zeros({batch_size, channels, height, width}, grad.options());
+  Tensor grad_input =
+      torch::stable::new_zeros(grad, {batch_size, channels, height, width});
 
-  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
+  void* stream_ptr = nullptr;
+  TORCH_ERROR_CODE_CHECK(
+      aoti_torch_get_current_cuda_stream(grad.get_device_index(), &stream_ptr));
+  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
 
   dim3 grid(std::min(
       ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
@@ -226,7 +333,7 @@ at::Tensor roi_pool_backward_kernel(
 
   // handle possibly empty gradients
   if (grad.numel() == 0) {
-    AT_CUDA_CHECK(cudaGetLastError());
+    STD_CUDA_KERNEL_LAUNCH_CHECK();
     return grad_input;
   }
 
@@ -235,15 +342,19 @@ at::Tensor roi_pool_backward_kernel(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
-  at::globalContext().alertNotDeterministic("roi_pool_backward_kernel");
-
-  auto argmax_ = argmax.contiguous(), rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "roi_pool_backward_kernel", [&] {
-        roi_pool_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
+  auto argmax_ = torch::stable::contiguous(argmax);
+  auto rois_ = torch::stable::contiguous(rois);
+  THO_DISPATCH_V2(
+      grad.scalar_type(),
+      "roi_pool_backward_kernel",
+      AT_WRAP([&]() {
+        launch_roi_pool_backward_kernel_impl<scalar_t>(
+            grid,
+            block,
+            stream,
             grad.numel(),
-            grad.data_ptr<scalar_t>(),
-            argmax_.data_ptr<int>(),
+            grad.const_data_ptr<scalar_t>(),
+            argmax_.const_data_ptr<int>(),
             num_rois,
             spatial_scale,
             channels,
@@ -251,27 +362,25 @@ at::Tensor roi_pool_backward_kernel(
             width,
             pooled_height,
             pooled_width,
-            grad_input.data_ptr<scalar_t>(),
-            rois_.data_ptr<scalar_t>(),
+            grad_input.mutable_data_ptr<scalar_t>(),
+            rois_.const_data_ptr<scalar_t>(),
             n_stride,
             c_stride,
             h_stride,
             w_stride,
             grad_input.numel());
-      });
-  AT_CUDA_CHECK(cudaGetLastError());
+      }),
+      AT_EXPAND(AT_FLOATING_TYPES),
+      torch::headeronly::ScalarType::Half);
+  STD_CUDA_KERNEL_LAUNCH_CHECK();
   return grad_input;
 }
 
 } // namespace
 
-TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
-  m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::roi_pool"),
-      TORCH_FN(roi_pool_forward_kernel));
-  m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::_roi_pool_backward"),
-      TORCH_FN(roi_pool_backward_kernel));
+STABLE_TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("roi_pool", TORCH_BOX(&roi_pool_forward_kernel));
+  m.impl("_roi_pool_backward", TORCH_BOX(&roi_pool_backward_kernel));
 }
 
 } // namespace ops
