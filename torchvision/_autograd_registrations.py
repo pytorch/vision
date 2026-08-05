@@ -119,7 +119,7 @@ def _ps_roi_pool_setup_context(ctx, inputs, output):
 
 
 def _ps_roi_pool_backward(ctx, grad_output, _grad_channel_mapping):
-    if grad_output.device.type == "mps":
+    if grad_output.device.type in ("cuda", "mps"):
         torch._prims_common.alert_not_deterministic("ps_roi_pool_backward_kernel")
     rois, channel_mapping = ctx.saved_tensors
     batch_size, channels, height, width = ctx.input_shape
