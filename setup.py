@@ -166,6 +166,9 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/quantized/cpu/qnms_kernel.cpp",
     CSRS_DIR / "ops/box_iou_rotated.cpp",
     CSRS_DIR / "ops/cpu/box_iou_rotated_kernel.cpp",
+    CSRS_DIR / "ops/roi_align.cpp",
+    CSRS_DIR / "ops/cpu/roi_align_kernel.cpp",
+    CSRS_DIR / "ops/quantized/cpu/qroi_align_kernel.cpp",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 STABLE_SOURCES.add(
