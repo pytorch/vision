@@ -206,11 +206,35 @@ def download_file_from_google_drive(
         raise RuntimeError("File not found or corrupted.")
 
 
+def _reject_escaping_tar_members(tar: tarfile.TarFile, to_path: Union[str, pathlib.Path]) -> None:
+    """Path-traversal guard for Python versions without the PEP 706 ``data`` filter.
+
+    Rejects any member whose resolved path, or link target, would fall outside
+    ``to_path`` before extraction writes anything.
+    """
+    base = os.path.realpath(to_path)
+    for member in tar.getmembers():
+        target = os.path.realpath(os.path.join(base, member.name))
+        if os.path.commonpath([base, target]) != base:
+            raise RuntimeError(f"Refusing to extract tar member '{member.name}' outside of '{to_path}'.")
+        if member.issym() or member.islnk():
+            link_target = os.path.realpath(os.path.join(os.path.dirname(target), member.linkname))
+            if os.path.commonpath([base, link_target]) != base:
+                raise RuntimeError(f"Refusing to extract tar member '{member.name}' linking outside of '{to_path}'.")
+
+
 def _extract_tar(
     from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
 ) -> None:
     with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
-        tar.extractall(to_path)
+        # PEP 706 ``data`` filter rejects path traversal, absolute paths, and links
+        # escaping ``to_path``. It is the default in Python 3.14 and available since
+        # 3.12 (backported to 3.10.12+/3.11.4+); fall back to a manual guard otherwise.
+        if hasattr(tarfile, "data_filter"):
+            tar.extractall(to_path, filter="data")
+        else:
+            _reject_escaping_tar_members(tar, to_path)
+            tar.extractall(to_path)
 
 
 _ZIP_COMPRESSION_MAP: dict[str, int] = {
