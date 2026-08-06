@@ -54,7 +54,7 @@ jobs:
       matrix:
         python-version:
           - "3.10"
-        runner: ["linux.rocm.gpu.gfx942.1"]
+        runner: ["linux.rocm.gpu.ecosystem.mi350.1"]
         gpu-arch-type: ["rocm"]
         gpu-arch-version: ["7.1"]
       fail-fast: false
