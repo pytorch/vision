@@ -66,6 +66,44 @@ PACKAGE_ROOT = osp.dirname(osp.dirname(HERE))
 PLATFORM_ARCH = platform.machine()
 PYTHON_VERSION = sys.version_info
 
+# ROCm runtime libraries omitted from bundling because they are provided by
+# the separate rocm-sdk-* Python wheels at runtime.  We extend the RPATH of
+# the torchvision binary instead so the dynamic linker resolves them.
+_ROCM_RUNTIME_LIBS = {
+    "librocjpeg.so",
+}
+
+
+def _is_rocm_build() -> bool:
+    # CU_VERSION is the most reliable indicator: set as a workflow-level env var
+    # in test-infra's build_wheels_linux.yml (e.g. "rocm7.14").
+    # GPU_ARCH_TYPE and DESIRED_CUDA are kept as fallbacks for local/custom builds.
+    return (
+        os.environ.get("CU_VERSION", "").startswith("rocm")
+        or os.environ.get("GPU_ARCH_TYPE", "") == "rocm"
+        or "rocm" in os.environ.get("DESIRED_CUDA", "")
+    )
+
+
+def _rocm_sdk_rpath() -> str:
+    """Extra RPATH entries for ROCm builds pointing at the rocm-sdk-* wheel lib dirs.
+
+    On the TheRock/ROCm-7.14+ layout, GPU runtime libraries are shipped in
+    separate rocm-sdk-* Python wheels installed into site-packages.
+    Adding these directories to the RPATH lets the dynamic linker resolve
+    them at runtime without bundling them into the torchvision wheel.
+
+    Verified against rocm-sdk-*==7.14.0 wheel contents:
+      _rocm_sdk_core/lib     - librocjpeg.so.1 and other core runtime libs
+      _rocm_sdk_libraries/lib - librocblas, libhipblas, MIOpen, RCCL, etc.
+      _rocm_sdk_devel/lib     - present on build hosts; symlinks into the above
+    """
+    return ":".join([
+        "$ORIGIN/../_rocm_sdk_core/lib",
+        "$ORIGIN/../_rocm_sdk_libraries/lib",
+        "$ORIGIN/../_rocm_sdk_devel/lib",
+    ])
+
 
 def rehash(path, blocksize=1 << 20):
     """Return (hash, length) for path using hashlib.sha256()"""
@@ -172,6 +210,15 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
             print(f"Omitting {library}")
             continue
 
+        if _is_rocm_build() and any(
+            library == lib or library.startswith(lib + ".")
+            for lib in _ROCM_RUNTIME_LIBS
+        ):
+            # ROCm runtime libs live in rocm-sdk-* wheels; resolve via RPATH
+            # instead of bundling so end-users get the version they installed.
+            print(f"Omitting ROCm runtime library {library} (resolved via RPATH)")
+            continue
+
         parent_dependencies = binary_dependencies.get(parent, [])
         parent_dependencies.append(library)
         binary_dependencies[parent] = parent_dependencies
@@ -223,8 +270,11 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
         subprocess.check_output([patchelf, "--replace-needed", dep, new_dep, binary], cwd=output_library)
 
     print("Update library rpath")
+    rpath = "$ORIGIN:$ORIGIN/../torchvision.libs"
+    if _is_rocm_build():
+        rpath = f"{rpath}:{_rocm_sdk_rpath()}"
     subprocess.check_output(
-        [patchelf, "--set-rpath", "$ORIGIN:$ORIGIN/../torchvision.libs", binary_path], cwd=output_library
+        [patchelf, "--set-rpath", rpath, binary_path], cwd=output_library
     )
 
 
