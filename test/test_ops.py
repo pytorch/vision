@@ -476,6 +476,38 @@ class TestRoIAlign(RoIOpTester):
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
+    @pytest.mark.parametrize("aligned", (True, False))
+    @pytest.mark.parametrize("sampling_ratio", (1, -1))
+    @pytest.mark.parametrize("dtype", (torch.float32, torch.float64, torch.float16))
+    # A non-finite value in any column is malformed: NaN slips past the bounds
+    # check directly, and +/-inf coordinates produce a NaN width (inf - inf)
+    # that does the same. Cover both hazards.
+    @pytest.mark.parametrize("bad_value", (float("nan"), float("inf"), float("-inf")))
+    # bad_col indexes a rois row [batch_idx, x1, y1, x2, y2]; a bad value in any
+    # column (batch index included) must not crash the kernel.
+    @pytest.mark.parametrize("bad_col", (0, 1, 2, 3, 4))
+    def test_nonfinite_rois_no_segfault(self, aligned, sampling_ratio, dtype, bad_value, bad_col):
+        # Regression test for https://github.com/pytorch/vision/issues/9273:
+        # a ROI with a non-finite batch index or coordinate (NaN or +/-inf) used
+        # to slip past the CPU kernel's bounds check (every comparison against
+        # NaN is false; inf coords yield NaN widths), get cast to int and read
+        # out of bounds, segfaulting the whole process. A malformed ROI must
+        # instead be treated as empty (zero output / zero gradient).
+        x = torch.zeros(2, 3, 15, 19, dtype=dtype, requires_grad=True)
+        row = [1.0, 0.0, 0.0, 1.0, 1.0]
+        row[bad_col] = bad_value
+        rois = torch.tensor([row], dtype=dtype)
+
+        y = ops.roi_align(x, rois, (7, 7), spatial_scale=0.1, sampling_ratio=sampling_ratio, aligned=aligned)
+        assert y.shape == (1, 3, 7, 7)
+        assert torch.isfinite(y).all()
+        assert (y == 0).all()
+
+        # Backward must be crash-free too (the same hazard lives in the gradient
+        # kernel) and must not propagate non-finite values into the input grad.
+        y.sum().backward()
+        assert torch.isfinite(x.grad).all()
+
     @needs_mps
     @pytest.mark.parametrize("seed", range(3))
     def test_backward_mps_consistency(self, seed):
