@@ -4477,6 +4477,27 @@ class TestConvertBoundingBoxFormat:
         assert (actual >= 0).all()
         torch.testing.assert_close(actual, expected)
 
+    @pytest.mark.parametrize("inplace", [False, True])
+    @pytest.mark.parametrize(
+        ("dtype", "box", "expected_box"),
+        [
+            (torch.uint8, [200, 10, 220, 30], [210, 20, 20, 20]),
+            (torch.float16, [32768, 0, 49152, 32], [40960, 16, 16384, 32]),
+        ],
+    )
+    def test_xyxy_to_cxcywh_narrow_dtype_overflow(self, inplace, dtype, box, expected_box):
+        bounding_boxes = torch.tensor([box], dtype=dtype)
+
+        actual = F.convert_bounding_box_format(
+            bounding_boxes,
+            old_format=tv_tensors.BoundingBoxFormat.XYXY,
+            new_format=tv_tensors.BoundingBoxFormat.CXCYWH,
+            inplace=inplace,
+        )
+        expected = torch.tensor([expected_box], dtype=dtype)
+
+        torch.testing.assert_close(actual, expected)
+
 
 class TestResizedCrop:
     INPUT_SIZE = (17, 11)
