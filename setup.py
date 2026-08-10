@@ -23,7 +23,6 @@ USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
-USE_ROCJPEG = os.getenv("TORCHVISION_USE_ROCJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
@@ -46,7 +45,6 @@ print(f"{USE_PNG = }")
 print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
 print(f"{USE_NVJPEG = }")
-print(f"{USE_ROCJPEG = }")
 print(f"{NVCC_FLAGS = }")
 print(f"{TORCHVISION_INCLUDE = }")
 print(f"{TORCHVISION_LIBRARY = }")
@@ -394,7 +392,7 @@ def make_image_stable_extension():
         list(image_dir.glob("*.cpp"))
         + list(image_dir.glob("cpu/*.cpp"))
         + list(image_dir.glob("cpu/giflib/*.c"))
-        + list(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
+        + list(image_dir.glob("cuda/*.cpp"))
     )
 
     Extension = CppExtension
@@ -445,16 +443,6 @@ def make_image_stable_extension():
             libraries.append("nvjpeg")
             define_macros += [("NVJPEG_FOUND", 1)]
             Extension = CUDAExtension
-
-    if USE_ROCJPEG and IS_ROCM and (torch.cuda.is_available() or FORCE_CUDA):
-        rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
-        if rocjpeg_found:
-            print("Building torchvision with ROCJPEG image support")
-            libraries.append("rocjpeg")
-            define_macros += [("ROCJPEG_FOUND", 1)]
-            Extension = CUDAExtension
-        else:
-            warnings.warn("Building torchvision without ROCJPEG support")
 
     return Extension(
         name="torchvision.image_stable",

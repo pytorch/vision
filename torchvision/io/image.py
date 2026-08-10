@@ -195,10 +195,7 @@ def decode_jpeg(
             for available modes.
         device (str or torch.device): The device on which the decoded image will
             be stored. If a cuda device is specified, the image will be decoded
-            with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_ on NVIDIA GPUs,
-            or with `rocJPEG
-            <https://rocm.docs.amd.com/projects/rocJPEG/en/latest/>`_ on AMD
-            (ROCm) GPUs. On both, pass ``device="cuda"``.
+            with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_.
 
             .. betastatus:: device parameter
 
