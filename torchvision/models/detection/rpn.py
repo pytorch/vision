@@ -358,11 +358,47 @@ class RegionProposalNetwork(torch.nn.Module):
         # RPN uses all feature maps that are available
         features = list(features.values())
         objectness, pred_bbox_deltas = self.head(features)
+
+        # Validate that the RPN head's predictions are compatible with the anchor
+        # generator's configuration on every feature level. A mismatch usually
+        # means that the anchor generator's sizes/aspect_ratios are not consistent
+        # with the number of anchors the RPN head was built for.
+        anchor_gen_num_anchors_per_location = self.anchor_generator.num_anchors_per_location()
+        if len(objectness) != len(anchor_gen_num_anchors_per_location):
+            raise ValueError(
+                f"Number of feature levels from the RPN head ({len(objectness)}) "
+                f"does not match the number of levels from the anchor generator "
+                f"({len(anchor_gen_num_anchors_per_location)})."
+            )
+        for level, (obj_per_level, bbox_per_level, gen_anchors) in enumerate(
+            zip(objectness, pred_bbox_deltas, anchor_gen_num_anchors_per_location)
+        ):
+            head_anchors = obj_per_level.shape[1]
+            if head_anchors != gen_anchors:
+                raise ValueError(
+                    f"Number of anchors per location at level {level} from the "
+                    f"anchor generator ({gen_anchors}) does not match the number "
+                    f"of anchors predicted by the RPN head ({head_anchors}). This "
+                    f"usually happens when the anchor generator's "
+                    f"sizes/aspect_ratios are not consistent with the RPN head's "
+                    f"num_anchors. Anchor generator produces "
+                    f"{anchor_gen_num_anchors_per_location} anchors per location, "
+                    f"while the RPN head expects {head_anchors} anchors per "
+                    f"location at level {level}."
+                )
+            if bbox_per_level.shape[1] != head_anchors * 4:
+                raise ValueError(
+                    f"Number of regression channels at level {level} from the "
+                    f"RPN head ({bbox_per_level.shape[1]}) does not match 4 "
+                    f"times the number of anchors ({head_anchors * 4})."
+                )
+
         anchors = self.anchor_generator(images, features)
 
         num_images = len(anchors)
         num_anchors_per_level_shape_tensors = [o[0].shape for o in objectness]
         num_anchors_per_level = [s[0] * s[1] * s[2] for s in num_anchors_per_level_shape_tensors]
+
         objectness, pred_bbox_deltas = concat_box_prediction_layers(objectness, pred_bbox_deltas)
         # apply pred_bbox_deltas to anchors to obtain the decoded proposals
         # note that we detach the deltas because Faster R-CNN do not backprop through

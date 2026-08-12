@@ -1,9 +1,13 @@
 import copy
+from collections import OrderedDict
 
 import pytest
 import torch
 from common_utils import assert_equal
 from torchvision.models.detection import _utils, backbone_utils
+from torchvision.models.detection.anchor_utils import AnchorGenerator
+from torchvision.models.detection.image_list import ImageList
+from torchvision.models.detection.rpn import RPNHead, RegionProposalNetwork
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 
 
@@ -79,6 +83,136 @@ class TestModelsDetectionUtils:
         targets = [{"boxes": torch.rand(3, 4)}]
         with pytest.raises(TypeError):
             out = transform(image, targets)  # noqa: F841
+
+    def test_rpn_anchor_count_mismatch(self):
+        # Anchor generator with a different number of anchors per location across
+        # feature levels: level 0 has 2 sizes * 3 aspect ratios = 6 anchors per
+        # location, while level 1 has 1 size * 3 aspect ratios = 3 anchors per
+        # location.
+        anchor_generator = AnchorGenerator(
+            sizes=((32, 64), (128,)),
+            aspect_ratios=((0.5, 1.0, 2.0), (0.5, 1.0, 2.0)),
+        )
+
+        # The RPN head is built using only the number of anchors of the first
+        # feature level, so the predictions at the second level will not match
+        # the number of anchors generated there.
+        in_channels = 4
+        rpn_head = RPNHead(in_channels, anchor_generator.num_anchors_per_location()[0])
+
+        rpn = RegionProposalNetwork(
+            anchor_generator=anchor_generator,
+            head=rpn_head,
+            fg_iou_thresh=0.7,
+            bg_iou_thresh=0.3,
+            batch_size_per_image=256,
+            positive_fraction=0.5,
+            pre_nms_top_n=dict(training=2000, testing=1000),
+            post_nms_top_n=dict(training=2000, testing=1000),
+            nms_thresh=0.7,
+        )
+        rpn.eval()
+
+        images = ImageList(torch.rand(1, 3, 32, 32), [(32, 32)])
+        features = OrderedDict(
+            [
+                ("0", torch.rand(1, in_channels, 8, 8)),
+                ("1", torch.rand(1, in_channels, 4, 4)),
+            ]
+        )
+
+        with pytest.raises(ValueError, match=r"(?i)anchor"):
+            rpn(images, features)
+
+    def test_rpn_anchor_count_mismatch_per_level_cancellation(self):
+        # Per-level anchor counts differ between the anchor generator and the
+        # RPN head, but the total counts coincide because the weighted
+        # differences cancel out. The RPN head predicts 3 anchors per location
+        # on every level, while the anchor generator produces [3, 2, 7] anchors
+        # per location. With feature-map areas [64, 16, 4]:
+        #   predictions = 3*64 + 3*16 + 3*4 = 252
+        #   anchors     = 3*64 + 2*16 + 7*4 = 252
+        # An aggregate total-count check would pass, but predictions would be
+        # paired with the wrong level's anchors.
+        anchor_generator = AnchorGenerator(
+            sizes=((32, 64, 128), (256, 512), (1024, 2048, 4096, 8192, 16384, 32768, 65536)),
+            aspect_ratios=((1.0,), (1.0,), (1.0,)),
+        )
+
+        in_channels = 4
+        rpn_head = RPNHead(in_channels, 3)
+
+        rpn = RegionProposalNetwork(
+            anchor_generator=anchor_generator,
+            head=rpn_head,
+            fg_iou_thresh=0.7,
+            bg_iou_thresh=0.3,
+            batch_size_per_image=256,
+            positive_fraction=0.5,
+            pre_nms_top_n=dict(training=2000, testing=1000),
+            post_nms_top_n=dict(training=2000, testing=1000),
+            nms_thresh=0.7,
+        )
+        rpn.eval()
+
+        # Stub the proposal filtering tail so that, if the per-level anchor
+        # validation is missing, execution does not fall through into NMS /
+        # native ops. The real anchor generation, RPN head predictions,
+        # per-level count preparation and the aggregate count guard still run.
+        rpn.filter_proposals = lambda proposals, objectness, image_shapes, num_anchors_per_level: (
+            [torch.empty((0, 4), device=proposals.device) for _ in image_shapes],
+            [torch.empty((0,), device=proposals.device) for _ in image_shapes],
+        )
+
+        images = ImageList(torch.rand(1, 3, 64, 64), [(64, 64)])
+        features = OrderedDict(
+            [
+                ("0", torch.rand(1, in_channels, 8, 8)),
+                ("1", torch.rand(1, in_channels, 4, 4)),
+                ("2", torch.rand(1, in_channels, 2, 2)),
+            ]
+        )
+
+        with pytest.raises(ValueError, match=r"(?i)anchor"):
+            rpn(images, features)
+
+    def test_rpn_anchor_level_count_mismatch(self):
+        # The anchor generator is configured for 2 feature levels, but 3
+        # feature maps are passed to the RPN. The level-count mismatch should
+        # surface as a clear ValueError rather than the anchor generator's
+        # internal assertion.
+        anchor_generator = AnchorGenerator(
+            sizes=((32,), (64,)),
+            aspect_ratios=((1.0,), (1.0,)),
+        )
+
+        in_channels = 4
+        rpn_head = RPNHead(in_channels, 1)
+
+        rpn = RegionProposalNetwork(
+            anchor_generator=anchor_generator,
+            head=rpn_head,
+            fg_iou_thresh=0.7,
+            bg_iou_thresh=0.3,
+            batch_size_per_image=256,
+            positive_fraction=0.5,
+            pre_nms_top_n=dict(training=2000, testing=1000),
+            post_nms_top_n=dict(training=2000, testing=1000),
+            nms_thresh=0.7,
+        )
+        rpn.eval()
+
+        images = ImageList(torch.rand(1, 3, 32, 32), [(32, 32)])
+        features = OrderedDict(
+            [
+                ("0", torch.rand(1, in_channels, 8, 8)),
+                ("1", torch.rand(1, in_channels, 4, 4)),
+                ("2", torch.rand(1, in_channels, 2, 2)),
+            ]
+        )
+
+        with pytest.raises(ValueError, match=r"(?i)anchor"):
+            rpn(images, features)
 
 
 if __name__ == "__main__":
