@@ -60,7 +60,7 @@ at::Tensor roi_align_forward_kernel(const at::Tensor& input,
           MTLSizeMake(std::min(static_cast<int64_t>(visionPSO.maxTotalThreadsPerThreadgroup), output_size), 1, 1);
 
       // this function call is a no-op if MPS Profiler is not enabled
-      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input_, rois_});
+      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input_, rois_}, mpsStream);
 
       [computeEncoder setComputePipelineState:visionPSO];
       // [N, C, H, W]
@@ -79,7 +79,7 @@ at::Tensor roi_align_forward_kernel(const at::Tensor& input,
 
       [computeEncoder dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadsPerThreadgroup];
 
-      getMPSProfiler().endProfileKernel(visionPSO);
+      getMPSProfiler().endProfileKernel(visionPSO, mpsStream);
     }
   });
   return output;
@@ -137,7 +137,7 @@ at::Tensor roi_align_backward_kernel(const at::Tensor& grad,
       id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
-      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {grad, rois_});
+      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {grad, rois_}, mpsStream);
 
       [computeEncoder setComputePipelineState:visionPSO];
       // [N, C, H, W]
@@ -167,7 +167,7 @@ at::Tensor roi_align_backward_kernel(const at::Tensor& grad,
       MTLSize threadGroupSize = MTLSizeMake(std::max<NSUInteger>(tgSize, 1), 1, 1);
       [computeEncoder dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadGroupSize];
 
-      getMPSProfiler().endProfileKernel(visionPSO);
+      getMPSProfiler().endProfileKernel(visionPSO, mpsStream);
     }
   });
   return grad_input;

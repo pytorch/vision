@@ -60,7 +60,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(const at::Tensor& inp
       id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
-      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input_, rois_});
+      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input_, rois_}, mpsStream);
 
       [computeEncoder setComputePipelineState:visionPSO];
       // [N, C, H, W]
@@ -86,7 +86,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(const at::Tensor& inp
       MTLSize threadGroupSize = MTLSizeMake(tgSize, 1, 1);
       [computeEncoder dispatchThreadgroups:threadgroupsPerGrid threadsPerThreadgroup:threadGroupSize];
 
-      getMPSProfiler().endProfileKernel(visionPSO);
+      getMPSProfiler().endProfileKernel(visionPSO, mpsStream);
     }
   });
   return std::make_tuple(output, argmax);
@@ -145,7 +145,7 @@ at::Tensor roi_pool_backward_kernel(const at::Tensor& grad,
       id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
 
       // this function call is a no-op if MPS Profiler is not enabled
-      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {grad, rois_, argmax_});
+      getMPSProfiler().beginProfileKernel(visionPSO, kernel, {grad, rois_, argmax_}, mpsStream);
 
       [computeEncoder setComputePipelineState:visionPSO];
       // [N, C, H, W]
@@ -174,7 +174,7 @@ at::Tensor roi_pool_backward_kernel(const at::Tensor& grad,
       MTLSize threadGroupSize = MTLSizeMake(std::max<NSUInteger>(tgSize, 1), 1, 1);
       [computeEncoder dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadGroupSize];
 
-      getMPSProfiler().endProfileKernel(visionPSO);
+      getMPSProfiler().endProfileKernel(visionPSO, mpsStream);
     }
   });
   return grad_input;
