@@ -169,6 +169,8 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/quantized/cpu/qroi_align_kernel.cpp",
     CSRS_DIR / "ops/roi_pool.cpp",
     CSRS_DIR / "ops/cpu/roi_pool_kernel.cpp",
+    CSRS_DIR / "ops/ps_roi_pool.cpp",
+    CSRS_DIR / "ops/cpu/ps_roi_pool_kernel.cpp",
     CSRS_DIR / "ops/ps_roi_align.cpp",
     CSRS_DIR / "ops/cpu/ps_roi_align_kernel.cpp",
 }
