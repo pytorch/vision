@@ -420,6 +420,16 @@ std::vector<torch::stable::Tensor> CUDAJpegDecoder::decode_images(
   auto [decoded_imgs_buf, output_tensors, channels] =
       prepare_buffers(encoded_images, output_format);
 
+  // prepare_buffers() allocated the output tensors while the caller's stream
+  // was current, so the caching allocator may have handed us blocks that it
+  // freed from that stream while kernels using them were still queued on it.
+  // Our private `stream` is not ordered against the caller's, so make it wait
+  // before nvJPEG writes into that memory.
+  void* current_stream_ptr = nullptr;
+  TORCH_ERROR_CODE_CHECK(aoti_torch_get_current_cuda_stream(
+      target_device.index(), &current_stream_ptr));
+  syncStreams(static_cast<cudaStream_t>(current_stream_ptr), stream);
+
   nvjpegStatus_t status;
   cudaError_t cudaStatus;
 

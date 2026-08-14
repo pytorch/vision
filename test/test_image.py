@@ -435,6 +435,48 @@ def test_decode_jpegs_cuda(mode, scripted):
 
 
 @needs_cuda
+def test_decode_jpegs_cuda_stream_ordering():
+    """
+    Non-regression test: the CUDA decoder allocates its output tensors while the
+    caller's stream is current, then writes them from its own stream. The caching
+    allocator recycles a block as soon as it is freed on the stream that owns it,
+    so unless the decoder waits for the caller's stream first, it can overwrite
+    memory that kernels queued on that stream have not finished reading.
+
+    Below, the reductions are queued behind a long-running kernel and their inputs
+    are freed while they are still queued, so the decoder is handed that memory.
+    The sums are exact integers, and only wrong if the decoder wrote too early.
+    """
+    device = torch.device("cuda", torch.cuda.current_device())
+    height, width = 1080, 1920  # large enough for the allocator's large-block pool
+    image = torch.linspace(0, 255, steps=height * width).view(1, height, width)
+    data = encode_jpeg(image.expand(3, -1, -1).to(torch.uint8).contiguous(), quality=90)
+    num_bytes = 3 * height * width
+
+    values = (1, 2, 3, 4)
+    expected = float(sum(value * num_bytes for value in values))
+    reused = 0
+    for _ in range(5):
+        victims = [torch.full((num_bytes,), value, dtype=torch.uint8, device=device) for value in values]
+        pointers = {victim.data_ptr() for victim in victims}
+        torch.cuda.synchronize()  # the victims' contents are resident on the device
+
+        torch.cuda._sleep(200_000_000)  # keep the caller's stream busy for ~100ms
+        total = torch.zeros((), dtype=torch.float64, device=device)
+        for victim in victims:
+            total = total + victim.sum(dtype=torch.float64)
+        victims.clear()  # freed while their reductions are still queued
+
+        decoded = decode_jpeg(data, device=device)
+        reused += decoded.data_ptr() in pointers
+        torch.cuda.synchronize()
+        assert float(total) == expected
+
+    if not reused:
+        pytest.skip("the allocator never handed the decoder a freed block, nothing was exercised")
+
+
+@needs_cuda
 def test_decode_image_cuda_raises():
     data = torch.randint(0, 127, size=(255,), device="cuda", dtype=torch.uint8)
     with pytest.raises(RuntimeError):
