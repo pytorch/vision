@@ -102,10 +102,28 @@ set(TORCHVISION_STABLE_SOURCES
   ${TVCPP}/ops/nms.cpp
   ${TVCPP}/ops/cpu/nms_kernel.cpp
   ${TVCPP}/ops/cuda/nms_kernel.cu
+  ${TVCPP}/ops/box_iou_rotated.cpp
+  ${TVCPP}/ops/cpu/box_iou_rotated_kernel.cpp
+  ${TVCPP}/ops/cuda/box_iou_rotated_kernel.cu
+  ${TVCPP}/ops/roi_align.cpp
+  ${TVCPP}/ops/cpu/roi_align_kernel.cpp
+  ${TVCPP}/ops/roi_pool.cpp
+  ${TVCPP}/ops/cpu/roi_pool_kernel.cpp
+  ${TVCPP}/ops/ps_roi_pool.cpp
+  ${TVCPP}/ops/cpu/ps_roi_pool_kernel.cpp
+  ${TVCPP}/ops/ps_roi_align.cpp
+  ${TVCPP}/ops/cpu/ps_roi_align_kernel.cpp
   ${TVCPP}/io/image/cuda/decode_jpegs_cuda.cpp
   ${TVCPP}/io/image/cuda/encode_jpegs_cuda.cpp
   ${TVCPP}/io/image/cpu/encode_png.cpp
   ${TVCPP}/io/image/cpu/encode_jpeg.cpp
+  ${TVCPP}/io/image/cpu/read_write_file.cpp
+  ${TVCPP}/io/image/cpu/decode_image.cpp
+  ${TVCPP}/io/image/cpu/decode_png.cpp
+  ${TVCPP}/io/image/cpu/decode_jpeg.cpp
+  ${TVCPP}/io/image/cpu/common_jpeg.cpp
+  ${TVCPP}/io/image/cpu/decode_gif.cpp
+  ${TVCPP}/io/image/cpu/decode_webp.cpp
   ${TVCPP}/io/image/common_stable.cpp
   ${TVCPP}/vision_stable.cpp)
 # Pin them to torch 2.11. Per source, not library-wide: the pin makes ATen headers

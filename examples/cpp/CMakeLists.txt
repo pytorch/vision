@@ -15,4 +15,4 @@ if(USE_TORCHVISION)
   target_link_libraries(run_model TorchVision::TorchVision)
 endif()
 
-set_property(TARGET run_model PROPERTY CXX_STANDARD 17)
+set_property(TARGET run_model PROPERTY CXX_STANDARD 20)

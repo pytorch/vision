@@ -1,9 +1,15 @@
 #include "decode_png.h"
-#include "../common.h"
+
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/headeronly/util/Exception.h>
+
+#include <algorithm>
+#include <optional>
+
+#include "../common_stable.h"
 #include "common_png.h"
 #include "exif.h"
-
-#include <optional>
 
 namespace vision {
 namespace image {
@@ -11,8 +17,8 @@ namespace image {
 using namespace exif_private;
 
 #if !PNG_FOUND
-torch::Tensor decode_png(
-    const torch::Tensor& data,
+torch::stable::Tensor decode_png(
+    const torch::stable::Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
   STD_TORCH_CHECK(
@@ -25,12 +31,10 @@ bool is_little_endian() {
   return *(uint8_t*)&x;
 }
 
-torch::Tensor decode_png(
-    const torch::Tensor& data,
+torch::stable::Tensor decode_png(
+    const torch::stable::Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
-  C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.decode_png.decode_png");
-
   validate_encoded_data(data);
 
   auto png_ptr =
@@ -43,15 +47,14 @@ torch::Tensor decode_png(
     STD_TORCH_CHECK(info_ptr, "libpng info structure allocation failed!")
   }
 
-  auto accessor = data.accessor<unsigned char, 1>();
-  auto datap = accessor.data();
-  auto datap_len = accessor.size(0);
+  auto datap = data.const_data_ptr<uint8_t>();
+  auto datap_len = data.numel();
 
   // NOTE: libpng uses setjmp/longjmp for error handling. longjmp does not
   // unwind C++ stack frames, so destructors of objects created after setjmp
   // won't run. We use std::optional to declare tensors before setjmp while
   // deferring construction, and explicitly reset them on the error path.
-  std::optional<torch::Tensor> tensor;
+  std::optional<torch::stable::Tensor> tensor;
 
   if (setjmp(png_jmpbuf(png_ptr)) != 0) {
     tensor.reset();
@@ -206,19 +209,20 @@ torch::Tensor decode_png(
 
   auto num_pixels_per_row = width * channels;
   auto is_16_bits = bit_depth == 16;
-  tensor = torch::empty(
+  tensor = torch::stable::empty(
       {int64_t(height), int64_t(width), channels},
-      is_16_bits ? at::kUInt16 : torch::kU8);
+      is_16_bits ? torch::headeronly::ScalarType::UInt16
+                 : torch::headeronly::ScalarType::Byte);
   if (is_little_endian()) {
     png_set_swap(png_ptr);
   }
-  auto t_ptr = (uint8_t*)tensor->data_ptr();
+  auto t_ptr = (uint8_t*)tensor->mutable_data_ptr();
   for (int pass = 0; pass < number_of_passes; pass++) {
     for (png_uint_32 i = 0; i < height; ++i) {
       png_read_row(png_ptr, t_ptr, nullptr);
       t_ptr += num_pixels_per_row * (is_16_bits ? 2 : 1);
     }
-    t_ptr = (uint8_t*)tensor->data_ptr();
+    t_ptr = (uint8_t*)tensor->mutable_data_ptr();
   }
 
   int exif_orientation = -1;
@@ -228,13 +232,22 @@ torch::Tensor decode_png(
 
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
 
-  auto output = tensor->permute({2, 0, 1});
+  auto output = stable_permute(*tensor, {2, 0, 1});
   if (apply_exif_orientation) {
     return exif_orientation_transform(output, exif_orientation);
   }
   return output;
 }
 #endif
+
+STABLE_TORCH_LIBRARY_FRAGMENT(image, m) {
+  m.def(
+      "decode_png(Tensor data, int mode, bool apply_exif_orientation=False) -> Tensor");
+}
+
+STABLE_TORCH_LIBRARY_IMPL(image, CompositeExplicitAutograd, m) {
+  m.impl("decode_png", TORCH_BOX(&decode_png));
+}
 
 } // namespace image
 } // namespace vision

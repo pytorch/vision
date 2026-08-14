@@ -1,16 +1,23 @@
 #include "decode_jpeg.h"
-#include "../common.h"
+
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/headeronly/util/Exception.h>
+
+#include <algorithm>
+#include <cstring>
+#include <optional>
+
+#include "../common_stable.h"
 #include "common_jpeg.h"
 #include "exif.h"
-
-#include <optional>
 
 namespace vision {
 namespace image {
 
 #if !JPEG_FOUND
-torch::Tensor decode_jpeg(
-    const torch::Tensor& data,
+torch::stable::Tensor decode_jpeg(
+    const torch::stable::Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
   STD_TORCH_CHECK(
@@ -131,13 +138,10 @@ void convert_line_cmyk_to_gray(
 
 } // namespace
 
-torch::Tensor decode_jpeg(
-    const torch::Tensor& data,
+torch::stable::Tensor decode_jpeg(
+    const torch::stable::Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
-  C10_LOG_API_USAGE_ONCE(
-      "torchvision.csrc.io.image.cpu.decode_jpeg.decode_jpeg");
-
   validate_encoded_data(data);
 
   struct jpeg_decompress_struct cinfo;
@@ -147,10 +151,10 @@ torch::Tensor decode_jpeg(
   // unwind C++ stack frames, so destructors of objects created after setjmp
   // won't run. We use std::optional to declare tensors before setjmp while
   // deferring construction, and explicitly reset them on the error path.
-  std::optional<torch::Tensor> tensor;
-  std::optional<torch::Tensor> cmyk_line_tensor;
+  std::optional<torch::stable::Tensor> tensor;
+  std::optional<torch::stable::Tensor> cmyk_line_tensor;
 
-  auto datap = data.data_ptr<uint8_t>();
+  auto datap = data.const_data_ptr<uint8_t>();
   // Setup decompression structure
   cinfo.err = jpeg_std_error(&jerr.pub);
   jerr.pub.error_exit = torch_jpeg_error_exit;
@@ -223,12 +227,14 @@ torch::Tensor decode_jpeg(
   int width = cinfo.output_width;
 
   int stride = width * channels;
-  tensor =
-      torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
-  auto ptr = tensor->data_ptr<uint8_t>();
+  tensor = torch::stable::empty(
+      {int64_t(height), int64_t(width), channels},
+      torch::headeronly::ScalarType::Byte);
+  auto ptr = tensor->mutable_data_ptr<uint8_t>();
 
   if (cmyk_to_rgb_or_gray) {
-    cmyk_line_tensor = torch::empty({int64_t(width), 4}, torch::kU8);
+    cmyk_line_tensor = torch::stable::empty(
+        {int64_t(width), 4}, torch::headeronly::ScalarType::Byte);
   }
 
   while (cinfo.output_scanline < cinfo.output_height) {
@@ -237,7 +243,7 @@ torch::Tensor decode_jpeg(
      * more than one scanline at a time if that's more convenient.
      */
     if (cmyk_to_rgb_or_gray) {
-      auto cmyk_line_ptr = cmyk_line_tensor->data_ptr<uint8_t>();
+      auto cmyk_line_ptr = cmyk_line_tensor->mutable_data_ptr<uint8_t>();
       jpeg_read_scanlines(&cinfo, &cmyk_line_ptr, 1);
 
       if (channels == 3) {
@@ -253,7 +259,7 @@ torch::Tensor decode_jpeg(
 
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
-  auto output = tensor->permute({2, 0, 1});
+  auto output = stable_permute(*tensor, {2, 0, 1});
 
   if (apply_exif_orientation) {
     return exif_orientation_transform(output, exif_orientation);
@@ -276,6 +282,19 @@ bool _is_compiled_against_turbo() {
 #else
   return false;
 #endif
+}
+
+STABLE_TORCH_LIBRARY_FRAGMENT(image, m) {
+  m.def(
+      "decode_jpeg(Tensor data, int mode, bool apply_exif_orientation=False) -> Tensor");
+  m.def("_jpeg_version() -> int");
+  m.def("_is_compiled_against_turbo() -> bool");
+}
+
+STABLE_TORCH_LIBRARY_IMPL(image, CompositeExplicitAutograd, m) {
+  m.impl("decode_jpeg", TORCH_BOX(&decode_jpeg));
+  m.impl("_jpeg_version", TORCH_BOX(&_jpeg_version));
+  m.impl("_is_compiled_against_turbo", TORCH_BOX(&_is_compiled_against_turbo));
 }
 
 } // namespace image

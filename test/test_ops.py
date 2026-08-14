@@ -23,6 +23,8 @@ from torchvision import models, ops
 from torchvision.models.feature_extraction import get_graph_node_names
 
 
+IS_WINDOWS = sys.platform in ("win32", "cygwin")
+
 OPTESTS = [
     "test_schema",
     "test_autograd_registration",
@@ -474,6 +476,33 @@ class TestRoIAlign(RoIOpTester):
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
+    @needs_mps
+    @pytest.mark.parametrize("seed", range(3))
+    def test_backward_mps_consistency(self, seed):
+        # Regression test for over-accumulation in the MPS roi_align backward
+        # kernel. The kernel used a grid-stride loop dispatched over multiple
+        # threadgroups, so each pooled-output element's gradient was scattered
+        # once per threadgroup. The error is invisible for a handful of RoIs
+        # (output fits in one threadgroup) but grows with the RoI count, so use
+        # enough RoIs for the output to span several threadgroups.
+        torch.random.manual_seed(seed)
+        pool_size = 5
+        num_rois = 100
+        x = torch.rand(1, 2 * (pool_size**2), 40, 40, dtype=torch.float32)
+        rois = torch.empty(num_rois, 5)
+        rois[:, 0] = 0
+        xy = torch.rand(num_rois, 2) * 20
+        wh = torch.rand(num_rois, 2) * 20
+        rois[:, 1:3] = xy
+        rois[:, 3:5] = xy + wh + 1  # ensure x2 > x1 and y2 > y1
+
+        def grad_on(device):
+            xd = x.to(device).detach().requires_grad_(True)
+            self.fn(xd, rois.to(device), pool_size, pool_size, spatial_scale=1, sampling_ratio=2).sum().backward()
+            return xd.grad.cpu()
+
+        torch.testing.assert_close(grad_on("mps"), grad_on("cpu"), rtol=1e-4, atol=1e-4)
+
     @pytest.mark.parametrize("aligned", (True, False))
     @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
     @pytest.mark.parametrize("x_dtype", (torch.float16, torch.float32, torch.float64))  # , ids=str)
@@ -702,6 +731,34 @@ class TestPSRoIAlign(RoIOpTester):
 
 
 @pytest.mark.parametrize(
+    "device",
+    (
+        pytest.param("cuda", marks=pytest.mark.needs_cuda),
+        pytest.param("mps", marks=pytest.mark.needs_mps),
+    ),
+)
+@pytest.mark.parametrize(
+    "op", (ops.roi_pool, ops.ps_roi_pool, ops.ps_roi_align), ids=("roi_pool", "ps_roi_pool", "ps_roi_align")
+)
+def test_roi_pooling_grad_sum(device, op):
+    pool_size = 4
+
+    def run(device):
+        x = torch.ones(1, 64, 8, 8, dtype=torch.float32, device=device, requires_grad=True)
+        # 17 RoIs make the PS outputs 1,088 elements, forcing a partial tail threadgroup.
+        rois = torch.tensor([[0.0, 0, 0, 7, 7]], device=device).repeat(17, 1)
+        output = op(x, rois, [pool_size, pool_size])
+        output.sum().backward()
+        return output.detach().cpu(), x.grad.detach().cpu()
+
+    output, grad = run(device)
+    _, expected_grad = run("cpu")
+    torch.testing.assert_close(output, torch.ones_like(output))
+    torch.testing.assert_close(grad, expected_grad)
+    torch.testing.assert_close(grad.sum(), output.new_tensor(output.numel()))
+
+
+@pytest.mark.parametrize(
     "op",
     (
         torch.ops.torchvision.roi_pool,
@@ -736,6 +793,51 @@ def test_roi_opcheck(op, dtype, device, requires_grad):
         kwargs["aligned"] = True
 
     optests.opcheck(op, args=(x,), kwargs=kwargs)
+
+
+def _check_symint(f, inputs):
+    torch._dynamo.reset()
+    # Duck shapes would guard on incidental equalities between the size args and
+    # unrelated tensor dims, causing recompiles that have nothing to do with SymInt.
+    with torch.fx.experimental._config.patch(use_duck_shape=False):
+        cf = torch.compile(f, dynamic=True, fullgraph=True)
+        # Dynamo's 0/1/many specialization: the size args only become symbolic on
+        # the second call. From then on the graph must be reused, which is what
+        # tells us they really are SymInts and not baked-in ints.
+        for inp in inputs[:2]:
+            cf(inp)
+        with torch._dynamo.config.patch(error_on_recompile=True):
+            for inp in inputs[2:]:
+                torch.testing.assert_close(cf(inp), f(inp))
+
+
+@pytest.mark.skipif(IS_WINDOWS, reason="torch.compile is flaky on Windows")
+@pytest.mark.skipif(not is_compile_supported("cpu"), reason="torch.compile not supported")
+@pytest.mark.parametrize("op", (ops.roi_align, ops.roi_pool, ops.ps_roi_align, ops.ps_roi_pool))
+def test_roi_pooled_size_symint(op):
+    # The ps_roi_* ops need the channels to be divisible by pooled_height *
+    # pooled_width, and 24 // (h * w) stays > 1 for every size below, which keeps
+    # dynamo from specializing on a single-channel output being contiguous.
+    x = torch.rand(2, 24, 10, 10)
+    rois = torch.tensor([[0.0, 0.0, 0.0, 9.0, 9.0], [1.0, 0.0, 0.0, 9.0, 9.0]])
+
+    def f(sizer):
+        return op(x, rois, (sizer.shape[0], sizer.shape[1]))
+
+    _check_symint(f, [torch.empty(h, w) for h, w in ((2, 2), (2, 3), (3, 2), (3, 4))])
+
+
+@pytest.mark.skipif(IS_WINDOWS, reason="torch.compile is flaky on Windows")
+@pytest.mark.skipif(not is_compile_supported("cpu"), reason="torch.compile not supported")
+def test_deform_conv2d_padding_symint():
+    x, weight = torch.rand(1, 2, 8, 8), torch.rand(3, 2, 3, 3)
+
+    def f(sizer):
+        pad = sizer.shape[0]
+        out_size = 8 + 2 * pad - 2  # 3x3 kernel, unit stride and dilation
+        return ops.deform_conv2d(x, torch.zeros(1, 18, out_size, out_size), weight, padding=(pad, pad))
+
+    _check_symint(f, [torch.empty(pad) for pad in (2, 3, 4, 5)])
 
 
 class TestMultiScaleRoIAlign:

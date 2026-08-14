@@ -6,15 +6,15 @@
 
 #pragma once
 
-#include <ATen/ATen.h>
+#include <torch/csrc/stable/tensor.h>
 #include "../macros.h"
 
 namespace vision {
 namespace ops {
 
-VISION_API at::Tensor box_iou_rotated(
-    const at::Tensor& boxes1,
-    const at::Tensor& boxes2);
+VISION_API torch::stable::Tensor box_iou_rotated(
+    const torch::stable::Tensor& boxes1,
+    const torch::stable::Tensor& boxes2);
 
 } // namespace ops
 } // namespace vision
