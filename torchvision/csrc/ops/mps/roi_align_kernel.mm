@@ -43,9 +43,6 @@ at::Tensor roi_align_forward_kernel(const at::Tensor& input,
   auto input_ = input.contiguous();
   auto rois_ = rois.contiguous();
 
-  id<MTLBuffer> inputBuffer = getMTLBufferStorage(input_);
-  id<MTLBuffer> roisBuffer = getMTLBufferStorage(rois_);
-  id<MTLBuffer> outputBuffer = getMTLBufferStorage(output);
   id<MTLDevice> device = MPSDevice::getInstance()->device();
   MPSStream* mpsStream = getCurrentMPSStream();
   dispatch_sync(mpsStream->queue(), ^() {
@@ -55,29 +52,25 @@ at::Tensor roi_align_forward_kernel(const at::Tensor& input,
       const std::string kernel = "roi_align_" + scalarToMetalTypeString(input.scalar_type());
       id<MTLComputePipelineState> visionPSO = mps::visionPipelineState(device, kernel);
 
-      auto threadsPerGrid = MTLSizeMake(output_size, 1, 1);
-      auto threadsPerThreadgroup =
-          MTLSizeMake(std::min(static_cast<int64_t>(visionPSO.maxTotalThreadsPerThreadgroup), output_size), 1, 1);
-
       // this function call is a no-op if MPS Profiler is not enabled
       getMPSProfiler().beginProfileKernel(visionPSO, kernel, {input_, rois_}, mpsStream);
 
       [computeEncoder setComputePipelineState:visionPSO];
       // [N, C, H, W]
-      [computeEncoder setBuffer:inputBuffer offset:input_.storage_offset() * input_.element_size() atIndex:0];
-      [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
-      [computeEncoder setBuffer:outputBuffer offset:output.storage_offset() * output.element_size() atIndex:2];
+      mtl_setArgs(computeEncoder,
+                  input_,
+                  rois_,
+                  output,
+                  spatial_scale_f,
+                  channels,
+                  height,
+                  width,
+                  pooled_height,
+                  pooled_width,
+                  sampling_ratio,
+                  aligned);
 
-      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:3];
-      [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:4];
-      [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:5];
-      [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:6];
-      [computeEncoder setBytes:&pooled_height length:sizeof(int64_t) atIndex:7];
-      [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:8];
-      [computeEncoder setBytes:&sampling_ratio length:sizeof(int64_t) atIndex:9];
-      [computeEncoder setBytes:&aligned length:sizeof(bool) atIndex:10];
-
-      [computeEncoder dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadsPerThreadgroup];
+      mtl_dispatch1DJob(computeEncoder, visionPSO, output_size);
 
       getMPSProfiler().endProfileKernel(visionPSO, mpsStream);
     }
@@ -124,9 +117,6 @@ at::Tensor roi_align_backward_kernel(const at::Tensor& grad,
   at::globalContext().alertNotDeterministic("roi_align_backward_kernel");
   auto rois_ = rois.contiguous();
 
-  id<MTLBuffer> inputBuffer = getMTLBufferStorage(grad);
-  id<MTLBuffer> roisBuffer = getMTLBufferStorage(rois_);
-  id<MTLBuffer> outputBuffer = getMTLBufferStorage(grad_input);
   id<MTLDevice> device = MPSDevice::getInstance()->device();
   MPSStream* mpsStream = getCurrentMPSStream();
   dispatch_sync(mpsStream->queue(), ^() {
@@ -141,31 +131,28 @@ at::Tensor roi_align_backward_kernel(const at::Tensor& grad,
 
       [computeEncoder setComputePipelineState:visionPSO];
       // [N, C, H, W]
-      [computeEncoder setBuffer:inputBuffer offset:grad.storage_offset() * grad.element_size() atIndex:0];
-      [computeEncoder setBuffer:roisBuffer offset:rois_.storage_offset() * rois_.element_size() atIndex:1];
-      [computeEncoder setBuffer:outputBuffer offset:grad_input.storage_offset() * grad_input.element_size() atIndex:2];
-
-      [computeEncoder setBytes:&output_size length:sizeof(int64_t) atIndex:3];
-      [computeEncoder setBytes:&channels length:sizeof(int64_t) atIndex:4];
-      [computeEncoder setBytes:&height length:sizeof(int64_t) atIndex:5];
-      [computeEncoder setBytes:&width length:sizeof(int64_t) atIndex:6];
-      [computeEncoder setBytes:&pooled_height length:sizeof(int64_t) atIndex:7];
-      [computeEncoder setBytes:&pooled_width length:sizeof(int64_t) atIndex:8];
-      [computeEncoder setBytes:&sampling_ratio length:sizeof(int64_t) atIndex:9];
-      [computeEncoder setBytes:&aligned length:sizeof(bool) atIndex:10];
-      [computeEncoder setBytes:&spatial_scale_f length:sizeof(float) atIndex:11];
-      [computeEncoder setBytes:&n_stride length:sizeof(int64_t) atIndex:12];
-      [computeEncoder setBytes:&c_stride length:sizeof(int64_t) atIndex:13];
-      [computeEncoder setBytes:&h_stride length:sizeof(int64_t) atIndex:14];
-      [computeEncoder setBytes:&w_stride length:sizeof(int64_t) atIndex:15];
+      mtl_setArgs(computeEncoder,
+                  grad,
+                  rois_,
+                  grad_input,
+                  output_size,
+                  channels,
+                  height,
+                  width,
+                  pooled_height,
+                  pooled_width,
+                  sampling_ratio,
+                  aligned,
+                  spatial_scale_f,
+                  n_stride,
+                  c_stride,
+                  h_stride,
+                  w_stride);
 
       // One thread per pooled-output element. dispatchThreads guarantees each
       // index is handled exactly once; the kernel scatters into grad_input with
       // atomic_add for overlapping RoIs.
-      MTLSize threadsPerGrid = MTLSizeMake(output_size, 1, 1);
-      NSUInteger tgSize = std::min(static_cast<int64_t>(visionPSO.maxTotalThreadsPerThreadgroup), output_size);
-      MTLSize threadGroupSize = MTLSizeMake(std::max<NSUInteger>(tgSize, 1), 1, 1);
-      [computeEncoder dispatchThreads:threadsPerGrid threadsPerThreadgroup:threadGroupSize];
+      mtl_dispatch1DJob(computeEncoder, visionPSO, output_size);
 
       getMPSProfiler().endProfileKernel(visionPSO, mpsStream);
     }
