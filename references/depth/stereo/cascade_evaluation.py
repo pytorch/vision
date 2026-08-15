@@ -139,7 +139,7 @@ def _evaluate(
         logger.add_meter("fl-all", fmt="{global_avg:.4f}")
 
     num_processed_samples = 0
-    with torch.cuda.amp.autocast(enabled=args.mixed_precision, dtype=torch.float16):
+    with torch.amp.autocast("cuda", enabled=args.mixed_precision, dtype=torch.float16):
         batch_idx = 0
         for blob in metric_logger.log_every(val_loader, print_freq, header):
             image_left, image_right, disp_gt, valid_disp_mask = (x.to(device) for x in blob)
