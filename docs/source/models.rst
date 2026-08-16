@@ -424,6 +424,7 @@ Here is an example of how to use the pre-trained object detection models:
 
     # Step 1: Initialize model with the best available weights
     weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
+    # for FCOS, RetinaNet, SSD and SSDlite, use `score_thresh=0.9`. 
     model = fasterrcnn_resnet50_fpn_v2(weights=weights, box_score_thresh=0.9)
     model.eval()
 
