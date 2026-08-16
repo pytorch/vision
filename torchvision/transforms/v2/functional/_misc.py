@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import PIL.Image
 import torch
@@ -13,7 +13,12 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import _convert_bounding_box_format
 
-from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
+from ._utils import _get_kernel, _import_cvcuda, _is_cvcuda_available, _register_kernel_internal, is_pure_tensor
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 
 def normalize(
@@ -70,6 +75,44 @@ def normalize_image(image: torch.Tensor, mean: list[float], std: list[float], in
 @_register_kernel_internal(normalize, tv_tensors.Video)
 def normalize_video(video: torch.Tensor, mean: list[float], std: list[float], inplace: bool = False) -> torch.Tensor:
     return normalize_image(video, mean, std, inplace=inplace)
+
+
+def _normalize_image_cvcuda(
+    image: "cvcuda.Tensor",
+    mean: list[float],
+    std: list[float],
+    inplace: bool = False,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+    if inplace:
+        raise ValueError("Inplace normalization is not supported for CVCUDA.")
+
+    # CV-CUDA supports signed int and float tensors
+    # torchvision only supports uint and float, right now CV-CUDA doesnt expose float16, so only check 32
+    # in the future add float16 once exposed in CV-CUDA
+    if not (image.dtype == cvcuda.Type.F32):
+        raise ValueError(f"Input tensor should be a float tensor. Got {image.dtype}.")
+
+    num_channels = image.shape[3]
+    if isinstance(mean, float | int):
+        mean = [mean] * num_channels
+    elif len(mean) != num_channels:
+        raise ValueError(f"Mean should have {num_channels} elements. Got {len(mean)}.")
+    if isinstance(std, float | int):
+        std = [std] * num_channels
+    elif len(std) != num_channels:
+        raise ValueError(f"Std should have {num_channels} elements. Got {len(std)}.")
+
+    mt = torch.as_tensor(mean, dtype=torch.float32).reshape(1, 1, 1, num_channels).cuda()
+    st = torch.as_tensor(std, dtype=torch.float32).reshape(1, 1, 1, num_channels).cuda()
+    mean_cv = cvcuda.as_tensor(mt, cvcuda.TensorLayout.NHWC)
+    std_cv = cvcuda.as_tensor(st, cvcuda.TensorLayout.NHWC)
+
+    return cvcuda.normalize(image, base=mean_cv, scale=std_cv, flags=cvcuda.NormalizeFlags.SCALE_IS_STDDEV)
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(normalize, _import_cvcuda().Tensor)(_normalize_image_cvcuda)
 
 
 def gaussian_blur(inpt: torch.Tensor, kernel_size: list[int], sigma: Optional[list[float]] = None) -> torch.Tensor:
