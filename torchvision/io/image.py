@@ -1,3 +1,4 @@
+import warnings
 from enum import Enum
 from typing import Union
 
@@ -17,6 +18,21 @@ if _load_library("image_stable"):
         return True
 
 
+_DEPRECATION_MSG = (
+    "The image decoding and encoding capabilities of TorchVision are deprecated "
+    "since torchvision 0.29 and will be removed in a future release. They are "
+    "superseded by the more complete decoders and encoders of TorchCodec (from "
+    "torchcodec 0.16). Please see "
+    "https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html "
+    "on how to migrate your code."
+)
+
+
+def _warn_deprecated():
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        warnings.warn(_DEPRECATION_MSG, DeprecationWarning)
+
+
 def _assert_has_image_ops():
     if not _has_image_ops():
         raise RuntimeError(
@@ -28,6 +44,15 @@ def _assert_has_image_ops():
 
 class ImageReadMode(Enum):
     """Allow automatic conversion to RGB, RGBA, etc while decoding.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
 
     .. note::
 
@@ -60,6 +85,15 @@ def read_file(path: str) -> torch.Tensor:
     """
     Return the bytes contents of a file as a uint8 1D Tensor.
 
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
+
     Args:
         path (str or ``pathlib.Path``): the path to the file to be read
 
@@ -68,6 +102,7 @@ def read_file(path: str) -> torch.Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_file)
+        _warn_deprecated()
     _assert_has_image_ops()
     data = torch.ops.image.read_file(str(path))
     return data
@@ -76,6 +111,15 @@ def read_file(path: str) -> torch.Tensor:
 def write_file(filename: str, data: torch.Tensor) -> torch.Tensor:
     """
     Write the content of an uint8 1D tensor to a file.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
 
     Args:
         filename (str or ``pathlib.Path``): the path to the file to be written
@@ -86,6 +130,7 @@ def write_file(filename: str, data: torch.Tensor) -> torch.Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_file)
+        _warn_deprecated()
     _assert_has_image_ops()
     return torch.ops.image.write_file(str(filename), data)
 
@@ -97,6 +142,15 @@ def decode_png(
 ) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
 
     The values of the output tensor are in uint8 in [0, 255] for most cases. If
     the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
@@ -120,6 +174,7 @@ def decode_png(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_png)
+        _warn_deprecated()
     _assert_has_image_ops()
     if isinstance(mode, str):
         mode = ImageReadMode[mode.upper()]
@@ -131,6 +186,15 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
     """
     Takes an input tensor in CHW layout and returns a buffer with the contents
     of its corresponding PNG file.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
 
     Args:
         input (Tensor[channels, image_height, image_width]): int8 image tensor of
@@ -144,6 +208,7 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(encode_png)
+        _warn_deprecated()
     _assert_has_image_ops()
     output = torch.ops.image.encode_png(input, compression_level)
     return output
@@ -153,6 +218,15 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6) ->
     """
     Takes an input tensor in CHW layout (or HW in the case of grayscale images)
     and saves it in a PNG file.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
 
     Args:
         input (Tensor[channels, image_height, image_width]): int8 image tensor of
@@ -166,6 +240,7 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6) ->
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_png)
+        _warn_deprecated()
     output = encode_png(input, compression_level)
     return write_file(filename, output)
 
@@ -177,6 +252,15 @@ def decode_jpeg(
     apply_exif_orientation: bool = False,
 ) -> Union[torch.Tensor, list[torch.Tensor]]:
     """Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
 
     The values of the output tensor are uint8 between 0 and 255.
 
@@ -211,6 +295,7 @@ def decode_jpeg(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_jpeg)
+        _warn_deprecated()
     _assert_has_image_ops()
     if isinstance(device, str):
         device = torch.device(device)
@@ -243,6 +328,15 @@ def encode_jpeg(
 ) -> Union[torch.Tensor, list[torch.Tensor]]:
     """Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.
 
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
+
     .. note::
         Passing a list of CUDA tensors is more efficient than repeated individual calls to ``encode_jpeg``.
         For CPU tensors the performance is equivalent.
@@ -258,6 +352,7 @@ def encode_jpeg(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(encode_jpeg)
+        _warn_deprecated()
     _assert_has_image_ops()
     if quality < 1 or quality > 100:
         raise ValueError("Image quality should be a positive number between 1 and 100")
@@ -279,6 +374,15 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75) -> torch.T
     """
     Takes an input tensor in CHW layout and saves it in a JPEG file.
 
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
+
     Args:
         input (Tensor[channels, image_height, image_width]): int8 image tensor of ``c``
             channels, where ``c`` must be 1 or 3.
@@ -291,6 +395,7 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75) -> torch.T
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(write_jpeg)
+        _warn_deprecated()
     output = encode_jpeg(input, quality)
     assert isinstance(output, torch.Tensor)  # Needed for torchscript
     return write_file(filename, output)
@@ -302,6 +407,15 @@ def decode_image(
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
     """Decode an image into a uint8 tensor, from a path or from raw encoded bytes.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
 
     Currently supported image formats are jpeg, png, gif and webp.
 
@@ -335,6 +449,7 @@ def decode_image(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_image)
+        _warn_deprecated()
     _assert_has_image_ops()
     if not isinstance(input, torch.Tensor):
         input = read_file(str(input))
@@ -349,9 +464,21 @@ def read_image(
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
-    """[OBSOLETE] Use :func:`~torchvision.io.decode_image` instead."""
+    """[OBSOLETE] Use :func:`~torchvision.io.decode_image` instead.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
+
+    """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(read_image)
+        _warn_deprecated()
     data = read_file(path)
     return decode_image(data, mode, apply_exif_orientation=apply_exif_orientation)
 
@@ -359,6 +486,15 @@ def read_image(
 def decode_gif(input: torch.Tensor) -> torch.Tensor:
     """
     Decode a GIF image into a 3 or 4 dimensional RGB Tensor.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
 
     The values of the output tensor are uint8 between 0 and 255.
     The output tensor has shape ``(C, H, W)`` if there is only one image in the
@@ -373,6 +509,7 @@ def decode_gif(input: torch.Tensor) -> torch.Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_gif)
+        _warn_deprecated()
     _assert_has_image_ops()
     return torch.ops.image.decode_gif(input)
 
@@ -383,6 +520,15 @@ def decode_webp(
 ) -> torch.Tensor:
     """
     Decode a WEBP image into a 3 dimensional RGB[A] Tensor.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
 
     The values of the output tensor are uint8 between 0 and 255.
 
@@ -398,6 +544,7 @@ def decode_webp(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(decode_webp)
+        _warn_deprecated()
     _assert_has_image_ops()
     if isinstance(mode, str):
         mode = ImageReadMode[mode.upper()]
@@ -462,6 +609,15 @@ def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
     """Decode an AVIF image into a 3 dimensional RGB[A] Tensor.
 
     .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
+
+    .. warning::
         In order to enable the AVIF decoding capabilities of torchvision, you
         first need to run ``pip install torchvision-extra-decoders``. Just
         install the package, you don't need to update your code. This is only
@@ -489,6 +645,7 @@ def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
     Returns:
         Decoded image (Tensor[image_channels, image_height, image_width])
     """
+    _warn_deprecated()
     _load_extra_decoders_once()
     if input.dtype != torch.uint8:
         raise RuntimeError(f"Input tensor must have uint8 data type, got {input.dtype}")
@@ -497,6 +654,15 @@ def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
 
 def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     """Decode an HEIC image into a 3 dimensional RGB[A] Tensor.
+
+    .. warning::
+
+        The image decoding and encoding capabilities of TorchVision are
+        deprecated since torchvision 0.29 and will be removed in a future
+        release. They are superseded by the more complete decoders and encoders
+        of TorchCodec (from torchcodec 0.16). Please see `this migration guide
+        <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+        on how to migrate your code.
 
     .. warning::
         In order to enable the HEIC decoding capabilities of torchvision, you
@@ -526,6 +692,7 @@ def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
     Returns:
         Decoded image (Tensor[image_channels, image_height, image_width])
     """
+    _warn_deprecated()
     _load_extra_decoders_once()
     if input.dtype != torch.uint8:
         raise RuntimeError(f"Input tensor must have uint8 data type, got {input.dtype}")
