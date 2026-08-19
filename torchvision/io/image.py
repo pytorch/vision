@@ -43,7 +43,9 @@ def _assert_has_image_ops():
 
 
 class ImageReadMode(Enum):
-    """Allow automatic conversion to RGB, RGBA, etc while decoding.
+    """[DEPRECATED] Use TorchCodec instead.
+
+    Allow automatic conversion to RGB, RGBA, etc while decoding.
 
     .. warning::
 
@@ -82,7 +84,8 @@ class ImageReadMode(Enum):
 
 
 def read_file(path: str) -> torch.Tensor:
-    """
+    """[DEPRECATED] Use TorchCodec instead.
+
     Return the bytes contents of a file as a uint8 1D Tensor.
 
     .. warning::
@@ -109,7 +112,8 @@ def read_file(path: str) -> torch.Tensor:
 
 
 def write_file(filename: str, data: torch.Tensor) -> torch.Tensor:
-    """
+    """[DEPRECATED] Use TorchCodec instead.
+
     Write the content of an uint8 1D tensor to a file.
 
     .. warning::
@@ -140,7 +144,8 @@ def decode_png(
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
-    """
+    """[DEPRECATED] Use TorchCodec instead.
+
     Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.
 
     .. warning::
@@ -183,7 +188,8 @@ def decode_png(
 
 
 def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
-    """
+    """[DEPRECATED] Use TorchCodec instead.
+
     Takes an input tensor in CHW layout and returns a buffer with the contents
     of its corresponding PNG file.
 
@@ -215,7 +221,8 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
 
 
 def write_png(input: torch.Tensor, filename: str, compression_level: int = 6) -> torch.Tensor:
-    """
+    """[DEPRECATED] Use TorchCodec instead.
+
     Takes an input tensor in CHW layout (or HW in the case of grayscale images)
     and saves it in a PNG file.
 
@@ -251,7 +258,9 @@ def decode_jpeg(
     device: Union[str, torch.device] = "cpu",
     apply_exif_orientation: bool = False,
 ) -> Union[torch.Tensor, list[torch.Tensor]]:
-    """Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.
+    """[DEPRECATED] Use TorchCodec instead.
+
+    Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.
 
     .. warning::
 
@@ -326,7 +335,9 @@ def decode_jpeg(
 def encode_jpeg(
     input: Union[torch.Tensor, list[torch.Tensor]], quality: int = 75
 ) -> Union[torch.Tensor, list[torch.Tensor]]:
-    """Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.
+    """[DEPRECATED] Use TorchCodec instead.
+
+    Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.
 
     .. warning::
 
@@ -371,7 +382,8 @@ def encode_jpeg(
 
 
 def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75) -> torch.Tensor:
-    """
+    """[DEPRECATED] Use TorchCodec instead.
+
     Takes an input tensor in CHW layout and saves it in a JPEG file.
 
     .. warning::
@@ -406,7 +418,9 @@ def decode_image(
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
-    """Decode an image into a uint8 tensor, from a path or from raw encoded bytes.
+    """[DEPRECATED] Use TorchCodec instead.
+
+    Decode an image into a uint8 tensor, from a path or from raw encoded bytes.
 
     .. warning::
 
@@ -464,7 +478,9 @@ def read_image(
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
     apply_exif_orientation: bool = False,
 ) -> torch.Tensor:
-    """[OBSOLETE] Use :func:`~torchvision.io.decode_image` instead.
+    """[DEPRECATED] Use TorchCodec instead.
+
+    [OBSOLETE] Use :func:`~torchvision.io.decode_image` instead.
 
     .. warning::
 
@@ -484,7 +500,8 @@ def read_image(
 
 
 def decode_gif(input: torch.Tensor) -> torch.Tensor:
-    """
+    """[DEPRECATED] Use TorchCodec instead.
+
     Decode a GIF image into a 3 or 4 dimensional RGB Tensor.
 
     .. warning::
@@ -518,7 +535,8 @@ def decode_webp(
     input: torch.Tensor,
     mode: ImageReadMode = ImageReadMode.UNCHANGED,
 ) -> torch.Tensor:
-    """
+    """[DEPRECATED] Use TorchCodec instead.
+
     Decode a WEBP image into a 3 dimensional RGB[A] Tensor.
 
     .. warning::
@@ -606,7 +624,9 @@ def _load_extra_decoders_once():
 
 
 def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
-    """Decode an AVIF image into a 3 dimensional RGB[A] Tensor.
+    """[DEPRECATED] Use TorchCodec instead.
+
+    Decode an AVIF image into a 3 dimensional RGB[A] Tensor.
 
     .. warning::
 
@@ -653,7 +673,9 @@ def decode_avif(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
 
 
 def decode_heic(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
-    """Decode an HEIC image into a 3 dimensional RGB[A] Tensor.
+    """[DEPRECATED] Use TorchCodec instead.
+
+    Decode an HEIC image into a 3 dimensional RGB[A] Tensor.
 
     .. warning::
 

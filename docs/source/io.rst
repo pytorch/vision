@@ -1,5 +1,5 @@
-Decoding and Encoding images
-============================
+[DEPRECATED] Decoding and Encoding images
+=========================================
 
 .. currentmodule:: torchvision.io
 
