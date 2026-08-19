@@ -113,6 +113,8 @@ set(TORCHVISION_STABLE_SOURCES
   ${TVCPP}/ops/cpu/ps_roi_pool_kernel.cpp
   ${TVCPP}/ops/ps_roi_align.cpp
   ${TVCPP}/ops/cpu/ps_roi_align_kernel.cpp
+  ${TVCPP}/ops/deform_conv2d.cpp
+  ${TVCPP}/ops/cpu/deform_conv2d_kernel.cpp
   ${TVCPP}/io/image/cuda/decode_jpegs_cuda.cpp
   ${TVCPP}/io/image/cuda/encode_jpegs_cuda.cpp
   ${TVCPP}/io/image/cpu/encode_png.cpp
@@ -126,12 +128,12 @@ set(TORCHVISION_STABLE_SOURCES
   ${TVCPP}/io/image/cpu/decode_webp.cpp
   ${TVCPP}/io/image/common_stable.cpp
   ${TVCPP}/vision_stable.cpp)
-# Pin them to torch 2.11. Per source, not library-wide: the pin makes ATen headers
+# Pin them to torch 2.14. Per source, not library-wide: the pin makes ATen headers
 # error, and the legacy ops sharing this library still include them.
 # TODO(stable-abi): once every op is ported, drop this list and pin the whole
 # library target instead.
 set_source_files_properties(${TORCHVISION_STABLE_SOURCES} PROPERTIES
-  COMPILE_DEFINITIONS TORCH_TARGET_VERSION=0x020b000000000000)
+  COMPILE_DEFINITIONS TORCH_TARGET_VERSION=0x020e000000000000)
 
 add_library(${PROJECT_NAME} SHARED ${ALL_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
@@ -144,6 +146,10 @@ if(WITH_CUDA)
 endif()
 
 if(WITH_MPS)
+  # Some torch APIs like torch_mps_set_arg_bytes (used by
+  # ops/mps/roi_align_kernel.mm) are only exposed when USE_MPS is defined.
+  # https://github.com/pytorch/pytorch/blob/7b260c057d76d7a37d1c28cbc8c79042d107f334/torch/csrc/stable/c/shim.h#L300-L312
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_MPS)
   find_library(metal NAMES Metal)
   find_library(foundation NAMES Foundation)
   target_link_libraries(${PROJECT_NAME} PRIVATE ${metal} ${foundation})
