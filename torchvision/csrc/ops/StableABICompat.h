@@ -27,8 +27,8 @@
 // This file GROWS as operators migrate: add a helper the first time an op needs
 // an ATen call with no stable wrapper. Each is a thin shim -- delete it once an
 // upstream torch::stable wrapper lands.
-// TODO(stable-abi): upstream torch::stable wrappers for sort / index_select /
-// masked_select so these helpers can be removed.
+// TODO(stable-abi): upstream torch::stable wrappers for sort / masked_select /
+// mm.out so these helpers can be removed.
 
 namespace vision {
 namespace ops {
@@ -77,6 +77,17 @@ inline Tensor masked_select(const Tensor& self, const Tensor& mask) {
   TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
       "aten::masked_select", "", stack.data(), TORCH_ABI_VERSION));
   return torch::stable::detail::to<Tensor>(stack[0]);
+}
+
+// aten::mm.out(Tensor self, Tensor mat2, *, Tensor(a!) out) -> Tensor(a!)
+inline void mm_out(const Tensor& self, const Tensor& mat2, Tensor& out) {
+  std::array<StableIValue, 3> stack{
+      torch::stable::detail::from(self),
+      torch::stable::detail::from(mat2),
+      torch::stable::detail::from(out)};
+  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
+      "aten::mm", "out", stack.data(), TORCH_ABI_VERSION));
+  torch::stable::detail::to<Tensor>(stack[0]);
 }
 
 } // namespace stable_helpers
