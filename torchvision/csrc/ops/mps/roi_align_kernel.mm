@@ -13,8 +13,7 @@
 
 #include "roi_align_metal_shader.h"
 
-namespace vision {
-namespace ops {
+namespace vision::ops {
 
 namespace {
 
@@ -297,5 +296,4 @@ STABLE_TORCH_LIBRARY_IMPL(torchvision, MPS, m) {
   m.impl("_roi_align_backward", TORCH_BOX(&roi_align_backward_kernel));
 }
 
-} // namespace ops
-} // namespace vision
+} // namespace vision::ops

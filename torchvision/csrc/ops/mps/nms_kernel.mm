@@ -15,8 +15,7 @@
 #include "../StableABICompat.h"
 #include "nms_metal_shader.h"
 
-namespace vision {
-namespace ops {
+namespace vision::ops {
 
 namespace {
 
@@ -200,5 +199,4 @@ STABLE_TORCH_LIBRARY_IMPL(torchvision, MPS, m) {
   m.impl("nms", TORCH_BOX(&nms_kernel));
 }
 
-} // namespace ops
-} // namespace vision
+} // namespace vision::ops
