@@ -5,6 +5,7 @@ namespace ops {
 
 namespace mps {
 
+// TODO(stable-abi): drop this header once every MPS op has moved.
 static at::native::mps::MetalShaderLibrary lib(R"VISION_METAL(
 
 #include <metal_atomic>
