@@ -1,4 +1,5 @@
 #include <torch/csrc/inductor/aoti_torch/c/shim_mps.h>
+#include <torch/csrc/stable/c/shim.h>
 #include <torch/csrc/stable/device.h>
 #include <torch/csrc/stable/library.h>
 #include <torch/csrc/stable/ops.h>
@@ -57,7 +58,7 @@ const char* metal_type_string(torch::headeronly::ScalarType scalar_type) {
 struct NmsLaunchArgs {
   AtenTensorHandle dets_sorted;
   AtenTensorHandle mask;
-  AtenTensorHandle iou_threshold;
+  float iou_threshold;
   int64_t dets_num;
   uint64_t grid[2];
   uint64_t threadgroup[2];
@@ -73,12 +74,8 @@ void nms_encode(AOTIMetalKernelFunctionHandle func, void* user_data) {
       aoti_torch_mps_set_arg_tensor(func, 1, launch_args->mask));
   TORCH_ERROR_CODE_CHECK(
       aoti_torch_mps_set_arg_int(func, 2, launch_args->dets_num));
-  // The MPS shim has no scalar-float arg setter, so iou_threshold rides in as a
-  // 1-element float32 tensor bound at buffer(3).
-  // TODO(stable-abi): bind a float directly once aoti_torch_mps_set_arg_double /
-  // set_arg_bytes lands upstream (pytorch/pytorch).
-  TORCH_ERROR_CODE_CHECK(
-      aoti_torch_mps_set_arg_tensor(func, 3, launch_args->iou_threshold));
+  TORCH_ERROR_CODE_CHECK(torch_mps_set_arg_bytes(
+      func, 3, &launch_args->iou_threshold, sizeof(float)));
   TORCH_ERROR_CODE_CHECK(aoti_torch_mps_dispatch_array_with_group_size(
       func,
       launch_args->grid,
@@ -129,12 +126,6 @@ Tensor nms_kernel(
   Tensor mask = torch::stable::new_empty(
       dets, {dets_num * col_blocks}, torch::headeronly::ScalarType::Long);
 
-  // The MPS kernel reads iou_threshold as a float; carry it in a 1-element
-  // float32 tensor (see note in nms_encode).
-  Tensor iou_threshold_t =
-      torch::stable::new_empty(dets, {1}, torch::headeronly::ScalarType::Float);
-  torch::stable::fill_(iou_threshold_t, iou_threshold);
-
   const std::string kernel =
       "nms_" + std::string(metal_type_string(dets_sorted.scalar_type()));
   AOTIMetalKernelFunctionHandle func = nullptr;
@@ -147,7 +138,7 @@ Tensor nms_kernel(
   NmsLaunchArgs launch_args{
       dets_sorted.get(),
       mask.get(),
-      iou_threshold_t.get(),
+      static_cast<float>(iou_threshold),
       dets_num,
       {static_cast<uint64_t>(col_blocks) * nmsThreadsPerBlock,
        static_cast<uint64_t>(col_blocks)},
