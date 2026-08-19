@@ -173,6 +173,7 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/mps/roi_pool_kernel.mm",
     CSRS_DIR / "ops/ps_roi_pool.cpp",
     CSRS_DIR / "ops/cpu/ps_roi_pool_kernel.cpp",
+    CSRS_DIR / "ops/mps/ps_roi_pool_kernel.mm",
     CSRS_DIR / "ops/ps_roi_align.cpp",
     CSRS_DIR / "ops/cpu/ps_roi_align_kernel.cpp",
     CSRS_DIR / "ops/deform_conv2d.cpp",
