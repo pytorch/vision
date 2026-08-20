@@ -161,6 +161,7 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/nms.cpp",
     CSRS_DIR / "ops/cpu/nms_kernel.cpp",
     CSRS_DIR / "ops/mps/nms_kernel.mm",
+    CSRS_DIR / "ops/mps/deform_conv2d_kernel.mm",
     CSRS_DIR / "ops/quantized/cpu/qnms_kernel.cpp",
     CSRS_DIR / "ops/box_iou_rotated.cpp",
     CSRS_DIR / "ops/cpu/box_iou_rotated_kernel.cpp",
