@@ -106,12 +106,14 @@ class RandomErasing(_RandomApplyTransform):
         area = img_h * img_w
 
         log_ratio = self._log_ratio
+        g = torch.thread_safe_generator()
         for _ in range(10):
-            erase_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
+            erase_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1], generator=g).item()
             aspect_ratio = torch.exp(
                 torch.empty(1).uniform_(
                     log_ratio[0],  # type: ignore[arg-type]
                     log_ratio[1],  # type: ignore[arg-type]
+                    generator=g,
                 )
             ).item()
 
@@ -121,12 +123,12 @@ class RandomErasing(_RandomApplyTransform):
                 continue
 
             if self.value is None:
-                v = torch.empty([img_c, h, w], dtype=torch.float32).normal_()
+                v = torch.empty([img_c, h, w], dtype=torch.float32).normal_(generator=g)
             else:
                 v = torch.tensor(self.value)[:, None, None]
 
-            i = torch.randint(0, img_h - h + 1, size=(1,)).item()
-            j = torch.randint(0, img_w - w + 1, size=(1,)).item()
+            i = torch.randint(0, img_h - h + 1, size=(1,), generator=g).item()
+            j = torch.randint(0, img_w - w + 1, size=(1,), generator=g).item()
             break
         else:
             i, j, h, w, v = 0, 0, img_h, img_w, None
@@ -298,8 +300,9 @@ class CutMix(_BaseMixUpCutMix):
 
         H, W = query_size(flat_inputs)
 
-        r_x = torch.randint(W, size=(1,))
-        r_y = torch.randint(H, size=(1,))
+        g = torch.thread_safe_generator()
+        r_x = torch.randint(W, size=(1,), generator=g)
+        r_y = torch.randint(H, size=(1,), generator=g)
 
         r = 0.5 * math.sqrt(1.0 - lam)
         r_w_half = int(r * W)
@@ -365,7 +368,8 @@ class JPEG(Transform):
         self.quality = quality
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
-        quality = torch.randint(self.quality[0], self.quality[1] + 1, ()).item()
+        g = torch.thread_safe_generator()
+        quality = torch.randint(self.quality[0], self.quality[1] + 1, (), generator=g).item()
         return dict(quality=quality)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
