@@ -177,6 +177,7 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/cpu/ps_roi_align_kernel.cpp",
     CSRS_DIR / "ops/deform_conv2d.cpp",
     CSRS_DIR / "ops/cpu/deform_conv2d_kernel.cpp",
+    CSRS_DIR / "ops/mps/deform_conv2d_kernel.mm",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 STABLE_SOURCES.add(
