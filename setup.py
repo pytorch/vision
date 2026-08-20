@@ -151,7 +151,7 @@ def get_macros_and_flags():
     return define_macros, extra_compile_args
 
 
-TORCH_TARGET_VERSION = "0x020b000000000000"
+TORCH_TARGET_VERSION = "0x020e000000000000"
 
 # Files migrated to the stable ABI: subtracted from make_C_extension()'s globs and
 # built into _C_stable instead. Add an op's files here as it migrates.
@@ -166,11 +166,20 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/cpu/box_iou_rotated_kernel.cpp",
     CSRS_DIR / "ops/roi_align.cpp",
     CSRS_DIR / "ops/cpu/roi_align_kernel.cpp",
+    CSRS_DIR / "ops/mps/roi_align_kernel.mm",
     CSRS_DIR / "ops/quantized/cpu/qroi_align_kernel.cpp",
     CSRS_DIR / "ops/roi_pool.cpp",
     CSRS_DIR / "ops/cpu/roi_pool_kernel.cpp",
+    CSRS_DIR / "ops/mps/roi_pool_kernel.mm",
     CSRS_DIR / "ops/ps_roi_pool.cpp",
     CSRS_DIR / "ops/cpu/ps_roi_pool_kernel.cpp",
+    CSRS_DIR / "ops/mps/ps_roi_pool_kernel.mm",
+    CSRS_DIR / "ops/ps_roi_align.cpp",
+    CSRS_DIR / "ops/cpu/ps_roi_align_kernel.cpp",
+    CSRS_DIR / "ops/mps/ps_roi_align_kernel.mm",
+    CSRS_DIR / "ops/deform_conv2d.cpp",
+    CSRS_DIR / "ops/cpu/deform_conv2d_kernel.cpp",
+    CSRS_DIR / "ops/mps/deform_conv2d_kernel.mm",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 STABLE_SOURCES.add(
@@ -260,6 +269,8 @@ def get_stable_macros_and_flags():
             # The jpeg decode .cpp also calls these shims (incl.
             # torch_get_cuda_stream_from_pool), so cxx needs USE_CUDA too.
             extra_compile_args["cxx"].append("-DUSE_CUDA")
+    if torch.backends.mps.is_available() or FORCE_MPS:
+        extra_compile_args["cxx"].append("-DUSE_MPS")
     return define_macros, extra_compile_args
 
 
