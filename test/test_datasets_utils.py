@@ -1,5 +1,6 @@
 import contextlib
 import gzip
+import io
 import os
 import pathlib
 import re
@@ -234,6 +235,28 @@ class TestDatasetsUtils:
 
         with open(file) as fh:
             assert fh.read() == content
+
+    @pytest.mark.parametrize("member_name", ["../escaped.txt", "../../escaped.txt"])
+    def test_extract_tar_rejects_path_traversal(self, member_name, tmpdir):
+        # Regression test for a path-traversal vulnerability (issue #9517): a tar
+        # member with a "../" component must not be extracted outside to_path.
+        tmpdir = pathlib.Path(tmpdir)
+        to_path = tmpdir / "extract_here"
+        to_path.mkdir()
+        escaped_target = (to_path / member_name).resolve()
+        assert to_path.resolve() not in escaped_target.parents  # target is really outside
+
+        archive = tmpdir / "malicious.tar"
+        payload = b"path traversal payload"
+        with tarfile.open(archive, mode="w") as tar:
+            info = tarfile.TarInfo(member_name)
+            info.size = len(payload)
+            tar.addfile(info, io.BytesIO(payload))
+
+        with pytest.raises((tarfile.TarError, RuntimeError)):
+            utils.extract_archive(str(archive), str(to_path))
+
+        assert not escaped_target.exists()
 
     def test_verify_str_arg(self):
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
