@@ -13,7 +13,8 @@
 #include <string>
 #include <tuple>
 
-#include "ps_roi_align_metal_shader.h"
+#include "mps_helpers.h"
+#include "mps_stable_kernels.h"
 
 namespace vision {
 namespace ops {
@@ -21,28 +22,6 @@ namespace ops {
 namespace {
 
 using torch::stable::Tensor;
-
-constexpr int64_t threadsPerBlock = 512;
-
-AOTIMetalShaderLibraryHandle ps_roi_align_shader_library() {
-  static AOTIMetalShaderLibraryHandle library = []() {
-    AOTIMetalShaderLibraryHandle handle = nullptr;
-    TORCH_ERROR_CODE_CHECK(aoti_torch_mps_create_shader_library(
-        ps_roi_align_metal_shader, &handle));
-    return handle;
-  }();
-  return library;
-}
-
-const char* metal_type_string(torch::headeronly::ScalarType scalar_type) {
-  if (scalar_type == torch::headeronly::ScalarType::Float) {
-    return "float";
-  }
-  if (scalar_type == torch::headeronly::ScalarType::Half) {
-    return "half";
-  }
-  return "";
-}
 
 struct PsRoiAlignForwardLaunchArgs {
   AtenTensorHandle input;
@@ -205,14 +184,12 @@ std::tuple<Tensor, Tensor> ps_roi_align_forward_kernel(
 
   float spatial_scale_f = static_cast<float>(spatial_scale);
 
-  const std::string kernel =
-      "ps_roi_align_" + std::string(metal_type_string(input.scalar_type()));
-  AOTIMetalKernelFunctionHandle func = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
-      ps_roi_align_shader_library(), kernel.c_str(), &func));
+  const std::string kernel = "ps_roi_align_" +
+      std::string(mps::metal_type_string(input.scalar_type()));
+  AOTIMetalKernelFunctionHandle func = mps::visionKernelFunction(kernel);
 
   const int64_t threadgroups = std::min(
-      (output_size + threadsPerBlock - 1) / threadsPerBlock,
+      ceil_div(output_size, static_cast<int64_t>(threadsPerBlock)),
       static_cast<int64_t>(4096));
 
   PsRoiAlignForwardLaunchArgs launch_args{
@@ -286,10 +263,8 @@ Tensor ps_roi_align_backward_kernel(
   float spatial_scale_f = static_cast<float>(spatial_scale);
 
   const std::string kernel = "ps_roi_align_backward_" +
-      std::string(metal_type_string(grad.scalar_type()));
-  AOTIMetalKernelFunctionHandle func = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
-      ps_roi_align_shader_library(), kernel.c_str(), &func));
+      std::string(mps::metal_type_string(grad.scalar_type()));
+  AOTIMetalKernelFunctionHandle func = mps::visionKernelFunction(kernel);
 
   PsRoiAlignBackwardLaunchArgs launch_args{
       grad_.get(),

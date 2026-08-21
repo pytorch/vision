@@ -1,12 +1,22 @@
-#include <ATen/native/mps/OperationUtils.h>
+#pragma once
+
+// Metal shader source for all MPS ops, plus the shared shader library and
+// the kernel lookup the ops use to run them. MetalShaderLibrary is not part
+// of the stable ABI, so the library is compiled at runtime from this string
+// with aoti_torch_mps_create_shader_library.
+
+#include <torch/csrc/inductor/aoti_torch/c/shim_mps.h>
+#include <torch/headeronly/core/ScalarType.h>
+#include <torch/headeronly/util/shim_utils.h>
+
+#include <string>
 
 namespace vision {
 namespace ops {
 
 namespace mps {
 
-// TODO(stable-abi): drop this header once every MPS op has moved.
-static at::native::mps::MetalShaderLibrary lib(R"VISION_METAL(
+inline constexpr char metal_shaders[] = R"VISION_METAL(
 
 #include <metal_atomic>
 #include <metal_stdlib>
@@ -1184,14 +1194,43 @@ REGISTER_PS_ROI_POOL_OP(half, int64_t);
 REGISTER_PS_ROI_POOL_BACKWARD_OP(float, int64_t);
 REGISTER_PS_ROI_POOL_BACKWARD_OP(half, int64_t);
 
-)VISION_METAL");
+)VISION_METAL";
 
-static id<MTLComputePipelineState> visionPipelineState(
-    id<MTLDevice> device,
+// Compiles the shader library on first use. The handle lives for the whole
+// process.
+inline AOTIMetalShaderLibraryHandle shaderLibrary() {
+  static AOTIMetalShaderLibraryHandle library = []() {
+    AOTIMetalShaderLibraryHandle handle = nullptr;
+    TORCH_ERROR_CODE_CHECK(
+        aoti_torch_mps_create_shader_library(metal_shaders, &handle));
+    return handle;
+  }();
+  return library;
+}
+
+// Maps a dtype to the suffix used in the kernel names above. Unsupported
+// dtypes map to "", so the kernel lookup fails.
+inline const char* metal_type_string(
+    torch::headeronly::ScalarType scalar_type) {
+  if (scalar_type == torch::headeronly::ScalarType::Float) {
+    return "float";
+  }
+  if (scalar_type == torch::headeronly::ScalarType::Half) {
+    return "half";
+  }
+  return "";
+}
+
+// Looks up a kernel by name in the shared shader library.
+inline AOTIMetalKernelFunctionHandle visionKernelFunction(
     const std::string& kernel) {
-  return lib.getPipelineStateForFunc(kernel);
+  AOTIMetalKernelFunctionHandle func = nullptr;
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
+      shaderLibrary(), kernel.c_str(), &func));
+  return func;
 }
 
 } // namespace mps
+
 } // namespace ops
 } // namespace vision
