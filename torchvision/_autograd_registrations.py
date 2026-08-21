@@ -87,6 +87,8 @@ def _ps_roi_align_setup_context(ctx, inputs, output):
 
 
 def _ps_roi_align_backward(ctx, grad_output, _grad_channel_mapping):
+    if grad_output.device.type == "mps":
+        torch._prims_common.alert_not_deterministic("ps_roi_align_backward_kernel")
     rois, channel_mapping = ctx.saved_tensors
     batch_size, channels, height, width = ctx.input_shape
     grad_input = torch.ops.torchvision._ps_roi_align_backward(
@@ -117,6 +119,8 @@ def _ps_roi_pool_setup_context(ctx, inputs, output):
 
 
 def _ps_roi_pool_backward(ctx, grad_output, _grad_channel_mapping):
+    if grad_output.device.type == "mps":
+        torch._prims_common.alert_not_deterministic("ps_roi_pool_backward_kernel")
     rois, channel_mapping = ctx.saved_tensors
     batch_size, channels, height, width = ctx.input_shape
     grad_input = torch.ops.torchvision._ps_roi_pool_backward(
