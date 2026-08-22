@@ -5,6 +5,7 @@ import io
 import os
 import re
 import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -1182,6 +1183,60 @@ def test_mode_str():
     assert decode_image(path, mode="rGb").shape[0] == 3
     assert decode_image(path, mode="GRAY").shape[0] == 1
     assert decode_image(path, mode="RGBA").shape[0] == 4
+
+
+def _deprecated_calls(tmp_path):
+    # Zero-arg thunks calling each deprecated entry point with valid inputs.
+    img = torch.randint(0, 256, (3, 8, 8), dtype=torch.uint8)
+    png = encode_png(img)
+    jpg = encode_jpeg(img)
+    path = str(tmp_path / "img.png")
+    write_file(path, png)
+    return {
+        "read_file": lambda: read_file(path),
+        "write_file": lambda: write_file(str(tmp_path / "out.bin"), png),
+        "decode_png": lambda: decode_png(png),
+        "encode_png": lambda: encode_png(img),
+        "write_png": lambda: write_png(img, str(tmp_path / "out.png")),
+        "decode_jpeg": lambda: decode_jpeg(jpg),
+        "encode_jpeg": lambda: encode_jpeg(img),
+        "write_jpeg": lambda: write_jpeg(img, str(tmp_path / "out.jpg")),
+        "decode_image": lambda: decode_image(png),
+        "read_image": lambda: read_image(path),
+    }
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "read_file",
+        "write_file",
+        "decode_png",
+        "encode_png",
+        "write_png",
+        "decode_jpeg",
+        "encode_jpeg",
+        "write_jpeg",
+        "decode_image",
+        "read_image",
+    ],
+)
+def test_deprecation_warning(name, tmp_path):
+    call = _deprecated_calls(tmp_path)[name]
+    with pytest.warns(DeprecationWarning, match="deprecated since torchvision 0.29"):
+        call()
+
+
+def test_deprecation_warning_only_once(tmp_path):
+    calls = _deprecated_calls(tmp_path)
+    with warnings.catch_warnings(record=True) as caught:
+        # "default" (rather than "always") is what dedups per warn() location,
+        # which is how users see this warning at most once.
+        warnings.simplefilter("default")
+        for call in calls.values():
+            call()
+            call()
+    assert [w.category for w in caught].count(DeprecationWarning) == 1
 
 
 if __name__ == "__main__":
