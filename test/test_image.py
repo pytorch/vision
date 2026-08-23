@@ -5,6 +5,7 @@ import io
 import os
 import re
 import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -43,7 +44,6 @@ TOOSMALL_PNG = os.path.join(IMAGE_ROOT, "toosmall_png")
 IS_WINDOWS = sys.platform in ("win32", "cygwin")
 IS_MACOS = sys.platform == "darwin"
 IS_LINUX = sys.platform == "linux"
-IS_ROCM = torch.version.hip is not None
 PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION.split("."))
 WEBP_TEST_IMAGES_DIR = os.environ.get("WEBP_TEST_IMAGES_DIR", "")
 # See https://github.com/pytorch/vision/pull/8724#issuecomment-2503964558
@@ -427,13 +427,12 @@ def test_decode_jpegs_cuda(mode, scripted):
         futures = [executor.submit(decode_fn, encoded_images, mode, "cuda") for _ in range(num_workers)]
     decoded_images_threaded = [future.result() for future in futures]
     assert len(decoded_images_threaded) == num_workers
-    tol = 2.5 if IS_ROCM else 2
     for decoded_images in decoded_images_threaded:
         assert len(decoded_images) == len(encoded_images)
         for decoded_image_cuda, decoded_image_cpu in zip(decoded_images, decoded_images_cpu):
             assert decoded_image_cuda.shape == decoded_image_cpu.shape
             assert decoded_image_cuda.dtype == decoded_image_cpu.dtype == torch.uint8
-            assert (decoded_image_cuda.cpu().float() - decoded_image_cpu.cpu().float()).abs().mean() < tol
+            assert (decoded_image_cuda.cpu().float() - decoded_image_cpu.cpu().float()).abs().mean() < 2
 
 
 @needs_cuda
@@ -578,7 +577,6 @@ def test_encode_jpeg(img_path, scripted):
 
 
 @needs_cuda
-@pytest.mark.skipif(IS_ROCM, reason="rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
 def test_encode_jpeg_cuda_device_param():
     path = next(path for path in get_images(IMAGE_ROOT, ".jpg") if "cmyk" not in path)
 
@@ -599,7 +597,6 @@ def test_encode_jpeg_cuda_device_param():
 
 
 @needs_cuda
-@pytest.mark.skipif(IS_ROCM, reason="rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(IMAGE_ROOT, ".jpg")],
@@ -629,7 +626,6 @@ def test_encode_jpeg_cuda(img_path, scripted, contiguous):
 
 
 @needs_cuda
-@pytest.mark.skipif(IS_ROCM, reason="rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
 def test_encode_jpeg_cuda_sync():
     """
     Non-regression test for https://github.com/pytorch/vision/issues/8587.
@@ -671,8 +667,6 @@ def test_encode_jpeg_cuda_sync():
 def test_encode_jpegs_batch(scripted, contiguous, device):
     if device == "cpu" and IS_MACOS:
         pytest.skip("https://github.com/pytorch/vision/issues/8031")
-    if device == "cuda" and IS_ROCM:
-        pytest.skip("rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
     decoded_images_tv = []
     for jpeg_path in get_images(IMAGE_ROOT, ".jpg"):
         if "cmyk" in jpeg_path:
@@ -718,7 +712,6 @@ def test_encode_jpegs_batch(scripted, contiguous, device):
 
 
 @needs_cuda
-@pytest.mark.skipif(IS_ROCM, reason="rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
 def test_single_encode_jpeg_cuda_errors():
     with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
         encode_jpeg(torch.empty((3, 100, 100), dtype=torch.float32, device="cuda"))
@@ -737,7 +730,6 @@ def test_single_encode_jpeg_cuda_errors():
 
 
 @needs_cuda
-@pytest.mark.skipif(IS_ROCM, reason="rocJPEG is decode-only; GPU JPEG encoding is not supported on ROCm")
 def test_batch_encode_jpegs_cuda_errors():
     with pytest.raises(RuntimeError, match="Input tensor dtype should be uint8"):
         encode_jpeg(
@@ -1191,6 +1183,60 @@ def test_mode_str():
     assert decode_image(path, mode="rGb").shape[0] == 3
     assert decode_image(path, mode="GRAY").shape[0] == 1
     assert decode_image(path, mode="RGBA").shape[0] == 4
+
+
+def _deprecated_calls(tmp_path):
+    # Zero-arg thunks calling each deprecated entry point with valid inputs.
+    img = torch.randint(0, 256, (3, 8, 8), dtype=torch.uint8)
+    png = encode_png(img)
+    jpg = encode_jpeg(img)
+    path = str(tmp_path / "img.png")
+    write_file(path, png)
+    return {
+        "read_file": lambda: read_file(path),
+        "write_file": lambda: write_file(str(tmp_path / "out.bin"), png),
+        "decode_png": lambda: decode_png(png),
+        "encode_png": lambda: encode_png(img),
+        "write_png": lambda: write_png(img, str(tmp_path / "out.png")),
+        "decode_jpeg": lambda: decode_jpeg(jpg),
+        "encode_jpeg": lambda: encode_jpeg(img),
+        "write_jpeg": lambda: write_jpeg(img, str(tmp_path / "out.jpg")),
+        "decode_image": lambda: decode_image(png),
+        "read_image": lambda: read_image(path),
+    }
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "read_file",
+        "write_file",
+        "decode_png",
+        "encode_png",
+        "write_png",
+        "decode_jpeg",
+        "encode_jpeg",
+        "write_jpeg",
+        "decode_image",
+        "read_image",
+    ],
+)
+def test_deprecation_warning(name, tmp_path):
+    call = _deprecated_calls(tmp_path)[name]
+    with pytest.warns(DeprecationWarning, match="deprecated since torchvision 0.29"):
+        call()
+
+
+def test_deprecation_warning_only_once(tmp_path):
+    calls = _deprecated_calls(tmp_path)
+    with warnings.catch_warnings(record=True) as caught:
+        # "default" (rather than "always") is what dedups per warn() location,
+        # which is how users see this warning at most once.
+        warnings.simplefilter("default")
+        for call in calls.values():
+            call()
+            call()
+    assert [w.category for w in caught].count(DeprecationWarning) == 1
 
 
 if __name__ == "__main__":

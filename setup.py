@@ -23,7 +23,6 @@ USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
-USE_ROCJPEG = os.getenv("TORCHVISION_USE_ROCJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
@@ -46,7 +45,6 @@ print(f"{USE_PNG = }")
 print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
 print(f"{USE_NVJPEG = }")
-print(f"{USE_ROCJPEG = }")
 print(f"{NVCC_FLAGS = }")
 print(f"{TORCHVISION_INCLUDE = }")
 print(f"{TORCHVISION_LIBRARY = }")
@@ -153,7 +151,7 @@ def get_macros_and_flags():
     return define_macros, extra_compile_args
 
 
-TORCH_TARGET_VERSION = "0x020b000000000000"
+TORCH_TARGET_VERSION = "0x020e000000000000"
 
 # Files migrated to the stable ABI: subtracted from make_C_extension()'s globs and
 # built into _C_stable instead. Add an op's files here as it migrates.
@@ -168,9 +166,20 @@ STABLE_SOURCES = {
     CSRS_DIR / "ops/cpu/box_iou_rotated_kernel.cpp",
     CSRS_DIR / "ops/roi_align.cpp",
     CSRS_DIR / "ops/cpu/roi_align_kernel.cpp",
+    CSRS_DIR / "ops/mps/roi_align_kernel.mm",
     CSRS_DIR / "ops/quantized/cpu/qroi_align_kernel.cpp",
     CSRS_DIR / "ops/roi_pool.cpp",
     CSRS_DIR / "ops/cpu/roi_pool_kernel.cpp",
+    CSRS_DIR / "ops/mps/roi_pool_kernel.mm",
+    CSRS_DIR / "ops/ps_roi_pool.cpp",
+    CSRS_DIR / "ops/cpu/ps_roi_pool_kernel.cpp",
+    CSRS_DIR / "ops/mps/ps_roi_pool_kernel.mm",
+    CSRS_DIR / "ops/ps_roi_align.cpp",
+    CSRS_DIR / "ops/cpu/ps_roi_align_kernel.cpp",
+    CSRS_DIR / "ops/mps/ps_roi_align_kernel.mm",
+    CSRS_DIR / "ops/deform_conv2d.cpp",
+    CSRS_DIR / "ops/cpu/deform_conv2d_kernel.cpp",
+    CSRS_DIR / "ops/mps/deform_conv2d_kernel.mm",
 }
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
 STABLE_SOURCES.add(
@@ -260,6 +269,8 @@ def get_stable_macros_and_flags():
             # The jpeg decode .cpp also calls these shims (incl.
             # torch_get_cuda_stream_from_pool), so cxx needs USE_CUDA too.
             extra_compile_args["cxx"].append("-DUSE_CUDA")
+    if torch.backends.mps.is_available() or FORCE_MPS:
+        extra_compile_args["cxx"].append("-DUSE_MPS")
     return define_macros, extra_compile_args
 
 
@@ -394,7 +405,7 @@ def make_image_stable_extension():
         list(image_dir.glob("*.cpp"))
         + list(image_dir.glob("cpu/*.cpp"))
         + list(image_dir.glob("cpu/giflib/*.c"))
-        + list(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
+        + list(image_dir.glob("cuda/*.cpp"))
     )
 
     Extension = CppExtension
@@ -445,16 +456,6 @@ def make_image_stable_extension():
             libraries.append("nvjpeg")
             define_macros += [("NVJPEG_FOUND", 1)]
             Extension = CUDAExtension
-
-    if USE_ROCJPEG and IS_ROCM and (torch.cuda.is_available() or FORCE_CUDA):
-        rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
-        if rocjpeg_found:
-            print("Building torchvision with ROCJPEG image support")
-            libraries.append("rocjpeg")
-            define_macros += [("ROCJPEG_FOUND", 1)]
-            Extension = CUDAExtension
-        else:
-            warnings.warn("Building torchvision without ROCJPEG support")
 
     return Extension(
         name="torchvision.image_stable",
