@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <string>
 
-#include "deform_conv2d_metal_shader.h"
+#include "mps_stable_kernels.h"
 
 namespace vision {
 namespace ops {
@@ -23,26 +23,6 @@ using torch::stable::Tensor;
 // TODO(stable-abi): use torch::stable::add once the shim adds aten::add.Tensor.
 Tensor add_tensors(const Tensor& self, const Tensor& other) {
   return torch::stable::subtract(self, other, -1.0);
-}
-
-AOTIMetalShaderLibraryHandle deform_conv2d_shader_library() {
-  static AOTIMetalShaderLibraryHandle library = []() {
-    AOTIMetalShaderLibraryHandle handle = nullptr;
-    TORCH_ERROR_CODE_CHECK(aoti_torch_mps_create_shader_library(
-        deform_conv2d_metal_shader, &handle));
-    return handle;
-  }();
-  return library;
-}
-
-const char* metal_type_string(torch::headeronly::ScalarType scalar_type) {
-  if (scalar_type == torch::headeronly::ScalarType::Float) {
-    return "float";
-  }
-  if (scalar_type == torch::headeronly::ScalarType::Half) {
-    return "half";
-  }
-  return "";
 }
 
 struct DeformConv2dIm2colLaunchArgs {
@@ -209,10 +189,8 @@ Tensor deform_conv2d_forward_kernel(
        static_cast<int64_t>(batch) * out_h * out_w});
 
   const std::string kernel = "deformable_im2col_" +
-      std::string(metal_type_string(input.scalar_type()));
-  AOTIMetalKernelFunctionHandle func = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
-      deform_conv2d_shader_library(), kernel.c_str(), &func));
+      std::string(mps::metal_type_string(input.scalar_type()));
+  AOTIMetalKernelFunctionHandle func = mps::visionKernelFunction(kernel);
 
   int64_t num_kernels =
       static_cast<int64_t>(in_channels) * out_h * out_w * batch;

@@ -12,7 +12,8 @@
 #include <string>
 #include <tuple>
 
-#include "roi_pool_metal_shader.h"
+#include "mps_helpers.h"
+#include "mps_stable_kernels.h"
 
 namespace vision {
 namespace ops {
@@ -20,28 +21,6 @@ namespace ops {
 namespace {
 
 using torch::stable::Tensor;
-
-constexpr int64_t threadsPerBlock = 512;
-
-AOTIMetalShaderLibraryHandle roi_pool_shader_library() {
-  static AOTIMetalShaderLibraryHandle library = []() {
-    AOTIMetalShaderLibraryHandle handle = nullptr;
-    TORCH_ERROR_CODE_CHECK(
-        aoti_torch_mps_create_shader_library(roi_pool_metal_shader, &handle));
-    return handle;
-  }();
-  return library;
-}
-
-const char* metal_type_string(torch::headeronly::ScalarType scalar_type) {
-  if (scalar_type == torch::headeronly::ScalarType::Float) {
-    return "float";
-  }
-  if (scalar_type == torch::headeronly::ScalarType::Half) {
-    return "half";
-  }
-  return "";
-}
 
 struct RoiPoolForwardLaunchArgs {
   AtenTensorHandle input;
@@ -198,13 +177,11 @@ std::tuple<Tensor, Tensor> roi_pool_forward_kernel(
   float spatial_scale_f = static_cast<float>(spatial_scale);
 
   const std::string kernel =
-      "roi_pool_" + std::string(metal_type_string(input.scalar_type()));
-  AOTIMetalKernelFunctionHandle func = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
-      roi_pool_shader_library(), kernel.c_str(), &func));
+      "roi_pool_" + std::string(mps::metal_type_string(input.scalar_type()));
+  AOTIMetalKernelFunctionHandle func = mps::visionKernelFunction(kernel);
 
   const int64_t threadgroups = std::min(
-      (output_size + threadsPerBlock - 1) / threadsPerBlock,
+      ceil_div(output_size, static_cast<int64_t>(threadsPerBlock)),
       static_cast<int64_t>(4096));
 
   RoiPoolForwardLaunchArgs launch_args{
@@ -277,11 +254,9 @@ Tensor roi_pool_backward_kernel(
 
   float spatial_scale_f = static_cast<float>(spatial_scale);
 
-  const std::string kernel =
-      "roi_pool_backward_" + std::string(metal_type_string(grad.scalar_type()));
-  AOTIMetalKernelFunctionHandle func = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
-      roi_pool_shader_library(), kernel.c_str(), &func));
+  const std::string kernel = "roi_pool_backward_" +
+      std::string(mps::metal_type_string(grad.scalar_type()));
+  AOTIMetalKernelFunctionHandle func = mps::visionKernelFunction(kernel);
 
   RoiPoolBackwardLaunchArgs launch_args{
       grad.get(),
