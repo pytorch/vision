@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "../StableABICompat.h"
-#include "nms_metal_shader.h"
+#include "mps_stable_kernels.h"
 
 namespace vision {
 namespace ops {
@@ -25,33 +25,6 @@ using torch::stable::Tensor;
 
 // This should be in sync with `nmsThreadsPerBlock` in the metal kernel.
 constexpr int64_t nmsThreadsPerBlock = sizeof(uint64_t) * 8;
-
-// Lazily compile the nms Metal shader library once for the process, mirroring
-// the lazy-singleton the AOTInductor MPS backend generates. The handle lives
-// for the process lifetime (as the legacy static MetalShaderLibrary did).
-AOTIMetalShaderLibraryHandle nms_shader_library() {
-  static AOTIMetalShaderLibraryHandle library = []() {
-    AOTIMetalShaderLibraryHandle handle = nullptr;
-    TORCH_ERROR_CODE_CHECK(
-        aoti_torch_mps_create_shader_library(nms_metal_shader, &handle));
-    return handle;
-  }();
-  return library;
-}
-
-// Mirrors at::native::mps::scalarToMetalTypeString for the dtypes nms registers
-// (nms_float / nms_half). An unsupported dtype yields a name with no matching
-// kernel, so the lookup in aoti_torch_mps_get_kernel_function fails -- as the
-// legacy visionPipelineState lookup did for unsupported types.
-const char* metal_type_string(torch::headeronly::ScalarType scalar_type) {
-  if (scalar_type == torch::headeronly::ScalarType::Float) {
-    return "float";
-  }
-  if (scalar_type == torch::headeronly::ScalarType::Half) {
-    return "half";
-  }
-  return "";
-}
 
 // Arguments bound to the nms kernel inside the command block. The tensors are
 // owned by the caller (nms_kernel) and outlive the synchronous dispatch.
@@ -127,10 +100,8 @@ Tensor nms_kernel(
       dets, {dets_num * col_blocks}, torch::headeronly::ScalarType::Long);
 
   const std::string kernel =
-      "nms_" + std::string(metal_type_string(dets_sorted.scalar_type()));
-  AOTIMetalKernelFunctionHandle func = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
-      nms_shader_library(), kernel.c_str(), &func));
+      "nms_" + std::string(mps::metal_type_string(dets_sorted.scalar_type()));
+  AOTIMetalKernelFunctionHandle func = mps::visionKernelFunction(kernel);
 
   // A threadGroup is equivalent to a cuda's block; dispatch col_blocks x
   // col_blocks threadgroups of nmsThreadsPerBlock threads. The shim dispatches
