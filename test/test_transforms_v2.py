@@ -3427,6 +3427,11 @@ class TestElastic:
             check_v1_compatibility=check_v1_compatibility,
         )
 
+    @pytest.mark.parametrize("sigma", [-100, -100.0, [-100, -100], [-100.0, 100.0], [100.0, -100.0]])
+    def test_transform_negative_sigma(self, sigma):
+        with pytest.raises(ValueError, match="sigma should have non-negative values"):
+            transforms.ElasticTransform(sigma=sigma)
+
 
 class TestToPureTensor:
     def test_correctness(self):

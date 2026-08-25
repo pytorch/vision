@@ -1053,7 +1053,7 @@ class ElasticTransform(Transform):
         alpha (float or sequence of floats, optional): Magnitude of displacements.
             Default is 50.0. A single value is ``[alpha, alpha]``.
         sigma (float or sequence of floats, optional): Smoothness of displacements.
-            Default is 5.0. A single value is ``[sigma, sigma]``.
+            Default is 5.0. A single value is ``[sigma, sigma]``. Values must be non-negative.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
@@ -1081,6 +1081,8 @@ class ElasticTransform(Transform):
         super().__init__()
         self.alpha = _setup_number_or_seq(alpha, "alpha")
         self.sigma = _setup_number_or_seq(sigma, "sigma")
+        if any(s < 0 for s in self.sigma):
+            raise ValueError(f"sigma should have non-negative values. Got {list(self.sigma)}")
 
         self.interpolation = interpolation
         self.fill = fill
