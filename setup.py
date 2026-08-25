@@ -188,6 +188,7 @@ STABLE_SOURCES.add(
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/roi_pool_kernel.hip" if IS_ROCM else "ops/cuda/roi_pool_kernel.cu"))
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/roi_align_kernel.hip" if IS_ROCM else "ops/cuda/roi_align_kernel.cu"))
 STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/ps_roi_pool_kernel.hip" if IS_ROCM else "ops/cuda/ps_roi_pool_kernel.cu"))
+STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/ps_roi_align_kernel.hip" if IS_ROCM else "ops/cuda/ps_roi_align_kernel.cu"))
 
 
 def _not_stable(paths):
