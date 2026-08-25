@@ -113,8 +113,10 @@ set(TORCHVISION_STABLE_SOURCES
   ${TVCPP}/ops/cuda/roi_pool_kernel.cu
   ${TVCPP}/ops/ps_roi_pool.cpp
   ${TVCPP}/ops/cpu/ps_roi_pool_kernel.cpp
+  ${TVCPP}/ops/cuda/ps_roi_pool_kernel.cu
   ${TVCPP}/ops/ps_roi_align.cpp
   ${TVCPP}/ops/cpu/ps_roi_align_kernel.cpp
+  ${TVCPP}/ops/cuda/ps_roi_align_kernel.cu
   ${TVCPP}/ops/deform_conv2d.cpp
   ${TVCPP}/ops/cpu/deform_conv2d_kernel.cpp
   ${TVCPP}/ops/cuda/deform_conv2d_kernel.cu
