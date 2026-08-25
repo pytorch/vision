@@ -169,6 +169,8 @@ def _deform_conv2d_setup_context(ctx, inputs, output):
 
 
 def _deform_conv2d_backward(ctx, grad_output):
+    if grad_output.device.type == "cuda":
+        torch._prims_common.alert_not_deterministic("compute_grad_input")
     input, weight, offset, mask, bias = ctx.saved_tensors
     grad_input, grad_weight, grad_offset, grad_mask, grad_bias = torch.ops.torchvision._deform_conv2d_backward(
         grad_output,

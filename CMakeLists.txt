@@ -119,6 +119,7 @@ set(TORCHVISION_STABLE_SOURCES
   ${TVCPP}/ops/cuda/ps_roi_align_kernel.cu
   ${TVCPP}/ops/deform_conv2d.cpp
   ${TVCPP}/ops/cpu/deform_conv2d_kernel.cpp
+  ${TVCPP}/ops/cuda/deform_conv2d_kernel.cu
   ${TVCPP}/io/image/cuda/decode_jpegs_cuda.cpp
   ${TVCPP}/io/image/cuda/encode_jpegs_cuda.cpp
   ${TVCPP}/io/image/cpu/encode_png.cpp
