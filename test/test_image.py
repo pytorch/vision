@@ -949,6 +949,101 @@ def test_decode_gif_frame_outside_canvas(scripted, frame1_left, frame1_top, is_o
         assert (out[1] == 0).all()
 
 
+def _craft_gif(*, canvas, gct, bg, frame_size, pixels, lzw_min):
+    # Minimal single-frame GIF89a builder. `gct` is a flat RGB palette whose
+    # length implies the colour count; `lzw_min` is the LZW minimum code size,
+    # which the GIF format lets an encoder choose independently of the palette
+    # size. Codes are packed at a fixed width, which is valid here because
+    # these streams are far too short to trigger a code-width increase.
+    def le16(v):
+        return bytes([v & 0xFF, (v >> 8) & 0xFF])
+
+    n_colors = len(gct) // 3
+    gct_bpp = n_colors.bit_length() - 1
+    clear, eoi, width = 1 << lzw_min, (1 << lzw_min) + 1, lzw_min + 1
+
+    packed_codes, cur, nbits = bytearray(), 0, 0
+    for code in [clear, *pixels, eoi]:
+        cur |= code << nbits
+        nbits += width
+        while nbits >= 8:
+            packed_codes.append(cur & 0xFF)
+            cur >>= 8
+            nbits -= 8
+    if nbits:
+        packed_codes.append(cur & 0xFF)
+
+    sub_blocks = b""
+    for i in range(0, len(packed_codes), 255):
+        chunk = packed_codes[i : i + 255]
+        sub_blocks += bytes([len(chunk)]) + bytes(chunk)
+
+    return (
+        b"GIF89a"
+        + le16(canvas)
+        + le16(canvas)
+        + bytes([0x80 | (gct_bpp - 1), bg, 0])  # LSD: GCT present, background index
+        + gct
+        + bytes([0x2C])  # image descriptor
+        + le16(0)
+        + le16(0)
+        + le16(frame_size)
+        + le16(frame_size)
+        + bytes([0])  # no local colormap
+        + bytes([lzw_min])
+        + sub_blocks
+        + bytes([0, 0x3B])  # block terminator + trailer
+    )
+
+
+# A 2-colour global colormap: the palette allocation is only 6 bytes, so any
+# index above 1 reads past it.
+_TINY_GCT = bytes([17, 34, 51, 255, 255, 255])
+
+
+@pytest.mark.parametrize("scripted", (True, False))
+@pytest.mark.parametrize("bg, expected_bg_color", [(0, (17, 34, 51)), (255, (0, 0, 0))])
+def test_decode_gif_out_of_range_background_color(scripted, bg, expected_bg_color):
+    # Non-regression test: SBackGroundColor is an unvalidated byte (0-255) from
+    # the logical screen descriptor, but the global colormap may hold as few as
+    # 2 entries. Before the fix, bg=255 against a 2-colour palette read 759
+    # bytes past the allocation and those heap bytes became the background
+    # colour of the output tensor (heap info leak, CWE-125).
+    encoded = _craft_gif(canvas=4, gct=_TINY_GCT, bg=bg, frame_size=1, pixels=[1], lzw_min=2)
+    f = torch.jit.script(decode_gif) if scripted else decode_gif
+    out = f(torch.frombuffer(bytearray(encoded), dtype=torch.uint8))
+
+    assert out.shape == (3, 4, 4)
+    # The 1x1 frame covers only the top-left pixel; the rest is background.
+    assert tuple(out[:, 0, 0].tolist()) == (255, 255, 255)
+    assert (out[:, 3, 3] == torch.tensor(expected_bg_color, dtype=torch.uint8)).all()
+
+
+@pytest.mark.parametrize("scripted", (True, False))
+@pytest.mark.parametrize("n_colors", (2, 256))
+def test_decode_gif_out_of_range_palette_index(scripted, n_colors):
+    # Non-regression test: the LZW minimum code size is read independently of
+    # the colormap size, so a GIF may declare a 2-entry palette while emitting
+    # raster values up to 255. Before the fix, cmap->Colors[c] read up to 762
+    # bytes past the palette and wrote those heap bytes straight into the
+    # output tensor, once per pixel (heap info leak, CWE-125).
+    gct = _TINY_GCT if n_colors == 2 else b"".join(bytes([i, i, i]) for i in range(256))
+    encoded = _craft_gif(canvas=4, gct=gct, bg=0, frame_size=4, pixels=[255] * 16, lzw_min=8)
+    f = torch.jit.script(decode_gif) if scripted else decode_gif
+    out = f(torch.frombuffer(bytearray(encoded), dtype=torch.uint8))
+
+    assert out.shape == (3, 4, 4)
+    if n_colors == 2:
+        # Index 255 is out of range: the pixel is skipped and the background
+        # (palette entry 0) shows through.
+        expected = (17, 34, 51)
+    else:
+        # Control: the same raster stream against a full 256-entry palette must
+        # still resolve to entry 255, i.e. the fix must not clip valid indices.
+        expected = (255, 255, 255)
+    assert (out == torch.tensor(expected, dtype=torch.uint8)[:, None, None]).all()
+
+
 @pytest.mark.parametrize(
     "decode_fun, match",
     [
