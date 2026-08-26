@@ -49,6 +49,8 @@ class WIDERFace(VisionDataset):
         ("1GUCogbp16PMGa39thoMMeWxp7Rp5oM8Q", "dfa7d7e790efa35df3788964cf0bbaea", "WIDER_val.zip"),
         ("1HIfDbVEWKmsYKJZm4lchTBDLW5N7dY5T", "e5d8f4248ed24c334bbd12f49c29dd40", "WIDER_test.zip"),
     ]
+    # shuoyang1213.me serves a certificate for *.github.com, so https fails hostname
+    # verification. Contents are checksummed below.
     ANNOTATIONS_FILE = (
         "http://shuoyang1213.me/WIDERFACE/support/bbx_annotation/wider_face_split.zip",
         "0e3767bcf0e326556d407bf5bff5d27c",
