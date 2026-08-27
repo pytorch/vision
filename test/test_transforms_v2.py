@@ -6794,6 +6794,16 @@ class TestToImage:
         with pytest.raises(TypeError, match="Input can either be a pure Tensor, a numpy array, or a PIL image"):
             F.to_image(object())
 
+    def test_numpy_channels_last_memory_format(self):
+        input = np.zeros((224, 224, 3), dtype=np.uint8)
+
+        output = F.to_image(input)
+
+        assert output.shape == (3, 224, 224)
+
+        assert output.unsqueeze(0).is_contiguous(
+            memory_format=torch.channels_last
+        )
 
 class TestToPILImage:
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image, make_image_numpy])
