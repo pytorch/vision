@@ -1,4 +1,3 @@
-#include <torch/csrc/inductor/aoti_torch/c/shim.h>
 #include <torch/csrc/stable/accelerator.h>
 #include <torch/csrc/stable/library.h>
 #include <torch/csrc/stable/macros.h>
@@ -446,10 +445,7 @@ std::tuple<Tensor, Tensor> ps_roi_align_forward_kernel(
     return std::make_tuple(output, channel_mapping);
   }
 
-  void* stream_ptr = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_get_current_cuda_stream(
-      input.get_device_index(), &stream_ptr));
-  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
+  cudaStream_t stream = get_current_cuda_stream(input.get_device_index());
 
   dim3 grid(std::min(
       ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
@@ -519,10 +515,7 @@ Tensor ps_roi_align_backward_kernel(
   Tensor grad_input =
       torch::stable::new_zeros(grad, {batch_size, channels, height, width});
 
-  void* stream_ptr = nullptr;
-  TORCH_ERROR_CODE_CHECK(
-      aoti_torch_get_current_cuda_stream(grad.get_device_index(), &stream_ptr));
-  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
+  cudaStream_t stream = get_current_cuda_stream(grad.get_device_index());
 
   dim3 grid(std::min(
       ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),

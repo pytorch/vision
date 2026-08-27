@@ -67,7 +67,6 @@
 // modified from
 // https://github.com/open-mmlab/mmdetection/blob/master/mmdet/ops/dcn/src/deform_conv_cuda.cpp
 
-#include <torch/csrc/inductor/aoti_torch/c/shim.h>
 #include <torch/csrc/stable/accelerator.h>
 #include <torch/csrc/stable/library.h>
 #include <torch/csrc/stable/macros.h>
@@ -344,10 +343,7 @@ void deformable_im2col(
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
-  void* stream_ptr = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_get_current_cuda_stream(
-      input.get_device_index(), &stream_ptr));
-  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
+  cudaStream_t stream = get_current_cuda_stream(input.get_device_index());
 
   // Checks if we should use 64bits indexing
   // https://github.com/pytorch/vision/issues/4269
@@ -596,10 +592,7 @@ void compute_grad_input(
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
-  void* stream_ptr = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_get_current_cuda_stream(
-      columns.get_device_index(), &stream_ptr));
-  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
+  cudaStream_t stream = get_current_cuda_stream(columns.get_device_index());
 
   // Checks if we should use 64bits indexing
   // https://github.com/pytorch/vision/issues/4269
@@ -908,10 +901,7 @@ void compute_grad_offset_and_mask(
   const unsigned int threads = GET_THREADS();
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
-  void* stream_ptr = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_get_current_cuda_stream(
-      columns.get_device_index(), &stream_ptr));
-  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
+  cudaStream_t stream = get_current_cuda_stream(columns.get_device_index());
 
   // Checks if we should use 64bits indexing
   // https://github.com/pytorch/vision/issues/4269
