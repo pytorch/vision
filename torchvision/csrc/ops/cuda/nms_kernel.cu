@@ -1,4 +1,3 @@
-#include <torch/csrc/inductor/aoti_torch/c/shim.h>
 #include <torch/csrc/stable/accelerator.h>
 #include <torch/csrc/stable/library.h>
 #include <torch/csrc/stable/macros.h>
@@ -212,10 +211,7 @@ Tensor nms_kernel(
   dim3 blocks(col_blocks, col_blocks);
   dim3 threads(threadsPerBlock);
 
-  void* stream_ptr = nullptr;
-  TORCH_ERROR_CODE_CHECK(
-      aoti_torch_get_current_cuda_stream(dets.get_device_index(), &stream_ptr));
-  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
+  cudaStream_t stream = get_current_cuda_stream(dets.get_device_index());
 
   THO_DISPATCH_V2(
       dets_sorted.scalar_type(),
