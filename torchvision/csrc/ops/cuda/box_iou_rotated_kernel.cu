@@ -9,7 +9,6 @@
 // Original source: https://github.com/facebookresearch/detectron2
 // License: https://github.com/facebookresearch/detectron2/blob/main/LICENSE
 
-#include <torch/csrc/inductor/aoti_torch/c/shim.h>
 #include <torch/csrc/stable/accelerator.h>
 #include <torch/csrc/stable/library.h>
 #include <torch/csrc/stable/macros.h>
@@ -144,10 +143,7 @@ Tensor box_iou_rotated_cuda(
     dim3 blocks(blocks_x, blocks_y);
     dim3 threads(BLOCK_DIM_X, BLOCK_DIM_Y);
 
-    void* stream_ptr = nullptr;
-    TORCH_ERROR_CODE_CHECK(aoti_torch_get_current_cuda_stream(
-        boxes1.get_device_index(), &stream_ptr));
-    cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
+    cudaStream_t stream = get_current_cuda_stream(boxes1.get_device_index());
 
     THO_DISPATCH_V2(
         boxes1.scalar_type(),

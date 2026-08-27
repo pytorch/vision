@@ -1,4 +1,5 @@
 #include <torch/csrc/inductor/aoti_torch/c/shim_mps.h>
+#include <torch/csrc/stable/c/shim.h>
 #include <torch/csrc/stable/device.h>
 #include <torch/csrc/stable/library.h>
 #include <torch/csrc/stable/ops.h>
@@ -13,7 +14,7 @@
 #include <vector>
 
 #include "../StableABICompat.h"
-#include "nms_metal_shader.h"
+#include "mps_stable_kernels.h"
 
 namespace vision {
 namespace ops {
@@ -25,39 +26,12 @@ using torch::stable::Tensor;
 // This should be in sync with `nmsThreadsPerBlock` in the metal kernel.
 constexpr int64_t nmsThreadsPerBlock = sizeof(uint64_t) * 8;
 
-// Lazily compile the nms Metal shader library once for the process, mirroring
-// the lazy-singleton the AOTInductor MPS backend generates. The handle lives
-// for the process lifetime (as the legacy static MetalShaderLibrary did).
-AOTIMetalShaderLibraryHandle nms_shader_library() {
-  static AOTIMetalShaderLibraryHandle library = []() {
-    AOTIMetalShaderLibraryHandle handle = nullptr;
-    TORCH_ERROR_CODE_CHECK(
-        aoti_torch_mps_create_shader_library(nms_metal_shader, &handle));
-    return handle;
-  }();
-  return library;
-}
-
-// Mirrors at::native::mps::scalarToMetalTypeString for the dtypes nms registers
-// (nms_float / nms_half). An unsupported dtype yields a name with no matching
-// kernel, so the lookup in aoti_torch_mps_get_kernel_function fails -- as the
-// legacy visionPipelineState lookup did for unsupported types.
-const char* metal_type_string(torch::headeronly::ScalarType scalar_type) {
-  if (scalar_type == torch::headeronly::ScalarType::Float) {
-    return "float";
-  }
-  if (scalar_type == torch::headeronly::ScalarType::Half) {
-    return "half";
-  }
-  return "";
-}
-
 // Arguments bound to the nms kernel inside the command block. The tensors are
 // owned by the caller (nms_kernel) and outlive the synchronous dispatch.
 struct NmsLaunchArgs {
   AtenTensorHandle dets_sorted;
   AtenTensorHandle mask;
-  AtenTensorHandle iou_threshold;
+  float iou_threshold;
   int64_t dets_num;
   uint64_t grid[2];
   uint64_t threadgroup[2];
@@ -73,12 +47,8 @@ void nms_encode(AOTIMetalKernelFunctionHandle func, void* user_data) {
       aoti_torch_mps_set_arg_tensor(func, 1, launch_args->mask));
   TORCH_ERROR_CODE_CHECK(
       aoti_torch_mps_set_arg_int(func, 2, launch_args->dets_num));
-  // The MPS shim has no scalar-float arg setter, so iou_threshold rides in as a
-  // 1-element float32 tensor bound at buffer(3).
-  // TODO(stable-abi): bind a float directly once aoti_torch_mps_set_arg_double /
-  // set_arg_bytes lands upstream (pytorch/pytorch).
-  TORCH_ERROR_CODE_CHECK(
-      aoti_torch_mps_set_arg_tensor(func, 3, launch_args->iou_threshold));
+  TORCH_ERROR_CODE_CHECK(torch_mps_set_arg_bytes(
+      func, 3, &launch_args->iou_threshold, sizeof(float)));
   TORCH_ERROR_CODE_CHECK(aoti_torch_mps_dispatch_array_with_group_size(
       func,
       launch_args->grid,
@@ -129,17 +99,9 @@ Tensor nms_kernel(
   Tensor mask = torch::stable::new_empty(
       dets, {dets_num * col_blocks}, torch::headeronly::ScalarType::Long);
 
-  // The MPS kernel reads iou_threshold as a float; carry it in a 1-element
-  // float32 tensor (see note in nms_encode).
-  Tensor iou_threshold_t =
-      torch::stable::new_empty(dets, {1}, torch::headeronly::ScalarType::Float);
-  torch::stable::fill_(iou_threshold_t, iou_threshold);
-
   const std::string kernel =
-      "nms_" + std::string(metal_type_string(dets_sorted.scalar_type()));
-  AOTIMetalKernelFunctionHandle func = nullptr;
-  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
-      nms_shader_library(), kernel.c_str(), &func));
+      "nms_" + std::string(mps::metal_type_string(dets_sorted.scalar_type()));
+  AOTIMetalKernelFunctionHandle func = mps::visionKernelFunction(kernel);
 
   // A threadGroup is equivalent to a cuda's block; dispatch col_blocks x
   // col_blocks threadgroups of nmsThreadsPerBlock threads. The shim dispatches
@@ -147,7 +109,7 @@ Tensor nms_kernel(
   NmsLaunchArgs launch_args{
       dets_sorted.get(),
       mask.get(),
-      iou_threshold_t.get(),
+      static_cast<float>(iou_threshold),
       dets_num,
       {static_cast<uint64_t>(col_blocks) * nmsThreadsPerBlock,
        static_cast<uint64_t>(col_blocks)},
