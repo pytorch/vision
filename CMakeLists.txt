@@ -96,50 +96,22 @@ FOREACH(DIR ${ALLOW_LISTED})
     file(GLOB ALL_SOURCES ${ALL_SOURCES} ${DIR}/*.*)
 ENDFOREACH()
 
-# These ops have been migrated to the stable ABI (torch::stable), the same set
-# setup.py builds into the _C_stable extension. It grows as each op is ported.
-set(TORCHVISION_STABLE_SOURCES
-  ${TVCPP}/ops/nms.cpp
-  ${TVCPP}/ops/cpu/nms_kernel.cpp
-  ${TVCPP}/ops/cuda/nms_kernel.cu
-  ${TVCPP}/ops/box_iou_rotated.cpp
-  ${TVCPP}/ops/cpu/box_iou_rotated_kernel.cpp
-  ${TVCPP}/ops/cuda/box_iou_rotated_kernel.cu
-  ${TVCPP}/ops/roi_align.cpp
-  ${TVCPP}/ops/cpu/roi_align_kernel.cpp
-  ${TVCPP}/ops/roi_pool.cpp
-  ${TVCPP}/ops/cpu/roi_pool_kernel.cpp
-  ${TVCPP}/io/image/cuda/decode_jpegs_cuda.cpp
-  ${TVCPP}/io/image/cuda/encode_jpegs_cuda.cpp
-  ${TVCPP}/io/image/cpu/encode_png.cpp
-  ${TVCPP}/io/image/cpu/encode_jpeg.cpp
-  ${TVCPP}/io/image/cpu/read_write_file.cpp
-  ${TVCPP}/io/image/cpu/decode_image.cpp
-  ${TVCPP}/io/image/cpu/decode_png.cpp
-  ${TVCPP}/io/image/cpu/decode_jpeg.cpp
-  ${TVCPP}/io/image/cpu/common_jpeg.cpp
-  ${TVCPP}/io/image/cpu/decode_gif.cpp
-  ${TVCPP}/io/image/cpu/decode_webp.cpp
-  ${TVCPP}/io/image/common_stable.cpp
-  ${TVCPP}/vision_stable.cpp)
-# Pin them to torch 2.11. Per source, not library-wide: the pin makes ATen headers
-# error, and the legacy ops sharing this library still include them.
-# TODO(stable-abi): once every op is ported, drop this list and pin the whole
-# library target instead.
-set_source_files_properties(${TORCHVISION_STABLE_SOURCES} PROPERTIES
-  COMPILE_DEFINITIONS TORCH_TARGET_VERSION=0x020b000000000000)
-
 add_library(${PROJECT_NAME} SHARED ${ALL_SOURCES})
+target_compile_definitions(${PROJECT_NAME} PRIVATE TORCH_TARGET_VERSION=0x020e000000000000)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
 
 if(WITH_CUDA)
   # Some torch APIs like aoti_torch_get_current_cuda_stream (used by
-  # ops/cuda/nms_kernel.cu) are only exposed when USE_CUDA is defined.
+  # ops/cuda/cuda_helpers.h) are only exposed when USE_CUDA is defined.
   # https://github.com/pytorch/pytorch/blob/98e36864e640023a716e058d894ea2d20e76e5f7/torch/csrc/inductor/aoti_torch/c/shim.h#L573-L602
   target_compile_definitions(${PROJECT_NAME} PRIVATE USE_CUDA)
 endif()
 
 if(WITH_MPS)
+  # Some torch APIs like torch_mps_set_arg_bytes (used by
+  # ops/mps/roi_align_kernel.mm) are only exposed when USE_MPS is defined.
+  # https://github.com/pytorch/pytorch/blob/7b260c057d76d7a37d1c28cbc8c79042d107f334/torch/csrc/stable/c/shim.h#L300-L312
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_MPS)
   find_library(metal NAMES Metal)
   find_library(foundation NAMES Foundation)
   target_link_libraries(${PROJECT_NAME} PRIVATE ${metal} ${foundation})

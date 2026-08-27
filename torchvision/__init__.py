@@ -2,7 +2,7 @@ from modulefinder import Module
 
 import torch
 
-# Don't re-order these, we need to load the _C extension (done when importing
+# Don't re-order these, we need to load the _C_stable extension (done when importing
 # .extension) before entering _meta_registrations.
 from . import extension  # usort:skip  # noqa: F401
 from torchvision import (

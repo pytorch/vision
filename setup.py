@@ -110,6 +110,9 @@ def get_requirements():
     return requirements
 
 
+TORCH_TARGET_VERSION = "0x020e000000000000"
+
+
 def get_macros_and_flags():
     define_macros = []
     extra_compile_args = {"cxx": []}
@@ -148,40 +151,22 @@ def get_macros_and_flags():
     else:
         extra_compile_args["cxx"].append("-g0")
 
+    tv = f"-DTORCH_TARGET_VERSION={TORCH_TARGET_VERSION}"
+    extra_compile_args["cxx"].append(tv)
+    if "nvcc" in extra_compile_args:
+        extra_compile_args["nvcc"].append(tv)
+        if not IS_ROCM:
+            # Some torch APIs like aoti_torch_get_current_cuda_stream (used by
+            # ops/cuda/cuda_helpers.h) are only exposed when USE_CUDA is defined.
+            # https://github.com/pytorch/pytorch/blob/98e36864e640023a716e058d894ea2d20e76e5f7/torch/csrc/inductor/aoti_torch/c/shim.h#L573-L602
+            extra_compile_args["nvcc"].append("-DUSE_CUDA")
+            # The jpeg decode .cpp also calls these shims (incl.
+            # torch_get_cuda_stream_from_pool), so cxx needs USE_CUDA too.
+            extra_compile_args["cxx"].append("-DUSE_CUDA")
+    if torch.backends.mps.is_available() or FORCE_MPS:
+        extra_compile_args["cxx"].append("-DUSE_MPS")
+
     return define_macros, extra_compile_args
-
-
-TORCH_TARGET_VERSION = "0x020b000000000000"
-
-# Files migrated to the stable ABI: subtracted from make_C_extension()'s globs and
-# built into _C_stable instead. Add an op's files here as it migrates.
-# TODO(stable-abi): when all ops migrate, drop make_C_extension()/STABLE_SOURCES and glob _C_stable.
-STABLE_SOURCES = {
-    CSRS_DIR / "vision_stable.cpp",
-    CSRS_DIR / "ops/nms.cpp",
-    CSRS_DIR / "ops/cpu/nms_kernel.cpp",
-    CSRS_DIR / "ops/mps/nms_kernel.mm",
-    CSRS_DIR / "ops/quantized/cpu/qnms_kernel.cpp",
-    CSRS_DIR / "ops/box_iou_rotated.cpp",
-    CSRS_DIR / "ops/cpu/box_iou_rotated_kernel.cpp",
-    CSRS_DIR / "ops/roi_align.cpp",
-    CSRS_DIR / "ops/cpu/roi_align_kernel.cpp",
-    CSRS_DIR / "ops/quantized/cpu/qroi_align_kernel.cpp",
-    CSRS_DIR / "ops/roi_pool.cpp",
-    CSRS_DIR / "ops/cpu/roi_pool_kernel.cpp",
-}
-STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
-STABLE_SOURCES.add(
-    CSRS_DIR / ("ops/hip/box_iou_rotated_kernel.hip" if IS_ROCM else "ops/cuda/box_iou_rotated_kernel.cu")
-)
-
-
-def _not_stable(paths):
-    return [p for p in paths if p not in STABLE_SOURCES]
-
-
-def _stable(paths):
-    return [p for p in paths if p in STABLE_SOURCES]
 
 
 _HIPIFIED = False
@@ -189,8 +174,6 @@ _HIPIFIED = False
 
 def ensure_hipified():
     # ROCm: rewrite ops/cuda/*.{cu,h} -> ops/hip/* once per build (no-op otherwise).
-    # Both _C and _C_stable consume ops/hip/*, so neither depends on the other's build
-    # order, and this survives make_C_extension() being dropped at the end state.
     global _HIPIFIED
     if _HIPIFIED or not IS_ROCM:
         return
@@ -208,75 +191,22 @@ def ensure_hipified():
     _HIPIFIED = True
 
 
-def make_C_extension():
-    print("Building _C extension")
-
-    ensure_hipified()
-    sources = (
-        _not_stable(CSRS_DIR.glob("*.cpp"))
-        + _not_stable(CSRS_DIR.glob("ops/*.cpp"))
-        + _not_stable(CSRS_DIR.glob("ops/cpu/*.cpp"))
-        + _not_stable(CSRS_DIR.glob("ops/quantized/cpu/*.cpp"))
-    )
-    mps_sources = _not_stable(CSRS_DIR.glob("ops/mps/*.mm"))
-
-    if IS_ROCM:
-        cuda_sources = _not_stable(CSRS_DIR.glob("ops/hip/*.hip"))
-    else:
-        cuda_sources = _not_stable(CSRS_DIR.glob("ops/cuda/*.cu"))
-
-    if BUILD_CUDA_SOURCES:
-        Extension = CUDAExtension
-        sources += cuda_sources
-    else:
-        Extension = CppExtension
-        if torch.backends.mps.is_available() or FORCE_MPS:
-            sources += mps_sources
-
-    define_macros, extra_compile_args = get_macros_and_flags()
-    return Extension(
-        name="torchvision._C",
-        sources=sorted(str(s) for s in sources),
-        include_dirs=[CSRS_DIR],
-        define_macros=define_macros,
-        extra_compile_args=extra_compile_args,
-    )
-
-
-def get_stable_macros_and_flags():
-    # TODO(stable-abi): merge into get_macros_and_flags() once the migration is done.
-    define_macros, extra_compile_args = get_macros_and_flags()
-    tv = f"-DTORCH_TARGET_VERSION={TORCH_TARGET_VERSION}"
-    extra_compile_args["cxx"].append(tv)
-    if "nvcc" in extra_compile_args:
-        extra_compile_args["nvcc"].append(tv)
-        if not IS_ROCM:
-            # Some torch APIs like aoti_torch_get_current_cuda_stream (used by
-            # ops/cuda/nms_kernel.cu) are only exposed when USE_CUDA is defined.
-            # https://github.com/pytorch/pytorch/blob/98e36864e640023a716e058d894ea2d20e76e5f7/torch/csrc/inductor/aoti_torch/c/shim.h#L573-L602
-            extra_compile_args["nvcc"].append("-DUSE_CUDA")
-            # The jpeg decode .cpp also calls these shims (incl.
-            # torch_get_cuda_stream_from_pool), so cxx needs USE_CUDA too.
-            extra_compile_args["cxx"].append("-DUSE_CUDA")
-    return define_macros, extra_compile_args
-
-
 def make_C_stable_extension():
     print("Building _C_stable extension")
 
     ensure_hipified()
     sources = (
-        _stable(CSRS_DIR.glob("*.cpp"))
-        + _stable(CSRS_DIR.glob("ops/*.cpp"))
-        + _stable(CSRS_DIR.glob("ops/cpu/*.cpp"))
-        + _stable(CSRS_DIR.glob("ops/quantized/cpu/*.cpp"))
+        list(CSRS_DIR.glob("*.cpp"))
+        + list(CSRS_DIR.glob("ops/*.cpp"))
+        + list(CSRS_DIR.glob("ops/cpu/*.cpp"))
+        + list(CSRS_DIR.glob("ops/quantized/cpu/*.cpp"))
     )
-    mps_sources = _stable(CSRS_DIR.glob("ops/mps/*.mm"))
+    mps_sources = list(CSRS_DIR.glob("ops/mps/*.mm"))
 
     if IS_ROCM:
-        cuda_sources = _stable(CSRS_DIR.glob("ops/hip/*.hip"))
+        cuda_sources = list(CSRS_DIR.glob("ops/hip/*.hip"))
     else:
-        cuda_sources = _stable(CSRS_DIR.glob("ops/cuda/*.cu"))
+        cuda_sources = list(CSRS_DIR.glob("ops/cuda/*.cu"))
 
     if BUILD_CUDA_SOURCES:
         Extension = CUDAExtension
@@ -286,7 +216,7 @@ def make_C_stable_extension():
         if torch.backends.mps.is_available() or FORCE_MPS:
             sources += mps_sources
 
-    define_macros, extra_compile_args = get_stable_macros_and_flags()
+    define_macros, extra_compile_args = get_macros_and_flags()
     return Extension(
         name="torchvision._C_stable",
         sources=sorted(str(s) for s in sources),
@@ -385,7 +315,7 @@ def make_image_stable_extension():
     include_dirs = TORCHVISION_INCLUDE.copy()
     library_dirs = TORCHVISION_LIBRARY.copy()
     libraries = []
-    define_macros, extra_compile_args = get_stable_macros_and_flags()
+    define_macros, extra_compile_args = get_macros_and_flags()
 
     image_dir = CSRS_DIR / "io/image"
     sources = (
@@ -480,7 +410,6 @@ if __name__ == "__main__":
         readme = f.read()
 
     extensions = [
-        make_C_extension(),
         make_C_stable_extension(),
         make_image_stable_extension(),
     ]
