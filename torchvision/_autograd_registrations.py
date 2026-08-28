@@ -23,7 +23,7 @@ def _roi_align_setup_context(ctx, inputs, output):
 
 
 def _roi_align_backward(ctx, grad_output):
-    if grad_output.device.type == "mps":
+    if grad_output.device.type in ("cuda", "mps"):
         torch._prims_common.alert_not_deterministic("roi_align_backward_kernel")
     (rois,) = ctx.saved_tensors
     batch_size, channels, height, width = ctx.input_shape
@@ -55,7 +55,7 @@ def _roi_pool_setup_context(ctx, inputs, output):
 
 
 def _roi_pool_backward(ctx, grad_output, _grad_argmax):
-    if grad_output.device.type == "mps":
+    if grad_output.device.type in ("cuda", "mps"):
         torch._prims_common.alert_not_deterministic("roi_pool_backward_kernel")
     rois, argmax = ctx.saved_tensors
     batch_size, channels, height, width = ctx.input_shape
@@ -87,7 +87,7 @@ def _ps_roi_align_setup_context(ctx, inputs, output):
 
 
 def _ps_roi_align_backward(ctx, grad_output, _grad_channel_mapping):
-    if grad_output.device.type == "mps":
+    if grad_output.device.type in ("cuda", "mps"):
         torch._prims_common.alert_not_deterministic("ps_roi_align_backward_kernel")
     rois, channel_mapping = ctx.saved_tensors
     batch_size, channels, height, width = ctx.input_shape
@@ -119,7 +119,7 @@ def _ps_roi_pool_setup_context(ctx, inputs, output):
 
 
 def _ps_roi_pool_backward(ctx, grad_output, _grad_channel_mapping):
-    if grad_output.device.type == "mps":
+    if grad_output.device.type in ("cuda", "mps"):
         torch._prims_common.alert_not_deterministic("ps_roi_pool_backward_kernel")
     rois, channel_mapping = ctx.saved_tensors
     batch_size, channels, height, width = ctx.input_shape
@@ -169,6 +169,8 @@ def _deform_conv2d_setup_context(ctx, inputs, output):
 
 
 def _deform_conv2d_backward(ctx, grad_output):
+    if grad_output.device.type == "cuda":
+        torch._prims_common.alert_not_deterministic("compute_grad_input")
     input, weight, offset, mask, bias = ctx.saved_tensors
     grad_input, grad_weight, grad_offset, grad_mask, grad_bias = torch.ops.torchvision._deform_conv2d_backward(
         grad_output,
