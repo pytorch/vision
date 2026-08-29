@@ -1628,6 +1628,7 @@ def _pad_with_scalar_fill(
         batch_size *= s
 
     image = image.reshape(batch_size, num_channels, height, width)
+    preserve_channels_last = image.is_contiguous(memory_format=torch.channels_last) and not image.is_contiguous()
 
     if padding_mode == "edge":
         # Similar to the padding order, `torch_pad`'s PIL's padding modes don't have the same names. Thus, we map
@@ -1655,6 +1656,9 @@ def _pad_with_scalar_fill(
         image = _pad_symmetric(image, torch_padding)
 
     new_height, new_width = image.shape[-2:]
+
+    if preserve_channels_last:
+        image = image.contiguous(memory_format=torch.channels_last)
 
     return image.reshape(shape[:-3] + (num_channels, new_height, new_width))
 
