@@ -85,6 +85,9 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         # when float is exactly 1.0.
         # `max + 1 - epsilon` provides more evenly distributed mapping of
         # ranges of floats to ints.
+        # float16/bfloat16 lack precision: 255.999 rounds to 256.0, overflowing to 0 on .to(uint8).
+        if image.dtype == torch.float16 or image.dtype == torch.bfloat16:
+            image = image.to(torch.float32)
         eps = 1e-3
         max_val = float(_max_value(dtype))
         result = image.mul(max_val + 1.0 - eps)
@@ -95,6 +98,9 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         # int to float
         # TODO: replace with dtype.is_floating_point when torchscript supports it
         if torch.tensor(0, dtype=dtype).is_floating_point():
+            if dtype == torch.float16 and image.dtype in (torch.int32, torch.int64):
+                msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
+                raise RuntimeError(msg)
             image = image.to(dtype)
             return image / input_max
 
