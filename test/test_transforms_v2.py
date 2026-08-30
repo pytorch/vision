@@ -4456,6 +4456,17 @@ class TestConvertBoundingBoxFormat:
 
         torch.testing.assert_close(actual, expected)
 
+    @pytest.mark.parametrize("dtype, values, expected", [
+        (torch.uint8, [[200, 10, 220, 30]], [[210, 20, 20, 20]]),
+        (torch.float16, [[32768, 0, 49152, 32]], [[40960, 16, 16384, 32]]),
+    ])
+    def test_xyxy_to_cxcywh_no_intermediate_overflow(self, dtype, values, expected):
+        boxes = tv_tensors.BoundingBoxes(
+            values, format=tv_tensors.BoundingBoxFormat.XYXY, canvas_size=(65536, 65536), dtype=dtype
+        )
+        actual = F.convert_bounding_box_format(boxes, new_format=tv_tensors.BoundingBoxFormat.CXCYWH)
+        torch.testing.assert_close(actual, torch.tensor(expected, dtype=dtype))
+
     def test_cxcywh_to_xyxy_odd_dimensions(self):
         # Non-regression test for https://github.com/pytorch/vision/issues/8887
         # Integer bounding boxes with odd width/height produced incorrect results
