@@ -919,8 +919,13 @@ def normalize(tensor: Tensor, mean: list[float], std: list[float], inplace: bool
     dtype = tensor.dtype
     mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
     std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
-    if (std == 0).any():
-        raise ValueError(f"std evaluated to zero after conversion to {dtype}, leading to division by zero.")
+
+    def stdzero():
+        raise ValueError(
+            f"std evaluated to zero after conversion to {dtype}, leading to division by zero."
+        )
+
+    torch.cond((std == 0).any(), stdzero, lambda: None)
     if mean.ndim == 1:
         mean = mean.view(-1, 1, 1)
     if std.ndim == 1:
