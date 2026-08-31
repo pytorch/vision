@@ -26,6 +26,9 @@ def convert_coco_poly_to_mask(segmentations, height, width):
 
 
 class ConvertCocoPolysToMask:
+    def __init__(self, with_masks=False):
+        self.with_masks = with_masks
+
     def __call__(self, image, target):
         w, h = image.size
 
@@ -45,8 +48,9 @@ class ConvertCocoPolysToMask:
         classes = [obj["category_id"] for obj in anno]
         classes = torch.tensor(classes, dtype=torch.int64)
 
-        segmentations = [obj["segmentation"] for obj in anno]
-        masks = convert_coco_poly_to_mask(segmentations, h, w)
+        if self.with_masks:
+            segmentations = [obj["segmentation"] for obj in anno]
+            masks = convert_coco_poly_to_mask(segmentations, h, w)
 
         keypoints = None
         if anno and "keypoints" in anno[0]:
@@ -59,14 +63,16 @@ class ConvertCocoPolysToMask:
         keep = (boxes[:, 3] > boxes[:, 1]) & (boxes[:, 2] > boxes[:, 0])
         boxes = boxes[keep]
         classes = classes[keep]
-        masks = masks[keep]
+        if self.with_masks:
+            masks = masks[keep]
         if keypoints is not None:
             keypoints = keypoints[keep]
 
         target = {}
         target["boxes"] = boxes
         target["labels"] = classes
-        target["masks"] = masks
+        if self.with_masks:
+            target["masks"] = masks
         target["image_id"] = image_id
         if keypoints is not None:
             target["keypoints"] = keypoints
@@ -218,8 +224,7 @@ def get_coco(root, image_set, transforms, mode="instances", use_v2=False, with_m
             target_keys += ["masks"]
         dataset = wrap_dataset_for_transforms_v2(dataset, target_keys=target_keys)
     else:
-        # TODO: handle with_masks for V1?
-        t = [ConvertCocoPolysToMask()]
+        t = [ConvertCocoPolysToMask(with_masks=with_masks)]
         if transforms is not None:
             t.append(transforms)
         transforms = T.Compose(t)
