@@ -27,6 +27,7 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       with-cuda: disable
+      python-abi3: enable
 
   build:
     needs: generate-matrix
