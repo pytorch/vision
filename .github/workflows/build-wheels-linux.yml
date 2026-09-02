@@ -26,6 +26,7 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       with-xpu: enable
+      python-abi3: enable
   build:
     needs: generate-matrix
     strategy:
@@ -54,3 +55,20 @@ jobs:
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+  # The build job only ever installs the wheel back into the interpreter that built
+  # it, so it cannot catch an abi3 wheel that fails to load on a newer CPython. The
+  # build runs on the oldest supported Python, so the newest one is the furthest
+  # away and the only one worth checking.
+  test-abi3-wheel:
+    needs: build
+    name: test-abi3-wheel-py3.15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/test-abi3-wheel
+        with:
+          python-version: "3.15"
+          # The build job names its artifact after the interpreter it built with,
+          # which for the abi3 wheel is the oldest supported one.
+          artifact-pattern: "*_3.10_cpu_x86_64"
+          wheel-glob: "dist/torchvision-*-abi3-manylinux*_x86_64.whl"

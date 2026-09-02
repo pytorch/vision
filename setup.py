@@ -14,7 +14,14 @@ from pathlib import Path
 import torch
 from packaging.version import parse as parse_version
 from setuptools import find_packages, setup
-from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDA_HOME, CUDAExtension, ROCM_HOME
+from torch.utils.cpp_extension import (
+    BuildExtension,
+    CppExtension,
+    CUDA_HOME,
+    CUDAExtension,
+    min_supported_cpython,
+    ROCM_HOME,
+)
 
 FORCE_CUDA = os.getenv("FORCE_CUDA", "0") == "1"
 FORCE_MPS = os.getenv("FORCE_MPS", "0") == "1"
@@ -24,6 +31,10 @@ USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
+
+# Free-threaded interpreters do not support the limited API, and pip refuses to install
+# an abi3 wheel on them. See packaging.tags._abi3_applies.
+USE_PY_LIMITED_API = not sysconfig.get_config_var("Py_GIL_DISABLED")
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
 TORCHVISION_LIBRARY = os.environ.get("TORCHVISION_LIBRARY", "")
@@ -46,6 +57,7 @@ print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
 print(f"{USE_NVJPEG = }")
 print(f"{NVCC_FLAGS = }")
+print(f"{USE_PY_LIMITED_API = }")
 print(f"{TORCHVISION_INCLUDE = }")
 print(f"{TORCHVISION_LIBRARY = }")
 print(f"{IS_ROCM = }")
@@ -223,6 +235,7 @@ def make_C_stable_extension():
         include_dirs=[CSRS_DIR],
         define_macros=define_macros,
         extra_compile_args=extra_compile_args,
+        py_limited_api=USE_PY_LIMITED_API,
     )
 
 
@@ -382,7 +395,22 @@ def make_image_stable_extension():
         define_macros=define_macros,
         libraries=libraries,
         extra_compile_args=extra_compile_args,
+        py_limited_api=USE_PY_LIMITED_API,
     )
+
+
+def get_bdist_wheel_options():
+    """Tag the wheel abi3 so that a single wheel covers every supported CPython.
+
+    The tag must match the ``Py_LIMITED_API`` level that torch compiles the extensions
+    with, otherwise the wheel would claim a compatibility it doesn't have.
+    """
+    if not USE_PY_LIMITED_API:
+        return {}
+    # min_supported_cpython is a Python hexversion, e.g. "0x030A0000" for 3.10.
+    hexversion = int(min_supported_cpython, 16)
+    major, minor = (hexversion >> 24) & 0xFF, (hexversion >> 16) & 0xFF
+    return {"bdist_wheel": {"py_limited_api": f"cp{major}{minor}"}}
 
 
 class clean(distutils.command.clean.clean):
@@ -433,6 +461,7 @@ if __name__ == "__main__":
             "scipy": ["scipy"],
         },
         ext_modules=extensions,
+        options=get_bdist_wheel_options(),
         python_requires=">=3.10,!=3.14.1",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),

@@ -1,0 +1,37 @@
+name: Test abi3 wheel
+description: >
+  Install the abi3 wheel built by the build job into a different Python version
+  than the one it was built with, and run the smoke test.
+
+inputs:
+  python-version:
+    description: Python version to install the wheel into
+    required: true
+  artifact-pattern:
+    description: Pattern matching the artifact holding the CPU wheel
+    required: true
+  wheel-glob:
+    description: Glob the downloaded wheel must match, asserting its tags
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+        # 3.15 is still a CPython pre-release.
+        allow-prereleases: true
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ inputs.artifact-pattern }}
+        merge-multiple: true
+        path: dist
+    - shell: bash
+      run: |
+        set -euxo pipefail
+        # Fails the job if the wheel isn't tagged the way we expect.
+        wheel=$(ls ${{ inputs.wheel-glob }})
+        pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu
+        pip install "${wheel}"
+        python test/smoke_test.py
