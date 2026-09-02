@@ -1,0 +1,35 @@
+/* This rule should be removed once
+https://github.com/pytorch/pytorch_sphinx_theme/issues/125 is fixed.
+
+We override the rule so that the links to the notebooks aren't hidden in the
+gallery examples. pytorch_sphinx_theme is supposed to customize those links so
+that they render nicely (look at the nice links on top of the tutorials
+examples) but it doesn't work for repos that are not the tutorial repo, and in
+torchvision it just hides the links. So we have to put them back here */
+article.pytorch-article .sphx-glr-download-link-note.admonition.note,
+article.pytorch-article .reference.download.internal, article.pytorch-article .sphx-glr-signature {
+  display: block;
+}
+
+/* These 2 rules below are for the weight tables (generated in conf.py) to look
+ * better. In particular we make their row height shorter */
+.table-weights td, .table-weights th {
+  margin-bottom: 0.2rem;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.table-weights p {
+    margin-bottom: 0.2rem !important;
+}
+
+/* Fix for Sphinx gallery 0.11
+See https://github.com/sphinx-gallery/sphinx-gallery/issues/990
+*/
+article.pytorch-article .sphx-glr-thumbnails .sphx-glr-thumbcontainer {
+    width: unset;
+    margin-right: 0;
+    margin-left: 0;
+}
+article.pytorch-article div.section div.wy-table-responsive tbody td {
+    width: 50%;
+}

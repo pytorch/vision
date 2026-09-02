@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+USPS
+====
+
+.. autoclass:: USPS
+    :members:
+        __getitem__,
+        
+    :special-members:

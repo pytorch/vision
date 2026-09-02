@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.detection
+
+
+fasterrcnn_mobilenet_v3_large_fpn
+=================================
+
+.. autofunction:: fasterrcnn_mobilenet_v3_large_fpn

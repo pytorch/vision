@@ -1,0 +1,6 @@
+﻿torchvision.transforms.v2.functional.convert\_bounding\_box\_format
+===================================================================
+
+.. currentmodule:: torchvision.transforms.v2.functional
+
+.. autofunction:: convert_bounding_box_format

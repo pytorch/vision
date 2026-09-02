@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+ETH3DStereo
+===========
+
+.. autoclass:: ETH3DStereo
+    :members:
+        __getitem__,
+        
+    :special-members:

@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+SVHN
+====
+
+.. autoclass:: SVHN
+    :members:
+        __getitem__,
+        
+    :special-members:

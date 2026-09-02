@@ -1,0 +1,10 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.transforms
+
+
+RandomInvert
+============
+
+.. autoclass:: RandomInvert
+    :members:

@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.ops
+
+
+drop_block2d
+============
+
+.. autofunction:: drop_block2d

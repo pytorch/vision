@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+FlyingThings3D
+==============
+
+.. autoclass:: FlyingThings3D
+    :members:
+        __getitem__,
+        
+    :special-members:

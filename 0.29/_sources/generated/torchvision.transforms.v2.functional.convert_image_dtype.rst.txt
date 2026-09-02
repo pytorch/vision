@@ -1,0 +1,10 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.transforms.v2.functional
+
+
+convert_image_dtype
+===================
+
+.. autoclass:: convert_image_dtype
+    :members:

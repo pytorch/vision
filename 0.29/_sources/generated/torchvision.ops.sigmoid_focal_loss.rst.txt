@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.ops
+
+
+sigmoid_focal_loss
+==================
+
+.. autofunction:: sigmoid_focal_loss

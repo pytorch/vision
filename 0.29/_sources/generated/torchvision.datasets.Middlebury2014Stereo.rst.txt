@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+Middlebury2014Stereo
+====================
+
+.. autoclass:: Middlebury2014Stereo
+    :members:
+        __getitem__,
+        
+    :special-members:

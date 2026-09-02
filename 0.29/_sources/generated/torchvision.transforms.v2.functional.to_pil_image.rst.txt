@@ -1,0 +1,6 @@
+﻿torchvision.transforms.v2.functional.to\_pil\_image
+===================================================
+
+.. currentmodule:: torchvision.transforms.v2.functional
+
+.. autofunction:: to_pil_image

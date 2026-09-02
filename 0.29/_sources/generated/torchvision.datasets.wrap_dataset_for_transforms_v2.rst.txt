@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+wrap_dataset_for_transforms_v2
+==============================
+
+.. autofunction:: wrap_dataset_for_transforms_v2

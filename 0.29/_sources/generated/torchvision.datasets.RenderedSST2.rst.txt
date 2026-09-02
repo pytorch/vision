@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+RenderedSST2
+============
+
+.. autoclass:: RenderedSST2
+    :members:
+        __getitem__,
+        
+    :special-members:

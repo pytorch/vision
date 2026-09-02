@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models
+
+
+mobilenet_v3_small
+==================
+
+.. autofunction:: mobilenet_v3_small

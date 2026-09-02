@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.segmentation
+
+
+lraspp_mobilenet_v3_large
+=========================
+
+.. autofunction:: lraspp_mobilenet_v3_large

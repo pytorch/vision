@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+LSUN
+====
+
+.. autoclass:: LSUN
+    :members:
+        __getitem__,
+        
+    :special-members:

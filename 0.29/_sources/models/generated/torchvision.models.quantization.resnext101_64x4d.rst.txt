@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.quantization
+
+
+resnext101_64x4d
+================
+
+.. autofunction:: resnext101_64x4d

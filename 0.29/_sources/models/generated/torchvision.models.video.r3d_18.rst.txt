@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.video
+
+
+r3d_18
+======
+
+.. autofunction:: r3d_18

@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+Imagenette
+==========
+
+.. autoclass:: Imagenette
+    :members:
+        __getitem__,
+        
+    :special-members:

@@ -1,0 +1,10 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.ops
+
+
+DeformConv2d
+============
+
+.. autoclass:: DeformConv2d
+    :members:

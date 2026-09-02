@@ -1,0 +1,19 @@
+.. rst-class:: table-weights
+.. table::
+    :widths: 110 18 18 18 18 10 
+
+    =======================================================================  ===========  ===========  ============  ============  ==============================================================================================
+    **Weight**                                                                 **Acc@1**    **Acc@5**  **Params**      **GFLOPS**  **Recipe**
+    =======================================================================  ===========  ===========  ============  ============  ==============================================================================================
+    :class:`MC3_18_Weights.KINETICS400_V1 <MC3_18_Weights>`                       63.96        84.13   11.7M                43.34  `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
+    :class:`MViT_V1_B_Weights.KINETICS400_V1 <MViT_V1_B_Weights>`                 78.477       93.582  36.6M                70.6   `link <https://github.com/facebookresearch/pytorchvideo/blob/main/docs/source/model_zoo.md>`__
+    :class:`MViT_V2_S_Weights.KINETICS400_V1 <MViT_V2_S_Weights>`                 80.757       94.665  34.5M                64.22  `link <https://github.com/facebookresearch/SlowFast/blob/main/MODEL_ZOO.md>`__
+    :class:`R2Plus1D_18_Weights.KINETICS400_V1 <R2Plus1D_18_Weights>`             67.463       86.175  31.5M                40.52  `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
+    :class:`R3D_18_Weights.KINETICS400_V1 <R3D_18_Weights>`                       63.2         83.479  33.4M                40.7   `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
+    :class:`S3D_Weights.KINETICS400_V1 <S3D_Weights>`                             68.368       88.05   8.3M                 17.98  `link <https://github.com/pytorch/vision/tree/main/references/video_classification#s3d>`__
+    :class:`Swin3D_B_Weights.KINETICS400_V1 <Swin3D_B_Weights>`                   79.427       94.386  88.0M               140.67  `link <https://github.com/SwinTransformer/Video-Swin-Transformer#kinetics-400>`__
+    :class:`Swin3D_B_Weights.KINETICS400_IMAGENET22K_V1 <Swin3D_B_Weights>`       81.643       95.574  88.0M               140.67  `link <https://github.com/SwinTransformer/Video-Swin-Transformer#kinetics-400>`__
+    :class:`Swin3D_S_Weights.KINETICS400_V1 <Swin3D_S_Weights>`                   79.521       94.158  49.8M                82.84  `link <https://github.com/SwinTransformer/Video-Swin-Transformer#kinetics-400>`__
+    :class:`Swin3D_T_Weights.KINETICS400_V1 <Swin3D_T_Weights>`                   77.715       93.519  28.2M                43.88  `link <https://github.com/SwinTransformer/Video-Swin-Transformer#kinetics-400>`__
+    =======================================================================  ===========  ===========  ============  ============  ==============================================================================================
+
