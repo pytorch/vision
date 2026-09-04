@@ -1,5 +1,6 @@
 import os
 import os.path
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Callable, cast, Optional, Union
 
@@ -335,3 +336,75 @@ class ImageFolder(DatasetFolder):
             allow_empty=allow_empty,
         )
         self.imgs = self.samples
+
+
+class UnlabeledImageDataset(VisionDataset):
+    """A generic data loader for a flat or nested directory of unlabeled images.
+
+    Unlike :class:`ImageFolder`, images do not need to be organized into per-class subfolders, and
+    ``__getitem__`` returns just the (optionally transformed) image, not a ``(sample, target)`` tuple.
+
+    Args:
+        root (str or ``pathlib.Path``): Root directory path.
+        patterns (str or sequence of str, optional): Glob pattern(s), relative to ``root`` and passed
+            to :meth:`pathlib.Path.glob`, used to discover the images. Defaults to ``None``, which
+            matches every :const:`IMG_EXTENSIONS` extension recursively, in both lower- and upper-case.
+            A file matched by several patterns is still listed once.
+        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends
+            on the given loader, and returns a transformed version. E.g, ``transforms.RandomCrop``.
+        loader (callable, optional): A function to load an image given its path. Defaults to
+            :func:`default_loader`.
+
+    Attributes:
+        samples (list): Sorted list of the discovered image file paths.
+    """
+
+    def __init__(
+        self,
+        root: Union[str, Path],
+        patterns: Optional[Union[str, Sequence[str]]] = None,
+        transform: Optional[Callable] = None,
+        loader: Callable[[str], Any] = default_loader,
+    ) -> None:
+        super().__init__(root, transform=transform)
+
+        self._default_patterns = patterns is None
+        if patterns is None:
+            # Path.glob() is case-sensitive on Linux, so also match e.g. "img.JPG"; duplicates are dropped below.
+            patterns = [f"**/*{ext}" for ext in IMG_EXTENSIONS] + [f"**/*{ext.upper()}" for ext in IMG_EXTENSIONS]
+        elif isinstance(patterns, str):
+            patterns = [patterns]
+
+        root_path = Path(self.root)
+        if not root_path.is_dir():
+            raise FileNotFoundError(f"The root directory {root_path} does not exist (or is not a directory).")
+
+        samples = sorted({str(path) for pattern in patterns for path in root_path.glob(pattern) if path.is_file()})
+        if not samples:
+            raise FileNotFoundError(
+                f"Found no image file in {root_path} matching any of the patterns {list(patterns)}."
+            )
+
+        self.loader = loader
+        self.patterns = list(patterns)
+        self.samples = samples
+
+    def __getitem__(self, index: int) -> Any:
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            (Any): The image at ``index``, transformed by ``transform`` if one was given. No target is returned.
+        """
+        sample = self.loader(self.samples[index])
+        if self.transform is not None:
+            sample = self.transform(sample)
+        return sample
+
+    def __len__(self) -> int:
+        return len(self.samples)
+
+    def extra_repr(self) -> str:
+        patterns = "default (all IMG_EXTENSIONS, case-insensitive)" if self._default_patterns else self.patterns
+        return f"patterns={patterns}"
