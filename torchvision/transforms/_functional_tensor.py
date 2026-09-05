@@ -618,7 +618,10 @@ def affine(
 ) -> Tensor:
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
 
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    # Match the grid's precision: half precision theta coefficients alone are enough to
+    # collapse distinct sample positions. Equivalent to the previous expression for every
+    # dtype except float16/bfloat16, and float64 is still preserved.
+    dtype = torch.promote_types(img.dtype, torch.float32)
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     shape = img.shape
     # grid will be generated on the same device as theta and img
@@ -669,7 +672,10 @@ def rotate(
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
     w, h = img.shape[-1], img.shape[-2]
     ow, oh = _compute_affine_output_size(matrix, w, h) if expand else (w, h)
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    # Match the grid's precision: half precision theta coefficients alone are enough to
+    # collapse distinct sample positions. Equivalent to the previous expression for every
+    # dtype except float16/bfloat16, and float64 is still preserved.
+    dtype = torch.promote_types(img.dtype, torch.float32)
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
@@ -731,7 +737,10 @@ def perspective(
     )
 
     ow, oh = img.shape[-1], img.shape[-2]
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    # Match the grid's precision: half precision theta coefficients alone are enough to
+    # collapse distinct sample positions. Equivalent to the previous expression for every
+    # dtype except float16/bfloat16, and float64 is still preserved.
+    dtype = torch.promote_types(img.dtype, torch.float32)
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=img.device)
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 

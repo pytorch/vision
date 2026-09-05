@@ -980,7 +980,10 @@ def affine_image(
 
     _assert_grid_transform_inputs(image, matrix, interpolation.value, fill, ["nearest", "bilinear"])
 
-    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    # Match the grid's precision: half precision theta coefficients alone are enough to
+    # collapse distinct sample positions. Equivalent to the previous expression for every
+    # dtype except float16/bfloat16, and float64 is still preserved.
+    dtype = torch.promote_types(image.dtype, torch.float32)
     theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
     grid = _affine_grid(theta, w=width, h=height, ow=width, oh=height)
     return _apply_grid_transform(image, grid, interpolation.value, fill=fill)
@@ -1418,7 +1421,10 @@ def rotate_image(
     output_width, output_height = (
         _compute_affine_output_size(matrix, input_width, input_height) if expand else (input_width, input_height)
     )
-    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    # Match the grid's precision: half precision theta coefficients alone are enough to
+    # collapse distinct sample positions. Equivalent to the previous expression for every
+    # dtype except float16/bfloat16, and float64 is still preserved.
+    dtype = torch.promote_types(image.dtype, torch.float32)
     theta = torch.tensor(matrix, dtype=dtype, device=image.device).reshape(1, 2, 3)
     grid = _affine_grid(theta, w=input_width, h=input_height, ow=output_width, oh=output_height)
     return _apply_grid_transform(image, grid, interpolation.value, fill=fill)
@@ -2054,7 +2060,10 @@ def perspective_image(
     )
 
     oh, ow = image.shape[-2:]
-    dtype = image.dtype if torch.is_floating_point(image) else torch.float32
+    # Match the grid's precision: half precision theta coefficients alone are enough to
+    # collapse distinct sample positions. Equivalent to the previous expression for every
+    # dtype except float16/bfloat16, and float64 is still preserved.
+    dtype = torch.promote_types(image.dtype, torch.float32)
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=image.device)
     return _apply_grid_transform(image, grid, interpolation.value, fill=fill)
 

@@ -8063,7 +8063,7 @@ class TestGridPrecision:
     # Large enough that half precision cannot represent every position; the bug needs
     # more distinct coordinates than the dtype can hold before it shows up.
     SIZE = 512
-    HALF_DTYPES = [torch.float16]
+    HALF_DTYPES = [torch.float16, torch.bfloat16]
 
     @staticmethod
     def _capture_grid(module, fn, image):
@@ -8162,9 +8162,9 @@ class TestGridPrecision:
         out = fn(image).to(torch.float32)
 
         # Compare only where the reference sampled real content; the zero padding outside the
-        # sampled region matches trivially. The observed error is ~1e-4 for float16 once the
-        # grid is promoted, versus ~0.25 with a half precision grid, so this threshold has a
-        # wide margin on both sides.
+        # sampled region matches trivially. The observed error is ~1e-4 (float16) and ~8e-4
+        # (bfloat16) once the grid is promoted, versus ~0.25 with a half precision grid, so
+        # this threshold has a wide margin on both sides.
         mask = ref != 0
         error = (out - ref).abs()[mask].mean().item()
         assert error < 0.01, f"{dtype} {fn_name}: mean absolute error vs float32 is {error:.4f}"
@@ -8192,8 +8192,8 @@ class TestApplyGridTransformDtypes:
     once the grid is promoted to float32.
     """
 
-    HALF_DTYPES = [torch.float16]
-    ROUND_TRIP_DTYPES = [torch.float16, torch.float32, torch.float64, torch.uint8]
+    HALF_DTYPES = [torch.float16, torch.bfloat16]
+    ROUND_TRIP_DTYPES = [torch.float16, torch.bfloat16, torch.float32, torch.float64, torch.uint8]
 
     @staticmethod
     def _image(dtype, size=32):
