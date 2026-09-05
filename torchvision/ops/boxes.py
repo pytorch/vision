@@ -5,8 +5,10 @@ from torchvision.extension import _assert_has_ops
 
 from ..utils import _log_api_usage_once
 from ._box_convert import (
+    _box_cxcywh_to_xywh,
     _box_cxcywh_to_xyxy,
     _box_cxcywhr_to_xywhr,
+    _box_xywh_to_cxcywh,
     _box_xywh_to_xyxy,
     _box_xywhr_to_cxcywhr,
     _box_xywhr_to_xyxyxyxy,
@@ -251,11 +253,9 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     elif e == ("xyxy", "cxcywh"):
         boxes = _box_xyxy_to_cxcywh(boxes)
     elif e == ("xywh", "cxcywh"):
-        boxes = _box_xywh_to_xyxy(boxes)
-        boxes = _box_xyxy_to_cxcywh(boxes)
+        boxes = _box_xywh_to_cxcywh(boxes)
     elif e == ("cxcywh", "xywh"):
-        boxes = _box_cxcywh_to_xyxy(boxes)
-        boxes = _box_xyxy_to_xywh(boxes)
+        boxes = _box_cxcywh_to_xywh(boxes)
     elif e == ("cxcywhr", "xywhr"):
         boxes = _box_cxcywhr_to_xywhr(boxes)
     elif e == ("xywhr", "cxcywhr"):
