@@ -843,6 +843,7 @@ def _apply_grid_transform(img: torch.Tensor, grid: torch.Tensor, mode: str, fill
     squashed_batch_size = img.shape[0]
 
     # We are using context knowledge that grid should have float dtype.
+    # The grid is at least float32 (see _affine_grid), so a half precision image is cast up here.
     # Rounding on the way back is keyed off the *input* dtype rather than off whether a cast
     # happened: rounding a float image to integers would destroy it.
     input_dtype = img.dtype
@@ -931,7 +932,11 @@ def _affine_grid(
     # Difference with AffineGridGenerator is that:
     # 1) we normalize grid values after applying theta
     # 2) we can normalize by other image size, such that it covers "extend" option like in PIL.Image.rotate
-    dtype = theta.dtype
+    # The grid is built and returned in at least float32. Half precision does not have enough
+    # mantissa bits to keep neighbouring sample positions distinct: at 512x512 an fp16 grid
+    # collapses ~262k distinct x coordinates down to ~16k, so blocks of adjacent output pixels
+    # read from an identical source location. float64 input is preserved, not downcast.
+    dtype = torch.promote_types(theta.dtype, torch.float32)
     device = theta.device
 
     base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
@@ -941,7 +946,8 @@ def _affine_grid(
     base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
-    rescaled_theta = theta.transpose(1, 2).div_(torch.tensor([0.5 * w, 0.5 * h], dtype=dtype, device=device))
+    # `.to()` is a no-op when theta is already at `dtype`, preserving the existing behaviour.
+    rescaled_theta = theta.transpose(1, 2).to(dtype).div_(torch.tensor([0.5 * w, 0.5 * h], dtype=dtype, device=device))
     output_grid = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta)
     return output_grid.view(1, oh, ow, 2)
 
@@ -1982,6 +1988,10 @@ def _perspective_grid(coeffs: list[float], ow: int, oh: int, dtype: torch.dtype,
     # x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #
+    # See the note in _affine_grid: the grid is built and returned in at least float32 so that
+    # neighbouring sample positions stay distinct. float64 is preserved, not downcast.
+    dtype = torch.promote_types(dtype, torch.float32)
+
     theta1 = torch.tensor(
         [[[coeffs[0], coeffs[1], coeffs[2]], [coeffs[3], coeffs[4], coeffs[5]]]], dtype=dtype, device=device
     )

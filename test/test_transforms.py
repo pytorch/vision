@@ -2242,6 +2242,114 @@ def test_random_grayscale_with_grayscale_input():
     torch.testing.assert_close(F.pil_to_tensor(output_pil), image_tensor)
 
 
+class TestGridPrecision:
+    """Regression tests for https://github.com/pytorch/vision/issues/9029.
+
+    The affine/perspective sampling grid used to be built and returned at the input image's
+    dtype. For float16/bfloat16 images that leaves too few mantissa bits to keep neighbouring
+    sample positions apart, so blocks of adjacent output pixels collapse onto an identical
+    source location. The symptom is not a large numerical error but a loss of *distinct*
+    sample positions, which is what these tests measure.
+    """
+
+    # Large enough that half precision cannot represent every position; the bug needs
+    # more distinct coordinates than the dtype can hold before it shows up.
+    SIZE = 512
+    HALF_DTYPES = [torch.float16]
+    START_POINTS = [[0, 0], [1, 0], [1, 1], [0, 1]]  # scaled to the image size at call time
+    END_POINTS = [[0.06, 0.04], [0.92, 0.02], [0.97, 0.95], [0.04, 0.93]]
+
+    @staticmethod
+    def _capture_grid(fn, image):
+        """Run ``fn(image)`` and return the grid handed to ``_apply_grid_transform``."""
+        captured = []
+        original = F_t._apply_grid_transform
+
+        def spy(img, grid, *args, **kwargs):
+            captured.append(grid)
+            return original(img, grid, *args, **kwargs)
+
+        F_t._apply_grid_transform = spy
+        try:
+            fn(image)
+        finally:
+            F_t._apply_grid_transform = original
+
+        assert len(captured) == 1
+        return captured[0]
+
+    def _distinct_positions(self, dtype, fn, size=None):
+        size = self.SIZE if size is None else size
+        image = torch.rand(3, size, size, dtype=torch.float32).to(dtype)
+        grid = self._capture_grid(fn, image)
+        return grid[..., 0].unique().numel(), grid[..., 1].unique().numel()
+
+    @staticmethod
+    def _rotate(image):
+        return F.rotate(image, 30.0, interpolation=transforms.InterpolationMode.BILINEAR)
+
+    def _perspective(self, image):
+        h, w = image.shape[-2:]
+
+        def scale(points):
+            return [[int(x * (w - 1)), int(y * (h - 1))] for x, y in points]
+
+        return F.perspective(image, scale(self.START_POINTS), scale(self.END_POINTS))
+
+    @pytest.mark.parametrize("dtype", HALF_DTYPES)
+    @pytest.mark.parametrize("fn_name", ["rotate", "perspective"])
+    def test_half_precision_grid_resolution(self, dtype, fn_name):
+        fn = self._rotate if fn_name == "rotate" else self._perspective
+
+        ref_x, ref_y = self._distinct_positions(torch.float32, fn)
+        x, y = self._distinct_positions(dtype, fn)
+
+        assert x >= 0.99 * ref_x, f"{dtype} {fn_name}: {x} distinct x positions vs {ref_x} for float32"
+        assert y >= 0.99 * ref_y, f"{dtype} {fn_name}: {y} distinct y positions vs {ref_y} for float32"
+
+    def _case(self, fn_name, dtype):
+        """Return a (callable, image) pair for the requested transform."""
+        fn = self._rotate if fn_name == "rotate" else self._perspective
+        return fn, torch.rand(3, self.SIZE, self.SIZE, dtype=torch.float32).to(dtype)
+
+    @pytest.mark.parametrize("dtype", HALF_DTYPES)
+    @pytest.mark.parametrize("fn_name", ["rotate", "perspective"])
+    def test_half_precision_output_is_finite(self, dtype, fn_name):
+        """A half precision grid overflows during grid_sample and yields NaN/Inf pixels."""
+        torch.manual_seed(0)
+        fn, image = self._case(fn_name, dtype)
+        out = fn(image)
+        assert torch.isfinite(out.to(torch.float32)).all(), (
+            f"{dtype} {fn_name}: output contains "
+            f"{(~torch.isfinite(out.to(torch.float32))).sum().item()} non-finite values"
+        )
+
+    @pytest.mark.parametrize("dtype", HALF_DTYPES)
+    @pytest.mark.parametrize("fn_name", ["rotate", "perspective"])
+    def test_half_precision_output_matches_float32(self, dtype, fn_name):
+        """With a collapsed grid the half precision output diverges from the float32 result."""
+        torch.manual_seed(0)
+        fn, image = self._case(fn_name, dtype)
+        ref = fn(image.to(torch.float32))
+        out = fn(image).to(torch.float32)
+
+        # Compare only where the reference sampled real content; the zero padding outside the
+        # sampled region matches trivially. The observed error is ~1e-4 for float16 once the
+        # grid is promoted, versus ~0.25 with a half precision grid, so this threshold has a
+        # wide margin on both sides.
+        mask = ref != 0
+        error = (out - ref).abs()[mask].mean().item()
+        assert error < 0.01, f"{dtype} {fn_name}: mean absolute error vs float32 is {error:.4f}"
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    @pytest.mark.parametrize("fn_name", ["rotate", "perspective"])
+    def test_full_precision_grid_dtype_is_unchanged(self, dtype, fn_name):
+        """float32 must stay float32 and float64 must not be downcast to float32."""
+        fn = self._rotate if fn_name == "rotate" else self._perspective
+        grid = self._capture_grid(fn, torch.rand(3, 16, 16, dtype=torch.float32).to(dtype))
+        assert grid.dtype == dtype
+
+
 class TestApplyGridTransformDtypes:
     """Dtype round trip through ``_apply_grid_transform``.
 
