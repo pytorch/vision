@@ -8048,3 +8048,47 @@ class TestUtils:
     def test_no_valid_input(self, query):
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
+
+
+class TestApplyGridTransformDtypes:
+    """Dtype round trip through ``_apply_grid_transform``.
+
+    The kernel casts the image to the grid's dtype, samples, then casts back. Rounding on the
+    way back must be keyed off the *input* dtype and apply to integer images only - rounding a
+    float image would quantise every pixel to 0.0 or 1.0. That cast is taken whenever the grid
+    dtype differs from the image dtype: today for integer images, and for half precision images
+    once the grid is promoted to float32.
+    """
+
+    HALF_DTYPES = [torch.float16]
+    ROUND_TRIP_DTYPES = [torch.float16, torch.float32, torch.float64, torch.uint8]
+
+    @staticmethod
+    def _image(dtype, size=32):
+        if dtype == torch.uint8:
+            return torch.randint(0, 256, (3, size, size), dtype=dtype)
+        return torch.rand(3, size, size, dtype=torch.float32).to(dtype)
+
+    @pytest.mark.parametrize("dtype", ROUND_TRIP_DTYPES)
+    def test_output_dtype_is_preserved(self, dtype):
+        image = self._image(dtype)
+        assert F.rotate(image, 30.0).dtype == dtype
+        assert F.perspective(image, None, None, coefficients=TestPerspective.COEFFICIENTS[0]).dtype == dtype
+
+    @pytest.mark.parametrize("dtype", HALF_DTYPES)
+    def test_float_output_is_not_rounded_to_integers(self, dtype):
+        """A float image must survive the round trip as a float, not as 0.0/1.0."""
+        image = torch.rand(3, 64, 64, dtype=torch.float32)
+        out = F.rotate(image.to(dtype), 30.0).to(torch.float32)
+        assert not torch.all((out == 0) | (out == 1)), "output was rounded to integer values"
+        # Zero padding drops corner content, so the float32 output - not the input - is the
+        # right reference for the mean.
+        torch.testing.assert_close(out.mean(), F.rotate(image, 30.0).mean(), atol=0.02, rtol=0.02)
+
+    def test_integer_output_is_rounded(self):
+        """Integer images must still be rounded before the cast back, not truncated."""
+        image = torch.randint(0, 256, (3, 64, 64), dtype=torch.uint8)
+        kwargs = dict(interpolation=transforms.InterpolationMode.BILINEAR)
+        out = F.rotate(image, 30.0, **kwargs)
+        expected = F.rotate(image.to(torch.float32), 30.0, **kwargs).round_().to(torch.uint8)
+        assert_equal(out, expected)

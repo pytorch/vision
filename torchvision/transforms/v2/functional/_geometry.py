@@ -842,8 +842,11 @@ def _apply_grid_transform(img: torch.Tensor, grid: torch.Tensor, mode: str, fill
     img = img.reshape(-1, num_channels, input_height, input_width)
     squashed_batch_size = img.shape[0]
 
-    # We are using context knowledge that grid should have float dtype
-    fp = img.dtype == grid.dtype
+    # We are using context knowledge that grid should have float dtype.
+    # Rounding on the way back is keyed off the *input* dtype rather than off whether a cast
+    # happened: rounding a float image to integers would destroy it.
+    input_dtype = img.dtype
+    fp = input_dtype == grid.dtype
     float_img = img if fp else img.to(grid.dtype)
 
     if squashed_batch_size > 1:
@@ -872,7 +875,13 @@ def _apply_grid_transform(img: torch.Tensor, grid: torch.Tensor, mode: str, fill
             # img * mask + (1.0 - mask) * fill = img * mask - fill * mask + fill = mask * (img - fill) + fill
             float_img = float_img.sub_(fill_img).mul_(mask).add_(fill_img)
 
-    img = float_img.round_().to(img.dtype) if not fp else float_img
+    if fp:
+        img = float_img
+    else:
+        if input_dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+            # it is better to round before cast
+            float_img = float_img.round_()
+        img = float_img.to(input_dtype)
 
     return img.reshape(output_shape)
 
