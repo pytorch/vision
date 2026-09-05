@@ -800,9 +800,13 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
 
         num_images = 3
         num_annotations_per_image = 2
+        include_empty_image = config.pop("include_empty_image", False)
 
         files = datasets_utils.create_image_folder(
-            tmpdir, name=self._IMAGE_FOLDER, file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_images
+            tmpdir,
+            name=self._IMAGE_FOLDER,
+            file_name_fn=lambda idx: f"{idx:012d}.jpg",
+            num_examples=num_images + int(include_empty_image),
         )
         file_names = [file.relative_to(tmpdir / self._IMAGE_FOLDER) for file in files]
 
@@ -810,22 +814,35 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
         os.makedirs(annotation_folder)
 
         segmentation_kind = config.pop("segmentation_kind", "list")
+        annotated_file_names = file_names[:num_images] if include_empty_image else file_names
         info = self._create_annotation_file(
             annotation_folder,
             self._ANNOTATIONS_FILE,
             file_names,
             num_annotations_per_image,
             segmentation_kind=segmentation_kind,
+            annotated_file_names=annotated_file_names,
         )
 
-        info["num_examples"] = num_images
+        info["num_examples"] = len(file_names)
+        if include_empty_image:
+            info["empty_image_idx"] = num_images
         return info
 
-    def _create_annotation_file(self, root, name, file_names, num_annotations_per_image, segmentation_kind="list"):
+    def _create_annotation_file(
+        self, root, name, file_names, num_annotations_per_image, segmentation_kind="list", annotated_file_names=None
+    ):
         image_ids = [int(file_name.stem) for file_name in file_names]
         images = [dict(file_name=str(file_name), id=id) for file_name, id in zip(file_names, image_ids)]
 
-        annotations, info = self._create_annotations(image_ids, num_annotations_per_image, segmentation_kind)
+        annotation_image_ids = (
+            [int(file_name.stem) for file_name in annotated_file_names]
+            if annotated_file_names is not None
+            else image_ids
+        )
+        annotations, info = self._create_annotations(
+            annotation_image_ids, num_annotations_per_image, segmentation_kind
+        )
         self._create_json(root, name, dict(images=images, annotations=annotations))
 
         return info
@@ -887,6 +904,29 @@ class CocoDetectionTestCase(datasets_utils.ImageDatasetTestCase):
             dataset = datasets.wrap_dataset_for_transforms_v2(dataset, target_keys="all")
             with pytest.raises(ValueError, match="COCO segmentation expected to be a dict or a list"):
                 list(dataset)
+
+    def test_empty_sample_honors_target_keys(self):
+        if isinstance(self, CocoCaptionsTestCase):
+            pytest.skip("CocoCaptions is currently not supported by the v2 wrapper.")
+
+        with self.create_dataset({"include_empty_image": True}) as (dataset, info):
+            empty_idx = info["empty_image_idx"]
+            _, raw_target = dataset[empty_idx]
+            assert raw_target == []
+
+            wrapped = datasets.wrap_dataset_for_transforms_v2(dataset, target_keys={"boxes", "labels"})
+            _, target = wrapped[empty_idx]
+            assert "image_id" not in target
+
+            wrapped_with_id = datasets.wrap_dataset_for_transforms_v2(
+                dataset, target_keys={"image_id", "boxes", "labels"}
+            )
+            _, target_with_id = wrapped_with_id[empty_idx]
+            assert target_with_id == {"image_id": dataset.ids[empty_idx]}
+
+            wrapped_default = datasets.wrap_dataset_for_transforms_v2(dataset)
+            _, target_default = wrapped_default[empty_idx]
+            assert target_default == {"image_id": dataset.ids[empty_idx]}
 
 
 class CocoCaptionsTestCase(CocoDetectionTestCase):
