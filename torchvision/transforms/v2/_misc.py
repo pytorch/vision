@@ -2,6 +2,7 @@ import warnings
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, Union
 
+import numpy as np
 import PIL.Image
 
 import torch
@@ -19,6 +20,53 @@ from ._utils import (
     has_any,
     is_pure_tensor,
 )
+
+_LABELS_TYPE_MSG = (
+    "The labels in the input to forward() must be a tensor, numpy array, sequence, or None, got {type} instead."
+)
+
+
+def _get_entry_length(entry: Any) -> int:
+    shape = getattr(entry, "shape", None)
+    if shape is not None and len(shape) > 0:
+        return shape[0]
+    return len(entry)
+
+
+def _index_with_valid(entry: Any, valid: torch.Tensor) -> Any:
+    if isinstance(entry, (list, tuple)):
+        return type(entry)(item for item, keep in zip(entry, valid.tolist()) if keep)
+    return entry[valid]
+
+
+def _is_indexable_label_entry(entry: Any) -> bool:
+    return isinstance(entry, (torch.Tensor, np.ndarray, list, tuple))
+
+
+def _normalize_sanitize_labels(labels: Any) -> tuple[Any, ...]:
+    if isinstance(labels, (list, tuple)):
+        # A sequence of tensors/arrays/sequences is multiple label entries. A sequence of
+        # scalars (e.g. list[int]) is a single per-box/per-keypoint label entry.
+        if any(_is_indexable_label_entry(entry) for entry in labels):
+            for entry in labels:
+                if not _is_indexable_label_entry(entry):
+                    raise ValueError(_LABELS_TYPE_MSG.format(type=type(entry)))
+            return tuple(labels)
+        return (labels,)
+    if _is_indexable_label_entry(labels):
+        return (labels,)
+    raise ValueError(_LABELS_TYPE_MSG.format(type=type(labels)))
+
+
+def _labels_tree_is_leaf(labels: Optional[tuple[Any, ...]]) -> Optional[Callable[[Any], bool]]:
+    if labels is None:
+        return None
+    label_ids = {id(label) for label in labels}
+
+    def is_leaf(x: Any) -> bool:
+        return id(x) in label_ids
+
+    return is_leaf
 
 
 # TODO: do we want/need to expose this?
@@ -393,8 +441,9 @@ class SanitizeBoundingBoxes(Transform):
 
             It can also be a callable that takes the same input as the transform, and returns either:
 
-            - A single tensor (the labels)
-            - A tuple/list of tensors, each of which will be subject to the same sanitization as the bounding boxes.
+            - A single tensor, numpy array, or sequence (the labels)
+            - A tuple/list of tensors, numpy arrays, or sequences, each of which will be subject to the same
+              sanitization as the bounding boxes.
               This is useful to sanitize multiple tensors like the labels, and the "iscrowd" or "area" properties
               from COCO.
 
@@ -425,26 +474,18 @@ class SanitizeBoundingBoxes(Transform):
 
         labels = self._labels_getter(inputs)
         if labels is not None:
-            msg = "The labels in the input to forward() must be a tensor or None, got {type} instead."
-            if isinstance(labels, torch.Tensor):
-                labels = (labels,)
-            elif isinstance(labels, (tuple, list)):
-                for entry in labels:
-                    if not isinstance(entry, torch.Tensor):
-                        # TODO: we don't need to enforce tensors, just that entries are indexable as t[bool_mask]
-                        raise ValueError(msg.format(type=type(entry)))
-            else:
-                raise ValueError(msg.format(type=type(labels)))
+            labels = _normalize_sanitize_labels(labels)
 
-        flat_inputs, spec = tree_flatten(inputs)
+        # Keep list/tuple labels as leaves so they can be subset with the validity mask.
+        flat_inputs, spec = tree_flatten(inputs, is_leaf=_labels_tree_is_leaf(labels))
         boxes = get_bounding_boxes(flat_inputs)
 
         if labels is not None:
             for label in labels:
-                if boxes.shape[0] != label.shape[0]:
+                if boxes.shape[0] != _get_entry_length(label):
                     raise ValueError(
                         f"Number of boxes (shape={boxes.shape}) and must match the number of labels."
-                        f"Found labels with shape={label.shape})."
+                        f"Found labels with length={_get_entry_length(label)}."
                     )
 
         valid = F._misc._get_sanitize_bounding_boxes_mask(
@@ -468,16 +509,16 @@ class SanitizeBoundingBoxes(Transform):
         if not (is_label or is_bounding_boxes or is_mask):
             return inpt
 
+        if is_label:
+            return _index_with_valid(inpt, params["valid"])
+
         try:
             output = inpt[params["valid"]]
         except (IndexError):
             # If indexing fails (e.g., shape mismatch), pass through unchanged
             return inpt
 
-        if is_label:
-            return output
-        else:
-            return tv_tensors.wrap(output, like=inpt)
+        return tv_tensors.wrap(output, like=inpt)
 
 
 class SanitizeKeyPoints(Transform):
@@ -504,8 +545,9 @@ class SanitizeKeyPoints(Transform):
 
             It can also be a callable that takes the same input as the transform, and returns either:
 
-            - A single tensor (the labels)
-            - A tuple/list of tensors, each of which will be subject to the same sanitization as the keypoints.
+            - A single tensor, numpy array, or sequence (the labels)
+            - A tuple/list of tensors, numpy arrays, or sequences, each of which will be subject to the same
+              sanitization as the keypoints.
 
             If ``labels_getter`` is None (the default), then only keypoints are sanitized.
     """
@@ -523,26 +565,18 @@ class SanitizeKeyPoints(Transform):
 
         labels = self._labels_getter(inputs)
         if labels is not None:
-            msg = "The labels in the input to forward() must be a tensor or None, got {type} instead."
-            if isinstance(labels, torch.Tensor):
-                labels = (labels,)
-            elif isinstance(labels, (tuple, list)):
-                for entry in labels:
-                    if not isinstance(entry, torch.Tensor):
-                        # TODO: we don't need to enforce tensors, just that entries are indexable as t[bool_mask]
-                        raise ValueError(msg.format(type=type(entry)))
-            else:
-                raise ValueError(msg.format(type=type(labels)))
+            labels = _normalize_sanitize_labels(labels)
 
-        flat_inputs, spec = tree_flatten(inputs)
+        # Keep list/tuple labels as leaves so they can be subset with the validity mask.
+        flat_inputs, spec = tree_flatten(inputs, is_leaf=_labels_tree_is_leaf(labels))
         points = get_keypoints(flat_inputs)
 
         if labels is not None:
             for label in labels:
-                if points.shape[0] != label.shape[0]:
+                if points.shape[0] != _get_entry_length(label):
                     raise ValueError(
                         f"Number of kepyoints (shape={points.shape}) must match the number of labels."
-                        f"Found labels with shape={label.shape})."
+                        f"Found labels with length={_get_entry_length(label)}."
                     )
 
         valid = F._misc._get_sanitize_keypoints_mask(
@@ -562,9 +596,8 @@ class SanitizeKeyPoints(Transform):
         if not (is_label or is_keypoints):
             return inpt
 
-        output = inpt[params["valid"]]
-
         if is_label:
-            return output
-        else:
-            return tv_tensors.wrap(output, like=inpt)
+            return _index_with_valid(inpt, params["valid"])
+
+        output = inpt[params["valid"]]
+        return tv_tensors.wrap(output, like=inpt)
