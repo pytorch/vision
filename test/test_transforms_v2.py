@@ -4142,9 +4142,21 @@ class TestGaussianNoise:
 
         check_transform(transforms.GaussianNoise(), make_input(dtype=torch.uint8), check_sample_input=adapter)
 
+    def test_pil_image(self):
+        image = make_image_pil()
+        out = F.gaussian_noise(image)
+        assert isinstance(out, PIL.Image.Image)
+        assert out.mode == image.mode
+        assert out.size == image.size
+
+        out = F.gaussian_noise(image, mean=100, clip=True)
+        assert isinstance(out, PIL.Image.Image)
+        assert out.mode == image.mode
+        assert out.size == image.size
+        assert F.pil_to_tensor(out).min() >= 0
+        assert F.pil_to_tensor(out).max() <= 255
+
     def test_bad_input(self):
-        with pytest.raises(ValueError, match="Gaussian Noise is not implemented for PIL images."):
-            F.gaussian_noise(make_image_pil())
         with pytest.raises(ValueError, match="Input tensor is expected to be in uint8 or float dtype"):
             F.gaussian_noise(make_image(dtype=torch.int32))
         with pytest.raises(ValueError, match="sigma shouldn't be negative"):
