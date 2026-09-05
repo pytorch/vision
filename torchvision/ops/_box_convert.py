@@ -1,5 +1,20 @@
+# Canonical box-format conversion kernels.
+# ``ops.box_convert`` exposes these without inplace; transforms v2 wraps them
+# and adds inplace / integer floor-div behavior.
 import torch
 from torch import Tensor
+
+
+def _half_wh(wh: Tensor, preserve_dtype: bool = False) -> Tensor:
+    """Half of a width/height extent.
+
+    True-div (``/ 2``) is the ops.box_convert convention and may promote integer
+    inputs to floating point. ``preserve_dtype=True`` uses floor-div so transforms
+    v2 can keep integer tensors in-place without changing typical int64 results.
+    """
+    if preserve_dtype and not wh.is_floating_point():
+        return wh.div(2, rounding_mode="floor")
+    return wh / 2
 
 
 def _box_cxcywh_to_xyxy(boxes: Tensor) -> Tensor:
@@ -15,10 +30,12 @@ def _box_cxcywh_to_xyxy(boxes: Tensor) -> Tensor:
     """
     # We need to change all 4 of them so some temporary variable is needed.
     cx, cy, w, h = boxes.unbind(-1)
-    x1 = cx - 0.5 * w
-    y1 = cy - 0.5 * h
-    x2 = cx + 0.5 * w
-    y2 = cy + 0.5 * h
+    half_w = _half_wh(w)
+    half_h = _half_wh(h)
+    x1 = cx - half_w
+    y1 = cy - half_h
+    x2 = cx + half_w
+    y2 = cy + half_h
 
     boxes = torch.stack((x1, y1, x2, y2), dim=-1)
 
@@ -37,10 +54,11 @@ def _box_xyxy_to_cxcywh(boxes: Tensor) -> Tensor:
         boxes (Tensor(N, 4)): boxes in (cx, cy, w, h) format.
     """
     x1, y1, x2, y2 = boxes.unbind(-1)
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
     w = x2 - x1
     h = y2 - y1
+    # Overflow-safe: x1 + width/2, not (x1 + x2)/2 or (x1 * 2 + width)/2.
+    cx = x1 + _half_wh(w)
+    cy = y1 + _half_wh(h)
 
     boxes = torch.stack((cx, cy, w, h), dim=-1)
 
@@ -78,6 +96,43 @@ def _box_xyxy_to_xywh(boxes: Tensor) -> Tensor:
     w = x2 - x1  # x2 - x1
     h = y2 - y1  # y2 - y1
     boxes = torch.stack((x1, y1, w, h), dim=-1)
+    return boxes
+
+
+def _box_xywh_to_cxcywh(boxes: Tensor) -> Tensor:
+    """
+    Converts bounding boxes from (x, y, w, h) format to (cx, cy, w, h) format.
+    (x, y) refers to top left of bounding box.
+    (w, h) refers to width and height of box.
+    Args:
+        boxes (Tensor[N, 4]): boxes in (x, y, w, h) which will be converted.
+
+    Returns:
+        boxes (Tensor[N, 4]): boxes in (cx, cy, w, h) format.
+    """
+    x, y, w, h = boxes.unbind(-1)
+    # Overflow-safe: x + width/2, not (x + x + w)/2.
+    cx = x + _half_wh(w)
+    cy = y + _half_wh(h)
+    boxes = torch.stack((cx, cy, w, h), dim=-1)
+    return boxes
+
+
+def _box_cxcywh_to_xywh(boxes: Tensor) -> Tensor:
+    """
+    Converts bounding boxes from (cx, cy, w, h) format to (x, y, w, h) format.
+    (cx, cy) refers to center of bounding box
+    (w, h) are width and height of bounding box
+    Args:
+        boxes (Tensor[N, 4]): boxes in (cx, cy, w, h) format which will be converted.
+
+    Returns:
+        boxes (Tensor[N, 4]): boxes in (x, y, w, h) format.
+    """
+    cx, cy, w, h = boxes.unbind(-1)
+    x = cx - _half_wh(w)
+    y = cy - _half_wh(h)
+    boxes = torch.stack((x, y, w, h), dim=-1)
     return boxes
 
 
