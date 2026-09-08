@@ -91,7 +91,7 @@ Tensor nms_kernel(
   auto order_t = std::get<1>(
       stable_helpers::sort(scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
   auto dets_sorted =
-      torch::stable::contiguous(stable_helpers::index_select(dets, 0, order_t));
+      torch::stable::contiguous(torch::stable::index_select(dets, 0, order_t));
   int64_t dets_num = dets.size(0);
 
   const int64_t col_blocks =
@@ -148,7 +148,7 @@ Tensor nms_kernel(
     }
   }
 
-  return stable_helpers::index_select(
+  return torch::stable::index_select(
       order_t,
       0,
       torch::stable::to(
