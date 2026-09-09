@@ -294,6 +294,25 @@ class TestToTensor:
         output = trans(img).view(torch.uint8).bool().to(torch.uint8)
         torch.testing.assert_close(input_data, output)
 
+    def test_pil_to_tensor_i16(self):
+        # I;16 mode PIL images (16-bit grayscale) were not handled correctly by pil_to_tensor,
+        # raising a TypeError since PyTorch has no native uint16 tensor type.
+        # See https://github.com/pytorch/vision/issues/8188
+        height, width = 4, 4
+        trans = transforms.PILToTensor()
+        np_rng = np.random.RandomState(0)
+
+        input_data = np_rng.randint(low=0, high=2**16, size=(height, width)).astype(np.uint16)
+        mode = "I;16" if sys.byteorder == "little" else "I;16B"
+        img = Image.fromarray(input_data, mode=mode)
+
+        output = trans(img)
+        assert output.dtype == torch.int16
+        assert output.shape == (1, height, width)
+
+        expected_output = input_data.astype(np.int16)
+        torch.testing.assert_close(output[0].numpy(), expected_output)
+
     def test_pil_to_tensor_errors(self):
         height, width = 4, 4
         trans = transforms.PILToTensor()
