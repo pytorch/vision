@@ -206,11 +206,31 @@ def download_file_from_google_drive(
         raise RuntimeError("File not found or corrupted.")
 
 
+def _validate_extract_target(member_path: str, to_path: pathlib.Path) -> pathlib.Path:
+    """Resolve an archive member's target path and ensure it stays inside to_path."""
+    target = (to_path / member_path).resolve()
+    to_path_resolved = to_path.resolve()
+    if target != to_path_resolved and to_path_resolved not in target.parents:
+        raise RuntimeError(
+            f"Archive member {member_path!r} would extract outside of the destination directory "
+            f"{to_path_resolved}. Refusing to extract a potentially malicious archive."
+        )
+    return target
+
+
 def _extract_tar(
     from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
 ) -> None:
     with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
-        tar.extractall(to_path)
+        try:
+            tar.extractall(to_path, filter="data")
+        except TypeError:
+            # Python builds without the "filter" keyword (no CVE-2007-4559 security backport)
+            # fall back to manually validating every member's resolved path.
+            to_path_resolved = pathlib.Path(to_path)
+            for member in tar.getmembers():
+                _validate_extract_target(member.name, to_path_resolved)
+            tar.extractall(to_path)
 
 
 _ZIP_COMPRESSION_MAP: dict[str, int] = {
@@ -225,6 +245,9 @@ def _extract_zip(
     with zipfile.ZipFile(
         from_path, "r", compression=_ZIP_COMPRESSION_MAP[compression] if compression else zipfile.ZIP_STORED
     ) as zip:
+        to_path_resolved = pathlib.Path(to_path)
+        for member in zip.namelist():
+            _validate_extract_target(member, to_path_resolved)
         zip.extractall(to_path)
 
 
