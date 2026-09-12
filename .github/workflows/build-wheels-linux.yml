@@ -19,12 +19,12 @@ permissions:
 
 jobs:
   generate-matrix:
-    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@main
+    uses: pytorch/test-infra/.github/workflows/generate_binary_build_matrix.yml@build-wheels-linux-osdc-workspace
     with:
       package-type: wheel
       os: linux
       test-infra-repository: pytorch/test-infra
-      test-infra-ref: main
+      test-infra-ref: build-wheels-linux-osdc-workspace
       runner-fleet: osdc
       with-xpu: enable
   build:
@@ -39,12 +39,12 @@ jobs:
             smoke-test-script: test/smoke_test.py
             package-name: torchvision
     name: ${{ matrix.repository }}
-    uses: pytorch/test-infra/.github/workflows/build_wheels_linux.yml@main
+    uses: pytorch/test-infra/.github/workflows/build_wheels_linux.yml@build-wheels-linux-osdc-workspace
     with:
       repository: ${{ matrix.repository }}
       ref: ""
       test-infra-repository: pytorch/test-infra
-      test-infra-ref: main
+      test-infra-ref: build-wheels-linux-osdc-workspace
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
       post-script: ${{ matrix.post-script }}
