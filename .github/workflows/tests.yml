@@ -16,15 +16,15 @@ jobs:
         python-version:
           - "3.10"
           - "3.14"
-        runner: ["linux.12xlarge"]
+        runner: ["mt-l-x86iavx512-48-384"]
         gpu-arch-type: ["cpu"]
         include:
           - python-version: "3.10"
-            runner: linux.g5.4xlarge.nvidia.gpu
+            runner: mt-l-x86aavx2-29-113-a10g
             gpu-arch-type: cuda
             gpu-arch-version: "12.6"
       fail-fast: false
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v3.yml@main
     permissions:
       id-token: write
       contents: read
@@ -105,7 +105,7 @@ jobs:
         ./.github/scripts/unittest.sh
 
   unittests-extended:
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@main
+    uses: pytorch/test-infra/.github/workflows/linux_job_v3.yml@main
     permissions:
       id-token: write
       contents: read
