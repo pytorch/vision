@@ -56,20 +56,6 @@ inline std::tuple<Tensor, Tensor> sort(
       torch::stable::detail::to<Tensor>(stack[1])};
 }
 
-// aten::index_select(Tensor self, int dim, Tensor index) -> Tensor
-inline Tensor index_select(
-    const Tensor& self,
-    int64_t dim,
-    const Tensor& index) {
-  std::array<StableIValue, 3> stack{
-      torch::stable::detail::from(self),
-      torch::stable::detail::from(dim),
-      torch::stable::detail::from(index)};
-  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
-      "aten::index_select", "", stack.data(), TORCH_ABI_VERSION));
-  return torch::stable::detail::to<Tensor>(stack[0]);
-}
-
 // aten::masked_select(Tensor self, Tensor mask) -> Tensor
 inline Tensor masked_select(const Tensor& self, const Tensor& mask) {
   std::array<StableIValue, 2> stack{
