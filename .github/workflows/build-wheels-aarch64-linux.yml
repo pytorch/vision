@@ -25,6 +25,7 @@ jobs:
       os: linux-aarch64
       test-infra-repository: pytorch/test-infra
       test-infra-ref: release/2.15
+      runner-fleet: osdc
       with-cuda: enable
   build:
     needs: generate-matrix
