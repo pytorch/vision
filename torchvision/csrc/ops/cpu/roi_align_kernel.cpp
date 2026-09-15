@@ -36,6 +36,24 @@ void roi_align_forward_kernel_impl(
     int index_n = n * channels * pooled_width * pooled_height;
 
     const T* offset_rois = rois + n * 5;
+
+    // A ROI with a non-finite batch index or coordinate (NaN or +/-inf) is
+    // malformed. Every comparison against NaN is false, and inf coordinates
+    // produce a NaN width (inf - inf), so such a ROI slips past the bilinear
+    // bounds check below; casting a non-finite value to int then yields a
+    // garbage index that reads out of bounds and segfaults (and ceil() of a
+    // non-finite value is UB when sampling_ratio <= 0). Guard on the raw ROI
+    // before the batch-index cast just below, which is itself UB on a
+    // non-finite value. Treat the ROI as empty: leave zeros for it.
+    // https://github.com/pytorch/vision/issues/9273
+    if (!std::isfinite(static_cast<double>(offset_rois[0])) ||
+        !std::isfinite(static_cast<double>(offset_rois[1])) ||
+        !std::isfinite(static_cast<double>(offset_rois[2])) ||
+        !std::isfinite(static_cast<double>(offset_rois[3])) ||
+        !std::isfinite(static_cast<double>(offset_rois[4]))) {
+      continue;
+    }
+
     int roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
@@ -206,6 +224,24 @@ void roi_align_backward_kernel_impl(
     int n = index / pooled_width / pooled_height / channels;
 
     const T* offset_rois = rois + n * 5;
+
+    // A ROI with a non-finite batch index or coordinate (NaN or +/-inf) is
+    // malformed. Every comparison against NaN is false, and inf coordinates
+    // produce a NaN width (inf - inf), so such a ROI slips past the bilinear
+    // bounds check below; casting a non-finite value to int then yields a
+    // garbage index that reads out of bounds and segfaults (and ceil() of a
+    // non-finite value is UB when sampling_ratio <= 0). Guard on the raw ROI
+    // before the batch-index cast just below, which is itself UB on a
+    // non-finite value. Treat the ROI as empty: leave zeros for it.
+    // https://github.com/pytorch/vision/issues/9273
+    if (!std::isfinite(static_cast<double>(offset_rois[0])) ||
+        !std::isfinite(static_cast<double>(offset_rois[1])) ||
+        !std::isfinite(static_cast<double>(offset_rois[2])) ||
+        !std::isfinite(static_cast<double>(offset_rois[3])) ||
+        !std::isfinite(static_cast<double>(offset_rois[4]))) {
+      continue;
+    }
+
     int roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
