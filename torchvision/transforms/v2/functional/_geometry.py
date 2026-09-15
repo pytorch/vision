@@ -2122,7 +2122,10 @@ def perspective_bounding_boxes(
     original_dtype = bounding_boxes.dtype
     is_rotated = tv_tensors.is_rotated_bounding_format(format)
     intermediate_format = tv_tensors.BoundingBoxFormat.XYXYXYXY if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
-    # TODO: first cast to float if bbox is int64 before convert_bounding_box_format
+
+    if bounding_boxes.dtype == torch.int64:
+        bounding_boxes = bounding_boxes.float()
+
     bounding_boxes = (
         convert_bounding_box_format(bounding_boxes, old_format=format, new_format=intermediate_format)
     ).reshape(-1, 8 if is_rotated else 4)
@@ -2446,7 +2449,11 @@ def elastic_bounding_boxes(
         displacement = displacement.to(dtype=dtype, device=device)
 
     original_shape = bounding_boxes.shape
-    # TODO: first cast to float if bbox is int64 before convert_bounding_box_format
+    original_dtype = bounding_boxes.dtype
+
+    if bounding_boxes.dtype == torch.int64:
+        bounding_boxes = bounding_boxes.float()
+        
     intermediate_format = tv_tensors.BoundingBoxFormat.CXCYWHR if is_rotated else tv_tensors.BoundingBoxFormat.XYXY
 
     bounding_boxes = (
@@ -2474,11 +2481,11 @@ def elastic_bounding_boxes(
 
     if is_rotated:
         transformed_points = transformed_points.reshape(-1, 2)
-        out_bboxes = torch.cat([transformed_points, bounding_boxes[:, 2:]], dim=1).to(bounding_boxes.dtype)
+        out_bboxes = torch.cat([transformed_points, bounding_boxes[:, 2:]], dim=1).to(original_dtype)
     else:
         transformed_points = transformed_points.reshape(-1, 4, 2)
         out_bbox_mins, out_bbox_maxs = torch.aminmax(transformed_points, dim=1)
-        out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(bounding_boxes.dtype)
+        out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1).to(original_dtype)
 
     out_bboxes = clamp_bounding_boxes(
         out_bboxes, format=intermediate_format, canvas_size=canvas_size, clamping_mode=clamping_mode
