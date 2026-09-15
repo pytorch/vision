@@ -215,12 +215,12 @@ def cifar100():
 
 
 def voc():
-    # TODO: Also test the "2007-test" key
     return itertools.chain.from_iterable(
         [
             collect_urls(datasets.VOCSegmentation, ROOT, year=year, download=True)
             for year in ("2007", "2008", "2009", "2010", "2011", "2012")
         ]
+        + [collect_urls(datasets.VOCSegmentation, ROOT, year="2007", image_set="test", download=True)]
     )
 
 
@@ -336,6 +336,21 @@ def url_parametrization(*dataset_urls_and_ids_fns):
             for url, id in sorted(set(dataset_urls_and_ids_fn()))
         ],
     )
+
+
+def test_voc_includes_2007_test_url():
+    expected_url = datasets.voc.DATASET_YEAR_DICT["2007-test"]["url"]
+    trainval_url = datasets.voc.DATASET_YEAR_DICT["2007"]["url"]
+
+    collected_urls = [url for url, _ in voc()]
+    assert expected_url in collected_urls
+    assert trainval_url in collected_urls
+
+    test_urls = [
+        url for url, _ in collect_urls(datasets.VOCSegmentation, ROOT, year="2007", image_set="test", download=True)
+    ]
+    assert expected_url in test_urls
+    assert trainval_url not in test_urls
 
 
 @url_parametrization(
