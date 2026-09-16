@@ -20,7 +20,7 @@ jobs:
         gpu-arch-type: ["cpu"]
         include:
           - python-version: "3.10"
-            runner: mt-l-x86aavx2-29-113-a10g
+            runner: mt-l-x86aavx2-11-41-a10g
             gpu-arch-type: cuda
             gpu-arch-version: "12.6"
       fail-fast: false
