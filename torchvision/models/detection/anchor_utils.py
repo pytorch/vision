@@ -33,23 +33,44 @@ class AnchorGenerator(nn.Module):
     }
 
     def __init__(
-        self,
-        sizes=((128, 256, 512),),
-        aspect_ratios=((0.5, 1.0, 2.0),),
-    ):
-        super().__init__()
+            self,
+            sizes=((128, 256, 512),),
+            aspect_ratios=((0.5, 1.0, 2.0),),
+        ):
+            super().__init__()
 
-        if not isinstance(sizes[0], (list, tuple)):
-            # TODO change this
-            sizes = tuple((s,) for s in sizes)
-        if not isinstance(aspect_ratios[0], (list, tuple)):
-            aspect_ratios = (aspect_ratios,) * len(sizes)
+            # Detect if user provided a flat list/tuple (new flexible API) vs tuple-of-tuples (legacy)
+            # Flat list: sizes=(32, 64, 128) -> apply ALL sizes to ALL feature maps
+            # Tuple of tuples: sizes=((32,), (64,), (128,)) -> one size per feature map
+            if not isinstance(sizes[0], (list, tuple)):
+                # Flat tuple provided - we don't know number of feature maps yet, store as-is
+                # Will be expanded in forward() based on actual feature map count
+                self._single_sizes = tuple(sizes)
+            else:
+                self._single_sizes = None
+           
+            if not isinstance(aspect_ratios[0], (list, tuple)):
+                self._single_aspect_ratios = tuple(aspect_ratios)
+            else:
+                self._single_aspect_ratios = None
 
-        self.sizes = sizes
-        self.aspect_ratios = aspect_ratios
-        self.cell_anchors = [
-            self.generate_anchors(size, aspect_ratio) for size, aspect_ratio in zip(sizes, aspect_ratios)
-        ]
+            # Legacy behavior: convert to tuple-of-tuples for backward compatibility
+            if self._single_sizes is None:
+                sizes = tuple((s,) if not isinstance(s, (list, tuple)) else tuple(s) for s in sizes)
+            if self._single_aspect_ratios is None:
+                aspect_ratios = tuple((a,) if not isinstance(a, (list, tuple)) else tuple(a) for a in aspect_ratios)
+
+            self.sizes = sizes
+            self.aspect_ratios = aspect_ratios
+        
+            # Only create cell_anchors for legacy API; for flexible API, create in forward()
+            if self._single_sizes is None and self._single_aspect_ratios is None:
+                self.cell_anchors = [
+                    self.generate_anchors(size, aspect_ratio) for size, aspect_ratio in zip(sizes, aspect_ratios)
+                ]
+            else:
+                # Placeholder - will be populated in forward()
+                self.cell_anchors = []
 
     # TODO: https://github.com/pytorch/pytorch/issues/26792
     # For every (aspect_ratios, scales) combination, output a zero-centered anchor with those values.
@@ -77,6 +98,13 @@ class AnchorGenerator(nn.Module):
         self.cell_anchors = [cell_anchor.to(dtype=dtype, device=device) for cell_anchor in self.cell_anchors]
 
     def num_anchors_per_location(self) -> list[int]:
+        # If using flexible API, compute based on expanded sizes/aspect_ratios
+        if self._single_sizes is not None or self._single_aspect_ratios is not None:
+            # We don't know the number of feature maps here, but we can return
+            # the per-location count for a single feature map (same for all)
+            sizes = self._single_sizes if self._single_sizes is not None else self.sizes[0]
+            aspect_ratios = self._single_aspect_ratios if self._single_aspect_ratios is not None else self.aspect_ratios[0]
+            return [len(sizes) * len(aspect_ratios)]
         return [len(s) * len(a) for s, a in zip(self.sizes, self.aspect_ratios)]
 
     # For every combination of (a, (g, s), i) in (self.cell_anchors, zip(grid_sizes, strides), 0:2),
@@ -112,7 +140,18 @@ class AnchorGenerator(nn.Module):
 
         return anchors
 
-    def forward(self, image_list: ImageList, feature_maps: list[Tensor]) -> list[Tensor]:
+    def forward(self, image_list: ImageList, feature_maps: list[Tensor]) -> list[list[Tensor]]:
+        """
+        Args:
+            image_list (ImageList): images for which we want to compute the anchors
+            feature_maps (list[Tensor]): feature maps from the backbone
+        
+        Returns:
+            list[list[Tensor]]: anchors for each image and feature map.
+                Outer list: batch dimension (one entry per image).
+                Inner list: feature map dimension (one tensor per feature map).
+                Each tensor has shape (num_anchors * H * W, 4) in (x1, y1, x2, y2) format.
+        """
         grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
@@ -123,13 +162,35 @@ class AnchorGenerator(nn.Module):
             ]
             for g in grid_sizes
         ]
+        
+        # Handle new flexible API: expand single sizes/aspect_ratios to all feature maps
+        num_feature_maps = len(grid_sizes)
+        if self._single_sizes is not None:
+            # User provided flat sizes - expand to all feature maps
+            sizes = (self._single_sizes,) * num_feature_maps
+        else:
+            sizes = self.sizes
+            
+        if self._single_aspect_ratios is not None:
+            # User provided flat aspect_ratios - expand to all feature maps
+            aspect_ratios = (self._single_aspect_ratios,) * num_feature_maps
+        else:
+            aspect_ratios = self.aspect_ratios
+        
+        # Recompute cell_anchors if using flexible API
+        if self._single_sizes is not None or self._single_aspect_ratios is not None:
+            self.cell_anchors = [
+                self.generate_anchors(list(size), list(aspect_ratio)) 
+                for size, aspect_ratio in zip(sizes, aspect_ratios)
+            ]
+        
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.grid_anchors(grid_sizes, strides)
+        
+        # Return list of list of tensors: [batch][feature_map] = anchors tensor
         anchors: list[list[torch.Tensor]] = []
         for _ in range(len(image_list.image_sizes)):
-            anchors_in_image = [anchors_per_feature_map for anchors_per_feature_map in anchors_over_all_feature_maps]
-            anchors.append(anchors_in_image)
-        anchors = [torch.cat(anchors_per_image) for anchors_per_image in anchors]
+            anchors.append(list(anchors_over_all_feature_maps))
         return anchors
 
 
