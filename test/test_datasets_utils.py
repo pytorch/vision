@@ -1,5 +1,6 @@
 import contextlib
 import gzip
+import io
 import os
 import pathlib
 import re
@@ -239,6 +240,40 @@ class TestDatasetsUtils:
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
         pytest.raises(ValueError, utils.verify_str_arg, 0, ("a",), "arg")
         pytest.raises(ValueError, utils.verify_str_arg, "b", ("a",), "arg")
+
+    def _make_tar_with_members(self, tmpdir, members):
+        archive = os.path.join(tmpdir, "archive.tar")
+        with tarfile.open(archive, mode="w") as fh:
+            for name, kind, data in members:
+                info = tarfile.TarInfo(name)
+                info.type = kind
+                if kind == tarfile.REGTYPE:
+                    info.size = len(data)
+                    fh.addfile(info, io.BytesIO(data))
+                elif kind in (tarfile.SYMTYPE, tarfile.LNKTYPE):
+                    info.linkname = "../escape_target"
+                    fh.addfile(info)
+                else:
+                    fh.addfile(info)
+        return archive
+
+    def test_extract_tar_rejects_link_members(self, tmpdir):
+        archive = self._make_tar_with_members(tmpdir, [("links.txt", tarfile.SYMTYPE, "")])
+        with pytest.raises(RuntimeError, match="unsupported link or device member"):
+            utils._extract_tar(archive, tmpdir, None)
+        assert not os.path.exists(os.path.join(tmpdir, "links.txt"))
+
+    def test_extract_tar_rejects_path_traversal(self, tmpdir):
+        archive = self._make_tar_with_members(tmpdir, [("../escape.txt", tarfile.REGTYPE, b"escaped")])
+        escape_file = os.path.join(os.path.dirname(os.path.abspath(tmpdir)), "escape.txt")
+        with pytest.raises(RuntimeError, match="outside of the destination"):
+            utils._extract_tar(archive, tmpdir, None)
+        assert not os.path.exists(escape_file)
+
+    def test_extract_tar_rejects_absolute_path(self, tmpdir):
+        archive = self._make_tar_with_members(tmpdir, [("/absolute.txt", tarfile.REGTYPE, b"escaped")])
+        with pytest.raises(RuntimeError, match="absolute path"):
+            utils._extract_tar(archive, tmpdir, None)
 
     @pytest.mark.parametrize(
         ("dtype", "actual_hex", "expected_hex"),

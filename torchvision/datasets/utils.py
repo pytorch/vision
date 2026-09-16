@@ -209,8 +209,24 @@ def download_file_from_google_drive(
 def _extract_tar(
     from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
 ) -> None:
+    dest_path = os.fspath(to_path)
+
+    def _check_tar_member(member: tarfile.TarInfo) -> None:
+        if member.issym() or member.islnk() or member.isdev():
+            raise RuntimeError(
+                f"Archive contains an unsupported link or device member: {member.name!r}"
+            )
+        if os.path.isabs(member.name):
+            raise RuntimeError(f"Archive contains a member with an absolute path: {member.name!r}")
+        if ".." in member.name.split("/"):
+            raise RuntimeError(
+                f"Archive member would be extracted outside of the destination: {member.name!r}"
+            )
+
     with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
-        tar.extractall(to_path)
+        for member in tar.getmembers():
+            _check_tar_member(member)
+        tar.extractall(dest_path)
 
 
 _ZIP_COMPRESSION_MAP: dict[str, int] = {
