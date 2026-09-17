@@ -25,6 +25,7 @@ jobs:
       os: macos-arm64
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
+      python-abi3: enable
   build:
     needs: generate-matrix
     strategy:
@@ -54,3 +55,17 @@ jobs:
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+  # See the equivalent job in build-wheels-linux.yml for why this exists.
+  test-abi3-wheel:
+    needs: build
+    name: test-abi3-wheel-py3.15
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/test-abi3-wheel
+        with:
+          python-version: "3.15"
+          # The macOS build matrix pins .0 point versions, but the artifact name
+          # is built from the short version. It carries no arch suffix.
+          artifact-pattern: "*_3.10_cpu_*"
+          wheel-glob: "dist/torchvision-*-abi3-macosx_*_arm64.whl"
