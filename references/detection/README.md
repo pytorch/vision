@@ -20,6 +20,35 @@ You must modify the following flags:
 
 Except otherwise noted, all models have been trained on 8x V100 GPUs. 
 
+### Optional COCO evaluation backend
+
+The reference evaluator uses pycocotools by default. For bbox, segmentation and
+keypoint evaluation, install the optional
+[ultrafast-pycocotools](https://github.com/developer0hye/ultrafast-pycocotools) backend:
+
+```bash
+pip install "ultrafast-pycocotools>=0.1.11,<0.2"
+```
+
+Add `--coco-backend ultrafast` to any training or `--test-only` command below.
+Python callers can pass `coco_backend="ultrafast"` to `engine.evaluate()` or
+`backend="ultrafast"` to `CocoEvaluator`. Each evaluator uses its selected backend
+without replacing process-wide imports. Dataset loading and annotation transforms
+still require pycocotools. Distributed image-ID deduplication and COCO summary
+semantics are retained.
+
+The ultrafast backend gathers prepared predictions and evaluates the deduplicated
+images during synchronization, because its native evaluator combines matching and
+accumulation. It does not consume externally merged `evalImgs`. Per-image records
+remain available after synchronization. This changes when evaluation work happens;
+the per-batch `evaluator_time` log does not include that final synchronization work.
+
+Backend parity tests can be run with both evaluators installed:
+
+```bash
+python -m pytest references/detection/test_coco_eval.py
+```
+
 ### Faster R-CNN ResNet-50 FPN
 ```
 torchrun --nproc_per_node=8 train.py\
