@@ -1755,6 +1755,91 @@ class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
             assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
 
 
+class UnlabeledImageDatasetTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.UnlabeledImageDataset
+    FEATURE_TYPES = (PIL.Image.Image,)  # just the image, no target
+
+    # Fake tree: 3 png (2 top-level, 1 nested), 1 jpg + 1 upper-case .JPG top-level, 1 jpeg + 1 bmp
+    # nested, and 1 .txt that must be ignored -> 7 images total.
+    _NUM_IMAGES = 7
+    _NUM_PNG_RECURSIVE = 3
+    _NUM_PNG_TOP_LEVEL = 2
+    _UPPERCASE_EXT_FILE_NAME = "top_3.JPG"
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+        nested = tmpdir / "nested" / "deep"
+        nested.mkdir(parents=True)
+
+        # distinct stems so "top_3.JPG" doesn't collide with a .jpg on case-insensitive filesystems
+        for name in ["top_0.png", "top_1.png", "top_2.jpg", self._UPPERCASE_EXT_FILE_NAME]:
+            datasets_utils.create_image_file(tmpdir, name)
+        for name in ["nested_0.png", "nested_1.jpeg", "nested_2.bmp"]:
+            datasets_utils.create_image_file(nested, name)
+        (tmpdir / "not_an_image.txt").write_text("definitely not an image")
+
+        return dict(num_examples=self._NUM_IMAGES)
+
+    def test_default_patterns_are_recursive(self):
+        with self.create_dataset() as (dataset, info):
+            assert len(dataset) == info["num_examples"] == self._NUM_IMAGES
+
+    def test_custom_patterns_restrict_discovery(self):
+        with self.create_dataset(patterns=["**/*.png"]) as (dataset, _):
+            assert len(dataset) == self._NUM_PNG_RECURSIVE
+            assert all(path.endswith(".png") for path in dataset.samples)
+
+    def test_non_recursive_pattern(self):
+        with self.create_dataset(patterns=["*.png"]) as (dataset, _):
+            assert len(dataset) == self._NUM_PNG_TOP_LEVEL
+
+    def test_uppercase_extensions_are_discovered(self):
+        with self.create_dataset() as (dataset, _):
+            assert any(pathlib.Path(path).name == self._UPPERCASE_EXT_FILE_NAME for path in dataset.samples)
+
+    def test_samples_are_unique_and_sorted(self):
+        # On case-insensitive filesystems the lower- and upper-case default patterns match the same files.
+        with self.create_dataset() as (dataset, info):
+            assert len(dataset.samples) == info["num_examples"] == len(set(dataset.samples))
+            assert dataset.samples == sorted(dataset.samples)
+
+    def test_getitem_returns_bare_image(self):
+        with self.create_dataset() as (dataset, _):
+            sample = dataset[0]
+            assert isinstance(sample, PIL.Image.Image)
+            assert not isinstance(sample, tuple)
+
+    def test_transform_is_applied_to_every_sample(self):
+        transform = unittest.mock.Mock(wraps=lambda image: image)
+        with self.create_dataset(transform=transform) as (dataset, info):
+            samples = list(dataset)
+        assert len(samples) == info["num_examples"]
+        assert transform.call_count == info["num_examples"]
+
+    def test_custom_loader_is_respected(self):
+        loader = unittest.mock.Mock(wraps=datasets.folder.default_loader)
+        with self.create_dataset(loader=loader) as (dataset, _):
+            dataset[0]
+        loader.assert_called_once_with(dataset.samples[0])
+
+    def test_root_as_pathlib_path(self):
+        with self.create_dataset() as (dataset, info):
+            from_pathlib = datasets.UnlabeledImageDataset(pathlib.Path(dataset.root))
+        assert len(from_pathlib) == info["num_examples"]
+
+    def test_raises_when_nothing_is_found(self):
+        with self.create_dataset() as (dataset, _):
+            empty_dir = pathlib.Path(dataset.root) / "empty"
+            empty_dir.mkdir()
+            # missing root, existing but empty root, and a pattern that matches nothing
+            with pytest.raises(FileNotFoundError):
+                datasets.UnlabeledImageDataset(os.path.join(dataset.root, "i_do_not_exist"))
+            with pytest.raises(FileNotFoundError):
+                datasets.UnlabeledImageDataset(empty_dir)
+            with pytest.raises(FileNotFoundError):
+                datasets.UnlabeledImageDataset(dataset.root, patterns=["**/*.no_such_extension"])
+
+
 class KittiTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Kitti
     FEATURE_TYPES = (PIL.Image.Image, (list, type(None)))  # test split returns None as target

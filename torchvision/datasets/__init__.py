@@ -25,7 +25,7 @@ from .fer2013 import FER2013
 from .fgvc_aircraft import FGVCAircraft
 from .flickr import Flickr30k, Flickr8k
 from .flowers102 import Flowers102
-from .folder import DatasetFolder, ImageFolder
+from .folder import DatasetFolder, ImageFolder, UnlabeledImageDataset
 from .food101 import Food101
 from .gtsrb import GTSRB
 from .hmdb51 import HMDB51
@@ -131,6 +131,7 @@ __all__ = (
     "ETH3DStereo",
     "wrap_dataset_for_transforms_v2",
     "Imagenette",
+    "UnlabeledImageDataset",
 )
 
 
