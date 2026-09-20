@@ -195,7 +195,7 @@ def vertical_flip_bounding_boxes(
         bounding_boxes[:, 1].sub_(canvas_size[0]).neg_()
     elif format == tv_tensors.BoundingBoxFormat.XYXYXYXY:
         bounding_boxes[:, 1::2].sub_(canvas_size[0]).neg_()
-        bounding_boxes = bounding_boxes[:, [2, 3, 0, 1, 6, 7, 4, 5]]
+        bounding_boxes = bounding_boxes[:, [6, 7, 4, 5, 2, 3, 0, 1]]
     elif format == tv_tensors.BoundingBoxFormat.XYWHR:
         angle_rad = bounding_boxes[:, 4].mul(torch.pi).div(180)
         bounding_boxes[:, 1].sub_(bounding_boxes[:, 2].mul(angle_rad.sin())).sub_(canvas_size[0]).neg_()
