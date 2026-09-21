@@ -5670,6 +5670,18 @@ class TestNormalize:
             check_sample_input=self._sample_input_adapter,
         )
 
+    def test_transform_accepts_tensor_statistics(self):
+        mean = torch.tensor(self.MEAN)
+        std = torch.tensor(self.STD)
+        transform = transforms.Normalize(mean=mean, std=std)
+
+        assert transform.mean is mean
+        assert transform.std is std
+        image = make_image(dtype=torch.float32)
+        actual = transform(image)
+        expected = F.normalize_image(image, mean=mean, std=std)
+        assert_equal(actual, expected)
+
     def _reference_normalize_image(self, image, *, mean, std):
         image = image.numpy()
         mean, std = (np.array(stat, dtype=image.dtype).reshape((-1, 1, 1)) for stat in [mean, std])
