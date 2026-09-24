@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import PIL.Image
 import torch
@@ -13,7 +13,12 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import _convert_bounding_box_format
 
-from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
+from ._utils import _get_kernel, _import_cvcuda, _is_cvcuda_available, _register_kernel_internal, is_pure_tensor
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 
 def normalize(
@@ -338,6 +343,101 @@ def to_dtype_video(video: torch.Tensor, dtype: torch.dtype = torch.float, scale:
 def _to_dtype_tensor_dispatch(inpt: torch.Tensor, dtype: torch.dtype, scale: bool = False) -> torch.Tensor:
     # We don't need to unwrap and rewrap here, since TVTensor.to() preserves the type
     return inpt.to(dtype)
+
+
+# cvcuda is only used if it is installed, so we can simply define empty mappings
+_torch_to_cvcuda_dtypes: dict[torch.dtype, "cvcuda.Type"] = {}
+_cvcuda_to_torch_dtypes: dict["cvcuda.Type", torch.dtype] = {}
+
+
+def _to_dtype_image_cvcuda(
+    inpt: "cvcuda.Tensor",
+    dtype: torch.dtype = torch.float,
+    scale: bool = False,
+) -> "cvcuda.Tensor":
+    """
+    Convert the dtype of a CV-CUDA tensor, based on a torch.dtype.
+
+    Args:
+        inpt: The CV-CUDA tensor to convert the dtype of.
+        dtype: The torch.dtype to convert the dtype to.
+        scale: Whether to scale the values to the new dtype.
+            There are four cases for the scaling setup:
+            1. float -> float
+            2. int -> int
+            3. float -> int
+            4. int -> float
+            If scale is True, the values will be scaled to the new dtype.
+            If scale is False, the values will not be scaled.
+            The scale values for float -> float are 1.0 and 0.0 respectively.
+            The scale values for int -> int are 2^(bit_diff) of the new dtype.
+            Where bit_diff is the difference in the number of bits of the new dtype and the input dtype.
+            The scale values for float -> int and int -> float are the maximum value of the new dtype.
+
+    Returns:
+        out (cvcuda.Tensor): The CV-CUDA tensor with the converted dtype.
+
+    """
+    cvcuda = _import_cvcuda()
+
+    if not _torch_to_cvcuda_dtypes:
+        _torch_to_cvcuda_dtypes[torch.uint8] = cvcuda.Type.U8
+        _torch_to_cvcuda_dtypes[torch.uint16] = cvcuda.Type.U16
+        _torch_to_cvcuda_dtypes[torch.uint32] = cvcuda.Type.U32
+        _torch_to_cvcuda_dtypes[torch.uint64] = cvcuda.Type.U64
+        _torch_to_cvcuda_dtypes[torch.int8] = cvcuda.Type.S8
+        _torch_to_cvcuda_dtypes[torch.int16] = cvcuda.Type.S16
+        _torch_to_cvcuda_dtypes[torch.int32] = cvcuda.Type.S32
+        _torch_to_cvcuda_dtypes[torch.int64] = cvcuda.Type.S64
+        _torch_to_cvcuda_dtypes[torch.float32] = cvcuda.Type.F32
+        _torch_to_cvcuda_dtypes[torch.float64] = cvcuda.Type.F64
+
+    if not _cvcuda_to_torch_dtypes:
+        for k, v in _torch_to_cvcuda_dtypes.items():
+            _cvcuda_to_torch_dtypes[v] = k
+
+    dtype_in = _cvcuda_to_torch_dtypes.get(inpt.dtype)
+    cvc_dtype = _torch_to_cvcuda_dtypes.get(dtype)
+    if dtype_in is None or cvc_dtype is None:
+        raise ValueError(f"No torch or cvcuda dtype found for dtype {dtype} or {inpt.dtype}")
+
+    # torchvision will overflow the values of uint16 when converting down to uint8 without scale
+    # example: 300 -> 255 (cvcuda) vs 300 mod 256 = 44 (torchvision)
+    # since it is not equivalent, raise an error for unsupported behavior
+    # the workaround could be using torch for dtype conversion directly via zero-copy
+    if dtype_in == torch.uint16 and dtype == torch.uint8 and not scale:
+        raise ValueError("uint16 to uint8 conversion without scale is not supported for CV-CUDA.")
+
+    scale_val, offset = 1.0, 0.0
+    if scale:
+        in_dtype_float = dtype_in.is_floating_point
+        out_dtype_float = dtype.is_floating_point
+
+        if in_dtype_float and out_dtype_float:
+            scale_val, offset = 1.0, 0.0
+        elif not in_dtype_float and not out_dtype_float:
+            in_bits = torch.iinfo(dtype_in).bits
+            out_bits = torch.iinfo(dtype).bits
+            scale_val = float(2 ** (out_bits - in_bits))
+            offset = 0.0
+        elif in_dtype_float and not out_dtype_float:
+            # Mirror the scaling factor which torchvision uses
+            eps = 1e-3
+            max_val = float(_max_value(dtype))
+            scale_val, offset = max_val + 1.0 - eps, 0.0
+        else:
+            scale_val, offset = 1.0 / float(_max_value(dtype_in)), 0.0
+
+    return cvcuda.convertto(
+        inpt,
+        dtype=cvc_dtype,
+        scale=scale_val,
+        offset=offset,
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(to_dtype, _import_cvcuda().Tensor)(_to_dtype_image_cvcuda)
 
 
 def sanitize_bounding_boxes(
