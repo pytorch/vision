@@ -170,7 +170,7 @@ def meta_nms(dets, scores, iou_threshold):
         lambda: f"boxes and scores should have same number of elements in dimension 0, got {dets.size(0)} and {scores.size(0)}",
     )
     ctx = torch._custom_ops.get_ctx()
-    num_to_keep = ctx.create_unbacked_symint()
+    num_to_keep = ctx.new_dynamic_size(min=0)
     return dets.new_empty(num_to_keep, dtype=torch.long)
 
 

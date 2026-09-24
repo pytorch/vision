@@ -182,7 +182,7 @@ def _multiscale_roi_align(
 
     levels = mapper(boxes)
 
-    num_rois = len(rois)
+    num_rois = rois.shape[0]
     num_channels = x_filtered[0].shape[1]
 
     dtype, device = x_filtered[0].dtype, x_filtered[0].device
