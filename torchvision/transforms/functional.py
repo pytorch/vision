@@ -164,7 +164,7 @@ def to_tensor(pic: Union[PILImage, np.ndarray]) -> Tensor:
         return torch.from_numpy(nppic).to(dtype=default_float_dtype)
 
     # handle PIL Image
-    mode_to_nptype = {"I": np.int32, "I;16" if sys.byteorder == "little" else "I;16B": np.int16, "F": np.float32}
+    mode_to_nptype = {"I": np.int32, "I;16" if sys.byteorder == "little" else "I;16B": np.uint16, "F": np.float32}
     img = torch.from_numpy(np.array(pic, mode_to_nptype.get(pic.mode, np.uint8), copy=True))
 
     if pic.mode == "1":
