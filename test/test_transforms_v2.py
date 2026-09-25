@@ -4860,6 +4860,28 @@ class TestPad:
 
         assert_equal(actual, expected)
 
+    @pytest.mark.parametrize(
+        ("padding_mode", "fill"),
+        [
+            ("constant", 7),
+            ("edge", None),
+            ("reflect", None),
+            ("symmetric", None),
+            ("constant", [1, 2, 3]),
+        ],
+    )
+    @pytest.mark.parametrize("fn", [F.pad, F.pad_image])
+    def test_channels_last_memory_format(self, padding_mode, fill, fn):
+        image = torch.arange(2 * 3 * 4 * 5, dtype=torch.float32).reshape(2, 3, 4, 5)
+        image = image.to(memory_format=torch.channels_last)
+        padding = [1, 1, 1, 1]
+
+        actual = fn(image, padding=padding, fill=fill, padding_mode=padding_mode)
+        expected = F.pad(image.contiguous(), padding=padding, fill=fill, padding_mode=padding_mode)
+
+        torch.testing.assert_close(actual, expected)
+        assert actual.is_contiguous(memory_format=torch.channels_last)
+
     def _reference_pad_bounding_boxes(self, bounding_boxes, *, padding):
         if isinstance(padding, int):
             padding = [padding]
