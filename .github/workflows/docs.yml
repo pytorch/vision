@@ -131,4 +131,13 @@ jobs:
         git config user.email 'soumith+bot@pytorch.org'
         git config http.postBuffer 524288000
         git commit -m "auto-generating sphinx docs" || true
-        git push
+
+        # The credentials persisted by actions/checkout are scoped (via
+        # includeIf.gitdir) to the runner-host checkout path and are NOT
+        # visible to git inside this container (repo is mounted at
+        # /pytorch/vision), so a bare `git push` is unauthenticated and
+        # hangs on a credential prompt until the job times out. Push with
+        # an explicit token and disable interactive prompts so any auth
+        # failure surfaces immediately instead of hanging.
+        export GIT_TERMINAL_PROMPT=0
+        git push "https://x-access-token:${SECRET_GITHUB_TOKEN}@github.com/pytorch/vision" HEAD:gh-pages
