@@ -1589,6 +1589,30 @@ class TestBoxConvert:
         scripted_cxcywh = scripted_fn(box_tensor, "xyxy", "cxcywh")
         torch.testing.assert_close(scripted_cxcywh, box_cxcywh)
 
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    @pytest.mark.parametrize(
+        ("in_fmt", "out_fmt"),
+        [
+            ("xyxy", "xywh"),
+            ("xywh", "xyxy"),
+            ("xyxy", "cxcywh"),
+            ("cxcywh", "xyxy"),
+            ("xywh", "cxcywh"),
+            ("cxcywh", "xywh"),
+        ],
+    )
+    def test_agrees_with_convert_bounding_box_format(self, dtype, in_fmt, out_fmt):
+        from torchvision.transforms.v2.functional import convert_bounding_box_format
+
+        boxes_xyxy = torch.tensor(
+            [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]],
+            dtype=dtype,
+        )
+        boxes = boxes_xyxy if in_fmt == "xyxy" else ops.box_convert(boxes_xyxy, in_fmt="xyxy", out_fmt=in_fmt)
+        ops_out = ops.box_convert(boxes, in_fmt=in_fmt, out_fmt=out_fmt)
+        v2_out = convert_bounding_box_format(boxes, old_format=in_fmt, new_format=out_fmt)
+        torch.testing.assert_close(ops_out, v2_out)
+
 
 class TestBoxArea:
     def area_check(self, box, expected, fmt="xyxy", atol=1e-4):

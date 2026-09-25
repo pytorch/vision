@@ -4420,6 +4420,28 @@ class TestConvertBoundingBoxFormat:
 
         torch.testing.assert_close(actual, expected)
 
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    @pytest.mark.parametrize(
+        ("old_format", "new_format"),
+        list(
+            itertools.permutations(
+                [
+                    tv_tensors.BoundingBoxFormat.XYXY,
+                    tv_tensors.BoundingBoxFormat.XYWH,
+                    tv_tensors.BoundingBoxFormat.CXCYWH,
+                ],
+                2,
+            )
+        ),
+    )
+    def test_agrees_with_ops_box_convert(self, dtype, old_format, new_format):
+        boxes = make_bounding_boxes(format=old_format, dtype=dtype).as_subclass(torch.Tensor)
+        ops_out = torchvision.ops.box_convert(
+            boxes, in_fmt=old_format.name.lower(), out_fmt=new_format.name.lower()
+        )
+        v2_out = F.convert_bounding_box_format(boxes, old_format=old_format, new_format=new_format)
+        torch.testing.assert_close(ops_out, v2_out)
+
     def test_errors(self):
         input_tv_tensor = make_bounding_boxes()
         input_pure_tensor = input_tv_tensor.as_subclass(torch.Tensor)
