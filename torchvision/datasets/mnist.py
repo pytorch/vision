@@ -36,6 +36,9 @@ class MNIST(VisionDataset):
 
     mirrors = [
         "https://ossci-datasets.s3.amazonaws.com/mnist/",
+        # yann.lecun.com has no TLS listener (connections to port 443 are refused), so this
+        # fallback mirror cannot be moved to https. It currently 404s for these files anyway;
+        # the checksummed https mirror above is the working source.
         "http://yann.lecun.com/exdb/mnist/",
     ]
 
@@ -218,7 +221,7 @@ class FashionMNIST(MNIST):
             downloaded again.
     """
 
-    mirrors = ["http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"]
+    mirrors = ["https://fashion-mnist.s3.eu-central-1.amazonaws.com/"]
 
     resources = [
         ("train-images-idx3-ubyte.gz", "8d4fb7e6c68d591d4c3dfef9ec88bf0d"),
@@ -246,7 +249,7 @@ class KMNIST(MNIST):
             downloaded again.
     """
 
-    mirrors = ["http://codh.rois.ac.jp/kmnist/dataset/kmnist/"]
+    mirrors = ["https://codh.rois.ac.jp/kmnist/dataset/kmnist/"]
 
     resources = [
         ("train-images-idx3-ubyte.gz", "bdb82020997e1d708af4cf47b453dcf7"),

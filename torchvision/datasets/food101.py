@@ -32,7 +32,7 @@ class Food101(VisionDataset):
             ``torchvision.io.decode_image`` for decoding image data into tensors directly.
     """
 
-    _URL = "http://data.vision.ee.ethz.ch/cvl/food-101.tar.gz"
+    _URL = "https://data.vision.ee.ethz.ch/cvl/food-101.tar.gz"
     _MD5 = "85eeb15f3717b99a5da872d97d918f87"
 
     def __init__(
