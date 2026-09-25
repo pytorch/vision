@@ -226,9 +226,11 @@ def gaussian_noise_video(video: torch.Tensor, mean: float = 0.0, sigma: float = 
 
 @_register_kernel_internal(gaussian_noise, PIL.Image.Image)
 def _gaussian_noise_pil(
-    video: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True
+    image: PIL.Image.Image, mean: float = 0.0, sigma: float = 0.1, clip: bool = True
 ) -> PIL.Image.Image:
-    raise ValueError("Gaussian Noise is not implemented for PIL images.")
+    t_img = pil_to_tensor(image)
+    output = gaussian_noise_image(t_img, mean=mean, sigma=sigma, clip=clip)
+    return to_pil_image(output, mode=image.mode)
 
 
 def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
