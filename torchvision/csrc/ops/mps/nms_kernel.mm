@@ -11,9 +11,9 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <tuple>
 #include <vector>
 
-#include "../StableABICompat.h"
 #include "mps_stable_kernels.h"
 
 namespace vision {
@@ -89,7 +89,7 @@ Tensor nms_kernel(
   }
 
   auto order_t = std::get<1>(
-      stable_helpers::sort(scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
+      torch::stable::sort(scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
   auto dets_sorted =
       torch::stable::contiguous(torch::stable::index_select(dets, 0, order_t));
   int64_t dets_num = dets.size(0);

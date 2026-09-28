@@ -195,7 +195,7 @@ Tensor nms_kernel(
         dets, {0}, torch::headeronly::ScalarType::Long);
   }
 
-  auto order_t = std::get<1>(stable_helpers::sort(
+  auto order_t = std::get<1>(torch::stable::sort(
       scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
   auto dets_sorted =
       torch::stable::contiguous(torch::stable::index_select(dets, 0, order_t));

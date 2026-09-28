@@ -1,7 +1,6 @@
 #include <torch/csrc/stable/library.h>
 #include <torch/csrc/stable/ops.h>
 #include <torch/headeronly/core/Dispatch_v2.h>
-#include "../StableABICompat.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -35,7 +34,7 @@ Tensor nms_kernel_impl(
   auto x2_t = torch::stable::contiguous(torch::stable::select(dets, 1, 2));
   auto y2_t = torch::stable::contiguous(torch::stable::select(dets, 1, 3));
 
-  auto order_t = std::get<1>(stable_helpers::sort(
+  auto order_t = std::get<1>(torch::stable::sort(
       scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
 
   auto ndets = dets.size(0);
