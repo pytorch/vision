@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -420,12 +420,12 @@
 
 
 <div class="viewcode-block" id="Imagenette"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Imagenette.html#torchvision.datasets.Imagenette">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Imagenette</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`Imagenette &lt;https://github.com/fastai/imagenette#imagenette-1&gt;`_ image classification dataset.</span>
+<span class="w">    </span><span class="sd">"""`Imagenette &lt;https://github.com/fastai/imagenette#imagenette-1&gt;`_ image classification dataset.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the Imagenette dataset.</span>
-<span class="sd">        split (string, optional): The dataset split. Supports ``&quot;train&quot;`` (default), and ``&quot;val&quot;``.</span>
-<span class="sd">        size (string, optional): The image size. Supports ``&quot;full&quot;`` (default), ``&quot;320px&quot;``, and ``&quot;160px&quot;``.</span>
+<span class="sd">        split (string, optional): The dataset split. Supports ``"train"`` (default), and ``"val"``.</span>
+<span class="sd">        size (string, optional): The image size. Supports ``"full"`` (default), ``"320px"``, and ``"160px"``.</span>
 <span class="sd">        download (bool, optional): If ``True``, downloads the dataset components and places them in ``root``. Already</span>
 <span class="sd">            downloaded archives are not downloaded again.</span>
 <span class="sd">        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,</span>
@@ -440,31 +440,31 @@
 <span class="sd">        class_to_idx (dict): Dict with items (class name, class index).</span>
 <span class="sd">        wnids (list): List of the WordNet IDs.</span>
 <span class="sd">        wnid_to_idx (dict): Dict with items (WordNet ID, class index).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_ARCHIVES</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;full&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;https://s3.amazonaws.com/fast-ai-imageclas/imagenette2.tgz&quot;</span><span class="p">,</span> <span class="s2">&quot;fe2fc210e6bb7c5664d602c3cd71e612&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;320px&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;https://s3.amazonaws.com/fast-ai-imageclas/imagenette2-320.tgz&quot;</span><span class="p">,</span> <span class="s2">&quot;3df6f0d01a2c9592104656642f5e78a3&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;160px&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;https://s3.amazonaws.com/fast-ai-imageclas/imagenette2-160.tgz&quot;</span><span class="p">,</span> <span class="s2">&quot;e793b78cc4c9e9a4ccc0c1155377a412&quot;</span><span class="p">),</span>
+        <span class="s2">"full"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"https://s3.amazonaws.com/fast-ai-imageclas/imagenette2.tgz"</span><span class="p">,</span> <span class="s2">"fe2fc210e6bb7c5664d602c3cd71e612"</span><span class="p">),</span>
+        <span class="s2">"320px"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"https://s3.amazonaws.com/fast-ai-imageclas/imagenette2-320.tgz"</span><span class="p">,</span> <span class="s2">"3df6f0d01a2c9592104656642f5e78a3"</span><span class="p">),</span>
+        <span class="s2">"160px"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"https://s3.amazonaws.com/fast-ai-imageclas/imagenette2-160.tgz"</span><span class="p">,</span> <span class="s2">"e793b78cc4c9e9a4ccc0c1155377a412"</span><span class="p">),</span>
     <span class="p">}</span>
     <span class="n">_WNID_TO_CLASS</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;n01440764&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;tench&quot;</span><span class="p">,</span> <span class="s2">&quot;Tinca tinca&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;n02102040&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;English springer&quot;</span><span class="p">,</span> <span class="s2">&quot;English springer spaniel&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;n02979186&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;cassette player&quot;</span><span class="p">,),</span>
-        <span class="s2">&quot;n03000684&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;chain saw&quot;</span><span class="p">,</span> <span class="s2">&quot;chainsaw&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;n03028079&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;church&quot;</span><span class="p">,</span> <span class="s2">&quot;church building&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;n03394916&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;French horn&quot;</span><span class="p">,</span> <span class="s2">&quot;horn&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;n03417042&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;garbage truck&quot;</span><span class="p">,</span> <span class="s2">&quot;dustcart&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;n03425413&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;gas pump&quot;</span><span class="p">,</span> <span class="s2">&quot;gasoline pump&quot;</span><span class="p">,</span> <span class="s2">&quot;petrol pump&quot;</span><span class="p">,</span> <span class="s2">&quot;island dispenser&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;n03445777&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;golf ball&quot;</span><span class="p">,),</span>
-        <span class="s2">&quot;n03888257&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;parachute&quot;</span><span class="p">,</span> <span class="s2">&quot;chute&quot;</span><span class="p">),</span>
+        <span class="s2">"n01440764"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"tench"</span><span class="p">,</span> <span class="s2">"Tinca tinca"</span><span class="p">),</span>
+        <span class="s2">"n02102040"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"English springer"</span><span class="p">,</span> <span class="s2">"English springer spaniel"</span><span class="p">),</span>
+        <span class="s2">"n02979186"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"cassette player"</span><span class="p">,),</span>
+        <span class="s2">"n03000684"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"chain saw"</span><span class="p">,</span> <span class="s2">"chainsaw"</span><span class="p">),</span>
+        <span class="s2">"n03028079"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"church"</span><span class="p">,</span> <span class="s2">"church building"</span><span class="p">),</span>
+        <span class="s2">"n03394916"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"French horn"</span><span class="p">,</span> <span class="s2">"horn"</span><span class="p">),</span>
+        <span class="s2">"n03417042"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"garbage truck"</span><span class="p">,</span> <span class="s2">"dustcart"</span><span class="p">),</span>
+        <span class="s2">"n03425413"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"gas pump"</span><span class="p">,</span> <span class="s2">"gasoline pump"</span><span class="p">,</span> <span class="s2">"petrol pump"</span><span class="p">,</span> <span class="s2">"island dispenser"</span><span class="p">),</span>
+        <span class="s2">"n03445777"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"golf ball"</span><span class="p">,),</span>
+        <span class="s2">"n03888257"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"parachute"</span><span class="p">,</span> <span class="s2">"chute"</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
-        <span class="n">size</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;full&quot;</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
+        <span class="n">size</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"full"</span><span class="p">,</span>
         <span class="n">download</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -472,8 +472,8 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="s2">&quot;size&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;full&quot;</span><span class="p">,</span> <span class="s2">&quot;320px&quot;</span><span class="p">,</span> <span class="s2">&quot;160px&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="s2">"size"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"full"</span><span class="p">,</span> <span class="s2">"320px"</span><span class="p">,</span> <span class="s2">"160px"</span><span class="p">])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_md5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ARCHIVES</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_size_root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_url</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span>
@@ -482,14 +482,14 @@
         <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_download</span><span class="p">()</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dataset not found. You can use download=True to download it.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Dataset not found. You can use download=True to download it."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">wnids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wnid_to_idx</span> <span class="o">=</span> <span class="n">find_classes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image_root</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">classes</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_WNID_TO_CLASS</span><span class="p">[</span><span class="n">wnid</span><span class="p">]</span> <span class="k">for</span> <span class="n">wnid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wnids</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">class_to_idx</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">class_name</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">wnid</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wnid_to_idx</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">for</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_WNID_TO_CLASS</span><span class="p">[</span><span class="n">wnid</span><span class="p">]</span>
         <span class="p">}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="n">make_dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image_root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wnid_to_idx</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="s2">&quot;.jpeg&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span> <span class="o">=</span> <span class="n">make_dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image_root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wnid_to_idx</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="s2">".jpeg"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="o">=</span> <span class="n">loader</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>

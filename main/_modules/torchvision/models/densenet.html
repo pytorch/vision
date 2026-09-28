@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -429,15 +429,15 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;DenseNet&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;DenseNet121_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;DenseNet161_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;DenseNet169_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;DenseNet201_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;densenet121&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;densenet161&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;densenet169&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;densenet201&quot;</span><span class="p">,</span>
+    <span class="s2">"DenseNet"</span><span class="p">,</span>
+    <span class="s2">"DenseNet121_Weights"</span><span class="p">,</span>
+    <span class="s2">"DenseNet161_Weights"</span><span class="p">,</span>
+    <span class="s2">"DenseNet169_Weights"</span><span class="p">,</span>
+    <span class="s2">"DenseNet201_Weights"</span><span class="p">,</span>
+    <span class="s2">"densenet121"</span><span class="p">,</span>
+    <span class="s2">"densenet161"</span><span class="p">,</span>
+    <span class="s2">"densenet169"</span><span class="p">,</span>
+    <span class="s2">"densenet201"</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -494,7 +494,7 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_efficient</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">any_requires_grad</span><span class="p">(</span><span class="n">prev_features</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
-                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Memory Efficient not supported in JIT&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">"Memory Efficient not supported in JIT"</span><span class="p">)</span>
 
             <span class="n">bottleneck_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_checkpoint_bottleneck</span><span class="p">(</span><span class="n">prev_features</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -527,7 +527,7 @@
                 <span class="n">drop_rate</span><span class="o">=</span><span class="n">drop_rate</span><span class="p">,</span>
                 <span class="n">memory_efficient</span><span class="o">=</span><span class="n">memory_efficient</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;denselayer</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">layer</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">"denselayer</span><span class="si">%d</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">layer</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">init_features</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="n">init_features</span><span class="p">]</span>
@@ -547,8 +547,8 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">DenseNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Densenet-BC model class, based on</span>
-<span class="sd">    `&quot;Densely Connected Convolutional Networks&quot; &lt;https://arxiv.org/pdf/1608.06993.pdf&gt;`_.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Densenet-BC model class, based on</span>
+<span class="sd">    `"Densely Connected Convolutional Networks" &lt;https://arxiv.org/pdf/1608.06993.pdf&gt;`_.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        growth_rate (int) - how many filters to add each layer (`k` in paper)</span>
@@ -559,8 +559,8 @@
 <span class="sd">        drop_rate (float) - dropout rate after each dense layer</span>
 <span class="sd">        num_classes (int) - number of classification classes</span>
 <span class="sd">        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,</span>
-<span class="sd">          but slower. Default: *False*. See `&quot;paper&quot; &lt;https://arxiv.org/pdf/1707.06990.pdf&gt;`_.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">          but slower. Default: *False*. See `"paper" &lt;https://arxiv.org/pdf/1707.06990.pdf&gt;`_.</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -580,10 +580,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
             <span class="n">OrderedDict</span><span class="p">(</span>
                 <span class="p">[</span>
-                    <span class="p">(</span><span class="s2">&quot;conv0&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_init_features</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)),</span>
-                    <span class="p">(</span><span class="s2">&quot;norm0&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">num_init_features</span><span class="p">)),</span>
-                    <span class="p">(</span><span class="s2">&quot;relu0&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)),</span>
-                    <span class="p">(</span><span class="s2">&quot;pool0&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="s2">"conv0"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_init_features</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="s2">"norm0"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">num_init_features</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="s2">"relu0"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)),</span>
+                    <span class="p">(</span><span class="s2">"pool0"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span>
                 <span class="p">]</span>
             <span class="p">)</span>
         <span class="p">)</span>
@@ -599,15 +599,15 @@
                 <span class="n">drop_rate</span><span class="o">=</span><span class="n">drop_rate</span><span class="p">,</span>
                 <span class="n">memory_efficient</span><span class="o">=</span><span class="n">memory_efficient</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;denseblock</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">block</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">"denseblock</span><span class="si">%d</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">block</span><span class="p">)</span>
             <span class="n">num_features</span> <span class="o">=</span> <span class="n">num_features</span> <span class="o">+</span> <span class="n">num_layers</span> <span class="o">*</span> <span class="n">growth_rate</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">block_config</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">trans</span> <span class="o">=</span> <span class="n">_Transition</span><span class="p">(</span><span class="n">num_input_features</span><span class="o">=</span><span class="n">num_features</span><span class="p">,</span> <span class="n">num_output_features</span><span class="o">=</span><span class="n">num_features</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;transition</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">trans</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">"transition</span><span class="si">%d</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">trans</span><span class="p">)</span>
                 <span class="n">num_features</span> <span class="o">=</span> <span class="n">num_features</span> <span class="o">//</span> <span class="mi">2</span>
 
         <span class="c1"># Final batch norm</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;norm5&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">num_features</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">"norm5"</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">num_features</span><span class="p">))</span>
 
         <span class="c1"># Linear layer</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">num_features</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">)</span>
@@ -632,12 +632,12 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_load_state_dict</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">WeightsEnum</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="c1"># &#39;.&#39;s are no longer allowed in module names, but previous _DenseLayer</span>
-    <span class="c1"># has keys &#39;norm.1&#39;, &#39;relu.1&#39;, &#39;conv.1&#39;, &#39;norm.2&#39;, &#39;relu.2&#39;, &#39;conv.2&#39;.</span>
+    <span class="c1"># '.'s are no longer allowed in module names, but previous _DenseLayer</span>
+    <span class="c1"># has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.</span>
     <span class="c1"># They are also in the checkpoints in model_urls. This pattern is used</span>
     <span class="c1"># to find such keys.</span>
     <span class="n">pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
-        <span class="sa">r</span><span class="s2">&quot;^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$&quot;</span>
+        <span class="sa">r</span><span class="s2">"^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$"</span>
     <span class="p">)</span>
 
     <span class="n">state_dict</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span> <span class="n">check_hash</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -659,7 +659,7 @@
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DenseNet</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"num_classes"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">]))</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="n">DenseNet</span><span class="p">(</span><span class="n">growth_rate</span><span class="p">,</span> <span class="n">block_config</span><span class="p">,</span> <span class="n">num_init_features</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -670,28 +670,28 @@
 
 
 <span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">29</span><span class="p">,</span> <span class="mi">29</span><span class="p">),</span>
-    <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
-    <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/116&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights are ported from LuaTorch.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s2">"min_size"</span><span class="p">:</span> <span class="p">(</span><span class="mi">29</span><span class="p">,</span> <span class="mi">29</span><span class="p">),</span>
+    <span class="s2">"categories"</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
+    <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/pull/116"</span><span class="p">,</span>
+    <span class="s2">"_docs"</span><span class="p">:</span> <span class="s2">"""These weights are ported from LuaTorch."""</span><span class="p">,</span>
 <span class="p">}</span>
 
 
 <div class="viewcode-block" id="DenseNet121_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.densenet121.html#torchvision.models.DenseNet121_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">DenseNet121_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/densenet121-a639ec97.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/densenet121-a639ec97.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">7978856</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">74.434</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">91.972</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">7978856</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">74.434</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">91.972</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">2.834</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">30.845</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">2.834</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">30.845</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
@@ -699,19 +699,19 @@
 
 <div class="viewcode-block" id="DenseNet161_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.densenet161.html#torchvision.models.DenseNet161_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">DenseNet161_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/densenet161-8d451a50.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/densenet161-8d451a50.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">28681000</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">77.138</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.560</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">28681000</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">77.138</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">93.560</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">7.728</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">110.369</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">7.728</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">110.369</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
@@ -719,19 +719,19 @@
 
 <div class="viewcode-block" id="DenseNet169_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.densenet169.html#torchvision.models.DenseNet169_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">DenseNet169_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/densenet169-b2777c0a.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/densenet169-b2777c0a.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">14149480</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">75.600</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">92.806</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">14149480</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">75.600</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">92.806</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">3.36</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">54.708</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">3.36</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">54.708</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
@@ -739,28 +739,28 @@
 
 <div class="viewcode-block" id="DenseNet201_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.densenet201.html#torchvision.models.DenseNet201_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">DenseNet201_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/densenet201-c1103571.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/densenet201-c1103571.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">20013928</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">76.896</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.370</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">20013928</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">76.896</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">93.370</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">4.291</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">77.373</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">4.291</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">77.373</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
 <div class="viewcode-block" id="densenet121"><a class="viewcode-back" href="../../../models/generated/torchvision.models.densenet121.html#torchvision.models.densenet121">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
-<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">DenseNet121_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">DenseNet121_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">densenet121</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DenseNet121_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DenseNet</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Densenet-121 model from</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Densenet-121 model from</span>
 <span class="sd">    `Densely Connected Convolutional Networks &lt;https://arxiv.org/abs/1608.06993&gt;`_.</span>
 
 <span class="sd">    Args:</span>
@@ -777,16 +777,16 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.DenseNet121_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">DenseNet121_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_densenet</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span> <span class="mi">64</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="densenet161"><a class="viewcode-back" href="../../../models/generated/torchvision.models.densenet161.html#torchvision.models.densenet161">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
-<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">DenseNet161_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">DenseNet161_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">densenet161</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DenseNet161_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DenseNet</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Densenet-161 model from</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Densenet-161 model from</span>
 <span class="sd">    `Densely Connected Convolutional Networks &lt;https://arxiv.org/abs/1608.06993&gt;`_.</span>
 
 <span class="sd">    Args:</span>
@@ -803,16 +803,16 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.DenseNet161_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">DenseNet161_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_densenet</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">36</span><span class="p">,</span> <span class="mi">24</span><span class="p">),</span> <span class="mi">96</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="densenet169"><a class="viewcode-back" href="../../../models/generated/torchvision.models.densenet169.html#torchvision.models.densenet169">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
-<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">DenseNet169_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">DenseNet169_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">densenet169</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DenseNet169_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DenseNet</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Densenet-169 model from</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Densenet-169 model from</span>
 <span class="sd">    `Densely Connected Convolutional Networks &lt;https://arxiv.org/abs/1608.06993&gt;`_.</span>
 
 <span class="sd">    Args:</span>
@@ -829,16 +829,16 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.DenseNet169_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">DenseNet169_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_densenet</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="mi">64</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="densenet201"><a class="viewcode-back" href="../../../models/generated/torchvision.models.densenet201.html#torchvision.models.densenet201">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
-<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">DenseNet201_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">DenseNet201_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">densenet201</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DenseNet201_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DenseNet</span><span class="p">:</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Densenet-201 model from</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Densenet-201 model from</span>
 <span class="sd">    `Densely Connected Convolutional Networks &lt;https://arxiv.org/abs/1608.06993&gt;`_.</span>
 
 <span class="sd">    Args:</span>
@@ -855,7 +855,7 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.DenseNet201_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">DenseNet201_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_densenet</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="mi">64</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>

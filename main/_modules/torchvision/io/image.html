@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -411,9 +411,9 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.io.image</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
@@ -421,24 +421,58 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
 
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">_load_library</span><span class="p">(</span><span class="s2">&quot;image&quot;</span><span class="p">)</span>
-<span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="n">warn</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;Failed to load image Python extension: &#39;</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;If you don&#39;t plan on using image functionality from `torchvision.io`, you can ignore this warning. &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;Otherwise, there might be something wrong with your environment. &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;Did you have `libjpeg` or `libpng` installed before building `torchvision` from source?&quot;</span>
-    <span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_has_image_ops</span><span class="p">():</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">if</span> <span class="n">_load_library</span><span class="p">(</span><span class="s2">"image_stable"</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_has_image_ops</span><span class="p">():</span>  <span class="c1"># noqa: F811</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="n">_DEPRECATION_MSG</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"The image decoding and encoding capabilities of TorchVision are deprecated "</span>
+    <span class="s2">"since torchvision 0.29 and will be removed in a future release. They are "</span>
+    <span class="s2">"superseded by the more complete decoders and encoders of TorchCodec (from "</span>
+    <span class="s2">"torchcodec 0.16). Please see "</span>
+    <span class="s2">"https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html "</span>
+    <span class="s2">"on how to migrate your code."</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_warn_deprecated</span><span class="p">():</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">_DEPRECATION_MSG</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_assert_has_image_ops</span><span class="p">():</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_has_image_ops</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">"Couldn't load the image extension. "</span>
+            <span class="s2">"If you built torchvision from source, make sure libjpeg and libpng were found. "</span>
+            <span class="s2">"Set TORCHVISION_WARN_WHEN_EXTENSION_LOADING_FAILS=1 and retry to get more details."</span>
+        <span class="p">)</span>
 
 
 <div class="viewcode-block" id="ImageReadMode"><a class="viewcode-back" href="../../../generated/torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ImageReadMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Allow automatic conversion to RGB, RGBA, etc while decoding.</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
+<span class="sd">    Allow automatic conversion to RGB, RGBA, etc while decoding.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    .. note::</span>
 
-<span class="sd">        You don&#39;t need to use this struct, you can just pass strings to all</span>
-<span class="sd">        ``mode`` parameters, e.g. ``mode=&quot;RGB&quot;``.</span>
+<span class="sd">        You don't need to use this struct, you can just pass strings to all</span>
+<span class="sd">        ``mode`` parameters, e.g. ``mode="RGB"``.</span>
 
 <span class="sd">    The different available modes are the following.</span>
 
@@ -450,9 +484,9 @@
 
 <span class="sd">    .. note::</span>
 
-<span class="sd">        Some decoders won&#39;t support all possible values, e.g. GRAY and</span>
+<span class="sd">        Some decoders won't support all possible values, e.g. GRAY and</span>
 <span class="sd">        GRAY_ALPHA are only supported for PNG and JPEG images.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">UNCHANGED</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">GRAY</span> <span class="o">=</span> <span class="mi">1</span>
@@ -463,32 +497,59 @@
 
 
 <div class="viewcode-block" id="read_file"><a class="viewcode-back" href="../../../generated/torchvision.io.read_file.html#torchvision.io.read_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">read_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
 <span class="sd">    Return the bytes contents of a file as a uint8 1D Tensor.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        path (str or ``pathlib.Path``): the path to the file to be read</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        data (Tensor)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">read_file</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
+    <span class="n">_assert_has_image_ops</span><span class="p">()</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">data</span></div>
 
 
-<div class="viewcode-block" id="write_file"><a class="viewcode-back" href="../../../generated/torchvision.io.write_file.html#torchvision.io.write_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="write_file"><a class="viewcode-back" href="../../../generated/torchvision.io.write_file.html#torchvision.io.write_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
 <span class="sd">    Write the content of an uint8 1D tensor to a file.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        filename (str or ``pathlib.Path``): the path to the file to be written</span>
 <span class="sd">        data (Tensor): the contents to be written to the output file</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        data (Tensor): the input data, returned as-is.</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">write_file</span><span class="p">)</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">write_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span></div>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
+    <span class="n">_assert_has_image_ops</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">write_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="decode_png"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_png.html#torchvision.io.decode_png">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_png</span><span class="p">(</span>
@@ -496,8 +557,18 @@
     <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
     <span class="n">apply_exif_orientation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
 <span class="sd">    Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    The values of the output tensor are in uint8 in [0, 255] for most cases. If</span>
 <span class="sd">    the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]</span>
@@ -510,17 +581,19 @@
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the PNG image.</span>
-<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. &quot;RGB&quot;.</span>
-<span class="sd">            Default is &quot;UNCHANGED&quot;.  See :class:`~torchvision.io.ImageReadMode`</span>
+<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".</span>
+<span class="sd">            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`</span>
 <span class="sd">            for available modes.</span>
 <span class="sd">        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.</span>
 <span class="sd">            Default: False.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        output (Tensor[image_channels, image_height, image_width])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_png</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
+    <span class="n">_assert_has_image_ops</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">mode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_png</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="p">)</span>
@@ -528,9 +601,19 @@
 
 
 <div class="viewcode-block" id="encode_png"><a class="viewcode-back" href="../../../generated/torchvision.io.encode_png.html#torchvision.io.encode_png">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">encode_png</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
 <span class="sd">    Takes an input tensor in CHW layout and returns a buffer with the contents</span>
 <span class="sd">    of its corresponding PNG file.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[channels, image_height, image_width]): int8 image tensor of</span>
@@ -541,17 +624,29 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Tensor[1]: A one dimensional int8 tensor that contains the raw bytes of the</span>
 <span class="sd">            PNG file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">encode_png</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
+    <span class="n">_assert_has_image_ops</span><span class="p">()</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">encode_png</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">output</span></div>
 
 
-<div class="viewcode-block" id="write_png"><a class="viewcode-back" href="../../../generated/torchvision.io.write_png.html#torchvision.io.write_png">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_png</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="write_png"><a class="viewcode-back" href="../../../generated/torchvision.io.write_png.html#torchvision.io.write_png">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_png</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
 <span class="sd">    Takes an input tensor in CHW layout (or HW in the case of grayscale images)</span>
 <span class="sd">    and saves it in a PNG file.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[channels, image_height, image_width]): int8 image tensor of</span>
@@ -559,20 +654,35 @@
 <span class="sd">        filename (str or ``pathlib.Path``): Path to save the image.</span>
 <span class="sd">        compression_level (int): Compression factor for the resulting file, it must be a number</span>
 <span class="sd">            between 0 and 9. Default: 6</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        output (Tensor): the PNG-encoded data that was written to the file.</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">write_png</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">encode_png</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">compression_level</span><span class="p">)</span>
-    <span class="n">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="decode_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_jpeg.html#torchvision.io.decode_jpeg">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_jpeg</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
-    <span class="n">device</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"cpu"</span><span class="p">,</span>
     <span class="n">apply_exif_orientation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
+<span class="sd">    Decode JPEG image(s) into 3D RGB or grayscale Tensor(s), on CPU or CUDA.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    The values of the output tensor are uint8 between 0 and 255.</span>
 
@@ -586,19 +696,15 @@
 <span class="sd">        input (Tensor[1] or list[Tensor[1]]): a (list of) one dimensional uint8 tensor(s) containing</span>
 <span class="sd">            the raw bytes of the JPEG image. The tensor(s) must be on CPU,</span>
 <span class="sd">            regardless of the ``device`` parameter.</span>
-<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. &quot;RGB&quot;.</span>
-<span class="sd">            Default is &quot;UNCHANGED&quot;.  See :class:`~torchvision.io.ImageReadMode`</span>
+<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".</span>
+<span class="sd">            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`</span>
 <span class="sd">            for available modes.</span>
 <span class="sd">        device (str or torch.device): The device on which the decoded image will</span>
 <span class="sd">            be stored. If a cuda device is specified, the image will be decoded</span>
-<span class="sd">            with `nvjpeg &lt;https://developer.nvidia.com/nvjpeg&gt;`_. This is only</span>
-<span class="sd">            supported for CUDA version &gt;= 10.1</span>
+<span class="sd">            with `nvjpeg &lt;https://developer.nvidia.com/nvjpeg&gt;`_.</span>
 
 <span class="sd">            .. betastatus:: device parameter</span>
 
-<span class="sd">            .. warning::</span>
-<span class="sd">                There is a memory leak in the nvjpeg library for CUDA versions &lt; 11.6.</span>
-<span class="sd">                Make sure to rely on CUDA 11.6 or above before using ``device=&quot;cuda&quot;``.</span>
 <span class="sd">        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.</span>
 <span class="sd">            Default: False. Only implemented for JPEG format on CPU.</span>
 
@@ -608,9 +714,11 @@
 <span class="sd">            ``output.device`` will be set to the specified ``device``</span>
 
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_jpeg</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
+    <span class="n">_assert_has_image_ops</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -618,20 +726,20 @@
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input list must contain at least one element&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Input list must contain at least one element"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All elements of the input list must be tensors.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cpu&quot;</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input list must contain tensors on CPU.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"All elements of the input list must be tensors."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"cpu"</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Input list must contain tensors on CPU."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"cuda"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_jpegs_cuda</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_jpeg</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="p">)</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">]</span>
 
     <span class="k">else</span><span class="p">:</span>  <span class="c1"># input is tensor</span>
-        <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">&quot;cpu&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input tensor must be a CPU tensor&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="s2">"cpu"</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Input tensor must be a CPU tensor"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"cuda"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_jpegs_cuda</span><span class="p">([</span><span class="nb">input</span><span class="p">],</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">device</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="p">)</span></div>
@@ -640,7 +748,18 @@
 <div class="viewcode-block" id="encode_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">encode_jpeg</span><span class="p">(</span>
     <span class="nb">input</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">75</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
+<span class="sd">    Encode RGB tensor(s) into raw encoded jpeg bytes, on CPU or CUDA.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">        Passing a list of CUDA tensors is more efficient than repeated individual calls to ``encode_jpeg``.</span>
@@ -654,28 +773,40 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        output (Tensor[1] or list[Tensor[1]]): A (list of) one dimensional uint8 tensor(s) that contain the raw bytes of the JPEG file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">encode_jpeg</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
+    <span class="n">_assert_has_image_ops</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">quality</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">quality</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Image quality should be a positive number between 1 and 100&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Image quality should be a positive number between 1 and 100"</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">input</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;encode_jpeg requires at least one input tensor when a list is passed&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">input</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"encode_jpeg requires at least one input tensor when a list is passed"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">input</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"cuda"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">encode_jpegs_cuda</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">quality</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">encode_jpeg</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">quality</span><span class="p">)</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>  <span class="c1"># single input tensor</span>
-        <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"cuda"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">encode_jpegs_cuda</span><span class="p">([</span><span class="nb">input</span><span class="p">],</span> <span class="n">quality</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">encode_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">quality</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="write_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">75</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="write_jpeg"><a class="viewcode-back" href="../../../generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">75</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
 <span class="sd">    Takes an input tensor in CHW layout and saves it in a JPEG file.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[channels, image_height, image_width]): int8 image tensor of ``c``</span>
@@ -683,12 +814,16 @@
 <span class="sd">        filename (str or ``pathlib.Path``): Path to save the image.</span>
 <span class="sd">        quality (int): Quality of the resulting JPEG file, it must be a number</span>
 <span class="sd">            between 1 and 100. Default: 75</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        output (Tensor): the JPEG-encoded data that was written to the file.</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">write_jpeg</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">encode_jpeg</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">quality</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>  <span class="c1"># Needed for torchscript</span>
-    <span class="n">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">write_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="decode_image"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_image.html#torchvision.io.decode_image">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_image</span><span class="p">(</span>
@@ -696,7 +831,18 @@
     <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
     <span class="n">apply_exif_orientation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode an image into a uint8 tensor, from a path or from raw encoded bytes.</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
+<span class="sd">    Decode an image into a uint8 tensor, from a path or from raw encoded bytes.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    Currently supported image formats are jpeg, png, gif and webp.</span>
 
@@ -711,7 +857,7 @@
 
 <span class="sd">    .. note::</span>
 
-<span class="sd">        ``decode_image()`` doesn&#39;t work yet on AVIF or HEIC images. For these</span>
+<span class="sd">        ``decode_image()`` doesn't work yet on AVIF or HEIC images. For these</span>
 <span class="sd">        formats, directly call  :func:`~torchvision.io.decode_avif` or</span>
 <span class="sd">        :func:`~torchvision.io.decode_heic`.</span>
 
@@ -719,17 +865,19 @@
 <span class="sd">        input (Tensor or str or ``pathlib.Path``): The image to decode. If a</span>
 <span class="sd">            tensor is passed, it must be one dimensional uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the image. Otherwise, this must be a path to the image file.</span>
-<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. &quot;RGB&quot;.</span>
-<span class="sd">            Default is &quot;UNCHANGED&quot;.  See :class:`~torchvision.io.ImageReadMode`</span>
+<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".</span>
+<span class="sd">            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`</span>
 <span class="sd">            for available modes.</span>
 <span class="sd">        apply_exif_orientation (bool): apply EXIF orientation transformation to the output tensor.</span>
 <span class="sd">           Only applies to JPEG and PNG images. Default: False.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        output (Tensor[image_channels, image_height, image_width])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_image</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
+    <span class="n">_assert_has_image_ops</span><span class="p">()</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="nb">input</span> <span class="o">=</span> <span class="n">read_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">input</span><span class="p">))</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -743,16 +891,40 @@
     <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
     <span class="n">apply_exif_orientation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[OBSOLETE] Use :func:`~torchvision.io.decode_image` instead.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
+<span class="sd">    [OBSOLETE] Use :func:`~torchvision.io.decode_image` instead.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
+
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">read_image</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">read_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">decode_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">apply_exif_orientation</span><span class="o">=</span><span class="n">apply_exif_orientation</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="decode_gif"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_gif.html#torchvision.io.decode_gif">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_gif</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
 <span class="sd">    Decode a GIF image into a 3 or 4 dimensional RGB Tensor.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    The values of the output tensor are uint8 between 0 and 255.</span>
 <span class="sd">    The output tensor has shape ``(C, H, W)`` if there is only one image in the</span>
@@ -764,9 +936,11 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        output (Tensor[image_channels, image_height, image_width] or Tensor[num_images, image_channels, image_height, image_width])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_gif</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
+    <span class="n">_assert_has_image_ops</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_gif</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span></div>
 
 
@@ -774,23 +948,35 @@
     <span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
 <span class="sd">    Decode a WEBP image into a 3 dimensional RGB[A] Tensor.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    The values of the output tensor are uint8 between 0 and 255.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the WEBP image.</span>
-<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. &quot;RGB&quot;.</span>
-<span class="sd">            Default is &quot;UNCHANGED&quot;.  See :class:`~torchvision.io.ImageReadMode`</span>
+<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".</span>
+<span class="sd">            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`</span>
 <span class="sd">            for available modes.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Decoded image (Tensor[image_channels, image_height, image_width])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">decode_webp</span><span class="p">)</span>
+        <span class="n">_warn_deprecated</span><span class="p">()</span>
+    <span class="n">_assert_has_image_ops</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">mode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="p">[</span><span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">decode_webp</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
@@ -811,7 +997,7 @@
 <span class="c1"># A trivial check that could be done within torchvision would be to check the</span>
 <span class="c1"># file extension, if a path was passed. We could also just implement the</span>
 <span class="c1"># AVIF/HEIC detection logic in Python as a fallback, if the file detection</span>
-<span class="c1"># didn&#39;t find any format. In any case: properly determining whether a file is</span>
+<span class="c1"># didn't find any format. In any case: properly determining whether a file is</span>
 <span class="c1"># HEIC is far from trivial, and relying on libmagic would probably be best</span>
 
 
@@ -833,15 +1019,15 @@
         <span class="c1"># is a dummy version that was created to reserve the namespace on PyPI.</span>
         <span class="c1"># We have to check that expose_extra_decoders() exists for those users,</span>
         <span class="c1"># so we can properly error on non-Linux archs.</span>
-        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torchvision_extra_decoders</span><span class="p">,</span> <span class="s2">&quot;expose_extra_decoders&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torchvision_extra_decoders</span><span class="p">,</span> <span class="s2">"expose_extra_decoders"</span><span class="p">)</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">AssertionError</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">&quot;In order to enable the AVIF and HEIC decoding capabilities of &quot;</span>
-            <span class="s2">&quot;torchvision, you need to `pip install torchvision-extra-decoders`. &quot;</span>
-            <span class="s2">&quot;Just install the package, you don&#39;t need to update your code. &quot;</span>
-            <span class="s2">&quot;This is only supported on Linux, and this feature is still in BETA stage. &quot;</span>
-            <span class="s2">&quot;Please let us know of any issue: https://github.com/pytorch/vision/issues/new/choose. &quot;</span>
-            <span class="s2">&quot;Note that `torchvision-extra-decoders` is released under the LGPL license. &quot;</span>
+            <span class="s2">"In order to enable the AVIF and HEIC decoding capabilities of "</span>
+            <span class="s2">"torchvision, you need to `pip install torchvision-extra-decoders`. "</span>
+            <span class="s2">"Just install the package, you don't need to update your code. "</span>
+            <span class="s2">"This is only supported on Linux, and this feature is still in BETA stage. "</span>
+            <span class="s2">"Please let us know of any issue: https://github.com/pytorch/vision/issues/new/choose. "</span>
+            <span class="s2">"Note that `torchvision-extra-decoders` is released under the LGPL license. "</span>
         <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
     <span class="c1"># This will expose torch.ops.extra_decoders_ns.decode_avif and torch.ops.extra_decoders_ns.decode_heic</span>
@@ -851,12 +1037,23 @@
 
 
 <div class="viewcode-block" id="decode_avif"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_avif.html#torchvision.io.decode_avif">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode an AVIF image into a 3 dimensional RGB[A] Tensor.</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
+<span class="sd">    Decode an AVIF image into a 3 dimensional RGB[A] Tensor.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    .. warning::</span>
 <span class="sd">        In order to enable the AVIF decoding capabilities of torchvision, you</span>
 <span class="sd">        first need to run ``pip install torchvision-extra-decoders``. Just</span>
-<span class="sd">        install the package, you don&#39;t need to update your code. This is only</span>
+<span class="sd">        install the package, you don't need to update your code. This is only</span>
 <span class="sd">        supported on Linux, and this feature is still in BETA stage. Please let</span>
 <span class="sd">        us know of any issue:</span>
 <span class="sd">        https://github.com/pytorch/vision/issues/new/choose. Note that</span>
@@ -874,26 +1071,38 @@
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the AVIF image.</span>
-<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. &quot;RGB&quot;.</span>
-<span class="sd">            Default is &quot;UNCHANGED&quot;.  See :class:`~torchvision.io.ImageReadMode`</span>
+<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".</span>
+<span class="sd">            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`</span>
 <span class="sd">            for available modes.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Decoded image (Tensor[image_channels, image_height, image_width])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
+    <span class="n">_warn_deprecated</span><span class="p">()</span>
     <span class="n">_load_extra_decoders_once</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor must have uint8 data type, got </span><span class="si">{</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input tensor must have uint8 data type, got </span><span class="si">{</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">extra_decoders_ns</span><span class="o">.</span><span class="n">decode_avif</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="decode_heic"><a class="viewcode-back" href="../../../generated/torchvision.io.decode_heic.html#torchvision.io.decode_heic">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">decode_heic</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">ImageReadMode</span> <span class="o">=</span> <span class="n">ImageReadMode</span><span class="o">.</span><span class="n">UNCHANGED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode an HEIC image into a 3 dimensional RGB[A] Tensor.</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use TorchCodec instead.</span>
+
+<span class="sd">    Decode an HEIC image into a 3 dimensional RGB[A] Tensor.</span>
+
+<span class="sd">    .. warning::</span>
+
+<span class="sd">        The image decoding and encoding capabilities of TorchVision are</span>
+<span class="sd">        deprecated since torchvision 0.29 and will be removed in a future</span>
+<span class="sd">        release. They are superseded by the more complete decoders and encoders</span>
+<span class="sd">        of TorchCodec (from torchcodec 0.16). Please see `this migration guide</span>
+<span class="sd">        &lt;https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html&gt;`__</span>
+<span class="sd">        on how to migrate your code.</span>
 
 <span class="sd">    .. warning::</span>
 <span class="sd">        In order to enable the HEIC decoding capabilities of torchvision, you</span>
 <span class="sd">        first need to run ``pip install torchvision-extra-decoders``. Just</span>
-<span class="sd">        install the package, you don&#39;t need to update your code. This is only</span>
+<span class="sd">        install the package, you don't need to update your code. This is only</span>
 <span class="sd">        supported on Linux, and this feature is still in BETA stage. Please let</span>
 <span class="sd">        us know of any issue:</span>
 <span class="sd">        https://github.com/pytorch/vision/issues/new/choose. Note that</span>
@@ -911,16 +1120,17 @@
 <span class="sd">    Args:</span>
 <span class="sd">        input (Tensor[1]): a one dimensional contiguous uint8 tensor containing</span>
 <span class="sd">            the raw bytes of the HEIC image.</span>
-<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. &quot;RGB&quot;.</span>
-<span class="sd">            Default is &quot;UNCHANGED&quot;.  See :class:`~torchvision.io.ImageReadMode`</span>
+<span class="sd">        mode (str or ImageReadMode): The mode to convert the image to, e.g. "RGB".</span>
+<span class="sd">            Default is "UNCHANGED".  See :class:`~torchvision.io.ImageReadMode`</span>
 <span class="sd">            for available modes.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Decoded image (Tensor[image_channels, image_height, image_width])</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
+    <span class="n">_warn_deprecated</span><span class="p">()</span>
     <span class="n">_load_extra_decoders_once</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor must have uint8 data type, got </span><span class="si">{</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input tensor must have uint8 data type, got </span><span class="si">{</span><span class="nb">input</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">extra_decoders_ns</span><span class="o">.</span><span class="n">decode_heic</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">mode</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
 </pre></div>
 

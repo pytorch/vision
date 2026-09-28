@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -430,11 +430,11 @@
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;MViT&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;MViT_V1_B_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;mvit_v1_b&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;MViT_V2_S_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;mvit_v2_s&quot;</span><span class="p">,</span>
+    <span class="s2">"MViT"</span><span class="p">,</span>
+    <span class="s2">"MViT_V1_B_Weights"</span><span class="p">,</span>
+    <span class="s2">"mvit_v1_b"</span><span class="p">,</span>
+    <span class="s2">"MViT_V2_S_Weights"</span><span class="p">,</span>
+    <span class="s2">"mvit_v2_s"</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -461,7 +461,7 @@
     <span class="k">if</span> <span class="n">tensor_dim</span> <span class="o">==</span> <span class="n">target_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">expand_dim</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">tensor_dim</span> <span class="o">!=</span> <span class="n">target_dim</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported input dimension </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported input dimension </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">tensor_dim</span>
 
 
@@ -471,8 +471,8 @@
     <span class="k">return</span> <span class="n">x</span>
 
 
-<span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;_unsqueeze&quot;</span><span class="p">)</span>
-<span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;_squeeze&quot;</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">"_unsqueeze"</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">"_squeeze"</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Pool</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -527,7 +527,7 @@
         <span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span>
             <span class="n">embedding</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
             <span class="n">size</span><span class="o">=</span><span class="n">d</span><span class="p">,</span>
-            <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="s2">"linear"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
@@ -572,8 +572,8 @@
     <span class="n">B</span><span class="p">,</span> <span class="n">n_head</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span>
 
     <span class="n">r_q</span> <span class="o">=</span> <span class="n">q</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">n_head</span><span class="p">,</span> <span class="n">q_t</span><span class="p">,</span> <span class="n">q_h</span><span class="p">,</span> <span class="n">q_w</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
-    <span class="n">rel_h_q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bythwc,hkc-&gt;bythwk&quot;</span><span class="p">,</span> <span class="n">r_q</span><span class="p">,</span> <span class="n">Rh</span><span class="p">)</span>  <span class="c1"># [B, H, q_t, qh, qw, k_h]</span>
-    <span class="n">rel_w_q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;bythwc,wkc-&gt;bythwk&quot;</span><span class="p">,</span> <span class="n">r_q</span><span class="p">,</span> <span class="n">Rw</span><span class="p">)</span>  <span class="c1"># [B, H, q_t, qh, qw, k_w]</span>
+    <span class="n">rel_h_q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"bythwc,hkc-&gt;bythwk"</span><span class="p">,</span> <span class="n">r_q</span><span class="p">,</span> <span class="n">Rh</span><span class="p">)</span>  <span class="c1"># [B, H, q_t, qh, qw, k_h]</span>
+    <span class="n">rel_w_q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"bythwc,wkc-&gt;bythwk"</span><span class="p">,</span> <span class="n">r_q</span><span class="p">,</span> <span class="n">Rw</span><span class="p">)</span>  <span class="c1"># [B, H, q_t, qh, qw, k_w]</span>
     <span class="c1"># [B, H, q_t, q_h, q_w, dim] -&gt; [q_t, B, H, q_h, q_w, dim] -&gt; [q_t, B*H*q_h*q_w, dim]</span>
     <span class="n">r_q</span> <span class="o">=</span> <span class="n">r_q</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">q_t</span><span class="p">,</span> <span class="n">B</span> <span class="o">*</span> <span class="n">n_head</span> <span class="o">*</span> <span class="n">q_h</span> <span class="o">*</span> <span class="n">q_w</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
     <span class="c1"># [q_t, B*H*q_h*q_w, dim] * [q_t, dim, k_t] = [q_t, B*H*q_h*q_w, k_t] -&gt; [B*H*q_h*q_w, q_t, k_t]</span>
@@ -602,8 +602,8 @@
     <span class="k">return</span> <span class="n">x</span>
 
 
-<span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;_add_rel_pos&quot;</span><span class="p">)</span>
-<span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">&quot;_add_shortcut&quot;</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">"_add_rel_pos"</span><span class="p">)</span>
+<span class="n">torch</span><span class="o">.</span><span class="n">fx</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="s2">"_add_shortcut"</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">MultiscaleAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -787,7 +787,7 @@
             <span class="n">inplace</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span> <span class="o">=</span> <span class="n">StochasticDepth</span><span class="p">(</span><span class="n">stochastic_depth_prob</span><span class="p">,</span> <span class="s2">&quot;row&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stochastic_depth</span> <span class="o">=</span> <span class="n">StochasticDepth</span><span class="p">(</span><span class="n">stochastic_depth_prob</span><span class="p">,</span> <span class="s2">"row"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">cnf</span><span class="o">.</span><span class="n">input_channels</span> <span class="o">!=</span> <span class="n">cnf</span><span class="o">.</span><span class="n">output_channels</span><span class="p">:</span>
@@ -855,7 +855,7 @@
         <span class="n">patch_embed_stride</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
         <span class="n">patch_embed_padding</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        MViT main class.</span>
 
 <span class="sd">        Args:</span>
@@ -865,7 +865,7 @@
 <span class="sd">            residual_pool (bool): If True, use MViTv2 pooling residual connection.</span>
 <span class="sd">            residual_with_cls_embed (bool): If True, the addition on the residual connection will include</span>
 <span class="sd">                the class embedding.</span>
-<span class="sd">            rel_pos_embed (bool): If True, use MViTv2&#39;s relative positional embeddings.</span>
+<span class="sd">            rel_pos_embed (bool): If True, use MViTv2's relative positional embeddings.</span>
 <span class="sd">            proj_after_attn (bool): If True, apply the projection after the attention.</span>
 <span class="sd">            dropout (float): Dropout rate. Default: 0.0.</span>
 <span class="sd">            attention_dropout (float): Attention dropout rate. Default: 0.0.</span>
@@ -876,16 +876,16 @@
 <span class="sd">            patch_embed_kernel (tuple of ints): The kernel of the convolution that patchifies the input.</span>
 <span class="sd">            patch_embed_stride (tuple of ints): The stride of the convolution that patchifies the input.</span>
 <span class="sd">            patch_embed_padding (tuple of ints): The padding of the convolution that patchifies the input.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="c1"># This implementation employs a different parameterization scheme than the one used at PyTorch Video:</span>
         <span class="c1"># https://github.com/facebookresearch/pytorchvideo/blob/718d0a4/pytorchvideo/models/vision_transformers.py</span>
-        <span class="c1"># We remove any experimental configuration that didn&#39;t make it to the final variants of the models. To represent</span>
+        <span class="c1"># We remove any experimental configuration that didn't make it to the final variants of the models. To represent</span>
         <span class="c1"># the configuration of the architecture we use the simplified form suggested at Table 1 of the paper.</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">total_stage_blocks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">block_setting</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">total_stage_blocks</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The configuration parameter can&#39;t be empty.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The configuration parameter can't be empty."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">block</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">block</span> <span class="o">=</span> <span class="n">MultiscaleBlock</span>
@@ -959,7 +959,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># Convert if necessary (B, C, H, W) -&gt; (B, C, 1, H, W)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">_unsqueeze</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="c1"># patchify and reshape: (B, C, T, H, W) -&gt; (B, embed_channels[0], T&#39;, H&#39;, W&#39;) -&gt; (B, THW&#39;, embed_channels[0])</span>
+        <span class="c1"># patchify and reshape: (B, C, T, H, W) -&gt; (B, embed_channels[0], T', H', W') -&gt; (B, THW', embed_channels[0])</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
@@ -972,7 +972,7 @@
             <span class="n">x</span><span class="p">,</span> <span class="n">thw</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">thw</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
-        <span class="c1"># classifier &quot;token&quot; as used by standard language architectures</span>
+        <span class="c1"># classifier "token" as used by standard language architectures</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
@@ -987,21 +987,21 @@
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MViT</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
-        <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;min_size&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;min_size&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;spatial_size&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;min_size&quot;</span><span class="p">])</span>
-        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;temporal_size&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;min_temporal_size&quot;</span><span class="p">])</span>
-    <span class="n">spatial_size</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;spatial_size&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">))</span>
-    <span class="n">temporal_size</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;temporal_size&quot;</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"num_classes"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">]))</span>
+        <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"min_size"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"min_size"</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"spatial_size"</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"min_size"</span><span class="p">])</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"temporal_size"</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"min_temporal_size"</span><span class="p">])</span>
+    <span class="n">spatial_size</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"spatial_size"</span><span class="p">,</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">))</span>
+    <span class="n">temporal_size</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"temporal_size"</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="n">MViT</span><span class="p">(</span>
         <span class="n">spatial_size</span><span class="o">=</span><span class="n">spatial_size</span><span class="p">,</span>
         <span class="n">temporal_size</span><span class="o">=</span><span class="n">temporal_size</span><span class="p">,</span>
         <span class="n">block_setting</span><span class="o">=</span><span class="n">block_setting</span><span class="p">,</span>
-        <span class="n">residual_pool</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;residual_pool&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-        <span class="n">residual_with_cls_embed</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;residual_with_cls_embed&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
-        <span class="n">rel_pos_embed</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;rel_pos_embed&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-        <span class="n">proj_after_attn</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;proj_after_attn&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="n">residual_pool</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"residual_pool"</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="n">residual_with_cls_embed</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"residual_with_cls_embed"</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+        <span class="n">rel_pos_embed</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"rel_pos_embed"</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="n">proj_after_attn</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"proj_after_attn"</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
         <span class="n">stochastic_depth_prob</span><span class="o">=</span><span class="n">stochastic_depth_prob</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
@@ -1014,7 +1014,7 @@
 
 <div class="viewcode-block" id="MViT_V1_B_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.mvit_v1_b.html#torchvision.models.video.MViT_V1_B_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">MViT_V1_B_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">KINETICS400_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/mvit_v1_b-dbeb1030.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/mvit_v1_b-dbeb1030.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">VideoClassification</span><span class="p">,</span>
             <span class="n">crop_size</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
@@ -1023,23 +1023,23 @@
             <span class="n">std</span><span class="o">=</span><span class="p">(</span><span class="mf">0.225</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">),</span>
         <span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
-            <span class="s2">&quot;min_temporal_size&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
-            <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_KINETICS400_CATEGORIES</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/facebookresearch/pytorchvideo/blob/main/docs/source/model_zoo.md&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="s2">&quot;The weights were ported from the paper. The accuracies are estimated on video-level &quot;</span>
-                <span class="s2">&quot;with parameters `frame_rate=7.5`, `clips_per_video=5`, and `clip_len=16`&quot;</span>
+            <span class="s2">"min_size"</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+            <span class="s2">"min_temporal_size"</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+            <span class="s2">"categories"</span><span class="p">:</span> <span class="n">_KINETICS400_CATEGORIES</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/facebookresearch/pytorchvideo/blob/main/docs/source/model_zoo.md"</span><span class="p">,</span>
+            <span class="s2">"_docs"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">"The weights were ported from the paper. The accuracies are estimated on video-level "</span>
+                <span class="s2">"with parameters `frame_rate=7.5`, `clips_per_video=5`, and `clip_len=16`"</span>
             <span class="p">),</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">36610672</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;Kinetics-400&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.477</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.582</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">36610672</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"Kinetics-400"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">78.477</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">93.582</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">70.599</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">139.764</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">70.599</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">139.764</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">KINETICS400_V1</span></div>
@@ -1047,7 +1047,7 @@
 
 <div class="viewcode-block" id="MViT_V2_S_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.mvit_v2_s.html#torchvision.models.video.MViT_V2_S_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">MViT_V2_S_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">KINETICS400_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/mvit_v2_s-ae3be167.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/mvit_v2_s-ae3be167.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">VideoClassification</span><span class="p">,</span>
             <span class="n">crop_size</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
@@ -1056,32 +1056,32 @@
             <span class="n">std</span><span class="o">=</span><span class="p">(</span><span class="mf">0.225</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">,</span> <span class="mf">0.225</span><span class="p">),</span>
         <span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
-            <span class="s2">&quot;min_temporal_size&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
-            <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_KINETICS400_CATEGORIES</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/facebookresearch/SlowFast/blob/main/MODEL_ZOO.md&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="s2">&quot;The weights were ported from the paper. The accuracies are estimated on video-level &quot;</span>
-                <span class="s2">&quot;with parameters `frame_rate=7.5`, `clips_per_video=5`, and `clip_len=16`&quot;</span>
+            <span class="s2">"min_size"</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+            <span class="s2">"min_temporal_size"</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+            <span class="s2">"categories"</span><span class="p">:</span> <span class="n">_KINETICS400_CATEGORIES</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/facebookresearch/SlowFast/blob/main/MODEL_ZOO.md"</span><span class="p">,</span>
+            <span class="s2">"_docs"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">"The weights were ported from the paper. The accuracies are estimated on video-level "</span>
+                <span class="s2">"with parameters `frame_rate=7.5`, `clips_per_video=5`, and `clip_len=16`"</span>
             <span class="p">),</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">34537744</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;Kinetics-400&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.757</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.665</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">34537744</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"Kinetics-400"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">80.757</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">94.665</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">64.224</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">131.884</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">64.224</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">131.884</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">KINETICS400_V1</span></div>
 
 
 <div class="viewcode-block" id="mvit_v1_b"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.mvit_v1_b.html#torchvision.models.video.mvit_v1_b">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
-<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">MViT_V1_B_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">MViT_V1_B_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">mvit_v1_b</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MViT_V1_B_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MViT</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Constructs a base MViTV1 architecture from</span>
 <span class="sd">    `Multiscale Vision Transformers &lt;https://arxiv.org/abs/2104.11227&gt;`__.</span>
 
@@ -1102,15 +1102,15 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.video.MViT_V1_B_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">MViT_V1_B_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;num_heads&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
-        <span class="s2">&quot;input_channels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">768</span><span class="p">],</span>
-        <span class="s2">&quot;output_channels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">192</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">768</span><span class="p">],</span>
-        <span class="s2">&quot;kernel_q&quot;</span><span class="p">:</span> <span class="p">[[],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[]],</span>
-        <span class="s2">&quot;kernel_kv&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"num_heads"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
+        <span class="s2">"input_channels"</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">768</span><span class="p">],</span>
+        <span class="s2">"output_channels"</span><span class="p">:</span> <span class="p">[</span><span class="mi">192</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">768</span><span class="p">],</span>
+        <span class="s2">"kernel_q"</span><span class="p">:</span> <span class="p">[[],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[]],</span>
+        <span class="s2">"kernel_kv"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
@@ -1128,8 +1128,8 @@
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
         <span class="p">],</span>
-        <span class="s2">&quot;stride_q&quot;</span><span class="p">:</span> <span class="p">[[],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[]],</span>
-        <span class="s2">&quot;stride_kv&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"stride_q"</span><span class="p">:</span> <span class="p">[[],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[]],</span>
+        <span class="s2">"stride_kv"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
@@ -1150,16 +1150,16 @@
     <span class="p">}</span>
 
     <span class="n">block_setting</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;num_heads&quot;</span><span class="p">])):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"num_heads"</span><span class="p">])):</span>
         <span class="n">block_setting</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">MSBlockConfig</span><span class="p">(</span>
-                <span class="n">num_heads</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;num_heads&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">input_channels</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;input_channels&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">output_channels</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;output_channels&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">kernel_q</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;kernel_q&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">kernel_kv</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;kernel_kv&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">stride_q</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stride_q&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">stride_kv</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stride_kv&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">num_heads</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"num_heads"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">input_channels</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"input_channels"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">output_channels</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"output_channels"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">kernel_q</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"kernel_q"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">kernel_kv</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"kernel_kv"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">stride_q</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"stride_q"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">stride_kv</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"stride_kv"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
             <span class="p">)</span>
         <span class="p">)</span>
 
@@ -1169,7 +1169,7 @@
         <span class="n">block_setting</span><span class="o">=</span><span class="n">block_setting</span><span class="p">,</span>
         <span class="n">residual_pool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">residual_with_cls_embed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">stochastic_depth_prob</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;stochastic_depth_prob&quot;</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
+        <span class="n">stochastic_depth_prob</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"stochastic_depth_prob"</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
         <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
         <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -1177,9 +1177,9 @@
 
 
 <div class="viewcode-block" id="mvit_v2_s"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.mvit_v2_s.html#torchvision.models.video.mvit_v2_s">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
-<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">MViT_V2_S_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">MViT_V2_S_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">mvit_v2_s</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MViT_V2_S_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MViT</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Constructs a small MViTV2 architecture from</span>
+<span class="w">    </span><span class="sd">"""Constructs a small MViTV2 architecture from</span>
 <span class="sd">    `Multiscale Vision Transformers &lt;https://arxiv.org/abs/2104.11227&gt;`__ and</span>
 <span class="sd">    `MViTv2: Improved Multiscale Vision Transformers for Classification</span>
 <span class="sd">    and Detection &lt;https://arxiv.org/abs/2112.01526&gt;`__.</span>
@@ -1201,14 +1201,14 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.video.MViT_V2_S_Weights</span>
 <span class="sd">            :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">MViT_V2_S_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;num_heads&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
-        <span class="s2">&quot;input_channels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">768</span><span class="p">],</span>
-        <span class="s2">&quot;output_channels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">768</span><span class="p">],</span>
-        <span class="s2">&quot;kernel_q&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"num_heads"</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
+        <span class="s2">"input_channels"</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">768</span><span class="p">],</span>
+        <span class="s2">"output_channels"</span><span class="p">:</span> <span class="p">[</span><span class="mi">96</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">768</span><span class="p">],</span>
+        <span class="s2">"kernel_q"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
@@ -1226,7 +1226,7 @@
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
         <span class="p">],</span>
-        <span class="s2">&quot;kernel_kv&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"kernel_kv"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
@@ -1244,7 +1244,7 @@
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
         <span class="p">],</span>
-        <span class="s2">&quot;stride_q&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"stride_q"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
@@ -1262,7 +1262,7 @@
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
         <span class="p">],</span>
-        <span class="s2">&quot;stride_kv&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"stride_kv"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
             <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span>
@@ -1283,16 +1283,16 @@
     <span class="p">}</span>
 
     <span class="n">block_setting</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;num_heads&quot;</span><span class="p">])):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"num_heads"</span><span class="p">])):</span>
         <span class="n">block_setting</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">MSBlockConfig</span><span class="p">(</span>
-                <span class="n">num_heads</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;num_heads&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">input_channels</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;input_channels&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">output_channels</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;output_channels&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">kernel_q</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;kernel_q&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">kernel_kv</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;kernel_kv&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">stride_q</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stride_q&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
-                <span class="n">stride_kv</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;stride_kv&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">num_heads</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"num_heads"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">input_channels</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"input_channels"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">output_channels</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"output_channels"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">kernel_q</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"kernel_q"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">kernel_kv</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"kernel_kv"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">stride_q</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"stride_q"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">stride_kv</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"stride_kv"</span><span class="p">][</span><span class="n">i</span><span class="p">],</span>
             <span class="p">)</span>
         <span class="p">)</span>
 
@@ -1304,7 +1304,7 @@
         <span class="n">residual_with_cls_embed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">rel_pos_embed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">proj_after_attn</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">stochastic_depth_prob</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;stochastic_depth_prob&quot;</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
+        <span class="n">stochastic_depth_prob</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"stochastic_depth_prob"</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
         <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
         <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>

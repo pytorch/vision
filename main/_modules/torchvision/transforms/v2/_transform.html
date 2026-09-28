@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -428,11 +428,11 @@
 
 
 <div class="viewcode-block" id="Transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Transform</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class to implement your own v2 transforms.</span>
+<span class="w">    </span><span class="sd">"""Base class to implement your own v2 transforms.</span>
 
 <span class="sd">    See  :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` for</span>
 <span class="sd">    more details.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Class attribute defining transformed types. Other types are passed-through without any transformation</span>
     <span class="c1"># We support both Types and callables that are able to do further checks on the type of the input.</span>
@@ -446,15 +446,15 @@
         <span class="k">pass</span>
 
     <span class="c1"># When v2 was introduced, this method was private and called</span>
-    <span class="c1"># `_get_params()`. Now it&#39;s publicly exposed as `make_params()`. It cannot</span>
+    <span class="c1"># `_get_params()`. Now it's publicly exposed as `make_params()`. It cannot</span>
     <span class="c1"># be exposed as `get_params()` because there is already a `get_params()`</span>
-    <span class="c1"># methods for v2 transforms: it&#39;s the v1&#39;s `get_params()` that we have  to</span>
-    <span class="c1"># keep in order to guarantee 100% BC with v1. (It&#39;s defined in</span>
+    <span class="c1"># methods for v2 transforms: it's the v1's `get_params()` that we have  to</span>
+    <span class="c1"># keep in order to guarantee 100% BC with v1. (It's defined in</span>
     <span class="c1"># __init_subclass__ below).</span>
 <div class="viewcode-block" id="Transform.make_params"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.make_params">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">make_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to override for custom transforms.</span>
+<span class="w">        </span><span class="sd">"""Method to override for custom transforms.</span>
 
-<span class="sd">        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`&quot;&quot;&quot;</span>
+<span class="sd">        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`"""</span>
         <span class="k">return</span> <span class="nb">dict</span><span class="p">()</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_call_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">functional</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
@@ -462,13 +462,13 @@
         <span class="k">return</span> <span class="n">kernel</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Transform.transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Method to override for custom transforms.</span>
+<span class="w">        </span><span class="sd">"""Method to override for custom transforms.</span>
 
-<span class="sd">        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`&quot;&quot;&quot;</span>
+<span class="sd">        See :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py`"""</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 <div class="viewcode-block" id="Transform.forward"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Do not override this! Use ``transform()`` instead.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Do not override this! Use ``transform()`` instead."""</span>
         <span class="n">flat_inputs</span><span class="p">,</span> <span class="n">spec</span> <span class="o">=</span> <span class="n">tree_flatten</span><span class="p">(</span><span class="n">inputs</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">check_inputs</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">)</span>
@@ -495,12 +495,12 @@
         <span class="c1">#</span>
         <span class="c1"># This heuristic stems from two requirements:</span>
         <span class="c1"># 1. We need to keep BC for single input pure tensors and treat them as images.</span>
-        <span class="c1"># 2. We don&#39;t want to treat all pure tensors as images, because some datasets like `CelebA` or `Widerface`</span>
+        <span class="c1"># 2. We don't want to treat all pure tensors as images, because some datasets like `CelebA` or `Widerface`</span>
         <span class="c1">#    return supplemental numerical data as tensors that cannot be transformed as images.</span>
         <span class="c1">#</span>
-        <span class="c1"># The heuristic should work well for most people in practice. The only case where it doesn&#39;t is if someone</span>
+        <span class="c1"># The heuristic should work well for most people in practice. The only case where it doesn't is if someone</span>
         <span class="c1"># tries to transform multiple pure tensors at the same time, expecting them all to be treated as images.</span>
-        <span class="c1"># However, this case wasn&#39;t supported by transforms v1 either, so there is no BC concern.</span>
+        <span class="c1"># However, this case wasn't supported by transforms v1 either, so there is no BC concern.</span>
 
         <span class="n">needs_transform_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">transform_pure_tensor</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">has_any</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
@@ -520,15 +520,15 @@
 <div class="viewcode-block" id="Transform.extra_repr"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Transform.html#torchvision.transforms.v2.Transform.extra_repr">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">extra</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">"training"</span><span class="p">:</span>
                 <span class="k">continue</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">)):</span>
                 <span class="k">continue</span>
 
-            <span class="n">extra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">extra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">extra</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">extra</span><span class="p">)</span></div>
 
     <span class="c1"># This attribute should be set on all transforms that have a v1 equivalent. Doing so enables two things:</span>
     <span class="c1"># 1. In case the v1 transform has a static `get_params` method, it will also be available under the same name on</span>
@@ -540,7 +540,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">__init_subclass__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Since `get_params` is a `@staticmethod`, we have to bind it to the class itself rather than to an instance.</span>
         <span class="c1"># This method is called after subclassing has happened, i.e. `cls` is the subclass, e.g. `Resize`.</span>
-        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_v1_transform_cls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_v1_transform_cls</span><span class="p">,</span> <span class="s2">&quot;get_params&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_v1_transform_cls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_v1_transform_cls</span><span class="p">,</span> <span class="s2">"get_params"</span><span class="p">):</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">get_params</span> <span class="o">=</span> <span class="nb">staticmethod</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_v1_transform_cls</span><span class="o">.</span><span class="n">get_params</span><span class="p">)</span>  <span class="c1"># type: ignore[attr-defined]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_extract_params_for_v1_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
@@ -550,24 +550,30 @@
         <span class="c1"># Overwrite this method on the v2 transform class if the above is not sufficient. For example, this might happen</span>
         <span class="c1"># if the v2 transform introduced new parameters that are not support by the v1 transform.</span>
         <span class="n">common_attrs</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">()</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">{</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">attr</span><span class="p">:</span> <span class="n">value</span>
             <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">common_attrs</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">common_attrs</span>
         <span class="p">}</span>
+        <span class="c1"># v1 transforms don't support string interpolation modes, so convert them.</span>
+        <span class="k">if</span> <span class="s2">"interpolation"</span> <span class="ow">in</span> <span class="n">params</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">"interpolation"</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">InterpolationMode</span>
+
+            <span class="n">params</span><span class="p">[</span><span class="s2">"interpolation"</span><span class="p">]</span> <span class="o">=</span> <span class="n">InterpolationMode</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">"interpolation"</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">params</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__prepare_scriptable__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
-        <span class="c1"># This method is called early on when `torch.jit.script`&#39;ing an `nn.Module` instance. If it succeeds, the return</span>
+        <span class="c1"># This method is called early on when `torch.jit.script`'ing an `nn.Module` instance. If it succeeds, the return</span>
         <span class="c1"># value is used for scripting over the original object that should have been scripted. Since the v1 transforms</span>
         <span class="c1"># are JIT scriptable, and we made sure that for single image inputs v1 and v2 are equivalent, we just return the</span>
         <span class="c1"># equivalent v1 transform here. This of course only makes transforms v2 JIT scriptable as long as transforms v1</span>
         <span class="c1"># is around.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v1_transform_cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Transform </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> cannot be JIT scripted. &quot;</span>
-                <span class="s2">&quot;torchscript is only supported for backward compatibility with transforms &quot;</span>
-                <span class="s2">&quot;which are already in torchvision.transforms. &quot;</span>
-                <span class="s2">&quot;For torchscript support (on tensors only), you can use the functional API instead.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Transform </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> cannot be JIT scripted. "</span>
+                <span class="s2">"torchscript is only supported for backward compatibility with transforms "</span>
+                <span class="s2">"which are already in torchvision.transforms. "</span>
+                <span class="s2">"For torchscript support (on tensors only), you can use the functional API instead."</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v1_transform_cls</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_extract_params_for_v1_transform</span><span class="p">())</span></div>
@@ -576,7 +582,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">_RandomApplyTransform</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`p` should be a floating point value in the interval [0.0, 1.0].&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`p` should be a floating point value in the interval [0.0, 1.0]."</span><span class="p">)</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>

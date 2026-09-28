@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -436,12 +436,12 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">StereoMatchingDataset</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">VisionDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base interface for Stereo matching datasets&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Base interface for Stereo matching datasets"""</span>
 
     <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">            root(str): Root directory of the dataset.</span>
 <span class="sd">            transforms(callable, optional): A function/transform that takes in Tuples of</span>
@@ -461,7 +461,7 @@
 <span class="sd">                disparities: (``None``, ``None``)</span>
 <span class="sd">                Optionally, based on the dataset, it can return a ``mask`` as well:</span>
 <span class="sd">                valid_masks: (``None``, ``None``)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="n">transforms</span>
 
@@ -470,8 +470,8 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
         <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;RGB&quot;</span><span class="p">:</span>
-            <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;RGB&quot;</span><span class="p">)</span>  <span class="c1"># type: ignore [assignment]</span>
+        <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">"RGB"</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">"RGB"</span><span class="p">)</span>  <span class="c1"># type: ignore [assignment]</span>
         <span class="k">return</span> <span class="n">img</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_scan_pairs</span><span class="p">(</span>
@@ -489,16 +489,16 @@
             <span class="n">right_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="kc">None</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">left_paths</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">left_paths</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find any files matching the patterns: </span><span class="si">{</span><span class="n">paths_left_pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not find any files matching the patterns: </span><span class="si">{</span><span class="n">paths_left_pattern</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">right_paths</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find any files matching the patterns: </span><span class="si">{</span><span class="n">paths_right_pattern</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not find any files matching the patterns: </span><span class="si">{</span><span class="n">paths_right_pattern</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">left_paths</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">right_paths</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">left_paths</span><span class="p">)</span><span class="si">}</span><span class="s2"> left files but </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">right_paths</span><span class="p">)</span><span class="si">}</span><span class="s2"> right files using:</span><span class="se">\n</span><span class="s2"> &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;left pattern: </span><span class="si">{</span><span class="n">paths_left_pattern</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;right pattern: </span><span class="si">{</span><span class="n">paths_right_pattern</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">left_paths</span><span class="p">)</span><span class="si">}</span><span class="s2"> left files but </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">right_paths</span><span class="p">)</span><span class="si">}</span><span class="s2"> right files using:</span><span class="se">\n</span><span class="s2"> "</span>
+                <span class="sa">f</span><span class="s2">"left pattern: </span><span class="si">{</span><span class="n">paths_left_pattern</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"right pattern: </span><span class="si">{</span><span class="n">paths_right_pattern</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="n">paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span> <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">left_paths</span><span class="p">,</span> <span class="n">right_paths</span><span class="p">))</span>
@@ -510,7 +510,7 @@
         <span class="k">pass</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -520,8 +520,8 @@
 <span class="sd">                can be a numpy boolean mask of shape (H, W) if the dataset provides a file</span>
 <span class="sd">                indicating which disparity pixels are valid. The disparity is a numpy array of</span>
 <span class="sd">                shape (1, H, W) and the images are PIL images. ``disparity`` is None for</span>
-<span class="sd">                datasets on which for ``split=&quot;test&quot;`` the authors did not provide annotations.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">                datasets on which for ``split="test"`` the authors did not provide annotations.</span>
+<span class="sd">        """</span>
         <span class="n">img_left</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">img_right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
 
@@ -549,7 +549,7 @@
 
 
 <div class="viewcode-block" id="CarlaStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CarlaStereo.html#torchvision.datasets.CarlaStereo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">CarlaStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Carla simulator data linked in the `CREStereo github repo &lt;https://github.com/megvii-research/CREStereo&gt;`_.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
@@ -574,20 +574,20 @@
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory where `carla-highres` is located.</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;carla-highres&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"carla-highres"</span>
 
-        <span class="n">left_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;trainingF&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;im0.png&quot;</span><span class="p">)</span>
-        <span class="n">right_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;trainingF&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;im1.png&quot;</span><span class="p">)</span>
+        <span class="n">left_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"trainingF"</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"im0.png"</span><span class="p">)</span>
+        <span class="n">right_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"trainingF"</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"im1.png"</span><span class="p">)</span>
         <span class="n">imgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_image_pattern</span><span class="p">,</span> <span class="n">right_image_pattern</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="n">imgs</span>
 
-        <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;trainingF&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;disp0GT.pfm&quot;</span><span class="p">)</span>
-        <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;trainingF&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;disp1GT.pfm&quot;</span><span class="p">)</span>
+        <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"trainingF"</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"disp0GT.pfm"</span><span class="p">)</span>
+        <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"trainingF"</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"disp1GT.pfm"</span><span class="p">)</span>
         <span class="n">disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="n">disparities</span>
 
@@ -598,7 +598,7 @@
         <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
 
 <div class="viewcode-block" id="CarlaStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CarlaStereo.html#torchvision.datasets.CarlaStereo.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -608,12 +608,12 @@
 <span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
 <span class="sd">            If a ``valid_mask`` is generated within the ``transforms`` parameter,</span>
 <span class="sd">            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="Kitti2012Stereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Kitti2012Stereo.html#torchvision.datasets.Kitti2012Stereo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Kitti2012Stereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    KITTI dataset from the `2012 stereo evaluation benchmark &lt;http://www.cvlibs.net/datasets/kitti/eval_stereo_flow.php&gt;`_.</span>
 <span class="sd">    Uses the RGB images for consistency with KITTI 2015.</span>
 
@@ -647,25 +647,25 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory where `Kitti2012` is located.</span>
-<span class="sd">        split (string, optional): The dataset split of scenes, either &quot;train&quot; (default) or &quot;test&quot;.</span>
+<span class="sd">        split (string, optional): The dataset split of scenes, either "train" (default) or "test".</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">))</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Kitti2012&quot;</span> <span class="o">/</span> <span class="p">(</span><span class="n">split</span> <span class="o">+</span> <span class="s2">&quot;ing&quot;</span><span class="p">)</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"Kitti2012"</span> <span class="o">/</span> <span class="p">(</span><span class="n">split</span> <span class="o">+</span> <span class="s2">"ing"</span><span class="p">)</span>
 
-        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;colored_0&quot;</span> <span class="o">/</span> <span class="s2">&quot;*_10.png&quot;</span><span class="p">)</span>
-        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;colored_1&quot;</span> <span class="o">/</span> <span class="s2">&quot;*_10.png&quot;</span><span class="p">)</span>
+        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"colored_0"</span> <span class="o">/</span> <span class="s2">"*_10.png"</span><span class="p">)</span>
+        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"colored_1"</span> <span class="o">/</span> <span class="s2">"*_10.png"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
-            <span class="n">disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;disp_noc&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">"train"</span><span class="p">:</span>
+            <span class="n">disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"disp_noc"</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">disparity_pattern</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">)</span>
@@ -682,7 +682,7 @@
         <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
 
 <div class="viewcode-block" id="Kitti2012Stereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Kitti2012Stereo.html#torchvision.datasets.Kitti2012Stereo.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -693,12 +693,12 @@
 <span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
 <span class="sd">            generate a valid mask.</span>
 <span class="sd">            Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="Kitti2015Stereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Kitti2015Stereo.html#torchvision.datasets.Kitti2015Stereo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Kitti2015Stereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    KITTI dataset from the `2015 stereo evaluation benchmark &lt;http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php&gt;`_.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
@@ -735,25 +735,25 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory where `Kitti2015` is located.</span>
-<span class="sd">        split (string, optional): The dataset split of scenes, either &quot;train&quot; (default) or &quot;test&quot;.</span>
+<span class="sd">        split (string, optional): The dataset split of scenes, either "train" (default) or "test".</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">))</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Kitti2015&quot;</span> <span class="o">/</span> <span class="p">(</span><span class="n">split</span> <span class="o">+</span> <span class="s2">&quot;ing&quot;</span><span class="p">)</span>
-        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;image_2&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
-        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;image_3&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"Kitti2015"</span> <span class="o">/</span> <span class="p">(</span><span class="n">split</span> <span class="o">+</span> <span class="s2">"ing"</span><span class="p">)</span>
+        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"image_2"</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)</span>
+        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"image_3"</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
-            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;disp_occ_0&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
-            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;disp_occ_1&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">"train"</span><span class="p">:</span>
+            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"disp_occ_0"</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)</span>
+            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"disp_occ_1"</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">)</span>
@@ -770,7 +770,7 @@
         <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
 
 <div class="viewcode-block" id="Kitti2015Stereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Kitti2015Stereo.html#torchvision.datasets.Kitti2015Stereo.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -781,12 +781,12 @@
 <span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
 <span class="sd">            generate a valid mask.</span>
 <span class="sd">            Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="Middlebury2014Stereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Middlebury2014Stereo.html#torchvision.datasets.Middlebury2014Stereo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Middlebury2014Stereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Publicly available scenes from the Middlebury dataset `2014 version &lt;https://vision.middlebury.edu/stereo/data/scenes2014/&gt;`.</span>
+<span class="w">    </span><span class="sd">"""Publicly available scenes from the Middlebury dataset `2014 version &lt;https://vision.middlebury.edu/stereo/data/scenes2014/&gt;`.</span>
 
 <span class="sd">    The dataset mostly follows the original format, without containing the ambient subdirectories.  : ::</span>
 
@@ -834,58 +834,58 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the Middleburry 2014 Dataset.</span>
-<span class="sd">        split (string, optional): The dataset split of scenes, either &quot;train&quot; (default), &quot;test&quot;, or &quot;additional&quot;</span>
+<span class="sd">        split (string, optional): The dataset split of scenes, either "train" (default), "test", or "additional"</span>
 <span class="sd">        use_ambient_views (boolean, optional): Whether to use different expose or lightning views when possible.</span>
 <span class="sd">            The dataset samples with equal probability between ``[im1.png, im1E.png, im1L.png]``.</span>
 <span class="sd">        calibration (string, optional): Whether or not to use the calibrated (default) or uncalibrated scenes.</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
 <span class="sd">        download (boolean, optional): Whether or not to download the dataset in the ``root`` directory.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">splits</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;Adirondack&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Jadeplant&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Motorcycle&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Piano&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pipes&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Playroom&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Playtable&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Recycle&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Shelves&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Vintage&quot;</span><span class="p">,</span>
+        <span class="s2">"train"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">"Adirondack"</span><span class="p">,</span>
+            <span class="s2">"Jadeplant"</span><span class="p">,</span>
+            <span class="s2">"Motorcycle"</span><span class="p">,</span>
+            <span class="s2">"Piano"</span><span class="p">,</span>
+            <span class="s2">"Pipes"</span><span class="p">,</span>
+            <span class="s2">"Playroom"</span><span class="p">,</span>
+            <span class="s2">"Playtable"</span><span class="p">,</span>
+            <span class="s2">"Recycle"</span><span class="p">,</span>
+            <span class="s2">"Shelves"</span><span class="p">,</span>
+            <span class="s2">"Vintage"</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;additional&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;Backpack&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Bicycle1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Cable&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Classroom1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Couch&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Flowers&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Mask&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Shopvac&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Sticks&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Storage&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Sword1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Sword2&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Umbrella&quot;</span><span class="p">,</span>
+        <span class="s2">"additional"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">"Backpack"</span><span class="p">,</span>
+            <span class="s2">"Bicycle1"</span><span class="p">,</span>
+            <span class="s2">"Cable"</span><span class="p">,</span>
+            <span class="s2">"Classroom1"</span><span class="p">,</span>
+            <span class="s2">"Couch"</span><span class="p">,</span>
+            <span class="s2">"Flowers"</span><span class="p">,</span>
+            <span class="s2">"Mask"</span><span class="p">,</span>
+            <span class="s2">"Shopvac"</span><span class="p">,</span>
+            <span class="s2">"Sticks"</span><span class="p">,</span>
+            <span class="s2">"Storage"</span><span class="p">,</span>
+            <span class="s2">"Sword1"</span><span class="p">,</span>
+            <span class="s2">"Sword2"</span><span class="p">,</span>
+            <span class="s2">"Umbrella"</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;Plants&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Classroom2E&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Classroom2&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Australia&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;DjembeL&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;CrusadeP&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Crusade&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Hoops&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Bicycle2&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Staircase&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Newkuba&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;AustraliaP&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Djembe&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Livingroom&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Computer&quot;</span><span class="p">,</span>
+        <span class="s2">"test"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="s2">"Plants"</span><span class="p">,</span>
+            <span class="s2">"Classroom2E"</span><span class="p">,</span>
+            <span class="s2">"Classroom2"</span><span class="p">,</span>
+            <span class="s2">"Australia"</span><span class="p">,</span>
+            <span class="s2">"DjembeL"</span><span class="p">,</span>
+            <span class="s2">"CrusadeP"</span><span class="p">,</span>
+            <span class="s2">"Crusade"</span><span class="p">,</span>
+            <span class="s2">"Hoops"</span><span class="p">,</span>
+            <span class="s2">"Bicycle2"</span><span class="p">,</span>
+            <span class="s2">"Staircase"</span><span class="p">,</span>
+            <span class="s2">"Newkuba"</span><span class="p">,</span>
+            <span class="s2">"AustraliaP"</span><span class="p">,</span>
+            <span class="s2">"Djembe"</span><span class="p">,</span>
+            <span class="s2">"Livingroom"</span><span class="p">,</span>
+            <span class="s2">"Computer"</span><span class="p">,</span>
         <span class="p">],</span>
     <span class="p">}</span>
 
@@ -894,35 +894,35 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
-        <span class="n">calibration</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;perfect&quot;</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
+        <span class="n">calibration</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"perfect"</span><span class="p">,</span>
         <span class="n">use_ambient_views</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="s2">&quot;additional&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">,</span> <span class="s2">"additional"</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">split</span> <span class="o">=</span> <span class="n">split</span>
 
         <span class="k">if</span> <span class="n">calibration</span><span class="p">:</span>
-            <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">calibration</span><span class="p">,</span> <span class="s2">&quot;calibration&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;perfect&quot;</span><span class="p">,</span> <span class="s2">&quot;imperfect&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
-            <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Split &#39;test&#39; has only no calibration settings, please set `calibration=None`.&quot;</span><span class="p">)</span>
+            <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">calibration</span><span class="p">,</span> <span class="s2">"calibration"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"perfect"</span><span class="p">,</span> <span class="s2">"imperfect"</span><span class="p">,</span> <span class="s2">"both"</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
+            <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">"test"</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Split 'test' has only no calibration settings, please set `calibration=None`."</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">split</span> <span class="o">!=</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">split</span> <span class="o">!=</span> <span class="s2">"test"</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Split &#39;</span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2">&#39; has calibration settings, however None was provided as an argument.&quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Setting calibration to &#39;perfect&#39; for split &#39;</span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2">&#39;. Available calibration settings are: &#39;perfect&#39;, &#39;imperfect&#39;, &#39;both&#39;.&quot;</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">"Split '</span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2">' has calibration settings, however None was provided as an argument."</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Setting calibration to 'perfect' for split '</span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2">'. Available calibration settings are: 'perfect', 'imperfect', 'both'."</span><span class="p">,</span>
                 <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_download_dataset</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Middlebury2014&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"Middlebury2014"</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The </span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2"> directory was not found in the provided root directory&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The </span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2"> directory was not found in the provided root directory"</span><span class="p">)</span>
 
         <span class="n">split_scenes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="n">split</span><span class="p">]</span>
         <span class="c1"># check that the provided root folder contains the scene splits</span>
@@ -932,46 +932,46 @@
             <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">split_scenes</span>
         <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Provided root folder does not contain any scenes from the </span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2"> split.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Provided root folder does not contain any scenes from the </span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2"> split."</span><span class="p">)</span>
 
         <span class="n">calibrartion_suffixes</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="kc">None</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;perfect&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;-perfect&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;imperfect&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;-imperfect&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;-perfect&quot;</span><span class="p">,</span> <span class="s2">&quot;-imperfect&quot;</span><span class="p">],</span>
+            <span class="kc">None</span><span class="p">:</span> <span class="p">[</span><span class="s2">""</span><span class="p">],</span>
+            <span class="s2">"perfect"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"-perfect"</span><span class="p">],</span>
+            <span class="s2">"imperfect"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"-imperfect"</span><span class="p">],</span>
+            <span class="s2">"both"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"-perfect"</span><span class="p">,</span> <span class="s2">"-imperfect"</span><span class="p">],</span>
         <span class="p">}[</span><span class="n">calibration</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">calibration_suffix</span> <span class="ow">in</span> <span class="n">calibrartion_suffixes</span><span class="p">:</span>
-            <span class="n">scene_pattern</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span> <span class="o">+</span> <span class="n">calibration_suffix</span>
-            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">&quot;im0.png&quot;</span><span class="p">)</span>
-            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">&quot;im1.png&quot;</span><span class="p">)</span>
+            <span class="n">scene_pattern</span> <span class="o">=</span> <span class="s2">"*"</span> <span class="o">+</span> <span class="n">calibration_suffix</span>
+            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">"im0.png"</span><span class="p">)</span>
+            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">"im1.png"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">"test"</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">left_dispartity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">&quot;disp0.pfm&quot;</span><span class="p">)</span>
-                <span class="n">right_dispartity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">&quot;disp1.pfm&quot;</span><span class="p">)</span>
+                <span class="n">left_dispartity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">"disp0.pfm"</span><span class="p">)</span>
+                <span class="n">right_dispartity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="n">scene_pattern</span> <span class="o">/</span> <span class="s2">"disp1.pfm"</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_dispartity_pattern</span><span class="p">,</span> <span class="n">right_dispartity_pattern</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">use_ambient_views</span> <span class="o">=</span> <span class="n">use_ambient_views</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Function that reads either the original right image or an augmented view when ``use_ambient_views`` is True.</span>
 <span class="sd">        When ``use_ambient_views`` is True, the dataset will return at random one of ``[im1.png, im1E.png, im1L.png]``</span>
 <span class="sd">        as the right image.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ambient_file_paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]</span>  <span class="c1"># make mypy happy</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
             <span class="n">file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">file_path</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;im1.png&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_ambient_views</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">file_path</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"im1.png"</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_ambient_views</span><span class="p">:</span>
             <span class="n">base_path</span> <span class="o">=</span> <span class="n">file_path</span><span class="o">.</span><span class="n">parent</span>
             <span class="c1"># initialize sampleable container</span>
-            <span class="n">ambient_file_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">base_path</span> <span class="o">/</span> <span class="n">view_name</span> <span class="k">for</span> <span class="n">view_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;im1E.png&quot;</span><span class="p">,</span> <span class="s2">&quot;im1L.png&quot;</span><span class="p">])</span>
-            <span class="c1"># double check that we&#39;re not going to try to read from an invalid file path</span>
+            <span class="n">ambient_file_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">base_path</span> <span class="o">/</span> <span class="n">view_name</span> <span class="k">for</span> <span class="n">view_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"im1E.png"</span><span class="p">,</span> <span class="s2">"im1L.png"</span><span class="p">])</span>
+            <span class="c1"># double check that we're not going to try to read from an invalid file path</span>
             <span class="n">ambient_file_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="n">ambient_file_paths</span><span class="p">))</span>
             <span class="c1"># keep the original image as an option as well for uniform sampling between base views</span>
             <span class="n">ambient_file_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
@@ -990,45 +990,45 @@
         <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_download_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">base_url</span> <span class="o">=</span> <span class="s2">&quot;https://vision.middlebury.edu/stereo/data/scenes2014/zip&quot;</span>
+        <span class="n">base_url</span> <span class="o">=</span> <span class="s2">"https://vision.middlebury.edu/stereo/data/scenes2014/zip"</span>
         <span class="c1"># train and additional splits have 2 different calibration settings</span>
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Middlebury2014&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"Middlebury2014"</span>
         <span class="n">split_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span>
 
-        <span class="k">if</span> <span class="n">split_name</span> <span class="o">!=</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">split_name</span> <span class="o">!=</span> <span class="s2">"test"</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">split_scene</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="n">split_name</span><span class="p">]:</span>
                 <span class="n">split_root</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">split_name</span>
-                <span class="k">for</span> <span class="n">calibration</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;perfect&quot;</span><span class="p">,</span> <span class="s2">&quot;imperfect&quot;</span><span class="p">]:</span>
-                    <span class="n">scene_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">split_scene</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">calibration</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="n">scene_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">scene_name</span><span class="si">}</span><span class="s2">.zip&quot;</span>
-                    <span class="c1"># download the scene only if it doesn&#39;t exist</span>
+                <span class="k">for</span> <span class="n">calibration</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"perfect"</span><span class="p">,</span> <span class="s2">"imperfect"</span><span class="p">]:</span>
+                    <span class="n">scene_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">split_scene</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">calibration</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="n">scene_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">scene_name</span><span class="si">}</span><span class="s2">.zip"</span>
+                    <span class="c1"># download the scene only if it doesn't exist</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">split_root</span> <span class="o">/</span> <span class="n">scene_name</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                         <span class="n">download_and_extract_archive</span><span class="p">(</span>
                             <span class="n">url</span><span class="o">=</span><span class="n">scene_url</span><span class="p">,</span>
-                            <span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">scene_name</span><span class="si">}</span><span class="s2">.zip&quot;</span><span class="p">,</span>
+                            <span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">scene_name</span><span class="si">}</span><span class="s2">.zip"</span><span class="p">,</span>
                             <span class="n">download_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">split_root</span><span class="p">),</span>
                             <span class="n">remove_finished</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                         <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="s2">&quot;test&quot;</span><span class="p">]):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"test"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"test"</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="s2">"test"</span><span class="p">]):</span>
                 <span class="c1"># test split is downloaded from a different location</span>
-                <span class="n">test_set_url</span> <span class="o">=</span> <span class="s2">&quot;https://vision.middlebury.edu/stereo/submit3/zip/MiddEval3-data-F.zip&quot;</span>
+                <span class="n">test_set_url</span> <span class="o">=</span> <span class="s2">"https://vision.middlebury.edu/stereo/submit3/zip/MiddEval3-data-F.zip"</span>
                 <span class="c1"># the unzip is going to produce a directory MiddEval3 with two subdirectories trainingF and testF</span>
                 <span class="c1"># we want to move the contents from testF into the  directory</span>
                 <span class="n">download_and_extract_archive</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">test_set_url</span><span class="p">,</span> <span class="n">download_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span><span class="p">),</span> <span class="n">remove_finished</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">scene_dir</span><span class="p">,</span> <span class="n">scene_names</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;MiddEval3/testF&quot;</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">scene_dir</span><span class="p">,</span> <span class="n">scene_names</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"MiddEval3/testF"</span><span class="p">)):</span>
                     <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">scene_names</span><span class="p">:</span>
-                        <span class="n">scene_dst_dir</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;test&quot;</span>
+                        <span class="n">scene_dst_dir</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="s2">"test"</span>
                         <span class="n">scene_src_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">scene_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">scene</span>
                         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">scene_dst_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                         <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">scene_src_dir</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">scene_dst_dir</span><span class="p">))</span>
 
                 <span class="c1"># cleanup MiddEval3 directory</span>
-                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;MiddEval3&quot;</span><span class="p">))</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"MiddEval3"</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Middlebury2014Stereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Middlebury2014Stereo.html#torchvision.datasets.Middlebury2014Stereo.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T2</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -1037,12 +1037,12 @@
 <span class="sd">            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)``.</span>
 <span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
 <span class="sd">            ``valid_mask`` is implicitly ``None`` for `split=test`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T2</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="CREStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CREStereo.html#torchvision.datasets.CREStereo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">CREStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Synthetic dataset used in training the `CREStereo &lt;https://arxiv.org/pdf/2203.11483.pdf&gt;`_ architecture.</span>
+<span class="w">    </span><span class="sd">"""Synthetic dataset used in training the `CREStereo &lt;https://arxiv.org/pdf/2203.11483.pdf&gt;`_ architecture.</span>
 <span class="sd">    Dataset details on the official paper `repo &lt;https://github.com/megvii-research/CREStereo&gt;`_.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
@@ -1081,7 +1081,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        root (str): Root directory of the dataset.</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -1092,18 +1092,18 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;CREStereo&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"CREStereo"</span>
 
-        <span class="n">dirs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;shapenet&quot;</span><span class="p">,</span> <span class="s2">&quot;reflective&quot;</span><span class="p">,</span> <span class="s2">&quot;tree&quot;</span><span class="p">,</span> <span class="s2">&quot;hole&quot;</span><span class="p">]</span>
+        <span class="n">dirs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"shapenet"</span><span class="p">,</span> <span class="s2">"reflective"</span><span class="p">,</span> <span class="s2">"tree"</span><span class="p">,</span> <span class="s2">"hole"</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
-            <span class="n">left_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_left.jpg&quot;</span><span class="p">)</span>
-            <span class="n">right_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_right.jpg&quot;</span><span class="p">)</span>
+            <span class="n">left_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">"*_left.jpg"</span><span class="p">)</span>
+            <span class="n">right_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">"*_right.jpg"</span><span class="p">)</span>
             <span class="n">imgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_image_pattern</span><span class="p">,</span> <span class="n">right_image_pattern</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="n">imgs</span>
 
-            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_left.disp.png&quot;</span><span class="p">)</span>
-            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">&quot;*_right.disp.png&quot;</span><span class="p">)</span>
+            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">"*_left.disp.png"</span><span class="p">)</span>
+            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="s2">"*_right.disp.png"</span><span class="p">)</span>
             <span class="n">disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="n">disparities</span>
 
@@ -1115,7 +1115,7 @@
         <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
 
 <div class="viewcode-block" id="CREStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CREStereo.html#torchvision.datasets.CREStereo.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -1125,12 +1125,12 @@
 <span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
 <span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
 <span class="sd">            generate a valid mask.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="FallingThingsStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FallingThingsStereo.html#torchvision.datasets.FallingThingsStereo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FallingThingsStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`FallingThings &lt;https://research.nvidia.com/publication/2018-06_falling-things-synthetic-dataset-3d-object-detection-and-pose-estimation&gt;`_ dataset.</span>
+<span class="w">    </span><span class="sd">"""`FallingThings &lt;https://research.nvidia.com/publication/2018-06_falling-things-synthetic-dataset-3d-object-detection-and-pose-estimation&gt;`_ dataset.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
 
@@ -1170,35 +1170,35 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory where FallingThings is located.</span>
-<span class="sd">        variant (string): Which variant to use. Either &quot;single&quot;, &quot;mixed&quot;, or &quot;both&quot;.</span>
+<span class="sd">        variant (string): Which variant to use. Either "single", "mixed", or "both".</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"single"</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;FallingThings&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"FallingThings"</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="s2">&quot;variant&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="s2">"variant"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"single"</span><span class="p">,</span> <span class="s2">"mixed"</span><span class="p">,</span> <span class="s2">"both"</span><span class="p">))</span>
 
         <span class="n">variants</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;single&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;single&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;mixed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;mixed&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="s2">&quot;mixed&quot;</span><span class="p">],</span>
+            <span class="s2">"single"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"single"</span><span class="p">],</span>
+            <span class="s2">"mixed"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"mixed"</span><span class="p">],</span>
+            <span class="s2">"both"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"single"</span><span class="p">,</span> <span class="s2">"mixed"</span><span class="p">],</span>
         <span class="p">}[</span><span class="n">variant</span><span class="p">]</span>
 
         <span class="n">split_prefix</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;single&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;mixed&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">),</span>
+            <span class="s2">"single"</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"*"</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"*"</span><span class="p">,</span>
+            <span class="s2">"mixed"</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"*"</span><span class="p">),</span>
         <span class="p">}</span>
 
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">:</span>
-            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.left.jpg&quot;</span><span class="p">)</span>
-            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.right.jpg&quot;</span><span class="p">)</span>
+            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">"*.left.jpg"</span><span class="p">)</span>
+            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">"*.right.jpg"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
 
-            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.left.depth.png&quot;</span><span class="p">)</span>
-            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;*.right.depth.png&quot;</span><span class="p">)</span>
+            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">"*.left.depth.png"</span><span class="p">)</span>
+            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">s</span> <span class="o">/</span> <span class="n">split_prefix</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">/</span> <span class="s2">"*.right.depth.png"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
@@ -1206,11 +1206,11 @@
         <span class="n">depth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>
         <span class="c1"># as per https://research.nvidia.com/sites/default/files/pubs/2018-06_Falling-Things/readme_0.txt</span>
         <span class="c1"># in order to extract disparity from depth maps</span>
-        <span class="n">camera_settings_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;_camera_settings.json&quot;</span>
+        <span class="n">camera_settings_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"_camera_settings.json"</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">camera_settings_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="c1"># inverse of depth-from-disparity equation: depth = (baseline * focal) / (disparity * pixel_constant)</span>
             <span class="n">intrinsics</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-            <span class="n">focal</span> <span class="o">=</span> <span class="n">intrinsics</span><span class="p">[</span><span class="s2">&quot;camera_settings&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;intrinsic_settings&quot;</span><span class="p">][</span><span class="s2">&quot;fx&quot;</span><span class="p">]</span>
+            <span class="n">focal</span> <span class="o">=</span> <span class="n">intrinsics</span><span class="p">[</span><span class="s2">"camera_settings"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">"intrinsic_settings"</span><span class="p">][</span><span class="s2">"fx"</span><span class="p">]</span>
             <span class="n">baseline</span><span class="p">,</span> <span class="n">pixel_constant</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">100</span>  <span class="c1"># pixel constant is inverted</span>
             <span class="n">disparity_map</span> <span class="o">=</span> <span class="p">(</span><span class="n">baseline</span> <span class="o">*</span> <span class="n">focal</span> <span class="o">*</span> <span class="n">pixel_constant</span><span class="p">)</span> <span class="o">/</span> <span class="n">depth</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
             <span class="c1"># unsqueeze disparity to (C, H, W)</span>
@@ -1219,7 +1219,7 @@
             <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
 
 <div class="viewcode-block" id="FallingThingsStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FallingThingsStereo.html#torchvision.datasets.FallingThingsStereo.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -1229,12 +1229,12 @@
 <span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
 <span class="sd">            If a ``valid_mask`` is generated within the ``transforms`` parameter,</span>
 <span class="sd">            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="SceneFlowStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.SceneFlowStereo.html#torchvision.datasets.SceneFlowStereo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SceneFlowStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset interface for `Scene Flow &lt;https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html&gt;`_ datasets.</span>
+<span class="w">    </span><span class="sd">"""Dataset interface for `Scene Flow &lt;https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html&gt;`_ datasets.</span>
 <span class="sd">    This interface provides access to the `FlyingThings3D, `Monkaa` and `Driving` datasets.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
@@ -1281,47 +1281,47 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory where SceneFlow is located.</span>
-<span class="sd">        variant (string): Which dataset variant to user, &quot;FlyingThings3D&quot; (default), &quot;Monkaa&quot; or &quot;Driving&quot;.</span>
-<span class="sd">        pass_name (string): Which pass to use, &quot;clean&quot; (default), &quot;final&quot; or &quot;both&quot;.</span>
+<span class="sd">        variant (string): Which dataset variant to user, "FlyingThings3D" (default), "Monkaa" or "Driving".</span>
+<span class="sd">        pass_name (string): Which pass to use, "clean" (default), "final" or "both".</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;FlyingThings3D&quot;</span><span class="p">,</span>
-        <span class="n">pass_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;clean&quot;</span><span class="p">,</span>
+        <span class="n">variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"FlyingThings3D"</span><span class="p">,</span>
+        <span class="n">pass_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"clean"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;SceneFlow&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"SceneFlow"</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="s2">&quot;variant&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;FlyingThings3D&quot;</span><span class="p">,</span> <span class="s2">&quot;Driving&quot;</span><span class="p">,</span> <span class="s2">&quot;Monkaa&quot;</span><span class="p">))</span>
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">pass_name</span><span class="p">,</span> <span class="s2">&quot;pass_name&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;clean&quot;</span><span class="p">,</span> <span class="s2">&quot;final&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="s2">"variant"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"FlyingThings3D"</span><span class="p">,</span> <span class="s2">"Driving"</span><span class="p">,</span> <span class="s2">"Monkaa"</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">pass_name</span><span class="p">,</span> <span class="s2">"pass_name"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"clean"</span><span class="p">,</span> <span class="s2">"final"</span><span class="p">,</span> <span class="s2">"both"</span><span class="p">))</span>
 
         <span class="n">passes</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;clean&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;frames_cleanpass&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;final&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;frames_finalpass&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;frames_cleanpass&quot;</span><span class="p">,</span> <span class="s2">&quot;frames_finalpass&quot;</span><span class="p">],</span>
+            <span class="s2">"clean"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"frames_cleanpass"</span><span class="p">],</span>
+            <span class="s2">"final"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"frames_finalpass"</span><span class="p">],</span>
+            <span class="s2">"both"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"frames_cleanpass"</span><span class="p">,</span> <span class="s2">"frames_finalpass"</span><span class="p">],</span>
         <span class="p">}[</span><span class="n">pass_name</span><span class="p">]</span>
 
         <span class="n">root</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">variant</span>
 
         <span class="n">prefix_directories</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;Monkaa&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">),</span>
-            <span class="s2">&quot;FlyingThings3D&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Driving&quot;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;*&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span><span class="p">,</span>
+            <span class="s2">"Monkaa"</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"*"</span><span class="p">),</span>
+            <span class="s2">"FlyingThings3D"</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"*"</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"*"</span><span class="p">,</span>
+            <span class="s2">"Driving"</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"*"</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"*"</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">passes</span><span class="p">:</span>
-            <span class="n">left_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">p</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;left&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
-            <span class="n">right_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">p</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;right&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="n">left_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">p</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">"left"</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)</span>
+            <span class="n">right_image_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">p</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">"right"</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_image_pattern</span><span class="p">,</span> <span class="n">right_image_pattern</span><span class="p">)</span>
 
-            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;disparity&quot;</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;left&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.pfm&quot;</span><span class="p">)</span>
-            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;disparity&quot;</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;right&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.pfm&quot;</span><span class="p">)</span>
+            <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"disparity"</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">"left"</span> <span class="o">/</span> <span class="s2">"*.pfm"</span><span class="p">)</span>
+            <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"disparity"</span> <span class="o">/</span> <span class="n">prefix_directories</span><span class="p">[</span><span class="n">variant</span><span class="p">]</span> <span class="o">/</span> <span class="s2">"right"</span> <span class="o">/</span> <span class="s2">"*.pfm"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
@@ -1331,7 +1331,7 @@
         <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
 
 <div class="viewcode-block" id="SceneFlowStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.SceneFlowStereo.html#torchvision.datasets.SceneFlowStereo.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -1341,12 +1341,12 @@
 <span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
 <span class="sd">            If a ``valid_mask`` is generated within the ``transforms`` parameter,</span>
 <span class="sd">            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="SintelStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.SintelStereo.html#torchvision.datasets.SintelStereo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SintelStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sintel `Stereo Dataset &lt;http://sintel.is.tue.mpg.de/stereo&gt;`_.</span>
+<span class="w">    </span><span class="sd">"""Sintel `Stereo Dataset &lt;http://sintel.is.tue.mpg.de/stereo&gt;`_.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
 
@@ -1386,30 +1386,30 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory where Sintel Stereo is located.</span>
-<span class="sd">        pass_name (string): The name of the pass to use, either &quot;final&quot;, &quot;clean&quot; or &quot;both&quot;.</span>
+<span class="sd">        pass_name (string): The name of the pass to use, either "final", "clean" or "both".</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">pass_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;final&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">pass_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"final"</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">pass_name</span><span class="p">,</span> <span class="s2">&quot;pass_name&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;final&quot;</span><span class="p">,</span> <span class="s2">&quot;clean&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">pass_name</span><span class="p">,</span> <span class="s2">"pass_name"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"final"</span><span class="p">,</span> <span class="s2">"clean"</span><span class="p">,</span> <span class="s2">"both"</span><span class="p">))</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Sintel&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"Sintel"</span>
         <span class="n">pass_names</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;final&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;final&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;clean&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;clean&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;final&quot;</span><span class="p">,</span> <span class="s2">&quot;clean&quot;</span><span class="p">],</span>
+            <span class="s2">"final"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"final"</span><span class="p">],</span>
+            <span class="s2">"clean"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"clean"</span><span class="p">],</span>
+            <span class="s2">"both"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"final"</span><span class="p">,</span> <span class="s2">"clean"</span><span class="p">],</span>
         <span class="p">}[</span><span class="n">pass_name</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">pass_names</span><span class="p">:</span>
-            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;training&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_left&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
-            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;training&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_right&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"training"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_left"</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)</span>
+            <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"training"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s2">_right"</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
 
-            <span class="n">disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;training&quot;</span> <span class="o">/</span> <span class="s2">&quot;disparities&quot;</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)</span>
+            <span class="n">disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"training"</span> <span class="o">/</span> <span class="s2">"disparities"</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">disparity_pattern</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_occlussion_mask_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
@@ -1422,14 +1422,14 @@
         <span class="c1"># the parent of the scenedir is actually the disparity dir</span>
         <span class="n">sampledir</span> <span class="o">=</span> <span class="n">scenedir</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
 
-        <span class="n">occlusion_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sampledir</span> <span class="o">/</span> <span class="s2">&quot;occlusions&quot;</span> <span class="o">/</span> <span class="n">scenedir</span><span class="o">.</span><span class="n">name</span> <span class="o">/</span> <span class="n">basename</span><span class="p">)</span>
-        <span class="n">outofframe_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sampledir</span> <span class="o">/</span> <span class="s2">&quot;outofframe&quot;</span> <span class="o">/</span> <span class="n">scenedir</span><span class="o">.</span><span class="n">name</span> <span class="o">/</span> <span class="n">basename</span><span class="p">)</span>
+        <span class="n">occlusion_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sampledir</span> <span class="o">/</span> <span class="s2">"occlusions"</span> <span class="o">/</span> <span class="n">scenedir</span><span class="o">.</span><span class="n">name</span> <span class="o">/</span> <span class="n">basename</span><span class="p">)</span>
+        <span class="n">outofframe_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sampledir</span> <span class="o">/</span> <span class="s2">"outofframe"</span> <span class="o">/</span> <span class="n">scenedir</span><span class="o">.</span><span class="n">name</span> <span class="o">/</span> <span class="n">basename</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">occlusion_path</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Occlusion mask </span><span class="si">{</span><span class="n">occlusion_path</span><span class="si">}</span><span class="s2"> does not exist&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Occlusion mask </span><span class="si">{</span><span class="n">occlusion_path</span><span class="si">}</span><span class="s2"> does not exist"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outofframe_path</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Out of frame mask </span><span class="si">{</span><span class="n">outofframe_path</span><span class="si">}</span><span class="s2"> does not exist&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Out of frame mask </span><span class="si">{</span><span class="n">outofframe_path</span><span class="si">}</span><span class="s2"> does not exist"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">occlusion_path</span><span class="p">,</span> <span class="n">outofframe_path</span>
 
@@ -1454,7 +1454,7 @@
         <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
 
 <div class="viewcode-block" id="SintelStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.SintelStereo.html#torchvision.datasets.SintelStereo.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T2</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -1463,12 +1463,12 @@
 <span class="sd">            tuple: A 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
 <span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images whilst</span>
 <span class="sd">            the valid_mask is a numpy array of shape (H, W).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T2</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="InStereo2k"><a class="viewcode-back" href="../../../generated/torchvision.datasets.InStereo2k.html#torchvision.datasets.InStereo2k">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">InStereo2k</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`InStereo2k &lt;https://github.com/YuhuaXu/StereoDataset&gt;`_ dataset.</span>
+<span class="w">    </span><span class="sd">"""`InStereo2k &lt;https://github.com/YuhuaXu/StereoDataset&gt;`_ dataset.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
 
@@ -1495,23 +1495,23 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory where InStereo2k is located.</span>
-<span class="sd">        split (string): Either &quot;train&quot; or &quot;test&quot;.</span>
+<span class="sd">        split (string): Either "train" or "test".</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;InStereo2k&quot;</span> <span class="o">/</span> <span class="n">split</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"InStereo2k"</span> <span class="o">/</span> <span class="n">split</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">))</span>
 
-        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;left.png&quot;</span><span class="p">)</span>
-        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;right.png&quot;</span><span class="p">)</span>
+        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"left.png"</span><span class="p">)</span>
+        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"right.png"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
 
-        <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;left_disp.png&quot;</span><span class="p">)</span>
-        <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;right_disp.png&quot;</span><span class="p">)</span>
+        <span class="n">left_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"left_disp.png"</span><span class="p">)</span>
+        <span class="n">right_disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"right_disp.png"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_disparity_pattern</span><span class="p">,</span> <span class="n">right_disparity_pattern</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
@@ -1522,7 +1522,7 @@
         <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
 
 <div class="viewcode-block" id="InStereo2k.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.InStereo2k.html#torchvision.datasets.InStereo2k.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T1</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -1532,12 +1532,12 @@
 <span class="sd">            The disparity is a numpy array of shape (1, H, W) and the images are PIL images.</span>
 <span class="sd">            If a ``valid_mask`` is generated within the ``transforms`` parameter,</span>
 <span class="sd">            a 4-tuple with ``(img_left, img_right, disparity, valid_mask)`` is returned.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="ETH3DStereo"><a class="viewcode-back" href="../../../generated/torchvision.datasets.ETH3DStereo.html#torchvision.datasets.ETH3DStereo">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ETH3DStereo</span><span class="p">(</span><span class="n">StereoMatchingDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;ETH3D `Low-Res Two-View &lt;https://www.eth3d.net/datasets&gt;`_ dataset.</span>
+<span class="w">    </span><span class="sd">"""ETH3D `Low-Res Two-View &lt;https://www.eth3d.net/datasets&gt;`_ dataset.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
 
@@ -1582,30 +1582,30 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the ETH3D Dataset.</span>
-<span class="sd">        split (string, optional): The dataset split of scenes, either &quot;train&quot; (default) or &quot;test&quot;.</span>
+<span class="sd">        split (string, optional): The dataset split of scenes, either "train" (default) or "test".</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in a sample and returns a transformed version.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_has_built_in_disparity_mask</span> <span class="o">=</span> <span class="kc">True</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">))</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;ETH3D&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"ETH3D"</span>
 
-        <span class="n">img_dir</span> <span class="o">=</span> <span class="s2">&quot;two_view_training&quot;</span> <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span> <span class="k">else</span> <span class="s2">&quot;two_view_test&quot;</span>
-        <span class="n">anot_dir</span> <span class="o">=</span> <span class="s2">&quot;two_view_training_gt&quot;</span>
+        <span class="n">img_dir</span> <span class="o">=</span> <span class="s2">"two_view_training"</span> <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">"train"</span> <span class="k">else</span> <span class="s2">"two_view_test"</span>
+        <span class="n">anot_dir</span> <span class="o">=</span> <span class="s2">"two_view_training_gt"</span>
 
-        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">img_dir</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;im0.png&quot;</span><span class="p">)</span>
-        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">img_dir</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;im1.png&quot;</span><span class="p">)</span>
+        <span class="n">left_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">img_dir</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"im0.png"</span><span class="p">)</span>
+        <span class="n">right_img_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">img_dir</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"im1.png"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">left_img_pattern</span><span class="p">,</span> <span class="n">right_img_pattern</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">"test"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">anot_dir</span> <span class="o">/</span> <span class="s2">&quot;*&quot;</span> <span class="o">/</span> <span class="s2">&quot;disp0GT.pfm&quot;</span><span class="p">)</span>
+            <span class="n">disparity_pattern</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">anot_dir</span> <span class="o">/</span> <span class="s2">"*"</span> <span class="o">/</span> <span class="s2">"disp0GT.pfm"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_disparities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_pairs</span><span class="p">(</span><span class="n">disparity_pattern</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_disparity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
@@ -1615,13 +1615,13 @@
 
         <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">_read_pfm_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
         <span class="n">disparity_map</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">disparity_map</span><span class="p">)</span>  <span class="c1"># ensure that the disparity is positive</span>
-        <span class="n">mask_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;mask0nocc.png&quot;</span>
+        <span class="n">mask_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"mask0nocc.png"</span>
         <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">mask_path</span><span class="p">)</span>
         <span class="n">valid_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">valid_mask</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">disparity_map</span><span class="p">,</span> <span class="n">valid_mask</span>
 
 <div class="viewcode-block" id="ETH3DStereo.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.ETH3DStereo.html#torchvision.datasets.ETH3DStereo.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T2</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -1632,7 +1632,7 @@
 <span class="sd">            ``valid_mask`` is implicitly ``None`` if the ``transforms`` parameter does not</span>
 <span class="sd">            generate a valid mask.</span>
 <span class="sd">            Both ``disparity`` and ``valid_mask`` are ``None`` if the dataset split is test.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">T2</span><span class="p">,</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">))</span></div></div>
 </pre></div>
 

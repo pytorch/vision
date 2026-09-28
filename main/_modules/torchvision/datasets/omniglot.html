@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -422,13 +422,13 @@
 
 
 <div class="viewcode-block" id="Omniglot"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Omniglot.html#torchvision.datasets.Omniglot">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Omniglot</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`Omniglot &lt;https://github.com/brendenlake/omniglot&gt;`_ Dataset.</span>
+<span class="w">    </span><span class="sd">"""`Omniglot &lt;https://github.com/brendenlake/omniglot&gt;`_ Dataset.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of dataset where directory</span>
 <span class="sd">            ``omniglot-py`` exists.</span>
-<span class="sd">        background (bool, optional): If True, creates dataset from the &quot;background&quot; set, otherwise</span>
-<span class="sd">            creates from the &quot;evaluation&quot; set. This terminology is defined by the authors.</span>
+<span class="sd">        background (bool, optional): If True, creates dataset from the "background" set, otherwise</span>
+<span class="sd">            creates from the "evaluation" set. This terminology is defined by the authors.</span>
 <span class="sd">        transform (callable, optional): A function/transform that takes in a PIL image</span>
 <span class="sd">            and returns a transformed version. E.g, ``transforms.RandomCrop``</span>
 <span class="sd">        target_transform (callable, optional): A function/transform that takes in the</span>
@@ -439,13 +439,13 @@
 <span class="sd">        loader (callable, optional): A function to load an image given its path.</span>
 <span class="sd">            By default, it uses PIL as its image loader, but users could also pass in</span>
 <span class="sd">            ``torchvision.io.decode_image`` for decoding image data into tensors directly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">folder</span> <span class="o">=</span> <span class="s2">&quot;omniglot-py&quot;</span>
-    <span class="n">download_url_prefix</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/brendenlake/omniglot/master/python&quot;</span>
+    <span class="n">folder</span> <span class="o">=</span> <span class="s2">"omniglot-py"</span>
+    <span class="n">download_url_prefix</span> <span class="o">=</span> <span class="s2">"https://raw.githubusercontent.com/brendenlake/omniglot/master/python"</span>
     <span class="n">zips_md5</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;images_background&quot;</span><span class="p">:</span> <span class="s2">&quot;68d2efa1b9178cc56df9314c21c6e718&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;images_evaluation&quot;</span><span class="p">:</span> <span class="s2">&quot;6b91aef0f799c5bb55b94e3f2daec811&quot;</span><span class="p">,</span>
+        <span class="s2">"images_background"</span><span class="p">:</span> <span class="s2">"68d2efa1b9178cc56df9314c21c6e718"</span><span class="p">,</span>
+        <span class="s2">"images_evaluation"</span><span class="p">:</span> <span class="s2">"6b91aef0f799c5bb55b94e3f2daec811"</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -464,7 +464,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_integrity</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dataset not found or corrupted. You can use download=True to download it&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Dataset not found or corrupted. You can use download=True to download it"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">target_folder</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_target_folder</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alphabets</span> <span class="o">=</span> <span class="n">list_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_folder</span><span class="p">)</span>
@@ -472,7 +472,7 @@
             <span class="p">([</span><span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">list_dir</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_folder</span><span class="p">,</span> <span class="n">a</span><span class="p">))]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alphabets</span><span class="p">),</span> <span class="p">[]</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_character_images</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">[(</span><span class="n">image</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">list_files</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_folder</span><span class="p">,</span> <span class="n">character</span><span class="p">),</span> <span class="s2">&quot;.png&quot;</span><span class="p">)]</span>
+            <span class="p">[(</span><span class="n">image</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">list_files</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_folder</span><span class="p">,</span> <span class="n">character</span><span class="p">),</span> <span class="s2">".png"</span><span class="p">)]</span>
             <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">character</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_characters</span><span class="p">)</span>
         <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_flat_character_images</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_character_images</span><span class="p">,</span> <span class="p">[])</span>
@@ -482,16 +482,16 @@
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flat_character_images</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Omniglot.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Omniglot.html#torchvision.datasets.Omniglot.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">            index (int): Index</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: (image, target) where target is index of the target character class.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">image_name</span><span class="p">,</span> <span class="n">character_class</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flat_character_images</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
         <span class="n">image_path</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_characters</span><span class="p">[</span><span class="n">character_class</span><span class="p">],</span> <span class="n">image_name</span><span class="p">)</span>
-        <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;L&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="p">(</span><span class="n">image_path</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"r"</span><span class="p">)</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">"L"</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="p">(</span><span class="n">image_path</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">:</span>
             <span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
@@ -503,7 +503,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_integrity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="n">zip_filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_target_folder</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_integrity</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">zip_filename</span> <span class="o">+</span> <span class="s2">&quot;.zip&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">zips_md5</span><span class="p">[</span><span class="n">zip_filename</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_integrity</span><span class="p">(</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">zip_filename</span> <span class="o">+</span> <span class="s2">".zip"</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">zips_md5</span><span class="p">[</span><span class="n">zip_filename</span><span class="p">]):</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="kc">True</span>
 
@@ -512,12 +512,12 @@
             <span class="k">return</span>
 
         <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_target_folder</span><span class="p">()</span>
-        <span class="n">zip_filename</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s2">&quot;.zip&quot;</span>
-        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_url_prefix</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">zip_filename</span>
+        <span class="n">zip_filename</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s2">".zip"</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">download_url_prefix</span> <span class="o">+</span> <span class="s2">"/"</span> <span class="o">+</span> <span class="n">zip_filename</span>
         <span class="n">download_and_extract_archive</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">zip_filename</span><span class="p">,</span> <span class="n">md5</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">zips_md5</span><span class="p">[</span><span class="n">filename</span><span class="p">])</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_target_folder</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">&quot;images_background&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">background</span> <span class="k">else</span> <span class="s2">&quot;images_evaluation&quot;</span></div>
+        <span class="k">return</span> <span class="s2">"images_background"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">background</span> <span class="k">else</span> <span class="s2">"images_evaluation"</span></div>
 </pre></div>
 
              </article>

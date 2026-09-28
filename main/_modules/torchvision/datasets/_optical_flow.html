@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -432,18 +432,18 @@
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">&quot;KittiFlow&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;Sintel&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;FlyingThings3D&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;FlyingChairs&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;HD1K&quot;</span><span class="p">,</span>
+    <span class="s2">"KittiFlow"</span><span class="p">,</span>
+    <span class="s2">"Sintel"</span><span class="p">,</span>
+    <span class="s2">"FlyingThings3D"</span><span class="p">,</span>
+    <span class="s2">"FlyingChairs"</span><span class="p">,</span>
+    <span class="s2">"HD1K"</span><span class="p">,</span>
 <span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">FlowDataset</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">VisionDataset</span><span class="p">):</span>
     <span class="c1"># Some datasets like Kitti have a built-in valid_flow_mask, indicating which flow values are valid</span>
     <span class="c1"># For those we return (img1, img2, flow, valid_flow_mask), and for the rest we return (img1, img2, flow),</span>
-    <span class="c1"># and it&#39;s up to whatever consumes the dataset to decide what valid_flow_mask should be.</span>
+    <span class="c1"># and it's up to whatever consumes the dataset to decide what valid_flow_mask should be.</span>
     <span class="n">_has_builtin_flow_mask</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -473,7 +473,7 @@
         <span class="n">img1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">img2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span><span class="p">:</span>  <span class="c1"># it will be empty for some dataset when split=&quot;test&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span><span class="p">:</span>  <span class="c1"># it will be empty for some dataset when split="test"</span>
             <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_builtin_flow_mask</span><span class="p">:</span>
                 <span class="n">flow</span><span class="p">,</span> <span class="n">valid_flow_mask</span> <span class="o">=</span> <span class="n">flow</span>
@@ -499,7 +499,7 @@
 
 
 <div class="viewcode-block" id="Sintel"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Sintel.html#torchvision.datasets.Sintel">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Sintel</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`Sintel &lt;http://sintel.is.tue.mpg.de/&gt;`_ Dataset for optical flow.</span>
+<span class="w">    </span><span class="sd">"""`Sintel &lt;http://sintel.is.tue.mpg.de/&gt;`_ Dataset for optical flow.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
 
@@ -530,8 +530,8 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the Sintel Dataset.</span>
-<span class="sd">        split (string, optional): The dataset split, either &quot;train&quot; (default) or &quot;test&quot;</span>
-<span class="sd">        pass_name (string, optional): The pass to use, either &quot;clean&quot; (default), &quot;final&quot;, or &quot;both&quot;. See link above for</span>
+<span class="sd">        split (string, optional): The dataset split, either "train" (default) or "test"</span>
+<span class="sd">        pass_name (string, optional): The pass to use, either "clean" (default), "final", or "both". See link above for</span>
 <span class="sd">            details on the different passes.</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
 <span class="sd">            ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.</span>
@@ -540,38 +540,38 @@
 <span class="sd">        loader (callable, optional): A function to load an image given its path.</span>
 <span class="sd">            By default, it uses PIL as its image loader, but users could also pass in</span>
 <span class="sd">            ``torchvision.io.decode_image`` for decoding image data into tensors directly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
-        <span class="n">pass_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;clean&quot;</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
+        <span class="n">pass_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"clean"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">loader</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_loader</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">,</span> <span class="n">loader</span><span class="o">=</span><span class="n">loader</span><span class="p">)</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">pass_name</span><span class="p">,</span> <span class="s2">&quot;pass_name&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;clean&quot;</span><span class="p">,</span> <span class="s2">&quot;final&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">))</span>
-        <span class="n">passes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;clean&quot;</span><span class="p">,</span> <span class="s2">&quot;final&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">pass_name</span> <span class="o">==</span> <span class="s2">&quot;both&quot;</span> <span class="k">else</span> <span class="p">[</span><span class="n">pass_name</span><span class="p">]</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">pass_name</span><span class="p">,</span> <span class="s2">"pass_name"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"clean"</span><span class="p">,</span> <span class="s2">"final"</span><span class="p">,</span> <span class="s2">"both"</span><span class="p">))</span>
+        <span class="n">passes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"clean"</span><span class="p">,</span> <span class="s2">"final"</span><span class="p">]</span> <span class="k">if</span> <span class="n">pass_name</span> <span class="o">==</span> <span class="s2">"both"</span> <span class="k">else</span> <span class="p">[</span><span class="n">pass_name</span><span class="p">]</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;Sintel&quot;</span>
-        <span class="n">flow_root</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;training&quot;</span> <span class="o">/</span> <span class="s2">&quot;flow&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"Sintel"</span>
+        <span class="n">flow_root</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="s2">"training"</span> <span class="o">/</span> <span class="s2">"flow"</span>
 
         <span class="k">for</span> <span class="n">pass_name</span> <span class="ow">in</span> <span class="n">passes</span><span class="p">:</span>
-            <span class="n">split_dir</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span> <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span> <span class="k">else</span> <span class="n">split</span>
+            <span class="n">split_dir</span> <span class="o">=</span> <span class="s2">"training"</span> <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">"train"</span> <span class="k">else</span> <span class="n">split</span>
             <span class="n">image_root</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">split_dir</span> <span class="o">/</span> <span class="n">pass_name</span>
             <span class="k">for</span> <span class="n">scene</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">image_root</span><span class="p">):</span>
-                <span class="n">image_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">image_root</span> <span class="o">/</span> <span class="n">scene</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)))</span>
+                <span class="n">image_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">image_root</span> <span class="o">/</span> <span class="n">scene</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)))</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">image_list</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">image_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">image_list</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]]</span>
 
-                <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">+=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">flow_root</span> <span class="o">/</span> <span class="n">scene</span> <span class="o">/</span> <span class="s2">&quot;*.flo&quot;</span><span class="p">)))</span>
+                <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">"train"</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">+=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">flow_root</span> <span class="o">/</span> <span class="n">scene</span> <span class="o">/</span> <span class="s2">"*.flo"</span><span class="p">)))</span>
 
 <div class="viewcode-block" id="Sintel.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Sintel.html#torchvision.datasets.Sintel.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -579,10 +579,10 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: A 3-tuple with ``(img1, img2, flow)``.</span>
 <span class="sd">            The flow is a numpy array of shape (2, H, W) and the images are PIL images.</span>
-<span class="sd">            ``flow`` is None if ``split=&quot;test&quot;``.</span>
+<span class="sd">            ``flow`` is None if ``split="test"``.</span>
 <span class="sd">            If a valid flow mask is generated within the ``transforms`` parameter,</span>
 <span class="sd">            a 4-tuple with ``(img1, img2, flow, valid_flow_mask)`` is returned.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
@@ -590,7 +590,7 @@
 
 
 <div class="viewcode-block" id="KittiFlow"><a class="viewcode-back" href="../../../generated/torchvision.datasets.KittiFlow.html#torchvision.datasets.KittiFlow">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">KittiFlow</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`KITTI &lt;http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow&gt;`__ dataset for optical flow (2015).</span>
+<span class="w">    </span><span class="sd">"""`KITTI &lt;http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow&gt;`__ dataset for optical flow (2015).</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
 
@@ -604,44 +604,44 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the KittiFlow Dataset.</span>
-<span class="sd">        split (string, optional): The dataset split, either &quot;train&quot; (default) or &quot;test&quot;</span>
+<span class="sd">        split (string, optional): The dataset split, either "train" (default) or "test"</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
 <span class="sd">            ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.</span>
 <span class="sd">        loader (callable, optional): A function to load an image given its path.</span>
 <span class="sd">            By default, it uses PIL as its image loader, but users could also pass in</span>
 <span class="sd">            ``torchvision.io.decode_image`` for decoding image data into tensors directly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_has_builtin_flow_mask</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">loader</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_loader</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">,</span> <span class="n">loader</span><span class="o">=</span><span class="n">loader</span><span class="p">)</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">))</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;KittiFlow&quot;</span> <span class="o">/</span> <span class="p">(</span><span class="n">split</span> <span class="o">+</span> <span class="s2">&quot;ing&quot;</span><span class="p">)</span>
-        <span class="n">images1</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;image_2&quot;</span> <span class="o">/</span> <span class="s2">&quot;*_10.png&quot;</span><span class="p">)))</span>
-        <span class="n">images2</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;image_2&quot;</span> <span class="o">/</span> <span class="s2">&quot;*_11.png&quot;</span><span class="p">)))</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"KittiFlow"</span> <span class="o">/</span> <span class="p">(</span><span class="n">split</span> <span class="o">+</span> <span class="s2">"ing"</span><span class="p">)</span>
+        <span class="n">images1</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"image_2"</span> <span class="o">/</span> <span class="s2">"*_10.png"</span><span class="p">)))</span>
+        <span class="n">images2</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"image_2"</span> <span class="o">/</span> <span class="s2">"*_11.png"</span><span class="p">)))</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">images1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">images2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-                <span class="s2">&quot;Could not find the Kitti flow images. Please make sure the directory structure is correct.&quot;</span>
+                <span class="s2">"Could not find the Kitti flow images. Please make sure the directory structure is correct."</span>
             <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">img1</span><span class="p">,</span> <span class="n">img2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">images1</span><span class="p">,</span> <span class="n">images2</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">img1</span><span class="p">,</span> <span class="n">img2</span><span class="p">]]</span>
 
-        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;flow_occ&quot;</span> <span class="o">/</span> <span class="s2">&quot;*_10.png&quot;</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">"train"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"flow_occ"</span> <span class="o">/</span> <span class="s2">"*_10.png"</span><span class="p">)))</span>
 
 <div class="viewcode-block" id="KittiFlow.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.KittiFlow.html#torchvision.datasets.KittiFlow.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -651,8 +651,8 @@
 <span class="sd">            where ``valid_flow_mask`` is a numpy boolean mask of shape (H, W)</span>
 <span class="sd">            indicating which flow values are valid. The flow is a numpy array of</span>
 <span class="sd">            shape (2, H, W) and the images are PIL images. ``flow`` and ``valid_flow_mask`` are None if</span>
-<span class="sd">            ``split=&quot;test&quot;``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            ``split="test"``.</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
@@ -660,7 +660,7 @@
 
 
 <div class="viewcode-block" id="FlyingChairs"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FlyingChairs.html#torchvision.datasets.FlyingChairs">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FlyingChairs</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`FlyingChairs &lt;https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs&gt;`_ Dataset for optical flow.</span>
+<span class="w">    </span><span class="sd">"""`FlyingChairs &lt;https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs&gt;`_ Dataset for optical flow.</span>
 
 <span class="sd">    You will also need to download the FlyingChairs_train_val.txt file from the dataset page.</span>
 
@@ -678,38 +678,38 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the FlyingChairs Dataset.</span>
-<span class="sd">        split (string, optional): The dataset split, either &quot;train&quot; (default) or &quot;val&quot;</span>
+<span class="sd">        split (string, optional): The dataset split, either "train" (default) or "val"</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
 <span class="sd">            ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.</span>
 <span class="sd">            ``valid_flow_mask`` is expected for consistency with other datasets which</span>
 <span class="sd">            return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span> <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">)</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">))</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;FlyingChairs&quot;</span>
-        <span class="n">images</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.ppm&quot;</span><span class="p">)))</span>
-        <span class="n">flows</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;data&quot;</span> <span class="o">/</span> <span class="s2">&quot;*.flo&quot;</span><span class="p">)))</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"FlyingChairs"</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"data"</span> <span class="o">/</span> <span class="s2">"*.ppm"</span><span class="p">)))</span>
+        <span class="n">flows</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"data"</span> <span class="o">/</span> <span class="s2">"*.flo"</span><span class="p">)))</span>
 
-        <span class="n">split_file_name</span> <span class="o">=</span> <span class="s2">&quot;FlyingChairs_train_val.txt&quot;</span>
+        <span class="n">split_file_name</span> <span class="o">=</span> <span class="s2">"FlyingChairs_train_val.txt"</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split_file_name</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-                <span class="s2">&quot;The FlyingChairs_train_val.txt file was not found - please download it from the dataset page (see docstring).&quot;</span>
+                <span class="s2">"The FlyingChairs_train_val.txt file was not found - please download it from the dataset page (see docstring)."</span>
             <span class="p">)</span>
 
         <span class="n">split_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">split_file_name</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flows</span><span class="p">)):</span>
             <span class="n">split_id</span> <span class="o">=</span> <span class="n">split_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span> <span class="ow">and</span> <span class="n">split_id</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;val&quot;</span> <span class="ow">and</span> <span class="n">split_id</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">split</span> <span class="o">==</span> <span class="s2">"train"</span> <span class="ow">and</span> <span class="n">split_id</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">split</span> <span class="o">==</span> <span class="s2">"val"</span> <span class="ow">and</span> <span class="n">split_id</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">flows</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">images</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">],</span> <span class="n">images</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]]</span>
 
 <div class="viewcode-block" id="FlyingChairs.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FlyingChairs.html#torchvision.datasets.FlyingChairs.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -717,10 +717,10 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: A 3-tuple with ``(img1, img2, flow)``.</span>
 <span class="sd">            The flow is a numpy array of shape (2, H, W) and the images are PIL images.</span>
-<span class="sd">            ``flow`` is None if ``split=&quot;val&quot;``.</span>
+<span class="sd">            ``flow`` is None if ``split="val"``.</span>
 <span class="sd">            If a valid flow mask is generated within the ``transforms`` parameter,</span>
 <span class="sd">            a 4-tuple with ``(img1, img2, flow, valid_flow_mask)`` is returned.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
@@ -728,7 +728,7 @@
 
 
 <div class="viewcode-block" id="FlyingThings3D"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FlyingThings3D.html#torchvision.datasets.FlyingThings3D">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FlyingThings3D</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`FlyingThings3D &lt;https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html&gt;`_ dataset for optical flow.</span>
+<span class="w">    </span><span class="sd">"""`FlyingThings3D &lt;https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html&gt;`_ dataset for optical flow.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
 
@@ -746,10 +746,10 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the intel FlyingThings3D Dataset.</span>
-<span class="sd">        split (string, optional): The dataset split, either &quot;train&quot; (default) or &quot;test&quot;</span>
-<span class="sd">        pass_name (string, optional): The pass to use, either &quot;clean&quot; (default) or &quot;final&quot; or &quot;both&quot;. See link above for</span>
+<span class="sd">        split (string, optional): The dataset split, either "train" (default) or "test"</span>
+<span class="sd">        pass_name (string, optional): The pass to use, either "clean" (default) or "final" or "both". See link above for</span>
 <span class="sd">            details on the different passes.</span>
-<span class="sd">        camera (string, optional): Which camera to return images from. Can be either &quot;left&quot; (default) or &quot;right&quot; or &quot;both&quot;.</span>
+<span class="sd">        camera (string, optional): Which camera to return images from. Can be either "left" (default) or "right" or "both".</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
 <span class="sd">            ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.</span>
 <span class="sd">            ``valid_flow_mask`` is expected for consistency with other datasets which</span>
@@ -757,61 +757,61 @@
 <span class="sd">        loader (callable, optional): A function to load an image given its path.</span>
 <span class="sd">            By default, it uses PIL as its image loader, but users could also pass in</span>
 <span class="sd">            ``torchvision.io.decode_image`` for decoding image data into tensors directly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
-        <span class="n">pass_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;clean&quot;</span><span class="p">,</span>
-        <span class="n">camera</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
+        <span class="n">pass_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"clean"</span><span class="p">,</span>
+        <span class="n">camera</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"left"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">loader</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_loader</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">,</span> <span class="n">loader</span><span class="o">=</span><span class="n">loader</span><span class="p">)</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">))</span>
         <span class="n">split</span> <span class="o">=</span> <span class="n">split</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">pass_name</span><span class="p">,</span> <span class="s2">&quot;pass_name&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;clean&quot;</span><span class="p">,</span> <span class="s2">&quot;final&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">pass_name</span><span class="p">,</span> <span class="s2">"pass_name"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"clean"</span><span class="p">,</span> <span class="s2">"final"</span><span class="p">,</span> <span class="s2">"both"</span><span class="p">))</span>
         <span class="n">passes</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;clean&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;frames_cleanpass&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;final&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;frames_finalpass&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;frames_cleanpass&quot;</span><span class="p">,</span> <span class="s2">&quot;frames_finalpass&quot;</span><span class="p">],</span>
+            <span class="s2">"clean"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"frames_cleanpass"</span><span class="p">],</span>
+            <span class="s2">"final"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"frames_finalpass"</span><span class="p">],</span>
+            <span class="s2">"both"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"frames_cleanpass"</span><span class="p">,</span> <span class="s2">"frames_finalpass"</span><span class="p">],</span>
         <span class="p">}[</span><span class="n">pass_name</span><span class="p">]</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="s2">&quot;camera&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">))</span>
-        <span class="n">cameras</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="s2">&quot;right&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">camera</span> <span class="o">==</span> <span class="s2">&quot;both&quot;</span> <span class="k">else</span> <span class="p">[</span><span class="n">camera</span><span class="p">]</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="s2">"camera"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"left"</span><span class="p">,</span> <span class="s2">"right"</span><span class="p">,</span> <span class="s2">"both"</span><span class="p">))</span>
+        <span class="n">cameras</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"left"</span><span class="p">,</span> <span class="s2">"right"</span><span class="p">]</span> <span class="k">if</span> <span class="n">camera</span> <span class="o">==</span> <span class="s2">"both"</span> <span class="k">else</span> <span class="p">[</span><span class="n">camera</span><span class="p">]</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;FlyingThings3D&quot;</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"FlyingThings3D"</span>
 
-        <span class="n">directions</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;into_future&quot;</span><span class="p">,</span> <span class="s2">&quot;into_past&quot;</span><span class="p">)</span>
+        <span class="n">directions</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"into_future"</span><span class="p">,</span> <span class="s2">"into_past"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">pass_name</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">direction</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">passes</span><span class="p">,</span> <span class="n">cameras</span><span class="p">,</span> <span class="n">directions</span><span class="p">):</span>
-            <span class="n">image_dirs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">pass_name</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="s2">&quot;*/*&quot;</span><span class="p">)))</span>
+            <span class="n">image_dirs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">pass_name</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="s2">"*/*"</span><span class="p">)))</span>
             <span class="n">image_dirs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">image_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">camera</span> <span class="k">for</span> <span class="n">image_dir</span> <span class="ow">in</span> <span class="n">image_dirs</span><span class="p">)</span>
 
-            <span class="n">flow_dirs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;optical_flow&quot;</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="s2">&quot;*/*&quot;</span><span class="p">)))</span>
+            <span class="n">flow_dirs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"optical_flow"</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="s2">"*/*"</span><span class="p">)))</span>
             <span class="n">flow_dirs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">flow_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">direction</span> <span class="o">/</span> <span class="n">camera</span> <span class="k">for</span> <span class="n">flow_dir</span> <span class="ow">in</span> <span class="n">flow_dirs</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">image_dirs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">flow_dirs</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-                    <span class="s2">&quot;Could not find the FlyingThings3D flow images. &quot;</span>
-                    <span class="s2">&quot;Please make sure the directory structure is correct.&quot;</span>
+                    <span class="s2">"Could not find the FlyingThings3D flow images. "</span>
+                    <span class="s2">"Please make sure the directory structure is correct."</span>
                 <span class="p">)</span>
 
             <span class="k">for</span> <span class="n">image_dir</span><span class="p">,</span> <span class="n">flow_dir</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">image_dirs</span><span class="p">,</span> <span class="n">flow_dirs</span><span class="p">):</span>
-                <span class="n">images</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">image_dir</span> <span class="o">/</span> <span class="s2">&quot;*.png&quot;</span><span class="p">)))</span>
-                <span class="n">flows</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">flow_dir</span> <span class="o">/</span> <span class="s2">&quot;*.pfm&quot;</span><span class="p">)))</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">image_dir</span> <span class="o">/</span> <span class="s2">"*.png"</span><span class="p">)))</span>
+                <span class="n">flows</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">flow_dir</span> <span class="o">/</span> <span class="s2">"*.pfm"</span><span class="p">)))</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flows</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-                    <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;into_future&quot;</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">"into_future"</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">images</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]]</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">flows</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
-                    <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">&quot;into_past&quot;</span><span class="p">:</span>
+                    <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s2">"into_past"</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">images</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">]]]</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">flows</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
 
 <div class="viewcode-block" id="FlyingThings3D.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FlyingThings3D.html#torchvision.datasets.FlyingThings3D.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -819,10 +819,10 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: A 3-tuple with ``(img1, img2, flow)``.</span>
 <span class="sd">            The flow is a numpy array of shape (2, H, W) and the images are PIL images.</span>
-<span class="sd">            ``flow`` is None if ``split=&quot;test&quot;``.</span>
+<span class="sd">            ``flow`` is None if ``split="test"``.</span>
 <span class="sd">            If a valid flow mask is generated within the ``transforms`` parameter,</span>
 <span class="sd">            a 4-tuple with ``(img1, img2, flow, valid_flow_mask)`` is returned.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
@@ -830,7 +830,7 @@
 
 
 <div class="viewcode-block" id="HD1K"><a class="viewcode-back" href="../../../generated/torchvision.datasets.HD1K.html#torchvision.datasets.HD1K">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">HD1K</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`HD1K &lt;http://hci-benchmark.iwr.uni-heidelberg.de/&gt;`__ dataset for optical flow.</span>
+<span class="w">    </span><span class="sd">"""`HD1K &lt;http://hci-benchmark.iwr.uni-heidelberg.de/&gt;`__ dataset for optical flow.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
 
@@ -845,52 +845,52 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the HD1K Dataset.</span>
-<span class="sd">        split (string, optional): The dataset split, either &quot;train&quot; (default) or &quot;test&quot;</span>
+<span class="sd">        split (string, optional): The dataset split, either "train" (default) or "test"</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
 <span class="sd">            ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.</span>
 <span class="sd">        loader (callable, optional): A function to load an image given its path.</span>
 <span class="sd">            By default, it uses PIL as its image loader, but users could also pass in</span>
 <span class="sd">            ``torchvision.io.decode_image`` for decoding image data into tensors directly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_has_builtin_flow_mask</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">loader</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_loader</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="n">transforms</span><span class="p">,</span> <span class="n">loader</span><span class="o">=</span><span class="n">loader</span><span class="p">)</span>
 
-        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+        <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="n">valid_values</span><span class="o">=</span><span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">))</span>
 
-        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;hd1k&quot;</span>
-        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
-            <span class="c1"># There are 36 &quot;sequences&quot; and we don&#39;t want seq i to overlap with seq i + 1, so we need this for loop</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"hd1k"</span>
+        <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">"train"</span><span class="p">:</span>
+            <span class="c1"># There are 36 "sequences" and we don't want seq i to overlap with seq i + 1, so we need this for loop</span>
             <span class="k">for</span> <span class="n">seq_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">36</span><span class="p">):</span>
-                <span class="n">flows</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;hd1k_flow_gt&quot;</span> <span class="o">/</span> <span class="s2">&quot;flow_occ&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">seq_idx</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">_*.png&quot;</span><span class="p">)))</span>
-                <span class="n">images</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;hd1k_input&quot;</span> <span class="o">/</span> <span class="s2">&quot;image_2&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">seq_idx</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">_*.png&quot;</span><span class="p">)))</span>
+                <span class="n">flows</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"hd1k_flow_gt"</span> <span class="o">/</span> <span class="s2">"flow_occ"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">seq_idx</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">_*.png"</span><span class="p">)))</span>
+                <span class="n">images</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"hd1k_input"</span> <span class="o">/</span> <span class="s2">"image_2"</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">seq_idx</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">_*.png"</span><span class="p">)))</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flows</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">flows</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">images</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">images1</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;hd1k_challenge&quot;</span> <span class="o">/</span> <span class="s2">&quot;image_2&quot;</span> <span class="o">/</span> <span class="s2">&quot;*10.png&quot;</span><span class="p">)))</span>
-            <span class="n">images2</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;hd1k_challenge&quot;</span> <span class="o">/</span> <span class="s2">&quot;image_2&quot;</span> <span class="o">/</span> <span class="s2">&quot;*11.png&quot;</span><span class="p">)))</span>
+            <span class="n">images1</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"hd1k_challenge"</span> <span class="o">/</span> <span class="s2">"image_2"</span> <span class="o">/</span> <span class="s2">"*10.png"</span><span class="p">)))</span>
+            <span class="n">images2</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"hd1k_challenge"</span> <span class="o">/</span> <span class="s2">"image_2"</span> <span class="o">/</span> <span class="s2">"*11.png"</span><span class="p">)))</span>
             <span class="k">for</span> <span class="n">image1</span><span class="p">,</span> <span class="n">image2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">images1</span><span class="p">,</span> <span class="n">images2</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">image1</span><span class="p">,</span> <span class="n">image2</span><span class="p">]]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-                <span class="s2">&quot;Could not find the HD1K images. Please make sure the directory structure is correct.&quot;</span>
+                <span class="s2">"Could not find the HD1K images. Please make sure the directory structure is correct."</span>
             <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
         <span class="k">return</span> <span class="n">_read_16bits_png_with_flow_and_valid_mask</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
 
 <div class="viewcode-block" id="HD1K.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.HD1K.html#torchvision.datasets.HD1K.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return example at given index.</span>
+<span class="w">        </span><span class="sd">"""Return example at given index.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            index(int): The index of the example to retrieve</span>
@@ -900,25 +900,25 @@
 <span class="sd">            is a numpy boolean mask of shape (H, W)</span>
 <span class="sd">            indicating which flow values are valid. The flow is a numpy array of</span>
 <span class="sd">            shape (2, H, W) and the images are PIL images. ``flow`` and ``valid_flow_mask`` are None if</span>
-<span class="sd">            ``split=&quot;test&quot;``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            ``split="test"``.</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div></div>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_read_flo</span><span class="p">(</span><span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read .flo file in Middlebury format&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Read .flo file in Middlebury format"""</span>
     <span class="c1"># Code adapted from:</span>
     <span class="c1"># http://stackoverflow.com/questions/28013200/reading-middlebury-flow-files-with-python-bytes-array-numpy</span>
     <span class="c1"># Everything needs to be in little Endian according to</span>
     <span class="c1"># https://vision.middlebury.edu/flow/code/flow-code/README.txt</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">magic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">magic</span> <span class="o">!=</span> <span class="sa">b</span><span class="s2">&quot;PIEH&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Magic number incorrect. Invalid .flo file&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">magic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">magic</span> <span class="o">!=</span> <span class="sa">b</span><span class="s2">"PIEH"</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Magic number incorrect. Invalid .flo file"</span><span class="p">)</span>
 
-        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;&lt;i4&quot;</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;&lt;i4&quot;</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;&lt;f4&quot;</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w</span> <span class="o">*</span> <span class="n">h</span><span class="p">)</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">"&lt;i4"</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">"&lt;i4"</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">"&lt;f4"</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">w</span> <span class="o">*</span> <span class="n">h</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
 

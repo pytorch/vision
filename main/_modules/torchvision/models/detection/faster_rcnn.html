@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -435,15 +435,15 @@
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;FasterRCNN&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;FasterRCNN_ResNet50_FPN_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;FasterRCNN_ResNet50_FPN_V2_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;FasterRCNN_MobileNet_V3_Large_FPN_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;FasterRCNN_MobileNet_V3_Large_320_FPN_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;fasterrcnn_resnet50_fpn&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;fasterrcnn_resnet50_fpn_v2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;fasterrcnn_mobilenet_v3_large_fpn&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;fasterrcnn_mobilenet_v3_large_320_fpn&quot;</span><span class="p">,</span>
+    <span class="s2">"FasterRCNN"</span><span class="p">,</span>
+    <span class="s2">"FasterRCNN_ResNet50_FPN_Weights"</span><span class="p">,</span>
+    <span class="s2">"FasterRCNN_ResNet50_FPN_V2_Weights"</span><span class="p">,</span>
+    <span class="s2">"FasterRCNN_MobileNet_V3_Large_FPN_Weights"</span><span class="p">,</span>
+    <span class="s2">"FasterRCNN_MobileNet_V3_Large_320_FPN_Weights"</span><span class="p">,</span>
+    <span class="s2">"fasterrcnn_resnet50_fpn"</span><span class="p">,</span>
+    <span class="s2">"fasterrcnn_resnet50_fpn_v2"</span><span class="p">,</span>
+    <span class="s2">"fasterrcnn_mobilenet_v3_large_fpn"</span><span class="p">,</span>
+    <span class="s2">"fasterrcnn_mobilenet_v3_large_320_fpn"</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -454,7 +454,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">FasterRCNN</span><span class="p">(</span><span class="n">GeneralizedRCNN</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Implements Faster R-CNN.</span>
 
 <span class="sd">    The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each</span>
@@ -490,7 +490,7 @@
 <span class="sd">            we attempt to preserve the aspect ratio and scale the shorter edge</span>
 <span class="sd">            to ``min_size``. If the resulting longer edge exceeds ``max_size``,</span>
 <span class="sd">            then downscale so that the longer edge does not exceed ``max_size``.</span>
-<span class="sd">            This may result in the shorter edge beeing lower than ``min_size``.</span>
+<span class="sd">            This may result in the shorter edge being lower than ``min_size``.</span>
 <span class="sd">        max_size (int): See ``min_size``.</span>
 <span class="sd">        image_mean (Tuple[float, float, float]): mean values used for input normalization.</span>
 <span class="sd">            They are generally the mean values of the dataset on which the backbone has been trained</span>
@@ -544,11 +544,11 @@
 <span class="sd">        &gt;&gt;&gt; # only the features</span>
 <span class="sd">        &gt;&gt;&gt; backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features</span>
 <span class="sd">        &gt;&gt;&gt; # FasterRCNN needs to know the number of</span>
-<span class="sd">        &gt;&gt;&gt; # output channels in a backbone. For mobilenet_v2, it&#39;s 1280,</span>
+<span class="sd">        &gt;&gt;&gt; # output channels in a backbone. For mobilenet_v2, it's 1280,</span>
 <span class="sd">        &gt;&gt;&gt; # so we need to add it here</span>
 <span class="sd">        &gt;&gt;&gt; backbone.out_channels = 1280</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; # let&#39;s make the RPN generate 5 x 3 anchors per spatial</span>
+<span class="sd">        &gt;&gt;&gt; # let's make the RPN generate 5 x 3 anchors per spatial</span>
 <span class="sd">        &gt;&gt;&gt; # location, with 5 different sizes and 3 different aspect</span>
 <span class="sd">        &gt;&gt;&gt; # ratios. We have a Tuple[Tuple[int]] because each feature</span>
 <span class="sd">        &gt;&gt;&gt; # map could potentially have different sizes and</span>
@@ -556,14 +556,14 @@
 <span class="sd">        &gt;&gt;&gt; anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),),</span>
 <span class="sd">        &gt;&gt;&gt;                                    aspect_ratios=((0.5, 1.0, 2.0),))</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; # let&#39;s define what are the feature maps that we will</span>
+<span class="sd">        &gt;&gt;&gt; # let's define what are the feature maps that we will</span>
 <span class="sd">        &gt;&gt;&gt; # use to perform the region of interest cropping, as well as</span>
 <span class="sd">        &gt;&gt;&gt; # the size of the crop after rescaling.</span>
 <span class="sd">        &gt;&gt;&gt; # if your backbone returns a Tensor, featmap_names is expected to</span>
-<span class="sd">        &gt;&gt;&gt; # be [&#39;0&#39;]. More generally, the backbone should return an</span>
+<span class="sd">        &gt;&gt;&gt; # be ['0']. More generally, the backbone should return an</span>
 <span class="sd">        &gt;&gt;&gt; # OrderedDict[Tensor], and in featmap_names you can choose which</span>
 <span class="sd">        &gt;&gt;&gt; # feature maps to use.</span>
-<span class="sd">        &gt;&gt;&gt; roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[&#39;0&#39;],</span>
+<span class="sd">        &gt;&gt;&gt; roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=['0'],</span>
 <span class="sd">        &gt;&gt;&gt;                                                 output_size=7,</span>
 <span class="sd">        &gt;&gt;&gt;                                                 sampling_ratio=2)</span>
 <span class="sd">        &gt;&gt;&gt;</span>
@@ -575,7 +575,7 @@
 <span class="sd">        &gt;&gt;&gt; model.eval()</span>
 <span class="sd">        &gt;&gt;&gt; x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]</span>
 <span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -614,28 +614,28 @@
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">&quot;out_channels&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="s2">"out_channels"</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;backbone should contain an attribute out_channels &quot;</span>
-                <span class="s2">&quot;specifying the number of output channels (assumed to be the &quot;</span>
-                <span class="s2">&quot;same for all the levels)&quot;</span>
+                <span class="s2">"backbone should contain an attribute out_channels "</span>
+                <span class="s2">"specifying the number of output channels (assumed to be the "</span>
+                <span class="s2">"same for all the levels)"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rpn_anchor_generator</span><span class="p">,</span> <span class="p">(</span><span class="n">AnchorGenerator</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;rpn_anchor_generator should be of type AnchorGenerator or None instead of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">rpn_anchor_generator</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"rpn_anchor_generator should be of type AnchorGenerator or None instead of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">rpn_anchor_generator</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">box_roi_pool</span><span class="p">,</span> <span class="p">(</span><span class="n">MultiScaleRoIAlign</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;box_roi_pool should be of type MultiScaleRoIAlign or None instead of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">box_roi_pool</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"box_roi_pool should be of type MultiScaleRoIAlign or None instead of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">box_roi_pool</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">box_predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_classes should be None when box_predictor is specified&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"num_classes should be None when box_predictor is specified"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">box_predictor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_classes should not be None when box_predictor is not specified&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"num_classes should not be None when box_predictor is not specified"</span><span class="p">)</span>
 
         <span class="n">out_channels</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">out_channels</span>
 
@@ -661,7 +661,7 @@
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">box_roi_pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">box_roi_pool</span> <span class="o">=</span> <span class="n">MultiScaleRoIAlign</span><span class="p">(</span><span class="n">featmap_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">],</span> <span class="n">output_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">sampling_ratio</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">box_roi_pool</span> <span class="o">=</span> <span class="n">MultiScaleRoIAlign</span><span class="p">(</span><span class="n">featmap_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"0"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">,</span> <span class="s2">"2"</span><span class="p">,</span> <span class="s2">"3"</span><span class="p">],</span> <span class="n">output_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">sampling_ratio</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">box_head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">resolution</span> <span class="o">=</span> <span class="n">box_roi_pool</span><span class="o">.</span><span class="n">output_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -697,13 +697,13 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">TwoMLPHead</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Standard heads for FPN-based models</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        in_channels (int): number of input channels</span>
 <span class="sd">        representation_size (int): size of the intermediate representation</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">representation_size</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -728,13 +728,13 @@
         <span class="n">fc_layers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">            input_size (Tuple[int, int, int]): the input size in CHW format.</span>
 <span class="sd">            conv_layers (list): feature dimensions of each Convolution layer</span>
 <span class="sd">            fc_layers (list): feature dimensions of each FCN layer</span>
 <span class="sd">            norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">in_channels</span><span class="p">,</span> <span class="n">in_height</span><span class="p">,</span> <span class="n">in_width</span> <span class="o">=</span> <span class="n">input_size</span>
 
         <span class="n">blocks</span> <span class="o">=</span> <span class="p">[]</span>
@@ -752,20 +752,20 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">blocks</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
-                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"fan_out"</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">"relu"</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">FastRCNNPredictor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Standard classification + bounding box regression layers</span>
 <span class="sd">    for Fast R-CNN.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        in_channels (int): number of input channels</span>
 <span class="sd">        num_classes (int): number of output classes (including background)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -776,7 +776,7 @@
         <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span>
                 <span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
-                <span class="sa">f</span><span class="s2">&quot;x has the wrong shape, expecting the last two dimensions to be [1,1] instead of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">"x has the wrong shape, expecting the last two dimensions to be [1,1] instead of </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">start_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cls_score</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -786,27 +786,27 @@
 
 
 <span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_COCO_CATEGORIES</span><span class="p">,</span>
-    <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">"categories"</span><span class="p">:</span> <span class="n">_COCO_CATEGORIES</span><span class="p">,</span>
+    <span class="s2">"min_size"</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
 <span class="p">}</span>
 
 
 <div class="viewcode-block" id="FasterRCNN_ResNet50_FPN_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn.html#torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FasterRCNN_ResNet50_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">41755286</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;COCO-val2017&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;box_map&quot;</span><span class="p">:</span> <span class="mf">37.0</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">41755286</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn"</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"COCO-val2017"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"box_map"</span><span class="p">:</span> <span class="mf">37.0</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">134.38</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">159.743</span><span class="p">,</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were produced by following a similar training recipe as on the paper.&quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">134.38</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">159.743</span><span class="p">,</span>
+            <span class="s2">"_docs"</span><span class="p">:</span> <span class="s2">"""These weights were produced by following a similar training recipe as on the paper."""</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
@@ -814,20 +814,20 @@
 
 <div class="viewcode-block" id="FasterRCNN_ResNet50_FPN_V2_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn_v2.html#torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FasterRCNN_ResNet50_FPN_V2_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_v2_coco-dd69338a.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_v2_coco-dd69338a.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">43712278</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5763&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;COCO-val2017&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;box_map&quot;</span><span class="p">:</span> <span class="mf">46.7</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">43712278</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/pull/5763"</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"COCO-val2017"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"box_map"</span><span class="p">:</span> <span class="mf">46.7</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">280.371</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">167.104</span><span class="p">,</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were produced using an enhanced training recipe to boost the model accuracy.&quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">280.371</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">167.104</span><span class="p">,</span>
+            <span class="s2">"_docs"</span><span class="p">:</span> <span class="s2">"""These weights were produced using an enhanced training recipe to boost the model accuracy."""</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
@@ -835,20 +835,20 @@
 
 <div class="viewcode-block" id="FasterRCNN_MobileNet_V3_Large_FPN_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn.html#torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_FPN_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FasterRCNN_MobileNet_V3_Large_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">19386354</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;COCO-val2017&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;box_map&quot;</span><span class="p">:</span> <span class="mf">32.8</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">19386354</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn"</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"COCO-val2017"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"box_map"</span><span class="p">:</span> <span class="mf">32.8</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">4.494</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">74.239</span><span class="p">,</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were produced by following a similar training recipe as on the paper.&quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">4.494</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">74.239</span><span class="p">,</span>
+            <span class="s2">"_docs"</span><span class="p">:</span> <span class="s2">"""These weights were produced by following a similar training recipe as on the paper."""</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
@@ -856,20 +856,20 @@
 
 <div class="viewcode-block" id="FasterRCNN_MobileNet_V3_Large_320_FPN_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn.html#torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">19386354</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;COCO-val2017&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;box_map&quot;</span><span class="p">:</span> <span class="mf">22.8</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">19386354</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn"</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"COCO-val2017"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"box_map"</span><span class="p">:</span> <span class="mf">22.8</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">0.719</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">74.239</span><span class="p">,</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were produced by following a similar training recipe as on the paper.&quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">0.719</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">74.239</span><span class="p">,</span>
+            <span class="s2">"_docs"</span><span class="p">:</span> <span class="s2">"""These weights were produced by following a similar training recipe as on the paper."""</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
@@ -877,8 +877,8 @@
 
 <div class="viewcode-block" id="fasterrcnn_resnet50_fpn"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn.html#torchvision.models.detection.fasterrcnn_resnet50_fpn">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span>
-    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">FasterRCNN_ResNet50_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
-    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
+    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">FasterRCNN_ResNet50_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
+    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained_backbone"</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">fasterrcnn_resnet50_fpn</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
@@ -889,7 +889,7 @@
     <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Faster R-CNN model with a ResNet-50-FPN backbone from the `Faster R-CNN: Towards Real-Time Object</span>
 <span class="sd">    Detection with Region Proposal Networks &lt;https://arxiv.org/abs/1506.01497&gt;`__</span>
 <span class="sd">    paper.</span>
@@ -935,8 +935,8 @@
 <span class="sd">        &gt;&gt;&gt; targets = []</span>
 <span class="sd">        &gt;&gt;&gt; for i in range(len(images)):</span>
 <span class="sd">        &gt;&gt;&gt;     d = {}</span>
-<span class="sd">        &gt;&gt;&gt;     d[&#39;boxes&#39;] = boxes[i]</span>
-<span class="sd">        &gt;&gt;&gt;     d[&#39;labels&#39;] = labels[i]</span>
+<span class="sd">        &gt;&gt;&gt;     d['boxes'] = boxes[i]</span>
+<span class="sd">        &gt;&gt;&gt;     d['labels'] = labels[i]</span>
 <span class="sd">        &gt;&gt;&gt;     targets.append(d)</span>
 <span class="sd">        &gt;&gt;&gt; output = model(images, targets)</span>
 <span class="sd">        &gt;&gt;&gt; # For inference</span>
@@ -945,7 +945,7 @@
 <span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
 <span class="sd">        &gt;&gt;&gt;</span>
 <span class="sd">        &gt;&gt;&gt; # optionally, if you want to export the model to ONNX:</span>
-<span class="sd">        &gt;&gt;&gt; torch.onnx.export(model, x, &quot;faster_rcnn.onnx&quot;, opset_version = 11)</span>
+<span class="sd">        &gt;&gt;&gt; torch.onnx.export(model, x, "faster_rcnn.onnx", opset_version = 11)</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        weights (:class:`~torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights`, optional): The</span>
@@ -968,13 +968,13 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.detection.FasterRCNN_ResNet50_FPN_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">FasterRCNN_ResNet50_FPN_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">weights_backbone</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">"num_classes"</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">]))</span>
     <span class="k">elif</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">num_classes</span> <span class="o">=</span> <span class="mi">91</span>
 
@@ -996,8 +996,8 @@
 
 <div class="viewcode-block" id="fasterrcnn_resnet50_fpn_v2"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_resnet50_fpn_v2.html#torchvision.models.detection.fasterrcnn_resnet50_fpn_v2">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span>
-    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
-    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
+    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
+    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained_backbone"</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">fasterrcnn_resnet50_fpn_v2</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
@@ -1008,7 +1008,7 @@
     <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Constructs an improved Faster R-CNN model with a ResNet-50-FPN backbone from `Benchmarking Detection</span>
 <span class="sd">    Transfer Learning with Vision Transformers &lt;https://arxiv.org/abs/2111.11429&gt;`__ paper.</span>
 
@@ -1039,13 +1039,13 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">weights_backbone</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">"num_classes"</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">]))</span>
     <span class="k">elif</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">num_classes</span> <span class="o">=</span> <span class="mi">91</span>
 
@@ -1085,7 +1085,7 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">weights_backbone</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">"num_classes"</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">]))</span>
     <span class="k">elif</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">num_classes</span> <span class="o">=</span> <span class="mi">91</span>
 
@@ -1117,8 +1117,8 @@
 
 <div class="viewcode-block" id="fasterrcnn_mobilenet_v3_large_320_fpn"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn.html#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span>
-    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
-    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
+    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
+    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained_backbone"</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">fasterrcnn_mobilenet_v3_large_320_fpn</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
@@ -1129,7 +1129,7 @@
     <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tuned for mobile use cases.</span>
 
 <span class="sd">    .. betastatus:: detection module</span>
@@ -1166,16 +1166,16 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">FasterRCNN_MobileNet_V3_Large_320_FPN_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
 
     <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="mi">320</span><span class="p">,</span>
-        <span class="s2">&quot;max_size&quot;</span><span class="p">:</span> <span class="mi">640</span><span class="p">,</span>
-        <span class="s2">&quot;rpn_pre_nms_top_n_test&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
-        <span class="s2">&quot;rpn_post_nms_top_n_test&quot;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
-        <span class="s2">&quot;rpn_score_thresh&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="s2">"min_size"</span><span class="p">:</span> <span class="mi">320</span><span class="p">,</span>
+        <span class="s2">"max_size"</span><span class="p">:</span> <span class="mi">640</span><span class="p">,</span>
+        <span class="s2">"rpn_pre_nms_top_n_test"</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+        <span class="s2">"rpn_post_nms_top_n_test"</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span>
+        <span class="s2">"rpn_score_thresh"</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>
@@ -1191,8 +1191,8 @@
 
 <div class="viewcode-block" id="fasterrcnn_mobilenet_v3_large_fpn"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn.html#torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span>
-    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">FasterRCNN_MobileNet_V3_Large_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
-    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
+    <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">FasterRCNN_MobileNet_V3_Large_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
+    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained_backbone"</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">fasterrcnn_mobilenet_v3_large_fpn</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
@@ -1203,7 +1203,7 @@
     <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FasterRCNN</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.</span>
 
 <span class="sd">    .. betastatus:: detection module</span>
@@ -1240,12 +1240,12 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.detection.FasterRCNN_MobileNet_V3_Large_FPN_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">FasterRCNN_MobileNet_V3_Large_FPN_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
 
     <span class="n">defaults</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;rpn_score_thresh&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="s2">"rpn_score_thresh"</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">}</span>

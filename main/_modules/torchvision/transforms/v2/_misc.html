@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -441,13 +441,13 @@
 
 
 <div class="viewcode-block" id="Lambda"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Lambda.html#torchvision.transforms.v2.Lambda">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Lambda</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a user-defined function as a transform.</span>
+<span class="w">    </span><span class="sd">"""Apply a user-defined function as a transform.</span>
 
 <span class="sd">    This transform does not support torchscript.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        lambd (function): Lambda/function to be used for transform.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_transformed_types</span> <span class="o">=</span> <span class="p">(</span><span class="nb">object</span><span class="p">,)</span>
 
@@ -464,15 +464,15 @@
 
 <div class="viewcode-block" id="Lambda.extra_repr"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Lambda.html#torchvision.transforms.v2.Lambda.extra_repr">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">extras</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lambd</span><span class="p">,</span> <span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lambd</span><span class="p">,</span> <span class="s2">"__name__"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">name</span><span class="p">:</span>
             <span class="n">extras</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-        <span class="n">extras</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;types=</span><span class="si">{</span><span class="p">[</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">types</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">extras</span><span class="p">)</span></div></div>
+        <span class="n">extras</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"types=</span><span class="si">{</span><span class="p">[</span><span class="nb">type</span><span class="o">.</span><span class="vm">__name__</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">types</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">extras</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="LinearTransformation"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.LinearTransformation.html#torchvision.transforms.v2.LinearTransformation">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">LinearTransformation</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.</span>
+<span class="w">    </span><span class="sd">"""Transform a tensor image or video with a square transformation matrix and a mean_vector computed offline.</span>
 
 <span class="sd">    This transform does not support PIL Image.</span>
 <span class="sd">    Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and</span>
@@ -488,7 +488,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        transformation_matrix (Tensor): tensor [D x D], D = C x H x W</span>
 <span class="sd">        mean_vector (Tensor): tensor [D], D = C x H x W</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_v1_transform_cls</span> <span class="o">=</span> <span class="n">_transforms</span><span class="o">.</span><span class="n">LinearTransformation</span>
 
@@ -498,24 +498,24 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">transformation_matrix</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="n">transformation_matrix</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;transformation_matrix should be square. Got &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">size</span><span class="p">())</span><span class="si">}</span><span class="s2"> rectangular matrix.&quot;</span>
+                <span class="s2">"transformation_matrix should be square. Got "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">size</span><span class="p">())</span><span class="si">}</span><span class="s2"> rectangular matrix."</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">mean_vector</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="n">transformation_matrix</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;mean_vector should have the same length </span><span class="si">{</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot; as any one of the dimensions of the transformation_matrix [</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">size</span><span class="p">())</span><span class="si">}</span><span class="s2">]&quot;</span>
+                <span class="sa">f</span><span class="s2">"mean_vector should have the same length </span><span class="si">{</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">" as any one of the dimensions of the transformation_matrix [</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">size</span><span class="p">())</span><span class="si">}</span><span class="s2">]"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">transformation_matrix</span><span class="o">.</span><span class="n">device</span> <span class="o">!=</span> <span class="n">mean_vector</span><span class="o">.</span><span class="n">device</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Input tensors should be on the same device. Got </span><span class="si">{</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Input tensors should be on the same device. Got </span><span class="si">{</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">transformation_matrix</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">mean_vector</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Input tensors should have the same dtype. Got </span><span class="si">{</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Input tensors should have the same dtype. Got </span><span class="si">{</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">transformation_matrix</span> <span class="o">=</span> <span class="n">transformation_matrix</span>
@@ -523,22 +523,22 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">has_any</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() does not support PIL images.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() does not support PIL images."</span><span class="p">)</span>
 
 <div class="viewcode-block" id="LinearTransformation.transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.LinearTransformation.html#torchvision.transforms.v2.LinearTransformation.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="n">inpt</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">n</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">n</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Input tensor and transformation matrix have incompatible shape.&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">] != &quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">"Input tensor and transformation matrix have incompatible shape."</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2"> x </span><span class="si">{</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">] != "</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">inpt</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Input tensor should be on the same device as transformation matrix and mean vector. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">"Input tensor should be on the same device as transformation matrix and mean vector. "</span>
+                <span class="sa">f</span><span class="s2">"Got </span><span class="si">{</span><span class="n">inpt</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2"> vs </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="n">flat_inpt</span> <span class="o">=</span> <span class="n">inpt</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_vector</span>
@@ -553,7 +553,7 @@
 
 
 <div class="viewcode-block" id="Normalize"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Normalize.html#torchvision.transforms.v2.Normalize">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Normalize</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize a tensor image or video with mean and standard deviation.</span>
+<span class="w">    </span><span class="sd">"""Normalize a tensor image or video with mean and standard deviation.</span>
 
 <span class="sd">    This transform does not support PIL Image.</span>
 <span class="sd">    Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``</span>
@@ -569,7 +569,7 @@
 <span class="sd">        std (sequence): Sequence of standard deviations for each channel.</span>
 <span class="sd">        inplace(bool,optional): Bool to make this operation in-place.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_v1_transform_cls</span> <span class="o">=</span> <span class="n">_transforms</span><span class="o">.</span><span class="n">Normalize</span>
 
@@ -581,14 +581,14 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">check_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">has_any</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() does not support PIL images.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() does not support PIL images."</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Normalize.transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.Normalize.html#torchvision.transforms.v2.Normalize.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_call_kernel</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">normalize</span><span class="p">,</span> <span class="n">inpt</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inplace</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="GaussianBlur"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.GaussianBlur.html#torchvision.transforms.v2.GaussianBlur">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">GaussianBlur</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Blurs image with randomly chosen Gaussian blur kernel.</span>
+<span class="w">    </span><span class="sd">"""Blurs image with randomly chosen Gaussian blur kernel.</span>
 
 <span class="sd">    The convolution will be using reflection padding corresponding to the kernel size, to maintain the input shape.</span>
 
@@ -601,7 +601,7 @@
 <span class="sd">            creating kernel to perform blurring. If float, sigma is fixed. If it is tuple</span>
 <span class="sd">            of float (min, max), sigma is chosen uniformly at random to lie in the</span>
 <span class="sd">            given range.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_v1_transform_cls</span> <span class="o">=</span> <span class="n">_transforms</span><span class="o">.</span><span class="n">GaussianBlur</span>
 
@@ -609,15 +609,15 @@
         <span class="bp">self</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span> <span class="o">=</span> <span class="n">_setup_size</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">,</span> <span class="s2">&quot;Kernel size should be a tuple/list of two integers&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span> <span class="o">=</span> <span class="n">_setup_size</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">,</span> <span class="s2">"Kernel size should be a tuple/list of two integers"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">ks</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">ks</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">ks</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Kernel size value should be an odd and positive number.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Kernel size value should be an odd and positive number."</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">_setup_number_or_seq</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">_setup_number_or_seq</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="s2">"sigma"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sigma values should be positive and of the form (min, max). Got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sigma values should be positive and of the form (min, max). Got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <div class="viewcode-block" id="GaussianBlur.make_params"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.GaussianBlur.html#torchvision.transforms.v2.GaussianBlur.make_params">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">make_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_inputs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="n">sigma</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
@@ -628,7 +628,7 @@
 
 
 <div class="viewcode-block" id="GaussianNoise"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.GaussianNoise.html#torchvision.transforms.v2.GaussianNoise">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">GaussianNoise</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add gaussian noise to images or videos.</span>
+<span class="w">    </span><span class="sd">"""Add gaussian noise to images or videos.</span>
 
 <span class="sd">    The input tensor is expected to be in [..., 1 or 3, H, W] format,</span>
 <span class="sd">    where ... means it can have an arbitrary number of leading dimensions.</span>
@@ -651,7 +651,7 @@
 <span class="sd">            ``[0, 1]`` for floats or to ``[0, 255]`` for ``uint8``. Setting this parameter to</span>
 <span class="sd">            ``False`` may cause unsigned integer overflows with uint8 inputs.</span>
 <span class="sd">            Default is True.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">clip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -664,7 +664,7 @@
 
 
 <div class="viewcode-block" id="ToDtype"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.ToDtype.html#torchvision.transforms.v2.ToDtype">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ToDtype</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Converts the input to a specific dtype, optionally scaling the values for images or videos.</span>
+<span class="w">    </span><span class="sd">"""Converts the input to a specific dtype, optionally scaling the values for images or videos.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">        ``ToDtype(dtype, scale=True)`` is the recommended replacement for ``ConvertImageDtype(dtype)``.</span>
@@ -674,11 +674,11 @@
 <span class="sd">            If a ``torch.dtype`` is passed, e.g. ``torch.float32``, only images and videos will be converted</span>
 <span class="sd">            to that dtype: this is for compatibility with :class:`~torchvision.transforms.v2.ConvertImageDtype`.</span>
 <span class="sd">            A dict can be passed to specify per-tv_tensor conversions, e.g.</span>
-<span class="sd">            ``dtype={tv_tensors.Image: torch.float32, tv_tensors.Mask: torch.int64, &quot;others&quot;:None}``. The &quot;others&quot;</span>
+<span class="sd">            ``dtype={tv_tensors.Image: torch.float32, tv_tensors.Mask: torch.int64, "others":None}``. The "others"</span>
 <span class="sd">            key can be used as a catch-all for any other tv_tensor type, and ``None`` means no conversion.</span>
 <span class="sd">        scale (bool, optional): Whether to scale the values for images or videos. See :ref:`range_and_dtype`.</span>
 <span class="sd">            Default: ``False``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_transformed_types</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,)</span>
 
@@ -688,7 +688,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dtype must be a dict or a torch.dtype, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"dtype must be a dict or a torch.dtype, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="p">(</span>
             <span class="nb">isinstance</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
@@ -696,9 +696,9 @@
             <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="bp">cls</span> <span class="ow">in</span> <span class="n">dtype</span> <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="p">[</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">])</span>
         <span class="p">):</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;Got `dtype` values for `torch.Tensor` and either `tv_tensors.Image` or `tv_tensors.Video`. &quot;</span>
-                <span class="s2">&quot;Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) &quot;</span>
-                <span class="s2">&quot;in case a `tv_tensors.Image` or `tv_tensors.Video` is present in the input.&quot;</span>
+                <span class="s2">"Got `dtype` values for `torch.Tensor` and either `tv_tensors.Image` or `tv_tensors.Video`. "</span>
+                <span class="s2">"Note that a plain `torch.Tensor` will *not* be transformed by this (or any other transformation) "</span>
+                <span class="s2">"in case a `tv_tensors.Image` or `tv_tensors.Video` is present in the input."</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
@@ -713,22 +713,22 @@
             <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span>
         <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
             <span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">[</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)]</span>
-        <span class="k">elif</span> <span class="s2">&quot;others&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
-            <span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">[</span><span class="s2">&quot;others&quot;</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s2">"others"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">[</span><span class="s2">"others"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;No dtype was specified for type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="si">}</span><span class="s2">. &quot;</span>
-                <span class="s2">&quot;If you only need to convert the dtype of images or videos, you can just pass e.g. dtype=torch.float32. &quot;</span>
-                <span class="s2">&quot;If you&#39;re passing a dict as dtype, &quot;</span>
-                <span class="s1">&#39;you can use &quot;others&quot; as a catch-all key &#39;</span>
-                <span class="s1">&#39;e.g. dtype={tv_tensors.Mask: torch.int64, &quot;others&quot;: None} to pass-through the rest of the inputs.&#39;</span>
+                <span class="sa">f</span><span class="s2">"No dtype was specified for type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="si">}</span><span class="s2">. "</span>
+                <span class="s2">"If you only need to convert the dtype of images or videos, you can just pass e.g. dtype=torch.float32. "</span>
+                <span class="s2">"If you're passing a dict as dtype, "</span>
+                <span class="s1">'you can use "others" as a catch-all key '</span>
+                <span class="s1">'e.g. dtype={tv_tensors.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'</span>
             <span class="p">)</span>
 
         <span class="n">supports_scaling</span> <span class="o">=</span> <span class="n">is_pure_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="p">(</span><span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="ow">and</span> <span class="n">supports_scaling</span><span class="p">:</span>
                 <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                    <span class="s2">&quot;scale was set to True but no dtype was specified for images or videos: no scaling will be done.&quot;</span>
+                    <span class="s2">"scale was set to True but no dtype was specified for images or videos: no scaling will be done."</span>
                 <span class="p">)</span>
             <span class="k">return</span> <span class="n">inpt</span>
 
@@ -736,7 +736,7 @@
 
 
 <div class="viewcode-block" id="ConvertImageDtype"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.ConvertImageDtype.html#torchvision.transforms.v2.ConvertImageDtype">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ConvertImageDtype</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[DEPRECATED] Use ``v2.ToDtype(dtype, scale=True)`` instead.</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use ``v2.ToDtype(dtype, scale=True)`` instead.</span>
 
 <span class="sd">    Convert input image to the given ``dtype`` and scale the values accordingly.</span>
 
@@ -758,7 +758,7 @@
 <span class="sd">            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to</span>
 <span class="sd">            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range</span>
 <span class="sd">            of the integer ``dtype``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_v1_transform_cls</span> <span class="o">=</span> <span class="n">_transforms</span><span class="o">.</span><span class="n">ConvertImageDtype</span>
 
@@ -771,7 +771,7 @@
 
 
 <div class="viewcode-block" id="SanitizeBoundingBoxes"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.SanitizeBoundingBoxes.html#torchvision.transforms.v2.SanitizeBoundingBoxes">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SanitizeBoundingBoxes</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove degenerate/invalid bounding boxes and their corresponding labels and masks.</span>
+<span class="w">    </span><span class="sd">"""Remove degenerate/invalid bounding boxes and their corresponding labels and masks.</span>
 
 <span class="sd">    This transform removes bounding boxes and their associated labels/masks that:</span>
 
@@ -779,7 +779,7 @@
 <span class="sd">    - have any coordinate outside of their corresponding image. You may want to</span>
 <span class="sd">      call :class:`~torchvision.transforms.v2.ClampBoundingBoxes` first to avoid undesired removals.</span>
 
-<span class="sd">    It can also sanitize other tensors like the &quot;iscrowd&quot; or &quot;area&quot; properties from COCO</span>
+<span class="sd">    It can also sanitize other tensors like the "iscrowd" or "area" properties from COCO</span>
 <span class="sd">    (see ``labels_getter`` parameter).</span>
 
 <span class="sd">    .. note::</span>
@@ -800,7 +800,7 @@
 <span class="sd">        min_area (float, optional): The area below which bounding boxes are removed. Default is 1.</span>
 <span class="sd">        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input</span>
 <span class="sd">            (or anything else that needs to be sanitized along with the bounding boxes).</span>
-<span class="sd">            By default, this will try to find a &quot;labels&quot; key in the input (case-insensitive), if</span>
+<span class="sd">            By default, this will try to find a "labels" key in the input (case-insensitive), if</span>
 <span class="sd">            the input is a dict or it is a tuple whose second element is a dict.</span>
 <span class="sd">            This heuristic should work well with a lot of datasets, including the built-in torchvision datasets.</span>
 
@@ -808,26 +808,26 @@
 
 <span class="sd">            - A single tensor (the labels)</span>
 <span class="sd">            - A tuple/list of tensors, each of which will be subject to the same sanitization as the bounding boxes.</span>
-<span class="sd">              This is useful to sanitize multiple tensors like the labels, and the &quot;iscrowd&quot; or &quot;area&quot; properties</span>
+<span class="sd">              This is useful to sanitize multiple tensors like the labels, and the "iscrowd" or "area" properties</span>
 <span class="sd">              from COCO.</span>
 
 <span class="sd">            If ``labels_getter`` is None then only bounding boxes are sanitized.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">min_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">min_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">labels_getter</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="n">labels_getter</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"default"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">min_size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;min_size must be &gt;= 1, got </span><span class="si">{</span><span class="n">min_size</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"min_size must be &gt;= 1, got </span><span class="si">{</span><span class="n">min_size</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_size</span> <span class="o">=</span> <span class="n">min_size</span>
 
         <span class="k">if</span> <span class="n">min_area</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;min_area must be &gt;= 1, got </span><span class="si">{</span><span class="n">min_area</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"min_area must be &gt;= 1, got </span><span class="si">{</span><span class="n">min_area</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_area</span> <span class="o">=</span> <span class="n">min_area</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">labels_getter</span> <span class="o">=</span> <span class="n">labels_getter</span>
@@ -838,13 +838,13 @@
 
         <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels_getter</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;The labels in the input to forward() must be a tensor or None, got </span><span class="si">{type}</span><span class="s2"> instead.&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"The labels in the input to forward() must be a tensor or None, got </span><span class="si">{type}</span><span class="s2"> instead."</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
                 <span class="n">labels</span> <span class="o">=</span> <span class="p">(</span><span class="n">labels</span><span class="p">,)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
                 <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-                        <span class="c1"># TODO: we don&#39;t need to enforce tensors, just that entries are indexable as t[bool_mask]</span>
+                        <span class="c1"># TODO: we don't need to enforce tensors, just that entries are indexable as t[bool_mask]</span>
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">entry</span><span class="p">)))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">labels</span><span class="p">)))</span>
@@ -856,8 +856,8 @@
             <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Number of boxes (shape=</span><span class="si">{</span><span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">) and must match the number of labels.&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;Found labels with shape=</span><span class="si">{</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">).&quot;</span>
+                        <span class="sa">f</span><span class="s2">"Number of boxes (shape=</span><span class="si">{</span><span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">) and must match the number of labels."</span>
+                        <span class="sa">f</span><span class="s2">"Found labels with shape=</span><span class="si">{</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">)."</span>
                     <span class="p">)</span>
 
         <span class="n">valid</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">_misc</span><span class="o">.</span><span class="n">_get_sanitize_bounding_boxes_mask</span><span class="p">(</span>
@@ -874,7 +874,7 @@
         <span class="k">return</span> <span class="n">tree_unflatten</span><span class="p">(</span><span class="n">flat_outputs</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SanitizeBoundingBoxes.transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.SanitizeBoundingBoxes.html#torchvision.transforms.v2.SanitizeBoundingBoxes.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="n">is_label</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">inpt</span> <span class="ow">is</span> <span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">])</span>
+        <span class="n">is_label</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">"labels"</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">inpt</span> <span class="ow">is</span> <span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s2">"labels"</span><span class="p">])</span>
         <span class="n">is_bounding_boxes</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">)</span>
         <span class="n">is_mask</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">)</span>
 
@@ -882,7 +882,7 @@
             <span class="k">return</span> <span class="n">inpt</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="n">inpt</span><span class="p">[</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;valid&quot;</span><span class="p">]]</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">inpt</span><span class="p">[</span><span class="n">params</span><span class="p">[</span><span class="s2">"valid"</span><span class="p">]]</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">):</span>
             <span class="c1"># If indexing fails (e.g., shape mismatch), pass through unchanged</span>
             <span class="k">return</span> <span class="n">inpt</span>
@@ -894,7 +894,7 @@
 
 
 <div class="viewcode-block" id="SanitizeKeyPoints"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.SanitizeKeyPoints.html#torchvision.transforms.v2.SanitizeKeyPoints">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SanitizeKeyPoints</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove keypoints outside of the image area and their corresponding labels (if any).</span>
+<span class="w">    </span><span class="sd">"""Remove keypoints outside of the image area and their corresponding labels (if any).</span>
 
 <span class="sd">    This transform removes keypoints or groups of keypoints and their associated labels that</span>
 <span class="sd">    have coordinates outside of their corresponding image.</span>
@@ -912,7 +912,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        labels_getter (callable or str or None, optional): indicates how to identify the labels in the input</span>
 <span class="sd">            (or anything else that needs to be sanitized along with the keypoints).</span>
-<span class="sd">            If set to the string ``&quot;default&quot;``, this will try to find a &quot;labels&quot; key in the input (case-insensitive), if</span>
+<span class="sd">            If set to the string ``"default"``, this will try to find a "labels" key in the input (case-insensitive), if</span>
 <span class="sd">            the input is a dict or it is a tuple whose second element is a dict.</span>
 
 <span class="sd">            It can also be a callable that takes the same input as the transform, and returns either:</span>
@@ -921,7 +921,7 @@
 <span class="sd">            - A tuple/list of tensors, each of which will be subject to the same sanitization as the keypoints.</span>
 
 <span class="sd">            If ``labels_getter`` is None (the default), then only keypoints are sanitized.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -936,13 +936,13 @@
 
         <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_labels_getter</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;The labels in the input to forward() must be a tensor or None, got </span><span class="si">{type}</span><span class="s2"> instead.&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"The labels in the input to forward() must be a tensor or None, got </span><span class="si">{type}</span><span class="s2"> instead."</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
                 <span class="n">labels</span> <span class="o">=</span> <span class="p">(</span><span class="n">labels</span><span class="p">,)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
                 <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-                        <span class="c1"># TODO: we don&#39;t need to enforce tensors, just that entries are indexable as t[bool_mask]</span>
+                        <span class="c1"># TODO: we don't need to enforce tensors, just that entries are indexable as t[bool_mask]</span>
                         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">entry</span><span class="p">)))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">labels</span><span class="p">)))</span>
@@ -954,8 +954,8 @@
             <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Number of kepyoints (shape=</span><span class="si">{</span><span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">) must match the number of labels.&quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;Found labels with shape=</span><span class="si">{</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">).&quot;</span>
+                        <span class="sa">f</span><span class="s2">"Number of kepyoints (shape=</span><span class="si">{</span><span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">) must match the number of labels."</span>
+                        <span class="sa">f</span><span class="s2">"Found labels with shape=</span><span class="si">{</span><span class="n">label</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">)."</span>
                     <span class="p">)</span>
 
         <span class="n">valid</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">_misc</span><span class="o">.</span><span class="n">_get_sanitize_keypoints_mask</span><span class="p">(</span>
@@ -969,13 +969,13 @@
         <span class="k">return</span> <span class="n">tree_unflatten</span><span class="p">(</span><span class="n">flat_outputs</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="SanitizeKeyPoints.transform"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.SanitizeKeyPoints.html#torchvision.transforms.v2.SanitizeKeyPoints.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inpt</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="n">is_label</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">inpt</span> <span class="ow">is</span> <span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">])</span>
+        <span class="n">is_label</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">"labels"</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">inpt</span> <span class="ow">is</span> <span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">params</span><span class="p">[</span><span class="s2">"labels"</span><span class="p">])</span>
         <span class="n">is_keypoints</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">KeyPoints</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">is_label</span> <span class="ow">or</span> <span class="n">is_keypoints</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">inpt</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="n">inpt</span><span class="p">[</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;valid&quot;</span><span class="p">]]</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">inpt</span><span class="p">[</span><span class="n">params</span><span class="p">[</span><span class="s2">"valid"</span><span class="p">]]</span>
 
         <span class="k">if</span> <span class="n">is_label</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">output</span>

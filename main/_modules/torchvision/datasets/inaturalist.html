@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -421,50 +421,50 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">download_and_extract_archive</span><span class="p">,</span> <span class="n">verify_str_arg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.vision</span><span class="w"> </span><span class="kn">import</span> <span class="n">VisionDataset</span>
 
-<span class="n">CATEGORIES_2021</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;kingdom&quot;</span><span class="p">,</span> <span class="s2">&quot;phylum&quot;</span><span class="p">,</span> <span class="s2">&quot;class&quot;</span><span class="p">,</span> <span class="s2">&quot;order&quot;</span><span class="p">,</span> <span class="s2">&quot;family&quot;</span><span class="p">,</span> <span class="s2">&quot;genus&quot;</span><span class="p">]</span>
+<span class="n">CATEGORIES_2021</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"kingdom"</span><span class="p">,</span> <span class="s2">"phylum"</span><span class="p">,</span> <span class="s2">"class"</span><span class="p">,</span> <span class="s2">"order"</span><span class="p">,</span> <span class="s2">"family"</span><span class="p">,</span> <span class="s2">"genus"</span><span class="p">]</span>
 
 <span class="n">DATASET_URLS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;2017&quot;</span><span class="p">:</span> <span class="s2">&quot;https://ml-inat-competition-datasets.s3.amazonaws.com/2017/train_val_images.tar.gz&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2018&quot;</span><span class="p">:</span> <span class="s2">&quot;https://ml-inat-competition-datasets.s3.amazonaws.com/2018/train_val2018.tar.gz&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2019&quot;</span><span class="p">:</span> <span class="s2">&quot;https://ml-inat-competition-datasets.s3.amazonaws.com/2019/train_val2019.tar.gz&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2021_train&quot;</span><span class="p">:</span> <span class="s2">&quot;https://ml-inat-competition-datasets.s3.amazonaws.com/2021/train.tar.gz&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2021_train_mini&quot;</span><span class="p">:</span> <span class="s2">&quot;https://ml-inat-competition-datasets.s3.amazonaws.com/2021/train_mini.tar.gz&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2021_valid&quot;</span><span class="p">:</span> <span class="s2">&quot;https://ml-inat-competition-datasets.s3.amazonaws.com/2021/val.tar.gz&quot;</span><span class="p">,</span>
+    <span class="s2">"2017"</span><span class="p">:</span> <span class="s2">"https://ml-inat-competition-datasets.s3.amazonaws.com/2017/train_val_images.tar.gz"</span><span class="p">,</span>
+    <span class="s2">"2018"</span><span class="p">:</span> <span class="s2">"https://ml-inat-competition-datasets.s3.amazonaws.com/2018/train_val2018.tar.gz"</span><span class="p">,</span>
+    <span class="s2">"2019"</span><span class="p">:</span> <span class="s2">"https://ml-inat-competition-datasets.s3.amazonaws.com/2019/train_val2019.tar.gz"</span><span class="p">,</span>
+    <span class="s2">"2021_train"</span><span class="p">:</span> <span class="s2">"https://ml-inat-competition-datasets.s3.amazonaws.com/2021/train.tar.gz"</span><span class="p">,</span>
+    <span class="s2">"2021_train_mini"</span><span class="p">:</span> <span class="s2">"https://ml-inat-competition-datasets.s3.amazonaws.com/2021/train_mini.tar.gz"</span><span class="p">,</span>
+    <span class="s2">"2021_valid"</span><span class="p">:</span> <span class="s2">"https://ml-inat-competition-datasets.s3.amazonaws.com/2021/val.tar.gz"</span><span class="p">,</span>
 <span class="p">}</span>
 
 <span class="n">DATASET_MD5</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;2017&quot;</span><span class="p">:</span> <span class="s2">&quot;7c784ea5e424efaec655bd392f87301f&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2018&quot;</span><span class="p">:</span> <span class="s2">&quot;b1c6952ce38f31868cc50ea72d066cc3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2019&quot;</span><span class="p">:</span> <span class="s2">&quot;c60a6e2962c9b8ccbd458d12c8582644&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2021_train&quot;</span><span class="p">:</span> <span class="s2">&quot;e0526d53c7f7b2e3167b2b43bb2690ed&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2021_train_mini&quot;</span><span class="p">:</span> <span class="s2">&quot;db6ed8330e634445efc8fec83ae81442&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2021_valid&quot;</span><span class="p">:</span> <span class="s2">&quot;f6f6e0e242e3d4c9569ba56400938afc&quot;</span><span class="p">,</span>
+    <span class="s2">"2017"</span><span class="p">:</span> <span class="s2">"7c784ea5e424efaec655bd392f87301f"</span><span class="p">,</span>
+    <span class="s2">"2018"</span><span class="p">:</span> <span class="s2">"b1c6952ce38f31868cc50ea72d066cc3"</span><span class="p">,</span>
+    <span class="s2">"2019"</span><span class="p">:</span> <span class="s2">"c60a6e2962c9b8ccbd458d12c8582644"</span><span class="p">,</span>
+    <span class="s2">"2021_train"</span><span class="p">:</span> <span class="s2">"e0526d53c7f7b2e3167b2b43bb2690ed"</span><span class="p">,</span>
+    <span class="s2">"2021_train_mini"</span><span class="p">:</span> <span class="s2">"db6ed8330e634445efc8fec83ae81442"</span><span class="p">,</span>
+    <span class="s2">"2021_valid"</span><span class="p">:</span> <span class="s2">"f6f6e0e242e3d4c9569ba56400938afc"</span><span class="p">,</span>
 <span class="p">}</span>
 
 
 <div class="viewcode-block" id="INaturalist"><a class="viewcode-back" href="../../../generated/torchvision.datasets.INaturalist.html#torchvision.datasets.INaturalist">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">INaturalist</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`iNaturalist &lt;https://github.com/visipedia/inat_comp&gt;`_ Dataset.</span>
+<span class="w">    </span><span class="sd">"""`iNaturalist &lt;https://github.com/visipedia/inat_comp&gt;`_ Dataset.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of dataset where the image files are stored.</span>
 <span class="sd">            This class does not require/use annotation files.</span>
 <span class="sd">        version (string, optional): Which version of the dataset to download/use. One of</span>
-<span class="sd">            &#39;2017&#39;, &#39;2018&#39;, &#39;2019&#39;, &#39;2021_train&#39;, &#39;2021_train_mini&#39;, &#39;2021_valid&#39;.</span>
+<span class="sd">            '2017', '2018', '2019', '2021_train', '2021_train_mini', '2021_valid'.</span>
 <span class="sd">            Default: `2021_train`.</span>
 <span class="sd">        target_type (string or list, optional): Type of target to use, for 2021 versions, one of:</span>
 
 <span class="sd">            - ``full``: the full category (species)</span>
-<span class="sd">            - ``kingdom``: e.g. &quot;Animalia&quot;</span>
-<span class="sd">            - ``phylum``: e.g. &quot;Arthropoda&quot;</span>
-<span class="sd">            - ``class``: e.g. &quot;Insecta&quot;</span>
-<span class="sd">            - ``order``: e.g. &quot;Coleoptera&quot;</span>
-<span class="sd">            - ``family``: e.g. &quot;Cleridae&quot;</span>
-<span class="sd">            - ``genus``: e.g. &quot;Trichodes&quot;</span>
+<span class="sd">            - ``kingdom``: e.g. "Animalia"</span>
+<span class="sd">            - ``phylum``: e.g. "Arthropoda"</span>
+<span class="sd">            - ``class``: e.g. "Insecta"</span>
+<span class="sd">            - ``order``: e.g. "Coleoptera"</span>
+<span class="sd">            - ``family``: e.g. "Cleridae"</span>
+<span class="sd">            - ``genus``: e.g. "Trichodes"</span>
 
 <span class="sd">            for 2017-2019 versions, one of:</span>
 
 <span class="sd">            - ``full``: the full (numeric) category</span>
-<span class="sd">            - ``super``: the super category, e.g. &quot;Amphibians&quot;</span>
+<span class="sd">            - ``super``: the super category, e.g. "Amphibians"</span>
 
 <span class="sd">            Can also be a list to output a tuple with all specified target types.</span>
 <span class="sd">            Defaults to ``full``.</span>
@@ -478,19 +478,19 @@
 <span class="sd">        loader (callable, optional): A function to load an image given its path.</span>
 <span class="sd">            By default, it uses PIL as its image loader, but users could also pass in</span>
 <span class="sd">            ``torchvision.io.decode_image`` for decoding image data into tensors directly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;2021_train&quot;</span><span class="p">,</span>
-        <span class="n">target_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;full&quot;</span><span class="p">,</span>
+        <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"2021_train"</span><span class="p">,</span>
+        <span class="n">target_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"full"</span><span class="p">,</span>
         <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">loader</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="n">DATASET_URLS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="s2">"version"</span><span class="p">,</span> <span class="n">DATASET_URLS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">version</span><span class="p">),</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
 
@@ -499,7 +499,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dataset not found or corrupted. You can use download=True to download it&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Dataset not found or corrupted. You can use download=True to download it"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">all_categories</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -511,11 +511,11 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_type</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
             <span class="n">target_type</span> <span class="o">=</span> <span class="p">[</span><span class="n">target_type</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;2021&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">target_type</span> <span class="o">=</span> <span class="p">[</span><span class="n">verify_str_arg</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">&quot;target_type&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;full&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">CATEGORIES_2021</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target_type</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"2021"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_type</span> <span class="o">=</span> <span class="p">[</span><span class="n">verify_str_arg</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">"target_type"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"full"</span><span class="p">,</span> <span class="o">*</span><span class="n">CATEGORIES_2021</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target_type</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_init_2021</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">target_type</span> <span class="o">=</span> <span class="p">[</span><span class="n">verify_str_arg</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">&quot;target_type&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;full&quot;</span><span class="p">,</span> <span class="s2">&quot;super&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target_type</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_type</span> <span class="o">=</span> <span class="p">[</span><span class="n">verify_str_arg</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="s2">"target_type"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"full"</span><span class="p">,</span> <span class="s2">"super"</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">target_type</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_init_pre2021</span><span class="p">()</span>
 
         <span class="c1"># index of all files: (full category id, filename)</span>
@@ -529,7 +529,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="o">=</span> <span class="n">loader</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_init_2021</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize based on 2021 layout&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Initialize based on 2021 layout"""</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">all_categories</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">))</span>
 
@@ -537,11 +537,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">categories_index</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">{}</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">CATEGORIES_2021</span><span class="p">}</span>
 
         <span class="k">for</span> <span class="n">dir_index</span><span class="p">,</span> <span class="n">dir_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_categories</span><span class="p">):</span>
-            <span class="n">pieces</span> <span class="o">=</span> <span class="n">dir_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+            <span class="n">pieces</span> <span class="o">=</span> <span class="n">dir_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pieces</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">8</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected category name </span><span class="si">{</span><span class="n">dir_name</span><span class="si">}</span><span class="s2">, wrong number of pieces&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">pieces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dir_index</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected category id </span><span class="si">{</span><span class="n">pieces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, expecting </span><span class="si">{</span><span class="n">dir_index</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unexpected category name </span><span class="si">{</span><span class="n">dir_name</span><span class="si">}</span><span class="s2">, wrong number of pieces"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pieces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dir_index</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unexpected category id </span><span class="si">{</span><span class="n">pieces</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, expecting </span><span class="si">{</span><span class="n">dir_index</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">cat_map</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">cat</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">CATEGORIES_2021</span><span class="p">,</span> <span class="n">pieces</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">7</span><span class="p">]):</span>
                 <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categories_index</span><span class="p">[</span><span class="n">cat</span><span class="p">]:</span>
@@ -553,18 +553,18 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">categories_map</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cat_map</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_init_pre2021</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize based on 2017-2019 layout&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Initialize based on 2017-2019 layout"""</span>
 
         <span class="c1"># map: category type -&gt; name of category -&gt; index</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">categories_index</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;super&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">categories_index</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"super"</span><span class="p">:</span> <span class="p">{}}</span>
 
         <span class="n">cat_index</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">super_categories</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">sindex</span><span class="p">,</span> <span class="n">scat</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">super_categories</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">categories_index</span><span class="p">[</span><span class="s2">&quot;super&quot;</span><span class="p">][</span><span class="n">scat</span><span class="p">]</span> <span class="o">=</span> <span class="n">sindex</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">categories_index</span><span class="p">[</span><span class="s2">"super"</span><span class="p">][</span><span class="n">scat</span><span class="p">]</span> <span class="o">=</span> <span class="n">sindex</span>
             <span class="n">subcategories</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">scat</span><span class="p">)))</span>
             <span class="k">for</span> <span class="n">subcat</span> <span class="ow">in</span> <span class="n">subcategories</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;2017&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">"2017"</span><span class="p">:</span>
                     <span class="c1"># this version does not use ids as directory names</span>
                     <span class="n">subcat_i</span> <span class="o">=</span> <span class="n">cat_index</span>
                     <span class="n">cat_index</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -572,29 +572,29 @@
                     <span class="k">try</span><span class="p">:</span>
                         <span class="n">subcat_i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">subcat</span><span class="p">)</span>
                     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected non-numeric dir name: </span><span class="si">{</span><span class="n">subcat</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unexpected non-numeric dir name: </span><span class="si">{</span><span class="n">subcat</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">subcat_i</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categories_map</span><span class="p">):</span>
                     <span class="n">old_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categories_map</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">categories_map</span><span class="o">.</span><span class="n">extend</span><span class="p">([{}]</span> <span class="o">*</span> <span class="p">(</span><span class="n">subcat_i</span> <span class="o">-</span> <span class="n">old_len</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">all_categories</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">subcat_i</span> <span class="o">-</span> <span class="n">old_len</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">all_categories</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">""</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">subcat_i</span> <span class="o">-</span> <span class="n">old_len</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">categories_map</span><span class="p">[</span><span class="n">subcat_i</span><span class="p">]:</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Duplicate category </span><span class="si">{</span><span class="n">subcat</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">categories_map</span><span class="p">[</span><span class="n">subcat_i</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;super&quot;</span><span class="p">:</span> <span class="n">sindex</span><span class="p">}</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Duplicate category </span><span class="si">{</span><span class="n">subcat</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">categories_map</span><span class="p">[</span><span class="n">subcat_i</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"super"</span><span class="p">:</span> <span class="n">sindex</span><span class="p">}</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">all_categories</span><span class="p">[</span><span class="n">subcat_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">scat</span><span class="p">,</span> <span class="n">subcat</span><span class="p">)</span>
 
         <span class="c1"># validate the dictionary</span>
         <span class="k">for</span> <span class="n">cindex</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categories_map</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">c</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing category </span><span class="si">{</span><span class="n">cindex</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing category </span><span class="si">{</span><span class="n">cindex</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 <div class="viewcode-block" id="INaturalist.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.INaturalist.html#torchvision.datasets.INaturalist.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">            index (int): Index</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: (image, target) where the type of target specified by target_type.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">cat_id</span><span class="p">,</span> <span class="n">fname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
         <span class="n">image_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_categories</span><span class="p">[</span><span class="n">cat_id</span><span class="p">],</span> <span class="n">fname</span><span class="p">)</span>
@@ -602,7 +602,7 @@
 
         <span class="n">target</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_type</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&quot;full&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">"full"</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cat_id</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">categories_map</span><span class="p">[</span><span class="n">cat_id</span><span class="p">][</span><span class="n">t</span><span class="p">])</span>
@@ -620,24 +620,24 @@
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
 <div class="viewcode-block" id="INaturalist.category_name"><a class="viewcode-back" href="../../../generated/torchvision.datasets.INaturalist.html#torchvision.datasets.INaturalist.category_name">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">category_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">category_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
-<span class="sd">            category_type(str): one of &quot;full&quot;, &quot;kingdom&quot;, &quot;phylum&quot;, &quot;class&quot;, &quot;order&quot;, &quot;family&quot;, &quot;genus&quot; or &quot;super&quot;</span>
+<span class="sd">            category_type(str): one of "full", "kingdom", "phylum", "class", "order", "family", "genus" or "super"</span>
 <span class="sd">            category_id(int): an index (class id) from this category</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            the name of the category</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">category_type</span> <span class="o">==</span> <span class="s2">&quot;full&quot;</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">category_type</span> <span class="o">==</span> <span class="s2">"full"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_categories</span><span class="p">[</span><span class="n">category_id</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">category_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categories_index</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid category type &#39;</span><span class="si">{</span><span class="n">category_type</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid category type '</span><span class="si">{</span><span class="n">category_type</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="nb">id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">categories_index</span><span class="p">[</span><span class="n">category_type</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="k">if</span> <span class="nb">id</span> <span class="o">==</span> <span class="n">category_id</span><span class="p">:</span>
                         <span class="k">return</span> <span class="n">name</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid category id </span><span class="si">{</span><span class="n">category_id</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">category_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid category id </span><span class="si">{</span><span class="n">category_id</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">category_type</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -649,12 +649,12 @@
         <span class="n">base_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
 
         <span class="n">download_and_extract_archive</span><span class="p">(</span>
-            <span class="n">DATASET_URLS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">],</span> <span class="n">base_root</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">.tgz&quot;</span><span class="p">,</span> <span class="n">md5</span><span class="o">=</span><span class="n">DATASET_MD5</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">]</span>
+            <span class="n">DATASET_URLS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">],</span> <span class="n">base_root</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">.tgz"</span><span class="p">,</span> <span class="n">md5</span><span class="o">=</span><span class="n">DATASET_MD5</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">]</span>
         <span class="p">)</span>
 
-        <span class="n">orig_dir_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_root</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">DATASET_URLS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">])</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;.tar.gz&quot;</span><span class="p">))</span>
+        <span class="n">orig_dir_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_root</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">DATASET_URLS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">])</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">".tar.gz"</span><span class="p">))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">orig_dir_name</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unable to find downloaded files at </span><span class="si">{</span><span class="n">orig_dir_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unable to find downloaded files at </span><span class="si">{</span><span class="n">orig_dir_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">orig_dir_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span></div>
 </pre></div>
 

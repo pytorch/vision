@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -320,7 +320,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -421,6 +421,12 @@
 <dt class="sig sig-object py" id="torchvision.datasets.LFWPairs">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.datasets.</span></span><span class="sig-name descname"><span class="pre">LFWPairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">root:</span> <span class="pre">str,</span> <span class="pre">split:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'10fold',</span> <span class="pre">image_set:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'funneled',</span> <span class="pre">transform:</span> <span class="pre">~typing.Optional[~typing.Callable]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">target_transform:</span> <span class="pre">~typing.Optional[~typing.Callable]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">download:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False,</span> <span class="pre">loader:</span> <span class="pre">~typing.Callable[[str],</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">default_loader&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/datasets/lfw.html#LFWPairs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.LFWPairs" title="Permalink to this definition">¶</a></dt>
 <dd><p><a class="reference external" href="http://vis-www.cs.umass.edu/lfw/">LFW</a> Dataset.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The LFW dataset is no longer available for automatic download. Please
+download it manually and place it in the specified directory.
+A commonly used mirror is available at: <a class="reference external" href="https://www.kaggle.com/datasets/jessicali9530/lfw-dataset">https://www.kaggle.com/datasets/jessicali9530/lfw-dataset</a></p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -428,13 +434,13 @@
 <code class="docutils literal notranslate"><span class="pre">lfw-py</span></code> exists or will be saved to if download is set to True.</p></li>
 <li><p><strong>split</strong> (<em>string</em><em>, </em><em>optional</em>) – The image split to use. Can be one of <code class="docutils literal notranslate"><span class="pre">train</span></code>, <code class="docutils literal notranslate"><span class="pre">test</span></code>,
 <code class="docutils literal notranslate"><span class="pre">10fold</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">10fold</span></code>.</p></li>
-<li><p><strong>image_set</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Type of image funneling to use, <code class="docutils literal notranslate"><span class="pre">original</span></code>, <code class="docutils literal notranslate"><span class="pre">funneled</span></code> or
+<li><p><strong>image_set</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Type of image funneling to use, <code class="docutils literal notranslate"><span class="pre">original</span></code>, <code class="docutils literal notranslate"><span class="pre">funneled</span></code> or
 <code class="docutils literal notranslate"><span class="pre">deepfunneled</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">funneled</span></code>.</p></li>
 <li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in a PIL image
 and returns a transformed version. E.g, <code class="docutils literal notranslate"><span class="pre">transforms.RandomRotation</span></code></p></li>
 <li><p><strong>target_transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in the
 target and transforms it.</p></li>
-<li><p><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – NOT SUPPORTED ANYMORE, leave to False.</p></li>
+<li><p><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – NOT SUPPORTED ANYMORE, leave to False.</p></li>
 <li><p><strong>loader</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function to load an image given its path.
 By default, it uses PIL as its image loader, but users could also pass in
 <code class="docutils literal notranslate"><span class="pre">torchvision.io.decode_image</span></code> for decoding image data into tensors directly.</p></li>
@@ -447,16 +453,16 @@ By default, it uses PIL as its image loader, but users could also pass in
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="torchvision.datasets.LFWPairs.__getitem__">
-<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/torchvision/datasets/lfw.html#LFWPairs.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.LFWPairs.__getitem__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><span class="pre">Any</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/torchvision/datasets/lfw.html#LFWPairs.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.LFWPairs.__getitem__" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Index</p>
+<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Index</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>(image1, image2, target) where target is <cite>0</cite> for different indentities and <cite>1</cite> for same identities.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
 </dd>
 </dl>
 </dd></dl>

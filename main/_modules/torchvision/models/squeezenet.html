@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -425,7 +425,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SqueezeNet&quot;</span><span class="p">,</span> <span class="s2">&quot;SqueezeNet1_0_Weights&quot;</span><span class="p">,</span> <span class="s2">&quot;SqueezeNet1_1_Weights&quot;</span><span class="p">,</span> <span class="s2">&quot;squeezenet1_0&quot;</span><span class="p">,</span> <span class="s2">&quot;squeezenet1_1&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"SqueezeNet"</span><span class="p">,</span> <span class="s2">"SqueezeNet1_0_Weights"</span><span class="p">,</span> <span class="s2">"SqueezeNet1_1_Weights"</span><span class="p">,</span> <span class="s2">"squeezenet1_0"</span><span class="p">,</span> <span class="s2">"squeezenet1_1"</span><span class="p">]</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Fire</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -447,11 +447,11 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">SqueezeNet</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;1_0&quot;</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"1_0"</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span> <span class="o">=</span> <span class="n">num_classes</span>
-        <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;1_0&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">"1_0"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
@@ -467,7 +467,7 @@
                 <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ceil_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
                 <span class="n">Fire</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;1_1&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">version</span> <span class="o">==</span> <span class="s2">"1_1"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
@@ -487,7 +487,7 @@
             <span class="c1"># FIXME: Is this needed? SqueezeNet should only be called from the</span>
             <span class="c1"># FIXME: squeezenet1_x() functions</span>
             <span class="c1"># FIXME: This checking is not done for the other models</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported SqueezeNet version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">: 1_0 or 1_1 expected&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported SqueezeNet version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">: 1_0 or 1_1 expected"</span><span class="p">)</span>
 
         <span class="c1"># Final convolution is initialized differently from the rest</span>
         <span class="n">final_conv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -517,7 +517,7 @@
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SqueezeNet</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"num_classes"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">]))</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="n">SqueezeNet</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -528,28 +528,28 @@
 
 
 <span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
-    <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/49#issuecomment-277560717&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights reproduce closely the results of the paper using a simple training recipe.&quot;&quot;&quot;</span><span class="p">,</span>
+    <span class="s2">"categories"</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
+    <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/pull/49#issuecomment-277560717"</span><span class="p">,</span>
+    <span class="s2">"_docs"</span><span class="p">:</span> <span class="s2">"""These weights reproduce closely the results of the paper using a simple training recipe."""</span><span class="p">,</span>
 <span class="p">}</span>
 
 
 <div class="viewcode-block" id="SqueezeNet1_0_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.squeezenet1_0.html#torchvision.models.SqueezeNet1_0_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SqueezeNet1_0_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/squeezenet1_0-b66bff10.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/squeezenet1_0-b66bff10.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">1248424</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">58.092</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">80.420</span><span class="p">,</span>
+            <span class="s2">"min_size"</span><span class="p">:</span> <span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">21</span><span class="p">),</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">1248424</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">58.092</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">80.420</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">0.819</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">4.778</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">0.819</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">4.778</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
@@ -557,31 +557,31 @@
 
 <div class="viewcode-block" id="SqueezeNet1_1_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.squeezenet1_1.html#torchvision.models.SqueezeNet1_1_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SqueezeNet1_1_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/squeezenet1_1-b8a52dc0.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/squeezenet1_1-b8a52dc0.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">17</span><span class="p">,</span> <span class="mi">17</span><span class="p">),</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">1235496</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">58.178</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">80.624</span><span class="p">,</span>
+            <span class="s2">"min_size"</span><span class="p">:</span> <span class="p">(</span><span class="mi">17</span><span class="p">,</span> <span class="mi">17</span><span class="p">),</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">1235496</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">58.178</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">80.624</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">0.349</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">4.729</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">0.349</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">4.729</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
 <div class="viewcode-block" id="squeezenet1_0"><a class="viewcode-back" href="../../../models/generated/torchvision.models.squeezenet1_0.html#torchvision.models.squeezenet1_0">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
-<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">SqueezeNet1_0_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">SqueezeNet1_0_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">squeezenet1_0</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SqueezeNet1_0_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SqueezeNet</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;SqueezeNet model architecture from the `SqueezeNet: AlexNet-level</span>
+<span class="w">    </span><span class="sd">"""SqueezeNet model architecture from the `SqueezeNet: AlexNet-level</span>
 <span class="sd">    accuracy with 50x fewer parameters and &lt;0.5MB model size</span>
 <span class="sd">    &lt;https://arxiv.org/abs/1602.07360&gt;`_ paper.</span>
 
@@ -600,17 +600,17 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.SqueezeNet1_0_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">SqueezeNet1_0_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_squeezenet</span><span class="p">(</span><span class="s2">&quot;1_0&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_squeezenet</span><span class="p">(</span><span class="s2">"1_0"</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="squeezenet1_1"><a class="viewcode-back" href="../../../models/generated/torchvision.models.squeezenet1_1.html#torchvision.models.squeezenet1_1">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
-<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">SqueezeNet1_1_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">SqueezeNet1_1_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">squeezenet1_1</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SqueezeNet1_1_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SqueezeNet</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;SqueezeNet 1.1 model from the `official SqueezeNet repo</span>
+<span class="w">    </span><span class="sd">"""SqueezeNet 1.1 model from the `official SqueezeNet repo</span>
 <span class="sd">    &lt;https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1&gt;`_.</span>
 
 <span class="sd">    SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters</span>
@@ -631,9 +631,9 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.SqueezeNet1_1_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">SqueezeNet1_1_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_squeezenet</span><span class="p">(</span><span class="s2">&quot;1_1&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_squeezenet</span><span class="p">(</span><span class="s2">"1_1"</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 </pre></div>
 
              </article>

@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -427,7 +427,7 @@
 
 
 <div class="viewcode-block" id="BoundingBoxFormat"><a class="viewcode-back" href="../../../generated/torchvision.tv_tensors.BoundingBoxFormat.html#torchvision.tv_tensors.BoundingBoxFormat">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BoundingBoxFormat</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Coordinate format of a bounding box.</span>
+<span class="w">    </span><span class="sd">"""Coordinate format of a bounding box.</span>
 
 <span class="sd">    Available formats are:</span>
 
@@ -446,14 +446,14 @@
 <span class="sd">    * ``XYXYXYXY``: rotated boxes represented via corners; x1, y1 being top</span>
 <span class="sd">      left; x2, y2 being top right; x3, y3 being bottom right; x4, y4 being</span>
 <span class="sd">      bottom left.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">XYXY</span> <span class="o">=</span> <span class="s2">&quot;XYXY&quot;</span>
-    <span class="n">XYWH</span> <span class="o">=</span> <span class="s2">&quot;XYWH&quot;</span>
-    <span class="n">CXCYWH</span> <span class="o">=</span> <span class="s2">&quot;CXCYWH&quot;</span>
-    <span class="n">XYWHR</span> <span class="o">=</span> <span class="s2">&quot;XYWHR&quot;</span>
-    <span class="n">CXCYWHR</span> <span class="o">=</span> <span class="s2">&quot;CXCYWHR&quot;</span>
-    <span class="n">XYXYXYXY</span> <span class="o">=</span> <span class="s2">&quot;XYXYXYXY&quot;</span></div>
+    <span class="n">XYXY</span> <span class="o">=</span> <span class="s2">"XYXY"</span>
+    <span class="n">XYWH</span> <span class="o">=</span> <span class="s2">"XYWH"</span>
+    <span class="n">CXCYWH</span> <span class="o">=</span> <span class="s2">"CXCYWH"</span>
+    <span class="n">XYWHR</span> <span class="o">=</span> <span class="s2">"XYWHR"</span>
+    <span class="n">CXCYWHR</span> <span class="o">=</span> <span class="s2">"CXCYWHR"</span>
+    <span class="n">XYXYXYXY</span> <span class="o">=</span> <span class="s2">"XYXYXYXY"</span></div>
 
 
 <span class="c1"># TODO: Once torchscript supports Enums with staticmethod</span>
@@ -466,9 +466,9 @@
             <span class="ow">or</span> <span class="nb">format</span> <span class="o">==</span> <span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYXYXYXY</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">format</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;XYWHR&quot;</span><span class="p">,</span> <span class="s2">&quot;CXCYWHR&quot;</span><span class="p">,</span> <span class="s2">&quot;XYXYXYXY&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">format</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"XYWHR"</span><span class="p">,</span> <span class="s2">"CXCYWHR"</span><span class="p">,</span> <span class="s2">"XYXYXYXY"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;format should be str or BoundingBoxFormat, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="nb">format</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"format should be str or BoundingBoxFormat, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="nb">format</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="c1"># This should ideally be a Literal, but torchscript fails.</span>
@@ -476,11 +476,11 @@
 
 
 <div class="viewcode-block" id="BoundingBoxes"><a class="viewcode-back" href="../../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BoundingBoxes</span><span class="p">(</span><span class="n">TVTensor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;:class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``.</span>
+<span class="w">    </span><span class="sd">""":class:`torch.Tensor` subclass for bounding boxes with shape ``[N, K]``.</span>
 
 <span class="sd">    .. note::</span>
 <span class="sd">        Support for rotated bounding boxes was released in TorchVision 0.23 and</span>
-<span class="sd">        is currently a BETA feature. We don&#39;t expect the API to change, but</span>
+<span class="sd">        is currently a BETA feature. We don't expect the API to change, but</span>
 <span class="sd">        there may be some rare edge-cases. If you find any issues, please report</span>
 <span class="sd">        them on our bug tracker:</span>
 <span class="sd">        https://github.com/pytorch/vision/issues?q=is:open+is:issue</span>
@@ -490,7 +490,7 @@
 
 <span class="sd">    .. note::</span>
 <span class="sd">        There should be only one :class:`~torchvision.tv_tensors.BoundingBoxes`</span>
-<span class="sd">        instance per sample e.g. ``{&quot;img&quot;: img, &quot;bbox&quot;: BoundingBoxes(...)}``,</span>
+<span class="sd">        instance per sample e.g. ``{"img": img, "bbox": BoundingBoxes(...)}``,</span>
 <span class="sd">        although one :class:`~torchvision.tv_tensors.BoundingBoxes` object can</span>
 <span class="sd">        contain multiple bounding boxes.</span>
 
@@ -499,28 +499,28 @@
 <span class="sd">        format (BoundingBoxFormat, str): Format of the bounding box.</span>
 <span class="sd">        canvas_size (two-tuple of ints): Height and width of the corresponding image or video.</span>
 <span class="sd">        clamping_mode: The clamping mode to use when applying transforms that may result in bounding boxes</span>
-<span class="sd">            partially outside of the image. Possible values are: &quot;soft&quot;, &quot;hard&quot;, or ``None``. Read more in :ref:`clamping_mode_tuto`.</span>
+<span class="sd">            partially outside of the image. Possible values are: "soft", "hard", or ``None``. Read more in :ref:`clamping_mode_tuto`.</span>
 <span class="sd">        dtype (torch.dtype, optional): Desired data type of the bounding box. If omitted, will be inferred from</span>
 <span class="sd">            ``data``.</span>
 <span class="sd">        device (torch.device, optional): Desired device of the bounding box. If omitted and ``data`` is a</span>
 <span class="sd">            :class:`torch.Tensor`, the device is taken from it. Otherwise, the bounding box is constructed on the CPU.</span>
 <span class="sd">        requires_grad (bool, optional): Whether autograd should record operations on the bounding box. If omitted and</span>
 <span class="sd">            ``data`` is a :class:`torch.Tensor`, the value is taken from it. Otherwise, defaults to ``False``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nb">format</span><span class="p">:</span> <span class="n">BoundingBoxFormat</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
     <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_wrap</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">BoundingBoxFormat</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;soft&quot;</span><span class="p">,</span> <span class="n">check_dims</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_wrap</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">format</span><span class="p">:</span> <span class="n">BoundingBoxFormat</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">"soft"</span><span class="p">,</span> <span class="n">check_dims</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
         <span class="k">if</span> <span class="n">check_dims</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">tensor</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">tensor</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected a 1D or 2D tensor, got </span><span class="si">{</span><span class="n">tensor</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hard&quot;</span><span class="p">,</span> <span class="s2">&quot;soft&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;clamping_mode must be None, hard or soft, got </span><span class="si">{</span><span class="n">clamping_mode</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected a 1D or 2D tensor, got </span><span class="si">{</span><span class="n">tensor</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">D"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"hard"</span><span class="p">,</span> <span class="s2">"soft"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"clamping_mode must be None, hard or soft, got </span><span class="si">{</span><span class="n">clamping_mode</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="nb">format</span> <span class="o">=</span> <span class="n">BoundingBoxFormat</span><span class="p">[</span><span class="nb">format</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
@@ -531,20 +531,29 @@
         <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">clamping_mode</span> <span class="o">=</span> <span class="n">clamping_mode</span>
         <span class="k">return</span> <span class="n">bounding_boxes</span>
 
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrap</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">like</span><span class="p">:</span> <span class="n">BoundingBoxes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span>
+            <span class="n">tensor</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"format"</span><span class="p">,</span> <span class="n">like</span><span class="o">.</span><span class="n">format</span><span class="p">),</span>
+            <span class="n">canvas_size</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"canvas_size"</span><span class="p">,</span> <span class="n">like</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">),</span>
+            <span class="n">clamping_mode</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"clamping_mode"</span><span class="p">,</span> <span class="n">like</span><span class="o">.</span><span class="n">clamping_mode</span><span class="p">),</span>
+        <span class="p">)</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="nb">format</span><span class="p">:</span> <span class="n">BoundingBoxFormat</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
-        <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">&quot;soft&quot;</span><span class="p">,</span>
+        <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span> <span class="o">=</span> <span class="s2">"soft"</span><span class="p">,</span>
         <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">requires_grad</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoundingBoxes</span><span class="p">:</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="n">is_rotated_bounding_format</span><span class="p">(</span><span class="nb">format</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Rotated bounding boxes should be floating point tensors, got </span><span class="si">{</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Rotated bounding boxes should be floating point tensors, got </span><span class="si">{</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
@@ -557,8 +566,8 @@
         <span class="c1"># If there are BoundingBoxes instances in the output, their metadata got lost when we called</span>
         <span class="c1"># super().__torch_function__. We need to restore the metadata somehow, so we choose to take</span>
         <span class="c1"># the metadata from the first bbox in the parameters.</span>
-        <span class="c1"># This should be what we want in most cases. When it&#39;s not, it&#39;s probably a mis-use anyway, e.g.</span>
-        <span class="c1"># something like some_xyxy_bbox + some_xywh_bbox; we don&#39;t guard against those cases.</span>
+        <span class="c1"># This should be what we want in most cases. When it's not, it's probably a mis-use anyway, e.g.</span>
+        <span class="c1"># something like some_xyxy_bbox + some_xywh_bbox; we don't guard against those cases.</span>
         <span class="n">flat_params</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">tree_flatten</span><span class="p">(</span><span class="n">args</span> <span class="o">+</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="k">if</span> <span class="n">kwargs</span> <span class="k">else</span> <span class="p">()))</span>  <span class="c1"># type: ignore[operator]</span>
         <span class="n">first_bbox_from_args</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">flat_params</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">BoundingBoxes</span><span class="p">))</span>
         <span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span> <span class="o">=</span> <span class="p">(</span>

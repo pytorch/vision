@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -435,15 +435,15 @@
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;QuantizableResNet&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ResNet18_QuantizedWeights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ResNet50_QuantizedWeights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ResNeXt101_32X8D_QuantizedWeights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ResNeXt101_64X4D_QuantizedWeights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;resnet18&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;resnet50&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;resnext101_32x8d&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;resnext101_64x4d&quot;</span><span class="p">,</span>
+    <span class="s2">"QuantizableResNet"</span><span class="p">,</span>
+    <span class="s2">"ResNet18_QuantizedWeights"</span><span class="p">,</span>
+    <span class="s2">"ResNet50_QuantizedWeights"</span><span class="p">,</span>
+    <span class="s2">"ResNeXt101_32X8D_QuantizedWeights"</span><span class="p">,</span>
+    <span class="s2">"ResNeXt101_64X4D_QuantizedWeights"</span><span class="p">,</span>
+    <span class="s2">"resnet18"</span><span class="p">,</span>
+    <span class="s2">"resnet50"</span><span class="p">,</span>
+    <span class="s2">"resnext101_32x8d"</span><span class="p">,</span>
+    <span class="s2">"resnext101_64x4d"</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -470,9 +470,9 @@
         <span class="k">return</span> <span class="n">out</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fuse_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_qat</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_fuse_modules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[[</span><span class="s2">&quot;conv1&quot;</span><span class="p">,</span> <span class="s2">&quot;bn1&quot;</span><span class="p">,</span> <span class="s2">&quot;relu&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;conv2&quot;</span><span class="p">,</span> <span class="s2">&quot;bn2&quot;</span><span class="p">]],</span> <span class="n">is_qat</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">_fuse_modules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[[</span><span class="s2">"conv1"</span><span class="p">,</span> <span class="s2">"bn1"</span><span class="p">,</span> <span class="s2">"relu"</span><span class="p">],</span> <span class="p">[</span><span class="s2">"conv2"</span><span class="p">,</span> <span class="s2">"bn2"</span><span class="p">]],</span> <span class="n">is_qat</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">:</span>
-            <span class="n">_fuse_modules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">],</span> <span class="n">is_qat</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_fuse_modules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">,</span> <span class="p">[</span><span class="s2">"0"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">],</span> <span class="n">is_qat</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">QuantizableBottleneck</span><span class="p">(</span><span class="n">Bottleneck</span><span class="p">):</span>
@@ -502,10 +502,10 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fuse_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_qat</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_fuse_modules</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="p">[[</span><span class="s2">&quot;conv1&quot;</span><span class="p">,</span> <span class="s2">&quot;bn1&quot;</span><span class="p">,</span> <span class="s2">&quot;relu1&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;conv2&quot;</span><span class="p">,</span> <span class="s2">&quot;bn2&quot;</span><span class="p">,</span> <span class="s2">&quot;relu2&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;conv3&quot;</span><span class="p">,</span> <span class="s2">&quot;bn3&quot;</span><span class="p">]],</span> <span class="n">is_qat</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="p">[[</span><span class="s2">"conv1"</span><span class="p">,</span> <span class="s2">"bn1"</span><span class="p">,</span> <span class="s2">"relu1"</span><span class="p">],</span> <span class="p">[</span><span class="s2">"conv2"</span><span class="p">,</span> <span class="s2">"bn2"</span><span class="p">,</span> <span class="s2">"relu2"</span><span class="p">],</span> <span class="p">[</span><span class="s2">"conv3"</span><span class="p">,</span> <span class="s2">"bn3"</span><span class="p">]],</span> <span class="n">is_qat</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">:</span>
-            <span class="n">_fuse_modules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">],</span> <span class="n">is_qat</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_fuse_modules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">,</span> <span class="p">[</span><span class="s2">"0"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">],</span> <span class="n">is_qat</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">QuantizableResNet</span><span class="p">(</span><span class="n">ResNet</span><span class="p">):</span>
@@ -525,13 +525,13 @@
         <span class="k">return</span> <span class="n">x</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fuse_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_qat</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Fuse conv/bn/relu modules in resnet models</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Fuse conv/bn/relu modules in resnet models</span>
 
 <span class="sd">        Fuse conv+bn+relu/ Conv+relu/conv+Bn modules to prepare for quantization.</span>
 <span class="sd">        Model is modified in place.  Note that this operation does not change numerics</span>
 <span class="sd">        and the model after modification is in floating point</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">_fuse_modules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;conv1&quot;</span><span class="p">,</span> <span class="s2">&quot;bn1&quot;</span><span class="p">,</span> <span class="s2">&quot;relu&quot;</span><span class="p">],</span> <span class="n">is_qat</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">_fuse_modules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s2">"conv1"</span><span class="p">,</span> <span class="s2">"bn1"</span><span class="p">,</span> <span class="s2">"relu"</span><span class="p">],</span> <span class="n">is_qat</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="ow">is</span> <span class="n">QuantizableBottleneck</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="ow">is</span> <span class="n">QuantizableBasicBlock</span><span class="p">:</span>
                 <span class="n">m</span><span class="o">.</span><span class="n">fuse_model</span><span class="p">(</span><span class="n">is_qat</span><span class="p">)</span>
@@ -546,10 +546,10 @@
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantizableResNet</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
-        <span class="k">if</span> <span class="s2">&quot;backend&quot;</span> <span class="ow">in</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">:</span>
-            <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;backend&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;backend&quot;</span><span class="p">])</span>
-    <span class="n">backend</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;backend&quot;</span><span class="p">,</span> <span class="s2">&quot;fbgemm&quot;</span><span class="p">)</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"num_classes"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="s2">"backend"</span> <span class="ow">in</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">:</span>
+            <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"backend"</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"backend"</span><span class="p">])</span>
+    <span class="n">backend</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"backend"</span><span class="p">,</span> <span class="s2">"fbgemm"</span><span class="p">)</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="n">QuantizableResNet</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="n">_replace_relu</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
@@ -563,33 +563,33 @@
 
 
 <span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-    <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
-    <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="s2">&quot;fbgemm&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+    <span class="s2">"min_size"</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">"categories"</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
+    <span class="s2">"backend"</span><span class="p">:</span> <span class="s2">"fbgemm"</span><span class="p">,</span>
+    <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models"</span><span class="p">,</span>
+    <span class="s2">"_docs"</span><span class="p">:</span> <span class="s2">"""</span>
 <span class="s2">        These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized</span>
 <span class="s2">        weights listed below.</span>
-<span class="s2">    &quot;&quot;&quot;</span><span class="p">,</span>
+<span class="s2">    """</span><span class="p">,</span>
 <span class="p">}</span>
 
 
 <div class="viewcode-block" id="ResNet18_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnet18.html#torchvision.models.quantization.ResNet18_QuantizedWeights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ResNet18_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_FBGEMM_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">11689512</span><span class="p">,</span>
-            <span class="s2">&quot;unquantized&quot;</span><span class="p">:</span> <span class="n">ResNet18_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">69.494</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">88.882</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">11689512</span><span class="p">,</span>
+            <span class="s2">"unquantized"</span><span class="p">:</span> <span class="n">ResNet18_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">69.494</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">88.882</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">1.814</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">11.238</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">1.814</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">11.238</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_FBGEMM_V1</span></div>
@@ -597,37 +597,37 @@
 
 <div class="viewcode-block" id="ResNet50_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnet50.html#torchvision.models.quantization.ResNet50_QuantizedWeights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ResNet50_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_FBGEMM_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">25557032</span><span class="p">,</span>
-            <span class="s2">&quot;unquantized&quot;</span><span class="p">:</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">75.920</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">92.814</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">25557032</span><span class="p">,</span>
+            <span class="s2">"unquantized"</span><span class="p">:</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">75.920</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">92.814</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">4.089</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">24.759</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">4.089</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">24.759</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">IMAGENET1K_FBGEMM_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/quantized/resnet50_fbgemm-23753f79.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/quantized/resnet50_fbgemm-23753f79.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">25557032</span><span class="p">,</span>
-            <span class="s2">&quot;unquantized&quot;</span><span class="p">:</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V2</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.282</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.976</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">25557032</span><span class="p">,</span>
+            <span class="s2">"unquantized"</span><span class="p">:</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V2</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">80.282</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">94.976</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">4.089</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">24.953</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">4.089</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">24.953</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_FBGEMM_V2</span></div>
@@ -635,37 +635,37 @@
 
 <div class="viewcode-block" id="ResNeXt101_32X8D_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnext101_32x8d.html#torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ResNeXt101_32X8D_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_FBGEMM_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">88791336</span><span class="p">,</span>
-            <span class="s2">&quot;unquantized&quot;</span><span class="p">:</span> <span class="n">ResNeXt101_32X8D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.986</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.480</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">88791336</span><span class="p">,</span>
+            <span class="s2">"unquantized"</span><span class="p">:</span> <span class="n">ResNeXt101_32X8D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">78.986</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">94.480</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">16.414</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">86.034</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">16.414</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">86.034</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">IMAGENET1K_FBGEMM_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm-ee16d00c.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm-ee16d00c.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">88791336</span><span class="p">,</span>
-            <span class="s2">&quot;unquantized&quot;</span><span class="p">:</span> <span class="n">ResNeXt101_32X8D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V2</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.574</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.132</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">88791336</span><span class="p">,</span>
+            <span class="s2">"unquantized"</span><span class="p">:</span> <span class="n">ResNeXt101_32X8D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V2</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">82.574</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">96.132</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">16.414</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">86.645</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">16.414</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">86.645</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_FBGEMM_V2</span></div>
@@ -673,33 +673,33 @@
 
 <div class="viewcode-block" id="ResNeXt101_64X4D_QuantizedWeights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnext101_64x4d.html#torchvision.models.quantization.ResNeXt101_64X4D_QuantizedWeights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ResNeXt101_64X4D_QuantizedWeights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_FBGEMM_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/quantized/resnext101_64x4d_fbgemm-605a1cb3.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/quantized/resnext101_64x4d_fbgemm-605a1cb3.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">83455272</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5935&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;unquantized&quot;</span><span class="p">:</span> <span class="n">ResNeXt101_64X4D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.898</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.326</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">83455272</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/pull/5935"</span><span class="p">,</span>
+            <span class="s2">"unquantized"</span><span class="p">:</span> <span class="n">ResNeXt101_64X4D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">82.898</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">96.326</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">15.46</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">81.556</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">15.46</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">81.556</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_FBGEMM_V1</span></div>
 
 
-<div class="viewcode-block" id="resnet18"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnet18.html#torchvision.models.quantization.resnet18">[docs]</a><span class="nd">@register_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;quantized_resnet18&quot;</span><span class="p">)</span>
+<div class="viewcode-block" id="resnet18"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnet18.html#torchvision.models.quantization.resnet18">[docs]</a><span class="nd">@register_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"quantized_resnet18"</span><span class="p">)</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span>
     <span class="n">weights</span><span class="o">=</span><span class="p">(</span>
-        <span class="s2">&quot;pretrained&quot;</span><span class="p">,</span>
+        <span class="s2">"pretrained"</span><span class="p">,</span>
         <span class="k">lambda</span> <span class="n">kwargs</span><span class="p">:</span> <span class="p">(</span>
             <span class="n">ResNet18_QuantizedWeights</span><span class="o">.</span><span class="n">IMAGENET1K_FBGEMM_V1</span>
-            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quantize&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"quantize"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
             <span class="k">else</span> <span class="n">ResNet18_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span>
         <span class="p">),</span>
     <span class="p">)</span>
@@ -711,7 +711,7 @@
     <span class="n">quantize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantizableResNet</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNet-18 model from</span>
+<span class="w">    </span><span class="sd">"""ResNet-18 model from</span>
 <span class="sd">    `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/abs/1512.03385&gt;`_</span>
 
 <span class="sd">    .. note::</span>
@@ -739,19 +739,19 @@
 <span class="sd">    .. autoclass:: torchvision.models.ResNet18_Weights</span>
 <span class="sd">        :members:</span>
 <span class="sd">        :noindex:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">ResNet18_QuantizedWeights</span> <span class="k">if</span> <span class="n">quantize</span> <span class="k">else</span> <span class="n">ResNet18_Weights</span><span class="p">)</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_resnet</span><span class="p">(</span><span class="n">QuantizableBasicBlock</span><span class="p">,</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">quantize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="resnet50"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnet50.html#torchvision.models.quantization.resnet50">[docs]</a><span class="nd">@register_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;quantized_resnet50&quot;</span><span class="p">)</span>
+<div class="viewcode-block" id="resnet50"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnet50.html#torchvision.models.quantization.resnet50">[docs]</a><span class="nd">@register_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"quantized_resnet50"</span><span class="p">)</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span>
     <span class="n">weights</span><span class="o">=</span><span class="p">(</span>
-        <span class="s2">&quot;pretrained&quot;</span><span class="p">,</span>
+        <span class="s2">"pretrained"</span><span class="p">,</span>
         <span class="k">lambda</span> <span class="n">kwargs</span><span class="p">:</span> <span class="p">(</span>
             <span class="n">ResNet50_QuantizedWeights</span><span class="o">.</span><span class="n">IMAGENET1K_FBGEMM_V1</span>
-            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quantize&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"quantize"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
             <span class="k">else</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span>
         <span class="p">),</span>
     <span class="p">)</span>
@@ -763,7 +763,7 @@
     <span class="n">quantize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantizableResNet</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNet-50 model from</span>
+<span class="w">    </span><span class="sd">"""ResNet-50 model from</span>
 <span class="sd">    `Deep Residual Learning for Image Recognition &lt;https://arxiv.org/abs/1512.03385&gt;`_</span>
 
 <span class="sd">    .. note::</span>
@@ -791,19 +791,19 @@
 <span class="sd">    .. autoclass:: torchvision.models.ResNet50_Weights</span>
 <span class="sd">        :members:</span>
 <span class="sd">        :noindex:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">ResNet50_QuantizedWeights</span> <span class="k">if</span> <span class="n">quantize</span> <span class="k">else</span> <span class="n">ResNet50_Weights</span><span class="p">)</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_resnet</span><span class="p">(</span><span class="n">QuantizableBottleneck</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">quantize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="resnext101_32x8d"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnext101_32x8d.html#torchvision.models.quantization.resnext101_32x8d">[docs]</a><span class="nd">@register_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;quantized_resnext101_32x8d&quot;</span><span class="p">)</span>
+<div class="viewcode-block" id="resnext101_32x8d"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnext101_32x8d.html#torchvision.models.quantization.resnext101_32x8d">[docs]</a><span class="nd">@register_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"quantized_resnext101_32x8d"</span><span class="p">)</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span>
     <span class="n">weights</span><span class="o">=</span><span class="p">(</span>
-        <span class="s2">&quot;pretrained&quot;</span><span class="p">,</span>
+        <span class="s2">"pretrained"</span><span class="p">,</span>
         <span class="k">lambda</span> <span class="n">kwargs</span><span class="p">:</span> <span class="p">(</span>
             <span class="n">ResNeXt101_32X8D_QuantizedWeights</span><span class="o">.</span><span class="n">IMAGENET1K_FBGEMM_V1</span>
-            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quantize&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"quantize"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
             <span class="k">else</span> <span class="n">ResNeXt101_32X8D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span>
         <span class="p">),</span>
     <span class="p">)</span>
@@ -815,7 +815,7 @@
     <span class="n">quantize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantizableResNet</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNeXt-101 32x8d model from</span>
+<span class="w">    </span><span class="sd">"""ResNeXt-101 32x8d model from</span>
 <span class="sd">    `Aggregated Residual Transformation for Deep Neural Networks &lt;https://arxiv.org/abs/1611.05431&gt;`_</span>
 
 <span class="sd">    .. note::</span>
@@ -843,21 +843,21 @@
 <span class="sd">    .. autoclass:: torchvision.models.ResNeXt101_32X8D_Weights</span>
 <span class="sd">        :members:</span>
 <span class="sd">        :noindex:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">ResNeXt101_32X8D_QuantizedWeights</span> <span class="k">if</span> <span class="n">quantize</span> <span class="k">else</span> <span class="n">ResNeXt101_32X8D_Weights</span><span class="p">)</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
-    <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;groups&quot;</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
-    <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;width_per_group&quot;</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+    <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"groups"</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+    <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"width_per_group"</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">_resnet</span><span class="p">(</span><span class="n">QuantizableBottleneck</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">quantize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="resnext101_64x4d"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnext101_64x4d.html#torchvision.models.quantization.resnext101_64x4d">[docs]</a><span class="nd">@register_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;quantized_resnext101_64x4d&quot;</span><span class="p">)</span>
+<div class="viewcode-block" id="resnext101_64x4d"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.quantization.resnext101_64x4d.html#torchvision.models.quantization.resnext101_64x4d">[docs]</a><span class="nd">@register_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"quantized_resnext101_64x4d"</span><span class="p">)</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span>
     <span class="n">weights</span><span class="o">=</span><span class="p">(</span>
-        <span class="s2">&quot;pretrained&quot;</span><span class="p">,</span>
+        <span class="s2">"pretrained"</span><span class="p">,</span>
         <span class="k">lambda</span> <span class="n">kwargs</span><span class="p">:</span> <span class="p">(</span>
             <span class="n">ResNeXt101_64X4D_QuantizedWeights</span><span class="o">.</span><span class="n">IMAGENET1K_FBGEMM_V1</span>
-            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quantize&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"quantize"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
             <span class="k">else</span> <span class="n">ResNeXt101_64X4D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span>
         <span class="p">),</span>
     <span class="p">)</span>
@@ -869,7 +869,7 @@
     <span class="n">quantize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QuantizableResNet</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;ResNeXt-101 64x4d model from</span>
+<span class="w">    </span><span class="sd">"""ResNeXt-101 64x4d model from</span>
 <span class="sd">    `Aggregated Residual Transformation for Deep Neural Networks &lt;https://arxiv.org/abs/1611.05431&gt;`_</span>
 
 <span class="sd">    .. note::</span>
@@ -897,11 +897,11 @@
 <span class="sd">    .. autoclass:: torchvision.models.ResNeXt101_64X4D_Weights</span>
 <span class="sd">        :members:</span>
 <span class="sd">        :noindex:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">ResNeXt101_64X4D_QuantizedWeights</span> <span class="k">if</span> <span class="n">quantize</span> <span class="k">else</span> <span class="n">ResNeXt101_64X4D_Weights</span><span class="p">)</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
-    <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;groups&quot;</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
-    <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;width_per_group&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"groups"</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+    <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"width_per_group"</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">_resnet</span><span class="p">(</span><span class="n">QuantizableBottleneck</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="n">quantize</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 </pre></div>
 

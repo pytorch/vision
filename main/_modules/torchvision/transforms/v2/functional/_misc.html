@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -435,7 +435,7 @@
     <span class="n">std</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
     <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.Normalize` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""See :class:`~torchvision.transforms.v2.Normalize` for details."""</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">normalize_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">std</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span>
 
@@ -449,10 +449,10 @@
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">normalize</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">normalize_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">std</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">image</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor should be a float tensor. Got </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input tensor should be a float tensor. Got </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected tensor to be a tensor image of size (..., C, H, W). Got </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected tensor to be a tensor image of size (..., C, H, W). Got </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">std</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
         <span class="n">divzero</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">std</span><span class="p">)</span>
@@ -461,7 +461,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">divzero</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">if</span> <span class="n">divzero</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;std evaluated to zero, leading to division by zero.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"std evaluated to zero, leading to division by zero."</span><span class="p">)</span>
 
     <span class="n">dtype</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">dtype</span>
     <span class="n">device</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">device</span>
@@ -486,7 +486,7 @@
 
 
 <div class="viewcode-block" id="gaussian_blur"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.gaussian_blur.html#torchvision.transforms.v2.functional.gaussian_blur">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">gaussian_blur</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.GaussianBlur` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""See :class:`~torchvision.transforms.v2.GaussianBlur` for details."""</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">gaussian_blur_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
 
@@ -521,10 +521,10 @@
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="n">kernel_size</span> <span class="o">=</span> <span class="p">[</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">]</span>
     <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If kernel_size is a sequence its length should be 2. Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"If kernel_size is a sequence its length should be 2. Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">ksize</span> <span class="ow">in</span> <span class="n">kernel_size</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">ksize</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">ksize</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;kernel_size should have odd and positive integers. Got </span><span class="si">{</span><span class="n">kernel_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"kernel_size should have odd and positive integers. Got </span><span class="si">{</span><span class="n">kernel_size</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">sigma</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">sigma</span> <span class="o">=</span> <span class="p">[</span><span class="n">ksize</span> <span class="o">*</span> <span class="mf">0.15</span> <span class="o">+</span> <span class="mf">0.35</span> <span class="k">for</span> <span class="n">ksize</span> <span class="ow">in</span> <span class="n">kernel_size</span><span class="p">]</span>
@@ -535,15 +535,15 @@
                 <span class="n">s</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">sigma</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span>
             <span class="k">elif</span> <span class="n">length</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If sigma is a sequence, its length should be 2. Got </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"If sigma is a sequence, its length should be 2. Got </span><span class="si">{</span><span class="n">length</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sigma</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
             <span class="n">s</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
             <span class="n">sigma</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sigma should be either float or sequence of floats. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sigma should be either float or sequence of floats. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sigma</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">s</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sigma should have positive values. Got </span><span class="si">{</span><span class="n">sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sigma should have positive values. Got </span><span class="si">{</span><span class="n">sigma</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">image</span>
@@ -564,7 +564,7 @@
 
     <span class="c1"># padding = (left, right, top, bottom)</span>
     <span class="n">padding</span> <span class="o">=</span> <span class="p">[</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
-    <span class="n">output</span> <span class="o">=</span> <span class="n">torch_pad</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;reflect&quot;</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">torch_pad</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"reflect"</span><span class="p">)</span>
     <span class="n">output</span> <span class="o">=</span> <span class="n">conv2d</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">])</span>
 
     <span class="k">if</span> <span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
@@ -595,7 +595,7 @@
 
 
 <div class="viewcode-block" id="gaussian_noise"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.gaussian_noise.html#torchvision.transforms.v2.functional.gaussian_noise">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">gaussian_noise</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">clip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :class:`~torchvision.transforms.v2.GaussianNoise`&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""See :class:`~torchvision.transforms.v2.GaussianNoise`"""</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">gaussian_noise_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
 
@@ -609,7 +609,7 @@
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">gaussian_noise</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">gaussian_noise_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">clip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">sigma</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sigma shouldn&#39;t be negative. Got </span><span class="si">{</span><span class="n">sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sigma shouldn't be negative. Got </span><span class="si">{</span><span class="n">sigma</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">():</span>
         <span class="n">noise</span> <span class="o">=</span> <span class="n">mean</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn_like</span><span class="p">(</span><span class="n">image</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span>
@@ -629,7 +629,7 @@
         <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor is expected to be in uint8 or float dtype, got dtype=</span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input tensor is expected to be in uint8 or float dtype, got dtype=</span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">gaussian_noise</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">)</span>
@@ -641,11 +641,11 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_gaussian_noise_pil</span><span class="p">(</span>
     <span class="n">video</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">clip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Gaussian Noise is not implemented for PIL images.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Gaussian Noise is not implemented for PIL images."</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="to_dtype"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.to_dtype.html#torchvision.transforms.v2.functional.to_dtype">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">to_dtype</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :func:`~torchvision.transforms.v2.ToDtype` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""See :func:`~torchvision.transforms.v2.ToDtype` for details."""</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">to_dtype_image</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span><span class="p">)</span>
 
@@ -669,7 +669,7 @@
     <span class="k">elif</span> <span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">63</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of value bits is only defined for integer dtypes, but got </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of value bits is only defined for integer dtypes, but got </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">to_dtype</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
@@ -697,7 +697,7 @@
         <span class="k">if</span> <span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span> <span class="ow">and</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span>
             <span class="n">image</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float64</span> <span class="ow">and</span> <span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">int64</span>
         <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The conversion from </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> cannot be performed safely.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The conversion from </span><span class="si">{</span><span class="n">image</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> cannot be performed safely."</span><span class="p">)</span>
 
         <span class="c1"># For data in the range `[0.0, 1.0]`, just multiplying by the maximum value of the integer range and converting</span>
         <span class="c1"># to the integer dtype  is not sufficient. For example, `torch.rand(...).mul(255).to(torch.uint8)` will only</span>
@@ -736,7 +736,7 @@
 
 <span class="c1"># We encourage users to use to_dtype() instead but we keep this for BC</span>
 <div class="viewcode-block" id="convert_image_dtype"><a class="viewcode-back" href="../../../../../generated/torchvision.transforms.v2.functional.convert_image_dtype.html#torchvision.transforms.v2.functional.convert_image_dtype">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">convert_image_dtype</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;[DEPRECATED] Use to_dtype() instead.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""[DEPRECATED] Use to_dtype() instead."""</span>
     <span class="k">return</span> <span class="n">to_dtype_image</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
@@ -749,7 +749,7 @@
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">to_dtype</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">to_dtype</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Mask</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_to_dtype_tensor_dispatch</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-    <span class="c1"># We don&#39;t need to unwrap and rewrap here, since TVTensor.to() preserves the type</span>
+    <span class="c1"># We don't need to unwrap and rewrap here, since TVTensor.to() preserves the type</span>
     <span class="k">return</span> <span class="n">inpt</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
 
 
@@ -760,7 +760,7 @@
     <span class="n">min_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="n">min_area</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove degenerate/invalid bounding boxes and return the corresponding indexing mask.</span>
+<span class="w">    </span><span class="sd">"""Remove degenerate/invalid bounding boxes and return the corresponding indexing mask.</span>
 
 <span class="sd">    This removes bounding boxes that:</span>
 
@@ -788,13 +788,13 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        out (tuple of Tensors): The subset of valid bounding boxes, and the corresponding indexing mask.</span>
 <span class="sd">        The mask can then be used to subset other tensors (e.g. labels) that are associated with the bounding boxes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">or</span> <span class="n">is_pure_tensor</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">format</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">canvas_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;format and canvas_size cannot be None if bounding_boxes is a pure tensor. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Got format=</span><span class="si">{</span><span class="nb">format</span><span class="si">}</span><span class="s2"> and canvas_size=</span><span class="si">{</span><span class="n">canvas_size</span><span class="si">}</span><span class="s2">.&quot;</span>
-                <span class="s2">&quot;Set those to appropriate values or pass bounding_boxes as a tv_tensors.BoundingBoxes object.&quot;</span>
+                <span class="s2">"format and canvas_size cannot be None if bounding_boxes is a pure tensor. "</span>
+                <span class="sa">f</span><span class="s2">"Got format=</span><span class="si">{</span><span class="nb">format</span><span class="si">}</span><span class="s2"> and canvas_size=</span><span class="si">{</span><span class="n">canvas_size</span><span class="si">}</span><span class="s2">."</span>
+                <span class="s2">"Set those to appropriate values or pass bounding_boxes as a tv_tensors.BoundingBoxes object."</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="nb">format</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxFormat</span><span class="p">[</span><span class="nb">format</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
@@ -804,12 +804,12 @@
         <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;bounding_boxes must be a tv_tensors.BoundingBoxes instance or a pure tensor.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"bounding_boxes must be a tv_tensors.BoundingBoxes instance or a pure tensor."</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">format</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">canvas_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;format and canvas_size must be None when bounding_boxes is a tv_tensors.BoundingBoxes instance. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Got format=</span><span class="si">{</span><span class="nb">format</span><span class="si">}</span><span class="s2"> and canvas_size=</span><span class="si">{</span><span class="n">canvas_size</span><span class="si">}</span><span class="s2">. &quot;</span>
-                <span class="s2">&quot;Leave those to None or pass bounding_boxes as a pure tensor.&quot;</span>
+                <span class="s2">"format and canvas_size must be None when bounding_boxes is a tv_tensors.BoundingBoxes instance. "</span>
+                <span class="sa">f</span><span class="s2">"Got format=</span><span class="si">{</span><span class="nb">format</span><span class="si">}</span><span class="s2"> and canvas_size=</span><span class="si">{</span><span class="n">canvas_size</span><span class="si">}</span><span class="s2">. "</span>
+                <span class="s2">"Leave those to None or pass bounding_boxes as a pure tensor."</span>
             <span class="p">)</span>
         <span class="n">valid</span> <span class="o">=</span> <span class="n">_get_sanitize_bounding_boxes_mask</span><span class="p">(</span>
             <span class="n">bounding_boxes</span><span class="p">,</span>
@@ -841,8 +841,8 @@
         <span class="n">dy12</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">bounding_boxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
         <span class="n">dx23</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">bounding_boxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
         <span class="n">dy23</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span> <span class="o">-</span> <span class="n">bounding_boxes</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span>
-        <span class="n">ws</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dx12</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dy12</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="n">hs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dx23</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">dy23</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ws</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dx12</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">dy12</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">hs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dx23</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">dy23</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">ws</span><span class="p">,</span> <span class="n">hs</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">bounding_boxes</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
     <span class="n">valid</span> <span class="o">=</span> <span class="p">(</span><span class="n">ws</span> <span class="o">&gt;=</span> <span class="n">min_size</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">hs</span> <span class="o">&gt;=</span> <span class="n">min_size</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bounding_boxes</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">ws</span> <span class="o">*</span> <span class="n">hs</span> <span class="o">&gt;=</span> <span class="n">min_area</span><span class="p">)</span>
@@ -861,7 +861,7 @@
     <span class="n">key_points</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove keypoints outside of the image area and their corresponding labels (if any).</span>
+<span class="w">    </span><span class="sd">"""Remove keypoints outside of the image area and their corresponding labels (if any).</span>
 
 <span class="sd">    This transform removes keypoints or groups of keypoints and their associated labels that</span>
 <span class="sd">    have coordinates outside of their corresponding image.</span>
@@ -885,12 +885,12 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        out (tuple of Tensors): The subset of valid keypoints, and the corresponding indexing mask.</span>
 <span class="sd">        The mask can then be used to subset other tensors (e.g. labels) that are associated with the keypoints.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">or</span> <span class="n">is_pure_tensor</span><span class="p">(</span><span class="n">key_points</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">canvas_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;canvas_size cannot be None if key_points is a pure tensor. &quot;</span>
-                <span class="s2">&quot;Set it to an appropriate value or pass key_points as a tv_tensors.KeyPoints object.&quot;</span>
+                <span class="s2">"canvas_size cannot be None if key_points is a pure tensor. "</span>
+                <span class="s2">"Set it to an appropriate value or pass key_points as a tv_tensors.KeyPoints object."</span>
             <span class="p">)</span>
         <span class="n">valid</span> <span class="o">=</span> <span class="n">_get_sanitize_keypoints_mask</span><span class="p">(</span>
             <span class="n">key_points</span><span class="p">,</span>
@@ -899,12 +899,12 @@
         <span class="n">key_points</span> <span class="o">=</span> <span class="n">key_points</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key_points</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">KeyPoints</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;key_points must be a tv_tensors.KeyPoints instance or a pure tensor.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"key_points must be a tv_tensors.KeyPoints instance or a pure tensor."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">canvas_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;canvas_size must be None when key_points is a tv_tensors.KeyPoints instance. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Got canvas_size=</span><span class="si">{</span><span class="n">canvas_size</span><span class="si">}</span><span class="s2">. &quot;</span>
-                <span class="s2">&quot;Leave it to None or pass key_points as a pure tensor.&quot;</span>
+                <span class="s2">"canvas_size must be None when key_points is a tv_tensors.KeyPoints instance. "</span>
+                <span class="sa">f</span><span class="s2">"Got canvas_size=</span><span class="si">{</span><span class="n">canvas_size</span><span class="si">}</span><span class="s2">. "</span>
+                <span class="s2">"Leave it to None or pass key_points as a pure tensor."</span>
             <span class="p">)</span>
         <span class="n">valid</span> <span class="o">=</span> <span class="n">_get_sanitize_keypoints_mask</span><span class="p">(</span>
             <span class="n">key_points</span><span class="p">,</span>

@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -421,7 +421,7 @@
 
 
 <div class="viewcode-block" id="Flowers102"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Flowers102.html#torchvision.datasets.Flowers102">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Flowers102</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`Oxford 102 Flower &lt;https://www.robots.ox.ac.uk/~vgg/data/flowers/102/&gt;`_ Dataset.</span>
+<span class="w">    </span><span class="sd">"""`Oxford 102 Flower &lt;https://www.robots.ox.ac.uk/~vgg/data/flowers/102/&gt;`_ Dataset.</span>
 
 <span class="sd">    .. warning::</span>
 
@@ -436,7 +436,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the dataset.</span>
-<span class="sd">        split (string, optional): The dataset split, supports ``&quot;train&quot;`` (default), ``&quot;val&quot;``, or ``&quot;test&quot;``.</span>
+<span class="sd">        split (string, optional): The dataset split, supports ``"train"`` (default), ``"val"``, or ``"test"``.</span>
 <span class="sd">        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,</span>
 <span class="sd">            and returns a transformed version. E.g, ``transforms.RandomCrop``</span>
 <span class="sd">        target_transform (callable, optional): A function/transform that takes in the target and transforms it.</span>
@@ -446,49 +446,49 @@
 <span class="sd">        loader (callable, optional): A function to load an image given its path.</span>
 <span class="sd">            By default, it uses PIL as its image loader, but users could also pass in</span>
 <span class="sd">            ``torchvision.io.decode_image`` for decoding image data into tensors directly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">_download_url_prefix</span> <span class="o">=</span> <span class="s2">&quot;https://www.robots.ox.ac.uk/~vgg/data/flowers/102/&quot;</span>
+    <span class="n">_download_url_prefix</span> <span class="o">=</span> <span class="s2">"https://www.robots.ox.ac.uk/~vgg/data/flowers/102/"</span>
     <span class="n">_file_dict</span> <span class="o">=</span> <span class="p">{</span>  <span class="c1"># filename, md5</span>
-        <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;102flowers.tgz&quot;</span><span class="p">,</span> <span class="s2">&quot;52808999861908f626f3c1f4e79d11fa&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;imagelabels.mat&quot;</span><span class="p">,</span> <span class="s2">&quot;e0620be6f572b9609742df49c70aed4d&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;setid&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;setid.mat&quot;</span><span class="p">,</span> <span class="s2">&quot;a5357ecc9cb78c4bef273ce3793fc85c&quot;</span><span class="p">),</span>
+        <span class="s2">"image"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"102flowers.tgz"</span><span class="p">,</span> <span class="s2">"52808999861908f626f3c1f4e79d11fa"</span><span class="p">),</span>
+        <span class="s2">"label"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"imagelabels.mat"</span><span class="p">,</span> <span class="s2">"e0620be6f572b9609742df49c70aed4d"</span><span class="p">),</span>
+        <span class="s2">"setid"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"setid.mat"</span><span class="p">,</span> <span class="s2">"a5357ecc9cb78c4bef273ce3793fc85c"</span><span class="p">),</span>
     <span class="p">}</span>
-    <span class="n">_splits_map</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="s2">&quot;trnid&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="s2">&quot;valid&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="s2">&quot;tstid&quot;</span><span class="p">}</span>
+    <span class="n">_splits_map</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"train"</span><span class="p">:</span> <span class="s2">"trnid"</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">:</span> <span class="s2">"valid"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">:</span> <span class="s2">"tstid"</span><span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
         <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">loader</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_loader</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;flowers-102&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="s2">&quot;jpg&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"flowers-102"</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="s2">"jpg"</span>
 
         <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_integrity</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dataset not found or corrupted. You can use download=True to download it&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Dataset not found or corrupted. You can use download=True to download it"</span><span class="p">)</span>
 
         <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">loadmat</span>
 
-        <span class="n">set_ids</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="s2">&quot;setid&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">squeeze_me</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">set_ids</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="s2">"setid"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">squeeze_me</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">image_ids</span> <span class="o">=</span> <span class="n">set_ids</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_splits_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_split</span><span class="p">]]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
-        <span class="n">labels</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">squeeze_me</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">image_id_to_label</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">((</span><span class="n">labels</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">loadmat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="s2">"label"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">squeeze_me</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">image_id_to_label</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">((</span><span class="n">labels</span><span class="p">[</span><span class="s2">"labels"</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="mi">1</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_image_files</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">image_id</span> <span class="ow">in</span> <span class="n">image_ids</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">image_id_to_label</span><span class="p">[</span><span class="n">image_id</span><span class="p">])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_image_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;image_</span><span class="si">{</span><span class="n">image_id</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">.jpg&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_image_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"image_</span><span class="si">{</span><span class="n">image_id</span><span class="si">:</span><span class="s2">05d</span><span class="si">}</span><span class="s2">.jpg"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="o">=</span> <span class="n">loader</span>
 
@@ -508,13 +508,13 @@
         <span class="k">return</span> <span class="n">image</span><span class="p">,</span> <span class="n">label</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;split=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_split</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"split=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_split</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_integrity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()):</span>
             <span class="k">return</span> <span class="kc">False</span>
 
-        <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="s2">&quot;setid&quot;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"label"</span><span class="p">,</span> <span class="s2">"setid"</span><span class="p">]:</span>
             <span class="n">filename</span><span class="p">,</span> <span class="n">md5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">check_integrity</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="n">filename</span><span class="p">),</span> <span class="n">md5</span><span class="p">):</span>
                 <span class="k">return</span> <span class="kc">False</span>
@@ -524,117 +524,117 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_integrity</span><span class="p">():</span>
             <span class="k">return</span>
         <span class="n">download_and_extract_archive</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_download_url_prefix</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="s1">&#39;image&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_download_url_prefix</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="s1">'image'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
             <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span>
-            <span class="n">md5</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">md5</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="s2">"image"</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
         <span class="p">)</span>
-        <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="s2">&quot;setid&quot;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"label"</span><span class="p">,</span> <span class="s2">"setid"</span><span class="p">]:</span>
             <span class="n">filename</span><span class="p">,</span> <span class="n">md5</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_file_dict</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
             <span class="n">download_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_download_url_prefix</span> <span class="o">+</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span> <span class="n">md5</span><span class="o">=</span><span class="n">md5</span><span class="p">)</span>
 
     <span class="n">classes</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s2">&quot;pink primrose&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;hard-leaved pocket orchid&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;canterbury bells&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sweet pea&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;english marigold&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;tiger lily&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;moon orchid&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;bird of paradise&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;monkshood&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;globe thistle&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;snapdragon&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;colt&#39;s foot&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;king protea&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;spear thistle&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;yellow iris&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;globe-flower&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;purple coneflower&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;peruvian lily&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;balloon flower&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;giant white arum lily&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;fire lily&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;pincushion flower&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;fritillary&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;red ginger&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;grape hyacinth&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;corn poppy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;prince of wales feathers&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;stemless gentian&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;artichoke&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sweet william&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;carnation&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;garden phlox&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;love in the mist&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mexican aster&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;alpine sea holly&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;ruby-lipped cattleya&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;cape flower&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;great masterwort&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;siam tulip&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;lenten rose&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;barbeton daisy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;daffodil&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sword lily&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;poinsettia&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;bolero deep blue&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;wallflower&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;marigold&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;buttercup&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;oxeye daisy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;common dandelion&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;petunia&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;wild pansy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;primula&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sunflower&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;pelargonium&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;bishop of llandaff&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;gaura&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;geranium&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;orange dahlia&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;pink-yellow dahlia?&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;cautleya spicata&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;japanese anemone&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;black-eyed susan&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;silverbush&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;californian poppy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;osteospermum&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;spring crocus&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;bearded iris&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;windflower&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;tree poppy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;gazania&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;azalea&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;water lily&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;rose&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;thorn apple&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;morning glory&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;passion flower&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;lotus&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;toad lily&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;anthurium&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;frangipani&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;clematis&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;hibiscus&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;columbine&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;desert-rose&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;tree mallow&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;magnolia&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;cyclamen&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;watercress&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;canna lily&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;hippeastrum&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;bee balm&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;ball moss&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;foxglove&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;bougainvillea&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;camellia&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mallow&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mexican petunia&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;bromelia&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;blanket flower&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;trumpet creeper&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;blackberry lily&quot;</span><span class="p">,</span>
+        <span class="s2">"pink primrose"</span><span class="p">,</span>
+        <span class="s2">"hard-leaved pocket orchid"</span><span class="p">,</span>
+        <span class="s2">"canterbury bells"</span><span class="p">,</span>
+        <span class="s2">"sweet pea"</span><span class="p">,</span>
+        <span class="s2">"english marigold"</span><span class="p">,</span>
+        <span class="s2">"tiger lily"</span><span class="p">,</span>
+        <span class="s2">"moon orchid"</span><span class="p">,</span>
+        <span class="s2">"bird of paradise"</span><span class="p">,</span>
+        <span class="s2">"monkshood"</span><span class="p">,</span>
+        <span class="s2">"globe thistle"</span><span class="p">,</span>
+        <span class="s2">"snapdragon"</span><span class="p">,</span>
+        <span class="s2">"colt's foot"</span><span class="p">,</span>
+        <span class="s2">"king protea"</span><span class="p">,</span>
+        <span class="s2">"spear thistle"</span><span class="p">,</span>
+        <span class="s2">"yellow iris"</span><span class="p">,</span>
+        <span class="s2">"globe-flower"</span><span class="p">,</span>
+        <span class="s2">"purple coneflower"</span><span class="p">,</span>
+        <span class="s2">"peruvian lily"</span><span class="p">,</span>
+        <span class="s2">"balloon flower"</span><span class="p">,</span>
+        <span class="s2">"giant white arum lily"</span><span class="p">,</span>
+        <span class="s2">"fire lily"</span><span class="p">,</span>
+        <span class="s2">"pincushion flower"</span><span class="p">,</span>
+        <span class="s2">"fritillary"</span><span class="p">,</span>
+        <span class="s2">"red ginger"</span><span class="p">,</span>
+        <span class="s2">"grape hyacinth"</span><span class="p">,</span>
+        <span class="s2">"corn poppy"</span><span class="p">,</span>
+        <span class="s2">"prince of wales feathers"</span><span class="p">,</span>
+        <span class="s2">"stemless gentian"</span><span class="p">,</span>
+        <span class="s2">"artichoke"</span><span class="p">,</span>
+        <span class="s2">"sweet william"</span><span class="p">,</span>
+        <span class="s2">"carnation"</span><span class="p">,</span>
+        <span class="s2">"garden phlox"</span><span class="p">,</span>
+        <span class="s2">"love in the mist"</span><span class="p">,</span>
+        <span class="s2">"mexican aster"</span><span class="p">,</span>
+        <span class="s2">"alpine sea holly"</span><span class="p">,</span>
+        <span class="s2">"ruby-lipped cattleya"</span><span class="p">,</span>
+        <span class="s2">"cape flower"</span><span class="p">,</span>
+        <span class="s2">"great masterwort"</span><span class="p">,</span>
+        <span class="s2">"siam tulip"</span><span class="p">,</span>
+        <span class="s2">"lenten rose"</span><span class="p">,</span>
+        <span class="s2">"barbeton daisy"</span><span class="p">,</span>
+        <span class="s2">"daffodil"</span><span class="p">,</span>
+        <span class="s2">"sword lily"</span><span class="p">,</span>
+        <span class="s2">"poinsettia"</span><span class="p">,</span>
+        <span class="s2">"bolero deep blue"</span><span class="p">,</span>
+        <span class="s2">"wallflower"</span><span class="p">,</span>
+        <span class="s2">"marigold"</span><span class="p">,</span>
+        <span class="s2">"buttercup"</span><span class="p">,</span>
+        <span class="s2">"oxeye daisy"</span><span class="p">,</span>
+        <span class="s2">"common dandelion"</span><span class="p">,</span>
+        <span class="s2">"petunia"</span><span class="p">,</span>
+        <span class="s2">"wild pansy"</span><span class="p">,</span>
+        <span class="s2">"primula"</span><span class="p">,</span>
+        <span class="s2">"sunflower"</span><span class="p">,</span>
+        <span class="s2">"pelargonium"</span><span class="p">,</span>
+        <span class="s2">"bishop of llandaff"</span><span class="p">,</span>
+        <span class="s2">"gaura"</span><span class="p">,</span>
+        <span class="s2">"geranium"</span><span class="p">,</span>
+        <span class="s2">"orange dahlia"</span><span class="p">,</span>
+        <span class="s2">"pink-yellow dahlia?"</span><span class="p">,</span>
+        <span class="s2">"cautleya spicata"</span><span class="p">,</span>
+        <span class="s2">"japanese anemone"</span><span class="p">,</span>
+        <span class="s2">"black-eyed susan"</span><span class="p">,</span>
+        <span class="s2">"silverbush"</span><span class="p">,</span>
+        <span class="s2">"californian poppy"</span><span class="p">,</span>
+        <span class="s2">"osteospermum"</span><span class="p">,</span>
+        <span class="s2">"spring crocus"</span><span class="p">,</span>
+        <span class="s2">"bearded iris"</span><span class="p">,</span>
+        <span class="s2">"windflower"</span><span class="p">,</span>
+        <span class="s2">"tree poppy"</span><span class="p">,</span>
+        <span class="s2">"gazania"</span><span class="p">,</span>
+        <span class="s2">"azalea"</span><span class="p">,</span>
+        <span class="s2">"water lily"</span><span class="p">,</span>
+        <span class="s2">"rose"</span><span class="p">,</span>
+        <span class="s2">"thorn apple"</span><span class="p">,</span>
+        <span class="s2">"morning glory"</span><span class="p">,</span>
+        <span class="s2">"passion flower"</span><span class="p">,</span>
+        <span class="s2">"lotus"</span><span class="p">,</span>
+        <span class="s2">"toad lily"</span><span class="p">,</span>
+        <span class="s2">"anthurium"</span><span class="p">,</span>
+        <span class="s2">"frangipani"</span><span class="p">,</span>
+        <span class="s2">"clematis"</span><span class="p">,</span>
+        <span class="s2">"hibiscus"</span><span class="p">,</span>
+        <span class="s2">"columbine"</span><span class="p">,</span>
+        <span class="s2">"desert-rose"</span><span class="p">,</span>
+        <span class="s2">"tree mallow"</span><span class="p">,</span>
+        <span class="s2">"magnolia"</span><span class="p">,</span>
+        <span class="s2">"cyclamen"</span><span class="p">,</span>
+        <span class="s2">"watercress"</span><span class="p">,</span>
+        <span class="s2">"canna lily"</span><span class="p">,</span>
+        <span class="s2">"hippeastrum"</span><span class="p">,</span>
+        <span class="s2">"bee balm"</span><span class="p">,</span>
+        <span class="s2">"ball moss"</span><span class="p">,</span>
+        <span class="s2">"foxglove"</span><span class="p">,</span>
+        <span class="s2">"bougainvillea"</span><span class="p">,</span>
+        <span class="s2">"camellia"</span><span class="p">,</span>
+        <span class="s2">"mallow"</span><span class="p">,</span>
+        <span class="s2">"mexican petunia"</span><span class="p">,</span>
+        <span class="s2">"bromelia"</span><span class="p">,</span>
+        <span class="s2">"blanket flower"</span><span class="p">,</span>
+        <span class="s2">"trumpet creeper"</span><span class="p">,</span>
+        <span class="s2">"blackberry lily"</span><span class="p">,</span>
     <span class="p">]</span></div>
 </pre></div>
 

@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -429,14 +429,14 @@
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;KeypointRCNN&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;KeypointRCNN_ResNet50_FPN_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;keypointrcnn_resnet50_fpn&quot;</span><span class="p">,</span>
+    <span class="s2">"KeypointRCNN"</span><span class="p">,</span>
+    <span class="s2">"KeypointRCNN_ResNet50_FPN_Weights"</span><span class="p">,</span>
+    <span class="s2">"keypointrcnn_resnet50_fpn"</span><span class="p">,</span>
 <span class="p">]</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">KeypointRCNN</span><span class="p">(</span><span class="n">FasterRCNN</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Implements Keypoint R-CNN.</span>
 
 <span class="sd">    The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each</span>
@@ -537,11 +537,11 @@
 <span class="sd">        &gt;&gt;&gt; # only the features</span>
 <span class="sd">        &gt;&gt;&gt; backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features</span>
 <span class="sd">        &gt;&gt;&gt; # KeypointRCNN needs to know the number of</span>
-<span class="sd">        &gt;&gt;&gt; # output channels in a backbone. For mobilenet_v2, it&#39;s 1280,</span>
+<span class="sd">        &gt;&gt;&gt; # output channels in a backbone. For mobilenet_v2, it's 1280,</span>
 <span class="sd">        &gt;&gt;&gt; # so we need to add it here</span>
 <span class="sd">        &gt;&gt;&gt; backbone.out_channels = 1280</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; # let&#39;s make the RPN generate 5 x 3 anchors per spatial</span>
+<span class="sd">        &gt;&gt;&gt; # let's make the RPN generate 5 x 3 anchors per spatial</span>
 <span class="sd">        &gt;&gt;&gt; # location, with 5 different sizes and 3 different aspect</span>
 <span class="sd">        &gt;&gt;&gt; # ratios. We have a Tuple[Tuple[int]] because each feature</span>
 <span class="sd">        &gt;&gt;&gt; # map could potentially have different sizes and</span>
@@ -549,18 +549,18 @@
 <span class="sd">        &gt;&gt;&gt; anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),),</span>
 <span class="sd">        &gt;&gt;&gt;                                    aspect_ratios=((0.5, 1.0, 2.0),))</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; # let&#39;s define what are the feature maps that we will</span>
+<span class="sd">        &gt;&gt;&gt; # let's define what are the feature maps that we will</span>
 <span class="sd">        &gt;&gt;&gt; # use to perform the region of interest cropping, as well as</span>
 <span class="sd">        &gt;&gt;&gt; # the size of the crop after rescaling.</span>
 <span class="sd">        &gt;&gt;&gt; # if your backbone returns a Tensor, featmap_names is expected to</span>
-<span class="sd">        &gt;&gt;&gt; # be [&#39;0&#39;]. More generally, the backbone should return an</span>
+<span class="sd">        &gt;&gt;&gt; # be ['0']. More generally, the backbone should return an</span>
 <span class="sd">        &gt;&gt;&gt; # OrderedDict[Tensor], and in featmap_names you can choose which</span>
 <span class="sd">        &gt;&gt;&gt; # feature maps to use.</span>
-<span class="sd">        &gt;&gt;&gt; roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[&#39;0&#39;],</span>
+<span class="sd">        &gt;&gt;&gt; roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=['0'],</span>
 <span class="sd">        &gt;&gt;&gt;                                                 output_size=7,</span>
 <span class="sd">        &gt;&gt;&gt;                                                 sampling_ratio=2)</span>
 <span class="sd">        &gt;&gt;&gt;</span>
-<span class="sd">        &gt;&gt;&gt; keypoint_roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[&#39;0&#39;],</span>
+<span class="sd">        &gt;&gt;&gt; keypoint_roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=['0'],</span>
 <span class="sd">        &gt;&gt;&gt;                                                          output_size=14,</span>
 <span class="sd">        &gt;&gt;&gt;                                                          sampling_ratio=2)</span>
 <span class="sd">        &gt;&gt;&gt; # put the pieces together inside a KeypointRCNN model</span>
@@ -572,7 +572,7 @@
 <span class="sd">        &gt;&gt;&gt; model.eval()</span>
 <span class="sd">        &gt;&gt;&gt; x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]</span>
 <span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -618,21 +618,21 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keypoint_roi_pool</span><span class="p">,</span> <span class="p">(</span><span class="n">MultiScaleRoIAlign</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;keypoint_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(keypoint_roi_pool)}&quot;</span>
+                <span class="s2">"keypoint_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(keypoint_roi_pool)}"</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">min_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">min_size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">640</span><span class="p">,</span> <span class="mi">672</span><span class="p">,</span> <span class="mi">704</span><span class="p">,</span> <span class="mi">736</span><span class="p">,</span> <span class="mi">768</span><span class="p">,</span> <span class="mi">800</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">num_keypoints</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">keypoint_predictor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;num_keypoints should be None when keypoint_predictor is specified&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"num_keypoints should be None when keypoint_predictor is specified"</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">num_keypoints</span> <span class="o">=</span> <span class="mi">17</span>
 
         <span class="n">out_channels</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">out_channels</span>
 
         <span class="k">if</span> <span class="n">keypoint_roi_pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">keypoint_roi_pool</span> <span class="o">=</span> <span class="n">MultiScaleRoIAlign</span><span class="p">(</span><span class="n">featmap_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">],</span> <span class="n">output_size</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">sampling_ratio</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">keypoint_roi_pool</span> <span class="o">=</span> <span class="n">MultiScaleRoIAlign</span><span class="p">(</span><span class="n">featmap_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"0"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">,</span> <span class="s2">"2"</span><span class="p">,</span> <span class="s2">"3"</span><span class="p">],</span> <span class="n">output_size</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">sampling_ratio</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">keypoint_head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">keypoint_layers</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="mi">512</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
@@ -694,7 +694,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">d</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
-                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"fan_out"</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">"relu"</span><span class="p">)</span>
                 <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
 
@@ -710,7 +710,7 @@
             <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
             <span class="n">padding</span><span class="o">=</span><span class="n">deconv_kernel</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kps_score_lowres</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)</span>
+        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kps_score_lowres</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"fan_out"</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">"relu"</span><span class="p">)</span>
         <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kps_score_lowres</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">up_scale</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_channels</span> <span class="o">=</span> <span class="n">num_keypoints</span>
@@ -718,55 +718,55 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kps_score_lowres</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span>
-            <span class="n">x</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">up_scale</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;bilinear&quot;</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">recompute_scale_factor</span><span class="o">=</span><span class="kc">False</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">up_scale</span><span class="p">),</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"bilinear"</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">recompute_scale_factor</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">)</span>
 
 
 <span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_COCO_PERSON_CATEGORIES</span><span class="p">,</span>
-    <span class="s2">&quot;keypoint_names&quot;</span><span class="p">:</span> <span class="n">_COCO_PERSON_KEYPOINT_NAMES</span><span class="p">,</span>
-    <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">"categories"</span><span class="p">:</span> <span class="n">_COCO_PERSON_CATEGORIES</span><span class="p">,</span>
+    <span class="s2">"keypoint_names"</span><span class="p">:</span> <span class="n">_COCO_PERSON_KEYPOINT_NAMES</span><span class="p">,</span>
+    <span class="s2">"min_size"</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
 <span class="p">}</span>
 
 
 <div class="viewcode-block" id="KeypointRCNN_ResNet50_FPN_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.keypointrcnn_resnet50_fpn.html#torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">KeypointRCNN_ResNet50_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_LEGACY</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">59137258</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/1606&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;COCO-val2017&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;box_map&quot;</span><span class="p">:</span> <span class="mf">50.6</span><span class="p">,</span>
-                    <span class="s2">&quot;kp_map&quot;</span><span class="p">:</span> <span class="mf">61.1</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">59137258</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/issues/1606"</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"COCO-val2017"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"box_map"</span><span class="p">:</span> <span class="mf">50.6</span><span class="p">,</span>
+                    <span class="s2">"kp_map"</span><span class="p">:</span> <span class="mf">61.1</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">133.924</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">226.054</span><span class="p">,</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">133.924</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">226.054</span><span class="p">,</span>
+            <span class="s2">"_docs"</span><span class="p">:</span> <span class="s2">"""</span>
 <span class="s2">                These weights were produced by following a similar training recipe as on the paper but use a checkpoint</span>
 <span class="s2">                from an early epoch.</span>
-<span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
+<span class="s2">            """</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">59137258</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/detection#keypoint-r-cnn&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;COCO-val2017&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;box_map&quot;</span><span class="p">:</span> <span class="mf">54.6</span><span class="p">,</span>
-                    <span class="s2">&quot;kp_map&quot;</span><span class="p">:</span> <span class="mf">65.0</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">59137258</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/tree/main/references/detection#keypoint-r-cnn"</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"COCO-val2017"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"box_map"</span><span class="p">:</span> <span class="mf">54.6</span><span class="p">,</span>
+                    <span class="s2">"kp_map"</span><span class="p">:</span> <span class="mf">65.0</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">137.42</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">226.054</span><span class="p">,</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were produced by following a similar training recipe as on the paper.&quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">137.42</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">226.054</span><span class="p">,</span>
+            <span class="s2">"_docs"</span><span class="p">:</span> <span class="s2">"""These weights were produced by following a similar training recipe as on the paper."""</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
@@ -775,14 +775,14 @@
 <div class="viewcode-block" id="keypointrcnn_resnet50_fpn"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.keypointrcnn_resnet50_fpn.html#torchvision.models.detection.keypointrcnn_resnet50_fpn">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span>
     <span class="n">weights</span><span class="o">=</span><span class="p">(</span>
-        <span class="s2">&quot;pretrained&quot;</span><span class="p">,</span>
+        <span class="s2">"pretrained"</span><span class="p">,</span>
         <span class="k">lambda</span> <span class="n">kwargs</span><span class="p">:</span> <span class="p">(</span>
             <span class="n">KeypointRCNN_ResNet50_FPN_Weights</span><span class="o">.</span><span class="n">COCO_LEGACY</span>
-            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;pretrained&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;legacy&quot;</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">"pretrained"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"legacy"</span>
             <span class="k">else</span> <span class="n">KeypointRCNN_ResNet50_FPN_Weights</span><span class="o">.</span><span class="n">COCO_V1</span>
         <span class="p">),</span>
     <span class="p">),</span>
-    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
+    <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained_backbone"</span><span class="p">,</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">keypointrcnn_resnet50_fpn</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
@@ -794,7 +794,7 @@
     <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KeypointRCNN</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.</span>
 
 <span class="sd">    .. betastatus:: detection module</span>
@@ -840,7 +840,7 @@
 <span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
 <span class="sd">        &gt;&gt;&gt;</span>
 <span class="sd">        &gt;&gt;&gt; # optionally, if you want to export the model to ONNX:</span>
-<span class="sd">        &gt;&gt;&gt; torch.onnx.export(model, x, &quot;keypoint_rcnn.onnx&quot;, opset_version = 11)</span>
+<span class="sd">        &gt;&gt;&gt; torch.onnx.export(model, x, "keypoint_rcnn.onnx", opset_version = 11)</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        weights (:class:`~torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights`, optional): The</span>
@@ -859,14 +859,14 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">KeypointRCNN_ResNet50_FPN_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">weights_backbone</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
-        <span class="n">num_keypoints</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">&quot;num_keypoints&quot;</span><span class="p">,</span> <span class="n">num_keypoints</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;keypoint_names&quot;</span><span class="p">]))</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">"num_classes"</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">]))</span>
+        <span class="n">num_keypoints</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="s2">"num_keypoints"</span><span class="p">,</span> <span class="n">num_keypoints</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"keypoint_names"</span><span class="p">]))</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">num_classes</span> <span class="o">=</span> <span class="mi">2</span>

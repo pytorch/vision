@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -427,11 +427,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">handle_legacy_interface</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Inception3&quot;</span><span class="p">,</span> <span class="s2">&quot;InceptionOutputs&quot;</span><span class="p">,</span> <span class="s2">&quot;_InceptionOutputs&quot;</span><span class="p">,</span> <span class="s2">&quot;Inception_V3_Weights&quot;</span><span class="p">,</span> <span class="s2">&quot;inception_v3&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Inception3"</span><span class="p">,</span> <span class="s2">"InceptionOutputs"</span><span class="p">,</span> <span class="s2">"_InceptionOutputs"</span><span class="p">,</span> <span class="s2">"Inception_V3_Weights"</span><span class="p">,</span> <span class="s2">"inception_v3"</span><span class="p">]</span>
 
 
-<span class="n">InceptionOutputs</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;InceptionOutputs&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;logits&quot;</span><span class="p">,</span> <span class="s2">&quot;aux_logits&quot;</span><span class="p">])</span>
-<span class="n">InceptionOutputs</span><span class="o">.</span><span class="vm">__annotations__</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;logits&quot;</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="s2">&quot;aux_logits&quot;</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]}</span>
+<span class="n">InceptionOutputs</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">"InceptionOutputs"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"logits"</span><span class="p">,</span> <span class="s2">"aux_logits"</span><span class="p">])</span>
+<span class="n">InceptionOutputs</span><span class="o">.</span><span class="vm">__annotations__</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"logits"</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="s2">"aux_logits"</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]}</span>
 
 <span class="c1"># Script annotations failed with _GoogleNetOutputs = namedtuple ...</span>
 <span class="c1"># _InceptionOutputs set here for backwards compat</span>
@@ -454,14 +454,14 @@
             <span class="n">inception_blocks</span> <span class="o">=</span> <span class="p">[</span><span class="n">BasicConv2d</span><span class="p">,</span> <span class="n">InceptionA</span><span class="p">,</span> <span class="n">InceptionB</span><span class="p">,</span> <span class="n">InceptionC</span><span class="p">,</span> <span class="n">InceptionD</span><span class="p">,</span> <span class="n">InceptionE</span><span class="p">,</span> <span class="n">InceptionAux</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">init_weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;The default weight initialization of inception_v3 will be changed in future releases of &quot;</span>
-                <span class="s2">&quot;torchvision. If you wish to keep the old behavior (which leads to long initialization times&quot;</span>
-                <span class="s2">&quot; due to scipy/scipy#11299), please set init_weights=True.&quot;</span><span class="p">,</span>
+                <span class="s2">"The default weight initialization of inception_v3 will be changed in future releases of "</span>
+                <span class="s2">"torchvision. If you wish to keep the old behavior (which leads to long initialization times"</span>
+                <span class="s2">" due to scipy/scipy#11299), please set init_weights=True."</span><span class="p">,</span>
                 <span class="ne">FutureWarning</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">init_weights</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inception_blocks</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">7</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;length of inception_blocks should be 7 instead of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inception_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"length of inception_blocks should be 7 instead of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">inception_blocks</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">conv_block</span> <span class="o">=</span> <span class="n">inception_blocks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">inception_a</span> <span class="o">=</span> <span class="n">inception_blocks</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">inception_b</span> <span class="o">=</span> <span class="n">inception_blocks</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
@@ -499,7 +499,7 @@
         <span class="k">if</span> <span class="n">init_weights</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">):</span>
-                    <span class="n">stddev</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">stddev</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s2">&quot;stddev&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.1</span>  <span class="c1"># type: ignore</span>
+                    <span class="n">stddev</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">stddev</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s2">"stddev"</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.1</span>  <span class="c1"># type: ignore</span>
                     <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">trunc_normal_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">stddev</span><span class="p">,</span> <span class="n">a</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">):</span>
                     <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">constant_</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -580,7 +580,7 @@
         <span class="n">aux_defined</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux_logits</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">aux_defined</span><span class="p">:</span>
-                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Scripted Inception3 always returns Inception3 Tuple&quot;</span><span class="p">)</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"Scripted Inception3 always returns Inception3 Tuple"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">InceptionOutputs</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">aux</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">eager_outputs</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">aux</span><span class="p">)</span>
@@ -822,31 +822,31 @@
 
 <div class="viewcode-block" id="Inception_V3_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.quantization.inception_v3.html#torchvision.models.Inception_V3_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Inception_V3_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">299</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">342</span><span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">27161264</span><span class="p">,</span>
-            <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">75</span><span class="p">,</span> <span class="mi">75</span><span class="p">),</span>
-            <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#inception-v3&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">77.294</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.450</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">27161264</span><span class="p">,</span>
+            <span class="s2">"min_size"</span><span class="p">:</span> <span class="p">(</span><span class="mi">75</span><span class="p">,</span> <span class="mi">75</span><span class="p">),</span>
+            <span class="s2">"categories"</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/tree/main/references/classification#inception-v3"</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"ImageNet-1K"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">77.294</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">93.450</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">5.713</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">103.903</span><span class="p">,</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights are ported from the original paper.&quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">5.713</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">103.903</span><span class="p">,</span>
+            <span class="s2">"_docs"</span><span class="p">:</span> <span class="s2">"""These weights are ported from the original paper."""</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
 <div class="viewcode-block" id="inception_v3"><a class="viewcode-back" href="../../../models/generated/torchvision.models.inception_v3.html#torchvision.models.inception_v3">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
-<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Inception_V3_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">Inception_V3_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">inception_v3</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Inception_V3_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Inception3</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Inception v3 model architecture from</span>
 <span class="sd">    `Rethinking the Inception Architecture for Computer Vision &lt;http://arxiv.org/abs/1512.00567&gt;`_.</span>
 
@@ -869,16 +869,16 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.Inception_V3_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">Inception_V3_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
-    <span class="n">original_aux_logits</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;aux_logits&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">original_aux_logits</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"aux_logits"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s2">&quot;transform_input&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;transform_input&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;aux_logits&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;init_weights&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="s2">"transform_input"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"transform_input"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"aux_logits"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"init_weights"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"num_classes"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">]))</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="n">Inception3</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 

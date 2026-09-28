@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -411,7 +411,7 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.transforms.v2.functional._meta</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">PIL.Image</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
@@ -422,14 +422,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_kernel</span><span class="p">,</span> <span class="n">_import_cvcuda</span><span class="p">,</span> <span class="n">_is_cvcuda_available</span><span class="p">,</span> <span class="n">_register_kernel_internal</span><span class="p">,</span> <span class="n">is_pure_tensor</span>
-
-<span class="n">CVCUDA_AVAILABLE</span> <span class="o">=</span> <span class="n">_is_cvcuda_available</span><span class="p">()</span>
-
-<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">cvcuda</span>  <span class="c1"># type: ignore[import-not-found]</span>
-<span class="k">if</span> <span class="n">CVCUDA_AVAILABLE</span><span class="p">:</span>
-    <span class="n">cvcuda</span> <span class="o">=</span> <span class="n">_import_cvcuda</span><span class="p">()</span>  <span class="c1"># noqa: F811</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_get_kernel</span><span class="p">,</span> <span class="n">_register_kernel_internal</span><span class="p">,</span> <span class="n">is_pure_tensor</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_dimensions</span><span class="p">(</span><span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
@@ -453,7 +446,7 @@
         <span class="n">chw</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">chw</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor should have at least two dimensions, but got </span><span class="si">{</span><span class="n">ndims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input tensor should have at least two dimensions, but got </span><span class="si">{</span><span class="n">ndims</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="n">_get_dimensions_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">get_dimensions</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">get_dimensions</span><span class="p">)</span>
@@ -484,7 +477,7 @@
     <span class="k">elif</span> <span class="n">ndims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">1</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor should have at least two dimensions, but got </span><span class="si">{</span><span class="n">ndims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input tensor should have at least two dimensions, but got </span><span class="si">{</span><span class="n">ndims</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="n">_get_num_channels_image_pil</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">get_num_channels</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)(</span><span class="n">_FP</span><span class="o">.</span><span class="n">get_image_num_channels</span><span class="p">)</span>
@@ -518,27 +511,13 @@
     <span class="k">if</span> <span class="n">ndims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">hw</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor should have at least two dimensions, but got </span><span class="si">{</span><span class="n">ndims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input tensor should have at least two dimensions, but got </span><span class="si">{</span><span class="n">ndims</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">get_size</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_size_image_pil</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
     <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">_FP</span><span class="o">.</span><span class="n">get_image_size</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">[</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">]</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">get_size_image_cvcuda</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="s2">&quot;cvcuda.Tensor&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get size of `cvcuda.Tensor` with NHWC layout.&quot;&quot;&quot;</span>
-    <span class="n">hw</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">ndims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hw</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">ndims</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">hw</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input tensor should have at least two dimensions, but got </span><span class="si">{</span><span class="n">ndims</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-
-<span class="k">if</span> <span class="n">CVCUDA_AVAILABLE</span><span class="p">:</span>
-    <span class="n">_get_size_image_cvcuda</span> <span class="o">=</span> <span class="n">_register_kernel_internal</span><span class="p">(</span><span class="n">get_size</span><span class="p">,</span> <span class="n">cvcuda</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)(</span><span class="n">get_size_image_cvcuda</span><span class="p">)</span>
 
 
 <span class="nd">@_register_kernel_internal</span><span class="p">(</span><span class="n">get_size</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">,</span> <span class="n">tv_tensor_wrapper</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -589,17 +568,69 @@
     <span class="k">return</span> <span class="n">xywh</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_cxcywh_to_xyxy</span><span class="p">(</span><span class="n">cxcywh</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_xywh_to_cxcywh</span><span class="p">(</span><span class="n">xywh</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
+        <span class="n">xywh</span> <span class="o">=</span> <span class="n">xywh</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+    <span class="c1"># cx = x + width / 2, cy = y + height / 2, width and height stay the same</span>
+    <span class="n">xywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">xywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">xywh</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"floor"</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">xywh</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_cxcywh_to_xywh</span><span class="p">(</span><span class="n">cxcywh</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># For integer tensors, use float arithmetic to match the behavior of the</span>
+    <span class="c1"># two-step conversion CXCYWH -&gt; XYXY -&gt; XYWH (where _cxcywh_to_xyxy uses</span>
+    <span class="c1"># float arithmetic, see PR #9322).</span>
+    <span class="n">original</span> <span class="o">=</span> <span class="n">cxcywh</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">dtype</span>
+    <span class="n">need_cast</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">need_cast</span><span class="p">:</span>
+        <span class="n">cxcywh</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
         <span class="n">cxcywh</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 
-    <span class="c1"># Trick to do fast division by 2 and ceil, without casting. It produces the same result as</span>
+    <span class="n">half_wh</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="c1"># x = cx - w/2, y = cy - h/2</span>
+    <span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">half_wh</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">need_cast</span><span class="p">:</span>
+        <span class="c1"># For integer types, truncation of x1/y1 and x2/y2 (= x1 + w, y1 + h) can change</span>
+        <span class="c1"># the effective width/height. Recompute w/h to match the two-step path.</span>
+        <span class="n">x2y2</span> <span class="o">=</span> <span class="p">(</span><span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">cxcywh</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="n">x2y2</span> <span class="o">-</span> <span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="n">original</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">cxcywh</span>
+            <span class="k">return</span> <span class="n">original</span>
+
+    <span class="k">return</span> <span class="n">cxcywh</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_cxcywh_to_xyxy</span><span class="p">(</span><span class="n">cxcywh</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="c1"># For integer tensors, use float arithmetic to match the behavior of</span>
     <span class="c1"># `torchvision.ops._box_convert._box_cxcywh_to_xyxy`.</span>
-    <span class="n">half_wh</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;floor&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">abs_</span><span class="p">()</span>
+    <span class="n">original</span> <span class="o">=</span> <span class="n">cxcywh</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">dtype</span>
+    <span class="n">need_cast</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">need_cast</span><span class="p">:</span>
+        <span class="n">cxcywh</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
+        <span class="n">cxcywh</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+    <span class="n">half_wh</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:]</span> <span class="o">/</span> <span class="mi">2</span>
     <span class="c1"># (cx - width / 2) = x1, same for y1</span>
     <span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">half_wh</span><span class="p">)</span>
     <span class="c1"># (x1 + width) = x2, same for y2</span>
     <span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">cxcywh</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">need_cast</span><span class="p">:</span>
+        <span class="n">cxcywh</span> <span class="o">=</span> <span class="n">cxcywh</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+            <span class="n">original</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">cxcywh</span>
+            <span class="k">return</span> <span class="n">original</span>
 
     <span class="k">return</span> <span class="n">cxcywh</span>
 
@@ -611,7 +642,7 @@
     <span class="c1"># (x2 - x1) = width, same for height</span>
     <span class="n">xyxy</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">sub_</span><span class="p">(</span><span class="n">xyxy</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>
     <span class="c1"># (x1 * 2 + width) / 2 = x1 + width / 2 = x1 + (x2-x1)/2 = (x1 + x2)/2 = cx, same for cy</span>
-    <span class="n">xyxy</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">xyxy</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:])</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">xyxy</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;floor&quot;</span><span class="p">)</span>
+    <span class="n">xyxy</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">mul_</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">add_</span><span class="p">(</span><span class="n">xyxy</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:])</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">xyxy</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"floor"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">xyxy</span>
 
@@ -628,7 +659,7 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
         <span class="n">cxcywhr</span> <span class="o">=</span> <span class="n">cxcywhr</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 
-    <span class="n">half_wh</span> <span class="o">=</span> <span class="n">cxcywhr</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">cxcywhr</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;floor&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">abs_</span><span class="p">()</span>
+    <span class="n">half_wh</span> <span class="o">=</span> <span class="n">cxcywhr</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">cxcywhr</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"floor"</span><span class="p">)</span><span class="o">.</span><span class="n">abs_</span><span class="p">()</span>
     <span class="n">r_rad</span> <span class="o">=</span> <span class="n">cxcywhr</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="mf">180.0</span><span class="p">)</span>
     <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span> <span class="o">=</span> <span class="n">r_rad</span><span class="o">.</span><span class="n">cos</span><span class="p">(),</span> <span class="n">r_rad</span><span class="o">.</span><span class="n">sin</span><span class="p">()</span>
     <span class="c1"># (cx - width / 2 * cos - height / 2 * sin) = x1</span>
@@ -643,7 +674,7 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
         <span class="n">xywhr</span> <span class="o">=</span> <span class="n">xywhr</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 
-    <span class="n">half_wh</span> <span class="o">=</span> <span class="n">xywhr</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">xywhr</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;floor&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">abs_</span><span class="p">()</span>
+    <span class="n">half_wh</span> <span class="o">=</span> <span class="n">xywhr</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">xywhr</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"floor"</span><span class="p">)</span><span class="o">.</span><span class="n">abs_</span><span class="p">()</span>
     <span class="n">r_rad</span> <span class="o">=</span> <span class="n">xywhr</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="mf">180.0</span><span class="p">)</span>
     <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span> <span class="o">=</span> <span class="n">r_rad</span><span class="o">.</span><span class="n">cos</span><span class="p">(),</span> <span class="n">r_rad</span><span class="o">.</span><span class="n">sin</span><span class="p">()</span>
     <span class="c1"># (x1 + width / 2 * cos + height / 2 * sin) = cx</span>
@@ -715,9 +746,13 @@
         <span class="k">return</span> <span class="n">bounding_boxes</span>
 
     <span class="k">if</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">is_rotated_bounding_format</span><span class="p">(</span><span class="n">old_format</span><span class="p">)</span> <span class="o">^</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">is_rotated_bounding_format</span><span class="p">(</span><span class="n">new_format</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot convert between rotated and unrotated bounding boxes.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot convert between rotated and unrotated bounding boxes."</span><span class="p">)</span>
 
-    <span class="c1"># TODO: Add _xywh_to_cxcywh and _cxcywh_to_xywh to improve performance</span>
+    <span class="k">if</span> <span class="n">old_format</span> <span class="o">==</span> <span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYWH</span> <span class="ow">and</span> <span class="n">new_format</span> <span class="o">==</span> <span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">CXCYWH</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_xywh_to_cxcywh</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">inplace</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">old_format</span> <span class="o">==</span> <span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">CXCYWH</span> <span class="ow">and</span> <span class="n">new_format</span> <span class="o">==</span> <span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYWH</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_cxcywh_to_xywh</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">inplace</span><span class="p">)</span>
+
     <span class="k">if</span> <span class="n">old_format</span> <span class="o">==</span> <span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">XYWH</span><span class="p">:</span>
         <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">_xywh_to_xyxy</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">,</span> <span class="n">inplace</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">old_format</span> <span class="o">==</span> <span class="n">BoundingBoxFormat</span><span class="o">.</span><span class="n">CXCYWH</span><span class="p">:</span>
@@ -745,13 +780,13 @@
     <span class="n">new_format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BoundingBoxFormat</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">inplace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :func:`~torchvision.transforms.v2.ConvertBoundingBoxFormat` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""See :func:`~torchvision.transforms.v2.ConvertBoundingBoxFormat` for details."""</span>
     <span class="c1"># This being a kernel / functional hybrid, we need an option to pass `old_format` explicitly for pure tensor</span>
     <span class="c1"># inputs as well as extract it from `tv_tensors.BoundingBoxes` inputs. However, putting a default value on</span>
     <span class="c1"># `old_format` means we also need to put one on `new_format` to have syntactically correct Python. Here we mimic the</span>
     <span class="c1"># default error that would be thrown if `new_format` had no default value.</span>
     <span class="k">if</span> <span class="n">new_format</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;convert_bounding_box_format() missing 1 required argument: &#39;new_format&#39;&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"convert_bounding_box_format() missing 1 required argument: 'new_format'"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">convert_bounding_box_format</span><span class="p">)</span>
@@ -763,18 +798,18 @@
 
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">or</span> <span class="n">is_pure_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">old_format</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For pure tensor inputs, `old_format` has to be passed.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"For pure tensor inputs, `old_format` has to be passed."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_convert_bounding_box_format</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">old_format</span><span class="o">=</span><span class="n">old_format</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="n">new_format</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">old_format</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For bounding box tv_tensor inputs, `old_format` must not be passed.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"For bounding box tv_tensor inputs, `old_format` must not be passed."</span><span class="p">)</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">_convert_bounding_box_format</span><span class="p">(</span>
             <span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">old_format</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="n">new_format</span><span class="o">=</span><span class="n">new_format</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="n">inplace</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">new_format</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Input can either be a plain tensor or a bounding box tv_tensor, but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Input can either be a plain tensor or a bounding box tv_tensor, but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead."</span>
         <span class="p">)</span></div>
 
 
@@ -805,7 +840,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_order_bounding_boxes_points</span><span class="p">(</span>
     <span class="n">bounding_boxes</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Re-order points in bounding boxes based on specific criteria or provided indices.</span>
+<span class="w">    </span><span class="sd">"""Re-order points in bounding boxes based on specific criteria or provided indices.</span>
 
 <span class="sd">    This function reorders the points of bounding boxes either according to provided indices or</span>
 <span class="sd">    by a default ordering strategy. In the default strategy, (x1, y1) corresponds to the point</span>
@@ -820,7 +855,7 @@
 <span class="sd">        tuple[torch.Tensor, torch.Tensor]: A tuple containing:</span>
 <span class="sd">            - indices: The indices used for reordering</span>
 <span class="sd">            - reordered_boxes: The bounding boxes with reordered points</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">output_xyxyxyxy</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">output_xyxyxyxy</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span> <span class="n">output_xyxyxyxy</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
@@ -834,11 +869,11 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_slope_and_intercept</span><span class="p">(</span><span class="n">box</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculate the slope and y-intercept of the lines defined by consecutive vertices in a bounding box.</span>
 <span class="sd">    This function computes the slope (a) and y-intercept (b) for each line segment in a bounding box,</span>
 <span class="sd">    where each line is defined by two consecutive vertices.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">box</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">::</span><span class="mi">2</span><span class="p">],</span> <span class="n">box</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
     <span class="n">a</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">append</span><span class="o">=</span><span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">x</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">append</span><span class="o">=</span><span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">a</span> <span class="o">*</span> <span class="n">x</span>
@@ -846,11 +881,11 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_intersection_point</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Calculate the intersection point of two lines defined by their slopes and y-intercepts.</span>
 <span class="sd">    This function computes the intersection points between pairs of lines, where each line</span>
 <span class="sd">    is defined by the equation y = ax + b (slope and y-intercept form).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">batch_size</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">prepend</span><span class="o">=</span><span class="n">b</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span><span class="o">.</span><span class="n">neg</span><span class="p">()</span> <span class="o">/</span> <span class="n">a</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">prepend</span><span class="o">=</span><span class="n">a</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">a</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">b</span>
@@ -863,7 +898,7 @@
     <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Apply clamping to bounding box y-intercepts. This function handles two clamping strategies:</span>
 <span class="sd">    - Hard clamping: Ensures all box vertices stay within canvas boundaries, finding the largest</span>
 <span class="sd">      angle-preserving box enclosed within the original box and the image canvas.</span>
@@ -872,7 +907,7 @@
 
 <span class="sd">    The function first calculates the slopes and y-intercepts of the lines forming the bounding box,</span>
 <span class="sd">    then applies various constraints to ensure the clamping conditions are respected.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Calculate slopes and y-intercepts for bounding boxes</span>
     <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">_get_slope_and_intercept</span><span class="p">(</span><span class="n">bounding_boxes</span><span class="p">)</span>
@@ -887,7 +922,7 @@
     <span class="n">b1</span> <span class="o">=</span> <span class="n">b2</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">b1</span><span class="p">,</span> <span class="n">b3</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">b4</span> <span class="o">=</span> <span class="n">b3</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">b2</span><span class="p">,</span> <span class="n">b4</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">canvas_size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-    <span class="k">if</span> <span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="o">==</span> <span class="s2">&quot;hard&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="o">==</span> <span class="s2">"hard"</span><span class="p">:</span>
         <span class="c1"># Hard clamping: Average b1 and b4, and adjust b2 and b3 for maximum area</span>
         <span class="n">b1</span> <span class="o">=</span> <span class="n">b4</span> <span class="o">=</span> <span class="p">(</span><span class="n">b1</span> <span class="o">+</span> <span class="n">b4</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
 
@@ -901,7 +936,7 @@
             <span class="p">],</span>
             <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="c1"># Take maximum value that doesn&#39;t exceed original b2</span>
+        <span class="c1"># Take maximum value that doesn't exceed original b2</span>
         <span class="n">b2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">b2_candidates</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">max</span><span class="o">=</span><span class="n">b2</span><span class="p">)</span>
 
         <span class="c1"># Calculate candidate values for b3 based on geometric constraints</span>
@@ -914,7 +949,7 @@
             <span class="p">],</span>
             <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="c1"># Take minimum value that doesn&#39;t go below original b3</span>
+        <span class="c1"># Take minimum value that doesn't go below original b3</span>
         <span class="n">b3</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">b3_candidates</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="n">b3</span><span class="p">)</span>
 
     <span class="c1"># Final clamping to ensure y-intercepts are within original box bounds</span>
@@ -932,7 +967,7 @@
     <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Adjusts bounding boxes along the y-axis based on specific conditions.</span>
 
 <span class="sd">    This function modifies the bounding boxes by evaluating different cases</span>
@@ -947,7 +982,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        torch.Tensor: The adjusted bounding boxes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">original_shape</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">shape</span>
     <span class="n">bounding_boxes</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
     <span class="n">original_bounding_boxes</span> <span class="o">=</span> <span class="n">original_bounding_boxes</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
@@ -983,7 +1018,7 @@
     <span class="n">canvas_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
     <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">CLAMPING_MODE_TYPE</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Clamp rotated bounding boxes to ensure they stay within the canvas boundaries.</span>
 
 <span class="sd">    This function handles rotated bounding boxes by:</span>
@@ -1002,7 +1037,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        torch.Tensor: Clamped bounding boxes in the original format and shape</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">clamping_mode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
     <span class="n">original_shape</span> <span class="o">=</span> <span class="n">bounding_boxes</span><span class="o">.</span><span class="n">shape</span>
@@ -1042,19 +1077,19 @@
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BoundingBoxFormat</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">CLAMPING_MODE_TYPE</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="n">clamping_mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">CLAMPING_MODE_TYPE</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :func:`~torchvision.transforms.v2.ClampBoundingBoxes` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""See :func:`~torchvision.transforms.v2.ClampBoundingBoxes` for details."""</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">clamp_bounding_boxes</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;soft&quot;</span><span class="p">,</span> <span class="s2">&quot;hard&quot;</span><span class="p">,</span> <span class="s2">&quot;auto&quot;</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;clamping_mode must be soft, hard, auto or None, got </span><span class="si">{</span><span class="n">clamping_mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"soft"</span><span class="p">,</span> <span class="s2">"hard"</span><span class="p">,</span> <span class="s2">"auto"</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"clamping_mode must be soft, hard, auto or None, got </span><span class="si">{</span><span class="n">clamping_mode</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">or</span> <span class="n">is_pure_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="p">):</span>
 
-        <span class="k">if</span> <span class="nb">format</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">canvas_size</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For pure tensor inputs, `format`, `canvas_size` and `clamping_mode` have to be passed.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">format</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">canvas_size</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"For pure tensor inputs, `format`, `canvas_size` and `clamping_mode` have to be passed."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">is_rotated_bounding_format</span><span class="p">(</span><span class="nb">format</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">_clamp_rotated_bounding_boxes</span><span class="p">(</span>
                 <span class="n">inpt</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span>
@@ -1063,8 +1098,8 @@
             <span class="k">return</span> <span class="n">_clamp_bounding_boxes</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">,</span> <span class="n">clamping_mode</span><span class="o">=</span><span class="n">clamping_mode</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">format</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">canvas_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For bounding box tv_tensor inputs, `format` and `canvas_size` must not be passed.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"For bounding box tv_tensor inputs, `format` and `canvas_size` must not be passed."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">clamping_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">clamping_mode</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
             <span class="n">clamping_mode</span> <span class="o">=</span> <span class="n">inpt</span><span class="o">.</span><span class="n">clamping_mode</span>
         <span class="k">if</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">is_rotated_bounding_format</span><span class="p">(</span><span class="n">inpt</span><span class="o">.</span><span class="n">format</span><span class="p">):</span>
             <span class="n">output</span> <span class="o">=</span> <span class="n">_clamp_rotated_bounding_boxes</span><span class="p">(</span>
@@ -1083,7 +1118,7 @@
         <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Input can either be a plain tensor or a bounding box tv_tensor, but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Input can either be a plain tensor or a bounding box tv_tensor, but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead."</span>
         <span class="p">)</span></div>
 
 
@@ -1101,22 +1136,22 @@
     <span class="n">inpt</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">canvas_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;See :func:`~torchvision.transforms.v2.ClampKeyPoints` for details.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""See :func:`~torchvision.transforms.v2.ClampKeyPoints` for details."""</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">clamp_keypoints</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">or</span> <span class="n">is_pure_tensor</span><span class="p">(</span><span class="n">inpt</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="n">canvas_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For pure tensor inputs, `canvas_size` has to be passed.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"For pure tensor inputs, `canvas_size` has to be passed."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_clamp_keypoints</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">canvas_size</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">KeyPoints</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">canvas_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;For keypoints tv_tensor inputs, `canvas_size` must not be passed.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"For keypoints tv_tensor inputs, `canvas_size` must not be passed."</span><span class="p">)</span>
         <span class="n">output</span> <span class="o">=</span> <span class="n">_clamp_keypoints</span><span class="p">(</span><span class="n">inpt</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">inpt</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">inpt</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input can either be a plain tensor or a keypoints tv_tensor, but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead.&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input can either be a plain tensor or a keypoints tv_tensor, but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">inpt</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead."</span><span class="p">)</span></div>
 </pre></div>
 
              </article>

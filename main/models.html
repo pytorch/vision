@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -320,7 +320,7 @@
 <li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -422,9 +422,9 @@ keypoint detection, video classification, and optical flow.</p>
 <section id="general-information-on-pre-trained-weights">
 <h2>General information on pre-trained weights<a class="headerlink" href="#general-information-on-pre-trained-weights" title="Permalink to this heading">¶</a></h2>
 <p>TorchVision offers pre-trained weights for every provided architecture, using
-the PyTorch <a class="reference external" href="https://docs.pytorch.org/docs/stable/hub.html#module-torch.hub" title="(in PyTorch v2.9)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.hub</span></code></a>. Instancing a pre-trained model will download its
+the PyTorch <a class="reference external" href="https://docs.pytorch.org/docs/stable/hub.html#module-torch.hub" title="(in PyTorch v2.14)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.hub</span></code></a>. Instancing a pre-trained model will download its
 weights to a cache directory. This directory can be set using the <cite>TORCH_HOME</cite>
-environment variable. See <a class="reference external" href="https://docs.pytorch.org/docs/stable/hub.html#torch.hub.load_state_dict_from_url" title="(in PyTorch v2.9)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.hub.load_state_dict_from_url()</span></code></a> for details.</p>
+environment variable. See <a class="reference external" href="https://docs.pytorch.org/docs/stable/hub.html#torch.hub.load_state_dict_from_url" title="(in PyTorch v2.14)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.hub.load_state_dict_from_url()</span></code></a> for details.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>The pre-trained models provided in this library may have their own licenses or
@@ -458,7 +458,7 @@ for loading different weights to the existing model builder methods:</p>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">)</span>
 
 <span class="c1"># Strings are also supported</span>
-<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="s2">&quot;IMAGENET1K_V2&quot;</span><span class="p">)</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="s2">"IMAGENET1K_V2"</span><span class="p">)</span>
 
 <span class="c1"># No weights - random initialization</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
@@ -469,7 +469,7 @@ for loading different weights to the existing model builder methods:</p>
 
 <span class="c1"># Using pretrained weights:</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">)</span>
-<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="s2">&quot;IMAGENET1K_V1&quot;</span><span class="p">)</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="s2">"IMAGENET1K_V1"</span><span class="p">)</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># deprecated</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># deprecated</span>
 
@@ -505,7 +505,7 @@ accessible via the <code class="docutils literal notranslate"><span class="pre">
 <p>Some models use modules which have different training and evaluation
 behavior, such as batch normalization. To switch between these modes, use
 <code class="docutils literal notranslate"><span class="pre">model.train()</span></code> or <code class="docutils literal notranslate"><span class="pre">model.eval()</span></code> as appropriate. See
-<a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train" title="(in PyTorch v2.9)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">train()</span></code></a> or <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.eval" title="(in PyTorch v2.9)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eval()</span></code></a> for details.</p>
+<a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train" title="(in PyTorch v2.14)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">train()</span></code></a> or <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.eval" title="(in PyTorch v2.14)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eval()</span></code></a> for details.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize model</span>
 <span class="n">weights</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
@@ -525,14 +525,14 @@ use them:</p>
 <span class="n">classification_models</span> <span class="o">=</span> <span class="n">list_models</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="p">)</span>
 
 <span class="c1"># Initialize models</span>
-<span class="n">m1</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="s2">&quot;mobilenet_v3_large&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="n">m2</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="s2">&quot;quantized_mobilenet_v3_large&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;DEFAULT&quot;</span><span class="p">)</span>
+<span class="n">m1</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="s2">"mobilenet_v3_large"</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">get_model</span><span class="p">(</span><span class="s2">"quantized_mobilenet_v3_large"</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">"DEFAULT"</span><span class="p">)</span>
 
 <span class="c1"># Fetch weights</span>
-<span class="n">weights</span> <span class="o">=</span> <span class="n">get_weight</span><span class="p">(</span><span class="s2">&quot;MobileNet_V3_Large_QuantizedWeights.DEFAULT&quot;</span><span class="p">)</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">get_weight</span><span class="p">(</span><span class="s2">"MobileNet_V3_Large_QuantizedWeights.DEFAULT"</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">weights</span> <span class="o">==</span> <span class="n">MobileNet_V3_Large_QuantizedWeights</span><span class="o">.</span><span class="n">DEFAULT</span>
 
-<span class="n">weights_enum</span> <span class="o">=</span> <span class="n">get_model_weights</span><span class="p">(</span><span class="s2">&quot;quantized_mobilenet_v3_large&quot;</span><span class="p">)</span>
+<span class="n">weights_enum</span> <span class="o">=</span> <span class="n">get_model_weights</span><span class="p">(</span><span class="s2">"quantized_mobilenet_v3_large"</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">weights_enum</span> <span class="o">==</span> <span class="n">MobileNet_V3_Large_QuantizedWeights</span>
 
 <span class="n">weights_enum2</span> <span class="o">=</span> <span class="n">get_model_weights</span><span class="p">(</span><span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">quantization</span><span class="o">.</span><span class="n">mobilenet_v3_large</span><span class="p">)</span>
@@ -563,21 +563,21 @@ use them:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 <span class="c1"># Option 1: passing weights param as string</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span> <span class="s2">&quot;resnet50&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;IMAGENET1K_V2&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"pytorch/vision"</span><span class="p">,</span> <span class="s2">"resnet50"</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">"IMAGENET1K_V2"</span><span class="p">)</span>
 
 <span class="c1"># Option 2: passing weights param as enum</span>
 <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
-    <span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;get_weight&quot;</span><span class="p">,</span>
-    <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;ResNet50_Weights.IMAGENET1K_V2&quot;</span><span class="p">,</span>
+    <span class="s2">"pytorch/vision"</span><span class="p">,</span>
+    <span class="s2">"get_weight"</span><span class="p">,</span>
+    <span class="n">weights</span><span class="o">=</span><span class="s2">"ResNet50_Weights.IMAGENET1K_V2"</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span> <span class="s2">&quot;resnet50&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"pytorch/vision"</span><span class="p">,</span> <span class="s2">"resnet50"</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>You can also retrieve all the available weights of a specific model via PyTorch Hub by doing:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
-<span class="n">weight_enum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span> <span class="s2">&quot;get_model_weights&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;resnet50&quot;</span><span class="p">)</span>
+<span class="n">weight_enum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"pytorch/vision"</span><span class="p">,</span> <span class="s2">"get_model_weights"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"resnet50"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">([</span><span class="n">weight</span> <span class="k">for</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">weight_enum</span><span class="p">])</span>
 </pre></div>
 </div>
@@ -621,7 +621,7 @@ weights:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">decode_image</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
 
-<span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">&quot;test/assets/encode_jpeg/grace_hopper_517x606.jpg&quot;</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">"test/assets/encode_jpeg/grace_hopper_517x606.jpg"</span><span class="p">)</span>
 
 <span class="c1"># Step 1: Initialize model with the best available weights</span>
 <span class="n">weights</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
@@ -638,8 +638,8 @@ weights:</p>
 <span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">class_id</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 <span class="n">score</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[</span><span class="n">class_id</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-<span class="n">category_name</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">][</span><span class="n">class_id</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">score</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+<span class="n">category_name</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">][</span><span class="n">class_id</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">score</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.</p>
@@ -1495,7 +1495,7 @@ pre-trained weights:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">decode_image</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.quantization</span><span class="w"> </span><span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_QuantizedWeights</span>
 
-<span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">&quot;test/assets/encode_jpeg/grace_hopper_517x606.jpg&quot;</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">"test/assets/encode_jpeg/grace_hopper_517x606.jpg"</span><span class="p">)</span>
 
 <span class="c1"># Step 1: Initialize model with the best available weights</span>
 <span class="n">weights</span> <span class="o">=</span> <span class="n">ResNet50_QuantizedWeights</span><span class="o">.</span><span class="n">DEFAULT</span>
@@ -1512,8 +1512,8 @@ pre-trained weights:</p>
 <span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">class_id</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 <span class="n">score</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[</span><span class="n">class_id</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-<span class="n">category_name</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">][</span><span class="n">class_id</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">score</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+<span class="n">category_name</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">][</span><span class="n">class_id</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">score</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.</p>
@@ -1665,7 +1665,7 @@ pre-trained weights:</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.segmentation</span><span class="w"> </span><span class="kn">import</span> <span class="n">fcn_resnet50</span><span class="p">,</span> <span class="n">FCN_ResNet50_Weights</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_pil_image</span>
 
-<span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">&quot;gallery/assets/dog1.jpg&quot;</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">"gallery/assets/dog1.jpg"</span><span class="p">)</span>
 
 <span class="c1"># Step 1: Initialize model with the best available weights</span>
 <span class="n">weights</span> <span class="o">=</span> <span class="n">FCN_ResNet50_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
@@ -1679,10 +1679,10 @@ pre-trained weights:</p>
 <span class="n">batch</span> <span class="o">=</span> <span class="n">preprocess</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
 <span class="c1"># Step 4: Use the model and visualize the prediction</span>
-<span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)[</span><span class="s2">&quot;out&quot;</span><span class="p">]</span>
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)[</span><span class="s2">"out"</span><span class="p">]</span>
 <span class="n">normalized_masks</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">class_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="bp">cls</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">])}</span>
-<span class="n">mask</span> <span class="o">=</span> <span class="n">normalized_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">class_to_idx</span><span class="p">[</span><span class="s2">&quot;dog&quot;</span><span class="p">]]</span>
+<span class="n">class_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="bp">cls</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">])}</span>
+<span class="n">mask</span> <span class="o">=</span> <span class="n">normalized_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">class_to_idx</span><span class="p">[</span><span class="s2">"dog"</span><span class="p">]]</span>
 <span class="n">to_pil_image</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -1690,7 +1690,7 @@ pre-trained weights:</p>
 The output format of the models is illustrated in <a class="reference internal" href="auto_examples/others/plot_visualization_utils.html#semantic-seg-output"><span class="std std-ref">Semantic segmentation models</span></a>.</p>
 <section id="table-of-all-available-semantic-segmentation-weights">
 <h3>Table of all available semantic segmentation weights<a class="headerlink" href="#table-of-all-available-semantic-segmentation-weights" title="Permalink to this heading">¶</a></h3>
-<p>All models are evaluated a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:</p>
+<p>All models are evaluated on a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:</p>
 <table class="table-weights docutils align-default">
 <colgroup>
 <col style="width: 57%" />
@@ -1788,7 +1788,7 @@ weights:</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">draw_bounding_boxes</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_pil_image</span>
 
-<span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">&quot;test/assets/encode_jpeg/grace_hopper_517x606.jpg&quot;</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">decode_image</span><span class="p">(</span><span class="s2">"test/assets/encode_jpeg/grace_hopper_517x606.jpg"</span><span class="p">)</span>
 
 <span class="c1"># Step 1: Initialize model with the best available weights</span>
 <span class="n">weights</span> <span class="o">=</span> <span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
@@ -1803,10 +1803,10 @@ weights:</p>
 
 <span class="c1"># Step 4: Use the model and visualize the prediction</span>
 <span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]]</span>
-<span class="n">box</span> <span class="o">=</span> <span class="n">draw_bounding_boxes</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">boxes</span><span class="o">=</span><span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">],</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">"labels"</span><span class="p">]]</span>
+<span class="n">box</span> <span class="o">=</span> <span class="n">draw_bounding_boxes</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">boxes</span><span class="o">=</span><span class="n">prediction</span><span class="p">[</span><span class="s2">"boxes"</span><span class="p">],</span>
                           <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span>
-                          <span class="n">colors</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span>
+                          <span class="n">colors</span><span class="o">=</span><span class="s2">"red"</span><span class="p">,</span>
                           <span class="n">width</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
 <span class="n">im</span> <span class="o">=</span> <span class="n">to_pil_image</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
 <span class="n">im</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -2023,7 +2023,7 @@ pre-trained weights:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.io.video</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_video</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.video</span><span class="w"> </span><span class="kn">import</span> <span class="n">r3d_18</span><span class="p">,</span> <span class="n">R3D_18_Weights</span>
 
-<span class="n">vid</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">read_video</span><span class="p">(</span><span class="s2">&quot;test/assets/videos/v_SoccerJuggling_g23_c01.avi&quot;</span><span class="p">,</span> <span class="n">output_format</span><span class="o">=</span><span class="s2">&quot;TCHW&quot;</span><span class="p">)</span>
+<span class="n">vid</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">read_video</span><span class="p">(</span><span class="s2">"test/assets/videos/v_SoccerJuggling_g23_c01.avi"</span><span class="p">,</span> <span class="n">output_format</span><span class="o">=</span><span class="s2">"TCHW"</span><span class="p">)</span>
 <span class="n">vid</span> <span class="o">=</span> <span class="n">vid</span><span class="p">[:</span><span class="mi">32</span><span class="p">]</span>  <span class="c1"># optionally shorten duration</span>
 
 <span class="c1"># Step 1: Initialize model with the best available weights</span>
@@ -2041,8 +2041,8 @@ pre-trained weights:</p>
 <span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">label</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 <span class="n">score</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-<span class="n">category_name</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">][</span><span class="n">label</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">score</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+<span class="n">category_name</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">][</span><span class="n">label</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">score</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.</p>

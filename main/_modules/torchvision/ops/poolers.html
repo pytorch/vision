@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -458,7 +458,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">LevelMapper</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine which FPN level each RoI in a set of RoIs should map to based</span>
+<span class="w">    </span><span class="sd">"""Determine which FPN level each RoI in a set of RoIs should map to based</span>
 <span class="sd">    on the heuristic in the FPN paper.</span>
 
 <span class="sd">    Args:</span>
@@ -467,7 +467,7 @@
 <span class="sd">        canonical_scale (int)</span>
 <span class="sd">        canonical_level (int)</span>
 <span class="sd">        eps (float)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -484,10 +484,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">boxlists</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">            boxlists (list[BoxList])</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Compute level ids</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">box_area</span><span class="p">(</span><span class="n">boxlist</span><span class="p">)</span> <span class="k">for</span> <span class="n">boxlist</span> <span class="ow">in</span> <span class="n">boxlists</span><span class="p">]))</span>
 
@@ -524,7 +524,7 @@
     <span class="n">features</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">image_shapes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">canonical_scale</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">canonical_level</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">LevelMapper</span><span class="p">]:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">image_shapes</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;images list should not be empty&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"images list should not be empty"</span><span class="p">)</span>
     <span class="n">max_x</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">max_y</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">image_shapes</span><span class="p">:</span>
@@ -565,7 +565,7 @@
     <span class="n">scales</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
     <span class="n">mapper</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LevelMapper</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Args:</span>
 <span class="sd">        x_filtered (List[Tensor]): List of input tensors.</span>
 <span class="sd">        boxes (List[Tensor[N, 4]]): boxes to be used to perform the pooling operation, in</span>
@@ -577,9 +577,9 @@
 <span class="sd">        mapper (Optional[LevelMapper]): If none, mapper will be automatically inferred. Default value is None.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        result (Tensor)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">scales</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">mapper</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;scales and mapper should not be None&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"scales and mapper should not be None"</span><span class="p">)</span>
 
     <span class="n">num_levels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_filtered</span><span class="p">)</span>
     <span class="n">rois</span> <span class="o">=</span> <span class="n">_convert_to_roi_format</span><span class="p">(</span><span class="n">boxes</span><span class="p">)</span>
@@ -625,12 +625,12 @@
         <span class="k">if</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">_is_tracing</span><span class="p">():</span>
             <span class="n">tracing_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result_idx_in_level</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># result and result_idx_in_level&#39;s dtypes are based on dtypes of different</span>
+            <span class="c1"># result and result_idx_in_level's dtypes are based on dtypes of different</span>
             <span class="c1"># elements in x_filtered.  x_filtered contains tensors output by different</span>
             <span class="c1"># layers.  When autocast is active, it may choose different dtypes for</span>
-            <span class="c1"># different layers&#39; outputs.  Therefore, we defensively match result&#39;s dtype</span>
+            <span class="c1"># different layers' outputs.  Therefore, we defensively match result's dtype</span>
             <span class="c1"># before copying elements from result_idx_in_level in the following op.</span>
-            <span class="c1"># We need to cast manually (can&#39;t rely on autocast to cast for us) because</span>
+            <span class="c1"># We need to cast manually (can't rely on autocast to cast for us) because</span>
             <span class="c1"># the op acts on result in-place, and autocast only affects out-of-place ops.</span>
             <span class="n">result</span><span class="p">[</span><span class="n">idx_in_level</span><span class="p">]</span> <span class="o">=</span> <span class="n">result_idx_in_level</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
@@ -641,7 +641,7 @@
 
 
 <div class="viewcode-block" id="MultiScaleRoIAlign"><a class="viewcode-back" href="../../../generated/torchvision.ops.MultiScaleRoIAlign.html#torchvision.ops.MultiScaleRoIAlign">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">MultiScaleRoIAlign</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.</span>
 
 <span class="sd">    It infers the scale of the pooling via the heuristics specified in eq. 1</span>
@@ -661,11 +661,11 @@
 
 <span class="sd">    Examples::</span>
 
-<span class="sd">        &gt;&gt;&gt; m = torchvision.ops.MultiScaleRoIAlign([&#39;feat1&#39;, &#39;feat3&#39;], 3, 2)</span>
+<span class="sd">        &gt;&gt;&gt; m = torchvision.ops.MultiScaleRoIAlign(['feat1', 'feat3'], 3, 2)</span>
 <span class="sd">        &gt;&gt;&gt; i = OrderedDict()</span>
-<span class="sd">        &gt;&gt;&gt; i[&#39;feat1&#39;] = torch.rand(1, 5, 64, 64)</span>
-<span class="sd">        &gt;&gt;&gt; i[&#39;feat2&#39;] = torch.rand(1, 5, 32, 32)  # this feature won&#39;t be used in the pooling</span>
-<span class="sd">        &gt;&gt;&gt; i[&#39;feat3&#39;] = torch.rand(1, 5, 16, 16)</span>
+<span class="sd">        &gt;&gt;&gt; i['feat1'] = torch.rand(1, 5, 64, 64)</span>
+<span class="sd">        &gt;&gt;&gt; i['feat2'] = torch.rand(1, 5, 32, 32)  # this feature won't be used in the pooling</span>
+<span class="sd">        &gt;&gt;&gt; i['feat3'] = torch.rand(1, 5, 16, 16)</span>
 <span class="sd">        &gt;&gt;&gt; # create some random bounding boxes</span>
 <span class="sd">        &gt;&gt;&gt; boxes = torch.rand(6, 4) * 256; boxes[:, 2:] += boxes[:, :2]</span>
 <span class="sd">        &gt;&gt;&gt; # original image size, before computing the feature maps</span>
@@ -674,9 +674,9 @@
 <span class="sd">        &gt;&gt;&gt; print(output.shape)</span>
 <span class="sd">        &gt;&gt;&gt; torch.Size([6, 5, 3, 3])</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="vm">__annotations__</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;scales&quot;</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span> <span class="s2">&quot;map_levels&quot;</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LevelMapper</span><span class="p">]}</span>
+    <span class="vm">__annotations__</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"scales"</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span> <span class="s2">"map_levels"</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LevelMapper</span><span class="p">]}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -705,7 +705,7 @@
         <span class="n">boxes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span>
         <span class="n">image_shapes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">            x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have</span>
 <span class="sd">                all the same number of channels, but they can have different sizes.</span>
@@ -717,7 +717,7 @@
 <span class="sd">                scale factor for each one of the levels to be pooled.</span>
 <span class="sd">        Returns:</span>
 <span class="sd">            result (Tensor)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">x_filtered</span> <span class="o">=</span> <span class="n">_filter_input</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">featmap_names</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_levels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">scales</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_levels</span> <span class="o">=</span> <span class="n">_setup_scales</span><span class="p">(</span>
@@ -735,8 +735,8 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(featmap_names=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">featmap_names</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;output_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="si">}</span><span class="s2">, sampling_ratio=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_ratio</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(featmap_names=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">featmap_names</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"output_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_size</span><span class="si">}</span><span class="s2">, sampling_ratio=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_ratio</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span></div>
 </pre></div>
 

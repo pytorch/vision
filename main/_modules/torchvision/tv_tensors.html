@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -427,29 +427,25 @@
 <span class="c1"># Until `disable` is removed, there will be graph breaks after all calls to functional transforms</span>
 <div class="viewcode-block" id="wrap"><a class="viewcode-back" href="../../generated/torchvision.tv_tensors.wrap.html#torchvision.tv_tensors.wrap">[docs]</a><span class="nd">@torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">disable</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">wrap</span><span class="p">(</span><span class="n">wrappee</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">like</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.</span>
+<span class="w">    </span><span class="sd">"""Convert a :class:`torch.Tensor` (``wrappee``) into the same :class:`~torchvision.tv_tensors.TVTensor` subclass as ``like``.</span>
 
-<span class="sd">    If ``like`` is a :class:`~torchvision.tv_tensors.BoundingBoxes`, the ``format`` and ``canvas_size`` of</span>
-<span class="sd">    ``like`` are assigned to ``wrappee``, unless they are passed as ``kwargs``.</span>
+<span class="sd">    If ``like`` carries metadata (e.g. ``format``, ``canvas_size``), that</span>
+<span class="sd">    metadata is copied to the output. Individual metadata fields can be</span>
+<span class="sd">    overridden via ``kwargs``.</span>
+
+<span class="sd">    Subclass authors can override :meth:`~torchvision.tv_tensors.TVTensor.wrap`</span>
+<span class="sd">    to define how their metadata is propagated.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        wrappee (Tensor): The tensor to convert.</span>
 <span class="sd">        like (:class:`~torchvision.tv_tensors.TVTensor`): The reference.</span>
 <span class="sd">            ``wrappee`` will be converted into the same subclass as ``like``.</span>
-<span class="sd">        kwargs: Can contain &quot;format&quot;, &quot;canvas_size&quot; and &quot;clamping_mode&quot; if ``like`` is a :class:`~torchvision.tv_tensor.BoundingBoxes`.</span>
-<span class="sd">            Ignored otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">like</span><span class="p">,</span> <span class="n">BoundingBoxes</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">BoundingBoxes</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span>
-            <span class="n">wrappee</span><span class="p">,</span>
-            <span class="nb">format</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;format&quot;</span><span class="p">,</span> <span class="n">like</span><span class="o">.</span><span class="n">format</span><span class="p">),</span>
-            <span class="n">canvas_size</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;canvas_size&quot;</span><span class="p">,</span> <span class="n">like</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">),</span>
-            <span class="n">clamping_mode</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clamping_mode&quot;</span><span class="p">,</span> <span class="n">like</span><span class="o">.</span><span class="n">clamping_mode</span><span class="p">),</span>
-        <span class="p">)</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">like</span><span class="p">,</span> <span class="n">KeyPoints</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">KeyPoints</span><span class="o">.</span><span class="n">_wrap</span><span class="p">(</span><span class="n">wrappee</span><span class="p">,</span> <span class="n">canvas_size</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;canvas_size&quot;</span><span class="p">,</span> <span class="n">like</span><span class="o">.</span><span class="n">canvas_size</span><span class="p">))</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">wrappee</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">like</span><span class="p">))</span></div>
+<span class="sd">        kwargs: Metadata overrides passed to the subclass's</span>
+<span class="sd">            :meth:`~torchvision.tv_tensors.TVTensor.wrap` method.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">wrap_method</span> <span class="o">:=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">like</span><span class="p">),</span> <span class="s2">"wrap"</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">wrap_method</span><span class="p">(</span><span class="n">wrappee</span><span class="p">,</span> <span class="n">like</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrappee</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">like</span><span class="p">))</span></div>
 </pre></div>
 
              </article>

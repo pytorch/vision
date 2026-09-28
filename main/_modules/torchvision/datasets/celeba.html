@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -423,15 +423,15 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_integrity</span><span class="p">,</span> <span class="n">download_file_from_google_drive</span><span class="p">,</span> <span class="n">extract_archive</span><span class="p">,</span> <span class="n">verify_str_arg</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.vision</span><span class="w"> </span><span class="kn">import</span> <span class="n">VisionDataset</span>
 
-<span class="n">CSV</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;CSV&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;header&quot;</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">])</span>
+<span class="n">CSV</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">"CSV"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"header"</span><span class="p">,</span> <span class="s2">"index"</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">])</span>
 
 
 <div class="viewcode-block" id="CelebA"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CelebA.html#torchvision.datasets.CelebA">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">CelebA</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`Large-scale CelebFaces Attributes (CelebA) Dataset &lt;http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html&gt;`_ Dataset.</span>
+<span class="w">    </span><span class="sd">"""`Large-scale CelebFaces Attributes (CelebA) Dataset &lt;http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html&gt;`_ Dataset.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory where images are downloaded to.</span>
-<span class="sd">        split (string): One of {&#39;train&#39;, &#39;valid&#39;, &#39;test&#39;, &#39;all&#39;}.</span>
+<span class="sd">        split (string): One of {'train', 'valid', 'test', 'all'}.</span>
 <span class="sd">            Accordingly dataset is selected.</span>
 <span class="sd">        target_type (string or list, optional): Type of target to use, ``attr``, ``identity``, ``bbox``,</span>
 <span class="sd">            or ``landmarks``. Can also be a list to output a tuple with all specified target types.</span>
@@ -439,7 +439,18 @@
 
 <span class="sd">                - ``attr`` (Tensor shape=(40,) dtype=int): binary (0, 1) labels for attributes</span>
 <span class="sd">                - ``identity`` (int): label for each person (data points with the same identity are the same person)</span>
-<span class="sd">                - ``bbox`` (Tensor shape=(4,) dtype=int): bounding box (x, y, width, height)</span>
+<span class="sd">                - ``bbox`` (Tensor shape=(4,) dtype=int): bounding box (x, y, width, height).</span>
+
+<span class="sd">                  .. warning::</span>
+
+<span class="sd">                      These bounding box coordinates correspond to the original uncropped</span>
+<span class="sd">                      CelebA images, not the cropped and aligned images returned by this</span>
+<span class="sd">                      dataset. As a result, the coordinates will not match and may fall</span>
+<span class="sd">                      outside the image boundaries.</span>
+
+<span class="sd">                      See `Issue #9008 &lt;https://github.com/pytorch/vision/issues/9008&gt;`_ for</span>
+<span class="sd">                      details and potential workarounds.</span>
+
 <span class="sd">                - ``landmarks`` (Tensor shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,</span>
 <span class="sd">                  righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)</span>
 
@@ -456,30 +467,30 @@
 <span class="sd">            .. warning::</span>
 
 <span class="sd">                To download the dataset `gdown &lt;https://github.com/wkentaro/gdown&gt;`_ is required.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">base_folder</span> <span class="o">=</span> <span class="s2">&quot;celeba&quot;</span>
+    <span class="n">base_folder</span> <span class="o">=</span> <span class="s2">"celeba"</span>
     <span class="c1"># There currently does not appear to be an easy way to extract 7z in python (without introducing additional</span>
-    <span class="c1"># dependencies). The &quot;in-the-wild&quot; (not aligned+cropped) images are only in 7z, so they are not available</span>
+    <span class="c1"># dependencies). The "in-the-wild" (not aligned+cropped) images are only in 7z, so they are not available</span>
     <span class="c1"># right now.</span>
     <span class="n">file_list</span> <span class="o">=</span> <span class="p">[</span>
         <span class="c1"># File ID                                      MD5 Hash                            Filename</span>
-        <span class="p">(</span><span class="s2">&quot;0B7EVK8r0v71pZjFTYXZWM3FlRnM&quot;</span><span class="p">,</span> <span class="s2">&quot;00d2c5bc6d35e252742224ab0c1e8fcb&quot;</span><span class="p">,</span> <span class="s2">&quot;img_align_celeba.zip&quot;</span><span class="p">),</span>
-        <span class="c1"># (&quot;0B7EVK8r0v71pbWNEUjJKdDQ3dGc&quot;,&quot;b6cd7e93bc7a96c2dc33f819aa3ac651&quot;, &quot;img_align_celeba_png.7z&quot;),</span>
-        <span class="c1"># (&quot;0B7EVK8r0v71peklHb0pGdDl6R28&quot;, &quot;b6cd7e93bc7a96c2dc33f819aa3ac651&quot;, &quot;img_celeba.7z&quot;),</span>
-        <span class="p">(</span><span class="s2">&quot;0B7EVK8r0v71pblRyaVFSWGxPY0U&quot;</span><span class="p">,</span> <span class="s2">&quot;75e246fa4810816ffd6ee81facbd244c&quot;</span><span class="p">,</span> <span class="s2">&quot;list_attr_celeba.txt&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;1_ee_0u7vcNLOfNLegJRHmolfH5ICW-XS&quot;</span><span class="p">,</span> <span class="s2">&quot;32bd1bd63d3c78cd57e08160ec5ed1e2&quot;</span><span class="p">,</span> <span class="s2">&quot;identity_CelebA.txt&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;0B7EVK8r0v71pbThiMVRxWXZ4dU0&quot;</span><span class="p">,</span> <span class="s2">&quot;00566efa6fedff7a56946cd1c10f1c16&quot;</span><span class="p">,</span> <span class="s2">&quot;list_bbox_celeba.txt&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s2">&quot;0B7EVK8r0v71pd0FJY3Blby1HUTQ&quot;</span><span class="p">,</span> <span class="s2">&quot;cc24ecafdb5b50baae59b03474781f8c&quot;</span><span class="p">,</span> <span class="s2">&quot;list_landmarks_align_celeba.txt&quot;</span><span class="p">),</span>
-        <span class="c1"># (&quot;0B7EVK8r0v71pTzJIdlJWdHczRlU&quot;, &quot;063ee6ddb681f96bc9ca28c6febb9d1a&quot;, &quot;list_landmarks_celeba.txt&quot;),</span>
-        <span class="p">(</span><span class="s2">&quot;0B7EVK8r0v71pY0NSMzRuSXJEVkk&quot;</span><span class="p">,</span> <span class="s2">&quot;d32c9cbf5e040fd4025c592c306e6668&quot;</span><span class="p">,</span> <span class="s2">&quot;list_eval_partition.txt&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"0B7EVK8r0v71pZjFTYXZWM3FlRnM"</span><span class="p">,</span> <span class="s2">"00d2c5bc6d35e252742224ab0c1e8fcb"</span><span class="p">,</span> <span class="s2">"img_align_celeba.zip"</span><span class="p">),</span>
+        <span class="c1"># ("0B7EVK8r0v71pbWNEUjJKdDQ3dGc","b6cd7e93bc7a96c2dc33f819aa3ac651", "img_align_celeba_png.7z"),</span>
+        <span class="c1"># ("0B7EVK8r0v71peklHb0pGdDl6R28", "b6cd7e93bc7a96c2dc33f819aa3ac651", "img_celeba.7z"),</span>
+        <span class="p">(</span><span class="s2">"0B7EVK8r0v71pblRyaVFSWGxPY0U"</span><span class="p">,</span> <span class="s2">"75e246fa4810816ffd6ee81facbd244c"</span><span class="p">,</span> <span class="s2">"list_attr_celeba.txt"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"1_ee_0u7vcNLOfNLegJRHmolfH5ICW-XS"</span><span class="p">,</span> <span class="s2">"32bd1bd63d3c78cd57e08160ec5ed1e2"</span><span class="p">,</span> <span class="s2">"identity_CelebA.txt"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"0B7EVK8r0v71pbThiMVRxWXZ4dU0"</span><span class="p">,</span> <span class="s2">"00566efa6fedff7a56946cd1c10f1c16"</span><span class="p">,</span> <span class="s2">"list_bbox_celeba.txt"</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"0B7EVK8r0v71pd0FJY3Blby1HUTQ"</span><span class="p">,</span> <span class="s2">"cc24ecafdb5b50baae59b03474781f8c"</span><span class="p">,</span> <span class="s2">"list_landmarks_align_celeba.txt"</span><span class="p">),</span>
+        <span class="c1"># ("0B7EVK8r0v71pTzJIdlJWdHczRlU", "063ee6ddb681f96bc9ca28c6febb9d1a", "list_landmarks_celeba.txt"),</span>
+        <span class="p">(</span><span class="s2">"0B7EVK8r0v71pY0NSMzRuSXJEVkk"</span><span class="p">,</span> <span class="s2">"d32c9cbf5e040fd4025c592c306e6668"</span><span class="p">,</span> <span class="s2">"list_eval_partition.txt"</span><span class="p">),</span>
     <span class="p">]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
-        <span class="n">target_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;attr&quot;</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
+        <span class="n">target_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"attr"</span><span class="p">,</span>
         <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -492,36 +503,36 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">target_type</span> <span class="o">=</span> <span class="p">[</span><span class="n">target_type</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_type</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;target_transform is specified but target_type is empty&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"target_transform is specified but target_type is empty"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_integrity</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dataset not found or corrupted. You can use download=True to download it&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Dataset not found or corrupted. You can use download=True to download it"</span><span class="p">)</span>
 
         <span class="n">split_map</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;test&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-            <span class="s2">&quot;all&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">"train"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">"valid"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"test"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">"all"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="n">split_</span> <span class="o">=</span> <span class="n">split_map</span><span class="p">[</span>
             <span class="n">verify_str_arg</span><span class="p">(</span>
                 <span class="n">split</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">split</span><span class="p">,</span>
-                <span class="s2">&quot;split&quot;</span><span class="p">,</span>
-                <span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;valid&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="s2">&quot;all&quot;</span><span class="p">),</span>
+                <span class="s2">"split"</span><span class="p">,</span>
+                <span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"valid"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">,</span> <span class="s2">"all"</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="p">]</span>
-        <span class="n">splits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_csv</span><span class="p">(</span><span class="s2">&quot;list_eval_partition.txt&quot;</span><span class="p">)</span>
-        <span class="n">identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_csv</span><span class="p">(</span><span class="s2">&quot;identity_CelebA.txt&quot;</span><span class="p">)</span>
-        <span class="n">bbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_csv</span><span class="p">(</span><span class="s2">&quot;list_bbox_celeba.txt&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">landmarks_align</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_csv</span><span class="p">(</span><span class="s2">&quot;list_landmarks_align_celeba.txt&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">attr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_csv</span><span class="p">(</span><span class="s2">&quot;list_attr_celeba.txt&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">splits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_csv</span><span class="p">(</span><span class="s2">"list_eval_partition.txt"</span><span class="p">)</span>
+        <span class="n">identity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_csv</span><span class="p">(</span><span class="s2">"identity_CelebA.txt"</span><span class="p">)</span>
+        <span class="n">bbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_csv</span><span class="p">(</span><span class="s2">"list_bbox_celeba.txt"</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">landmarks_align</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_csv</span><span class="p">(</span><span class="s2">"list_landmarks_align_celeba.txt"</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_csv</span><span class="p">(</span><span class="s2">"list_attr_celeba.txt"</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">mask</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">split_</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">splits</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="n">split_</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="n">mask</span> <span class="o">==</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># if split == &quot;all&quot;</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="o">==</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">):</span>  <span class="c1"># if split == "all"</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">splits</span><span class="o">.</span><span class="n">index</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="p">[</span><span class="n">splits</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">torch</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">mask</span><span class="p">))]</span>  <span class="c1"># type: ignore[arg-type]</span>
@@ -530,7 +541,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">landmarks_align</span> <span class="o">=</span> <span class="n">landmarks_align</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attr</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
         <span class="c1"># map from {-1, 1} to {0, 1}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">attr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="s2">&quot;floor&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">rounding_mode</span><span class="o">=</span><span class="s2">"floor"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attr_names</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">header</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_load_csv</span><span class="p">(</span>
@@ -539,7 +550,7 @@
         <span class="n">header</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CSV</span><span class="p">:</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span> <span class="k">as</span> <span class="n">csv_file</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csv_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">skipinitialspace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csv_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">" "</span><span class="p">,</span> <span class="n">skipinitialspace</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">header</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">headers</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">header</span><span class="p">]</span>
@@ -559,11 +570,11 @@
             <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
             <span class="c1"># Allow original archive to be deleted (zip and 7z)</span>
             <span class="c1"># Only need the extracted images</span>
-            <span class="k">if</span> <span class="n">ext</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;.zip&quot;</span><span class="p">,</span> <span class="s2">&quot;.7z&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">check_integrity</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">md5</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ext</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">".zip"</span><span class="p">,</span> <span class="s2">".7z"</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">check_integrity</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">md5</span><span class="p">):</span>
                 <span class="k">return</span> <span class="kc">False</span>
 
         <span class="c1"># Should check a hash of the images</span>
-        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="s2">&quot;img_align_celeba&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="s2">"img_align_celeba"</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_integrity</span><span class="p">():</span>
@@ -572,24 +583,24 @@
         <span class="k">for</span> <span class="n">file_id</span><span class="p">,</span> <span class="n">md5</span><span class="p">,</span> <span class="n">filename</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_list</span><span class="p">:</span>
             <span class="n">download_file_from_google_drive</span><span class="p">(</span><span class="n">file_id</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">),</span> <span class="n">filename</span><span class="p">,</span> <span class="n">md5</span><span class="p">)</span>
 
-        <span class="n">extract_archive</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="s2">&quot;img_align_celeba.zip&quot;</span><span class="p">))</span>
+        <span class="n">extract_archive</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="s2">"img_align_celeba.zip"</span><span class="p">))</span>
 
 <div class="viewcode-block" id="CelebA.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CelebA.html#torchvision.datasets.CelebA.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="n">X</span> <span class="o">=</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="s2">&quot;img_align_celeba&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">[</span><span class="n">index</span><span class="p">]))</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="s2">"img_align_celeba"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">[</span><span class="n">index</span><span class="p">]))</span>
 
         <span class="n">target</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_type</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&quot;attr&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">"attr"</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attr</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="p">:])</span>
-            <span class="k">elif</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&quot;identity&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">"identity"</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">identity</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-            <span class="k">elif</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&quot;bbox&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">"bbox"</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bbox</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="p">:])</span>
-            <span class="k">elif</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">&quot;landmarks&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">t</span> <span class="o">==</span> <span class="s2">"landmarks"</span><span class="p">:</span>
                 <span class="n">target</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">landmarks_align</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="p">:])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># TODO: refactor with utils.verify_str_arg</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Target type &quot;</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s1">&quot; is not recognized.&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Target type "</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s1">" is not recognized.'</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
@@ -608,8 +619,8 @@
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attr</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Target type: </span><span class="si">{target_type}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;Split: </span><span class="si">{split}</span><span class="s2">&quot;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span></div>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Target type: </span><span class="si">{target_type}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"Split: </span><span class="si">{split}</span><span class="s2">"</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span></div>
 </pre></div>
 
              </article>

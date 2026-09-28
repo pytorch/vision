@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -428,12 +428,12 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.._internally_replaced_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;WeightsEnum&quot;</span><span class="p">,</span> <span class="s2">&quot;Weights&quot;</span><span class="p">,</span> <span class="s2">&quot;get_model&quot;</span><span class="p">,</span> <span class="s2">&quot;get_model_builder&quot;</span><span class="p">,</span> <span class="s2">&quot;get_model_weights&quot;</span><span class="p">,</span> <span class="s2">&quot;get_weight&quot;</span><span class="p">,</span> <span class="s2">&quot;list_models&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"WeightsEnum"</span><span class="p">,</span> <span class="s2">"Weights"</span><span class="p">,</span> <span class="s2">"get_model"</span><span class="p">,</span> <span class="s2">"get_model_builder"</span><span class="p">,</span> <span class="s2">"get_model_weights"</span><span class="p">,</span> <span class="s2">"get_weight"</span><span class="p">,</span> <span class="s2">"list_models"</span><span class="p">]</span>
 
 
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Weights</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class is used to group important attributes associated with the pre-trained weights.</span>
 
 <span class="sd">    Args:</span>
@@ -446,7 +446,7 @@
 <span class="sd">            informative attributes (for example the number of parameters/flops, recipe link/methods used in training</span>
 <span class="sd">            etc), configuration parameters (for example the `num_classes`) needed to construct the model or important</span>
 <span class="sd">            meta-data (for example the `classes` of a classification model) needed to use the model.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">url</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">transforms</span><span class="p">:</span> <span class="n">Callable</span>
@@ -480,23 +480,23 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">WeightsEnum</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class is the parent class of all model weights. Each model building method receives an optional `weights`</span>
 <span class="sd">    parameter with its associated pre-trained weights. It inherits from `Enum` and its values should be of type</span>
 <span class="sd">    `Weights`.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        value (Weights): The data class entry with the weight information.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">verify</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">str</span><span class="p">:</span>
-                <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)]</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">[</span><span class="n">obj</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">"."</span><span class="p">,</span> <span class="s2">""</span><span class="p">)]</span>
             <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Invalid Weight class provided; expected </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> but received </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Invalid Weight class provided; expected </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> but received </span><span class="si">{</span><span class="n">obj</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span>
                 <span class="p">)</span>
         <span class="k">return</span> <span class="n">obj</span>
 
@@ -504,7 +504,7 @@
         <span class="k">return</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_name_</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_name_</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -520,26 +520,26 @@
 
 
 <div class="viewcode-block" id="get_weight"><a class="viewcode-back" href="../../../generated/torchvision.models.get_weight.html#torchvision.models.get_weight">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_weight</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">WeightsEnum</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Gets the weights enum value by its full name. Example: &quot;ResNet50_Weights.IMAGENET1K_V1&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Gets the weights enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        name (str): The name of the weight enum entry.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        WeightsEnum: The requested weight enum.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">enum_name</span><span class="p">,</span> <span class="n">value_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+        <span class="n">enum_name</span><span class="p">,</span> <span class="n">value_name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid weight name provided: &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid weight name provided: '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
 
-    <span class="n">base_module_name</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">base_module_name</span> <span class="o">=</span> <span class="s2">"."</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="vm">__name__</span><span class="p">]</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">base_module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">base_module_name</span><span class="p">)</span>
     <span class="n">model_modules</span> <span class="o">=</span> <span class="p">[</span><span class="n">base_module</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span>
         <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">base_module</span><span class="p">,</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismodule</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__file__</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;__init__.py&quot;</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="vm">__file__</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"__init__.py"</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
     <span class="p">]</span>
 
     <span class="n">weights_enum</span> <span class="o">=</span> <span class="kc">None</span>
@@ -550,13 +550,13 @@
             <span class="k">break</span>
 
     <span class="k">if</span> <span class="n">weights_enum</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The weight enum &#39;</span><span class="si">{</span><span class="n">enum_name</span><span class="si">}</span><span class="s2">&#39; for the specific method couldn&#39;t be retrieved.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The weight enum '</span><span class="si">{</span><span class="n">enum_name</span><span class="si">}</span><span class="s2">' for the specific method couldn't be retrieved."</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">weights_enum</span><span class="p">[</span><span class="n">value_name</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="get_model_weights"><a class="viewcode-back" href="../../../generated/torchvision.models.get_model_weights.html#torchvision.models.get_model_weights">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_model_weights</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">WeightsEnum</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns the weights enum class associated to the given model.</span>
 
 <span class="sd">    Args:</span>
@@ -564,25 +564,25 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        weights_enum (WeightsEnum): The weights enum class associated with the model.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">get_model_builder</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">name</span>
     <span class="k">return</span> <span class="n">_get_enum_from_fn</span><span class="p">(</span><span class="n">model</span><span class="p">)</span></div>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_enum_from_fn</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">WeightsEnum</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Internal method that gets the weight enum of a specific model builder method.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        fn (Callable): The builder method used to create the model.</span>
 <span class="sd">    Returns:</span>
 <span class="sd">        WeightsEnum: The requested weight enum.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">sig</span> <span class="o">=</span> <span class="n">signature</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
-    <span class="k">if</span> <span class="s2">&quot;weights&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The method is missing the &#39;weights&#39; argument.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"weights"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The method is missing the 'weights' argument."</span><span class="p">)</span>
 
-    <span class="n">ann</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">annotation</span>
+    <span class="n">ann</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"weights"</span><span class="p">]</span><span class="o">.</span><span class="n">annotation</span>
     <span class="n">weights_enum</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ann</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">ann</span><span class="p">,</span> <span class="n">WeightsEnum</span><span class="p">):</span>
         <span class="n">weights_enum</span> <span class="o">=</span> <span class="n">ann</span>
@@ -595,13 +595,13 @@
 
     <span class="k">if</span> <span class="n">weights_enum</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;The WeightsEnum class for the specific method couldn&#39;t be retrieved. Make sure the typing info is correct.&quot;</span>
+            <span class="s2">"The WeightsEnum class for the specific method couldn't be retrieved. Make sure the typing info is correct."</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">weights_enum</span>
 
 
-<span class="n">M</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
+<span class="n">M</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">"M"</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span>
 
 <span class="n">BUILTIN_MODELS</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -610,7 +610,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="n">fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">M</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">M</span><span class="p">]:</span>
         <span class="n">key</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">fn</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">BUILTIN_MODELS</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;An entry is already registered under the name &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"An entry is already registered under the name '</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
         <span class="n">BUILTIN_MODELS</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span>
         <span class="k">return</span> <span class="n">fn</span>
 
@@ -622,7 +622,7 @@
     <span class="n">include</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">exclude</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns a list with the names of registered models.</span>
 
 <span class="sd">    Args:</span>
@@ -636,9 +636,9 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        models (list): A list with the names of available models.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">all_models</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">BUILTIN_MODELS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">v</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">module</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">BUILTIN_MODELS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">module</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">v</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">"."</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">module</span><span class="o">.</span><span class="vm">__name__</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">include</span><span class="p">:</span>
         <span class="n">models</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
@@ -658,7 +658,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">get_model_builder</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Gets the model name and returns the model builder method.</span>
 
 <span class="sd">    Args:</span>
@@ -666,17 +666,17 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        fn (Callable): The model builder method.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">fn</span> <span class="o">=</span> <span class="n">BUILTIN_MODELS</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown model </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown model </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">fn</span>
 
 
 <div class="viewcode-block" id="get_model"><a class="viewcode-back" href="../../../generated/torchvision.models.get_model.html#torchvision.models.get_model">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_model</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Gets the model name and configuration and returns an instantiated model.</span>
 
 <span class="sd">    Args:</span>
@@ -685,7 +685,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        model (nn.Module): The initialized model.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">fn</span> <span class="o">=</span> <span class="n">get_model_builder</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span></div>
 </pre></div>

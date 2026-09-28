@@ -342,6 +342,9 @@ Functionals
     v2.functional.perspective
     v2.functional.elastic
 
+.. autoclass:: torchvision.transforms.v2.InterpolationMode
+    :members:
+
 Color
 ^^^^^
 

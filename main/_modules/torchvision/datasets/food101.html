@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -422,7 +422,7 @@
 
 
 <div class="viewcode-block" id="Food101"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Food101.html#torchvision.datasets.Food101">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Food101</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;`The Food-101 Data Set &lt;https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/&gt;`_.</span>
+<span class="w">    </span><span class="sd">"""`The Food-101 Data Set &lt;https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/&gt;`_.</span>
 
 <span class="sd">    The Food-101 is a challenging data set of 101 food categories with 101,000 images.</span>
 <span class="sd">    For each class, 250 manually reviewed test images are provided as well as 750 training images.</span>
@@ -433,7 +433,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (str or ``pathlib.Path``): Root directory of the dataset.</span>
-<span class="sd">        split (string, optional): The dataset split, supports ``&quot;train&quot;`` (default) and ``&quot;test&quot;``.</span>
+<span class="sd">        split (string, optional): The dataset split, supports ``"train"`` (default) and ``"test"``.</span>
 <span class="sd">        transform (callable, optional): A function/transform that takes in a PIL image or torch.Tensor, depends on the given loader,</span>
 <span class="sd">            and returns a transformed version. E.g, ``transforms.RandomCrop``</span>
 <span class="sd">        target_transform (callable, optional): A function/transform that takes in the target and transforms it.</span>
@@ -443,35 +443,35 @@
 <span class="sd">        loader (callable, optional): A function to load an image given its path.</span>
 <span class="sd">            By default, it uses PIL as its image loader, but users could also pass in</span>
 <span class="sd">            ``torchvision.io.decode_image`` for decoding image data into tensors directly.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">_URL</span> <span class="o">=</span> <span class="s2">&quot;http://data.vision.ee.ethz.ch/cvl/food-101.tar.gz&quot;</span>
-    <span class="n">_MD5</span> <span class="o">=</span> <span class="s2">&quot;85eeb15f3717b99a5da872d97d918f87&quot;</span>
+    <span class="n">_URL</span> <span class="o">=</span> <span class="s2">"http://data.vision.ee.ethz.ch/cvl/food-101.tar.gz"</span>
+    <span class="n">_MD5</span> <span class="o">=</span> <span class="s2">"85eeb15f3717b99a5da872d97d918f87"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span>
-        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"train"</span><span class="p">,</span>
         <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">loader</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_loader</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;food-101&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_folder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="s2">&quot;meta&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="s2">&quot;images&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">"split"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"food-101"</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_folder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="s2">"meta"</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="s2">"images"</span>
 
         <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_download</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dataset not found. You can use download=True to download it&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Dataset not found. You can use download=True to download it"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_image_files</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta_folder</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2">.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta_folder</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2">.json"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">metadata</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">classes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">metadata</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
@@ -480,7 +480,7 @@
         <span class="k">for</span> <span class="n">class_label</span><span class="p">,</span> <span class="n">im_rel_paths</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_labels</span> <span class="o">+=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">class_to_idx</span><span class="p">[</span><span class="n">class_label</span><span class="p">]]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">im_rel_paths</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_image_files</span> <span class="o">+=</span> <span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="o">*</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">im_rel_path</span><span class="si">}</span><span class="s2">.jpg&quot;</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">im_rel_path</span> <span class="ow">in</span> <span class="n">im_rel_paths</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="o">*</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">im_rel_path</span><span class="si">}</span><span class="s2">.jpg"</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">))</span> <span class="k">for</span> <span class="n">im_rel_path</span> <span class="ow">in</span> <span class="n">im_rel_paths</span>
             <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loader</span> <span class="o">=</span> <span class="n">loader</span>
 
@@ -500,7 +500,7 @@
         <span class="k">return</span> <span class="n">image</span><span class="p">,</span> <span class="n">label</span></div>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;split=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_split</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"split=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_split</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">folder</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">folder</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="k">for</span> <span class="n">folder</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_images_folder</span><span class="p">))</span>

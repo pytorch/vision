@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -427,20 +427,20 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch.fx.graph_module</span><span class="w"> </span><span class="kn">import</span> <span class="n">_CodeOnlyModule</span><span class="p">,</span> <span class="n">_copy_attr</span><span class="p">,</span> <span class="n">_USER_PRESERVED_ATTRIBUTES_KEY</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;create_feature_extractor&quot;</span><span class="p">,</span> <span class="s2">&quot;get_graph_node_names&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"create_feature_extractor"</span><span class="p">,</span> <span class="s2">"get_graph_node_names"</span><span class="p">]</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">LeafModuleAwareTracer</span><span class="p">(</span><span class="n">fx</span><span class="o">.</span><span class="n">Tracer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    An fx.Tracer that allows the user to specify a set of leaf modules, i.e.</span>
 <span class="sd">    modules that are not to be traced through. The resulting graph ends up</span>
-<span class="sd">    having single nodes referencing calls to the leaf modules&#39; forward methods.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    having single nodes referencing calls to the leaf modules' forward methods.</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">leaf_modules</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="s2">&quot;leaf_modules&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">leaf_modules</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;leaf_modules&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">"leaf_modules"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">leaf_modules</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"leaf_modules"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">leaf_modules</span> <span class="o">=</span> <span class="n">leaf_modules</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -451,14 +451,14 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">NodePathTracer</span><span class="p">(</span><span class="n">LeafModuleAwareTracer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    NodePathTracer is an FX tracer that, for each operation, also records the</span>
 <span class="sd">    name of the Node from which the operation originated. A node name here is</span>
 <span class="sd">    a `.` separated path walking the hierarchy from top level module down to</span>
 <span class="sd">    leaf operation or leaf module. The name of the top level module is not</span>
 <span class="sd">    included as part of the node name. For example, if we trace a module whose</span>
 <span class="sd">    forward method applies a ReLU module, the name for that node will simply</span>
-<span class="sd">    be &#39;relu&#39;.</span>
+<span class="sd">    be 'relu'.</span>
 
 <span class="sd">    Some notes on the specifics:</span>
 <span class="sd">        - Nodes are recorded to `self.node_to_qualname` which is a dictionary</span>
@@ -467,28 +467,28 @@
 <span class="sd">          tracing.</span>
 <span class="sd">        - When a duplicate node name is encountered, a suffix of the form</span>
 <span class="sd">          _{int} is added. The counter starts from 1.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="c1"># Track the qualified name of the Node being traced</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_module_qualname</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_module_qualname</span> <span class="o">=</span> <span class="s2">""</span>
         <span class="c1"># A map from FX Node to the qualified name\#</span>
-        <span class="c1"># NOTE: This is loosely like the &quot;qualified name&quot; mentioned in the</span>
+        <span class="c1"># NOTE: This is loosely like the "qualified name" mentioned in the</span>
         <span class="c1"># torch.fx docs https://pytorch.org/docs/stable/fx.html but adapted</span>
         <span class="c1"># for the purposes of the torchvision feature extractor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">node_to_qualname</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">call_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">forward</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Override of `fx.Tracer.call_module`</span>
 <span class="sd">        This override:</span>
 <span class="sd">        1) Stores away the qualified name of the caller for restoration later</span>
 <span class="sd">        2) Adds the qualified name of the caller to</span>
 <span class="sd">           `current_module_qualname` for retrieval by `create_proxy`</span>
 <span class="sd">        3) Once a leaf module is reached, calls `create_proxy`</span>
-<span class="sd">        4) Restores the caller&#39;s qualified name into current_module_qualname</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        4) Restores the caller's qualified name into current_module_qualname</span>
+<span class="sd">        """</span>
         <span class="n">old_qualname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_module_qualname</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">module_qualname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_of_module</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
@@ -496,18 +496,18 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_leaf_module</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">module_qualname</span><span class="p">):</span>
                 <span class="n">out</span> <span class="o">=</span> <span class="n">forward</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">out</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_proxy</span><span class="p">(</span><span class="s2">&quot;call_module&quot;</span><span class="p">,</span> <span class="n">module_qualname</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_proxy</span><span class="p">(</span><span class="s2">"call_module"</span><span class="p">,</span> <span class="n">module_qualname</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_module_qualname</span> <span class="o">=</span> <span class="n">old_qualname</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">create_proxy</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="n">fx</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">Target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">type_expr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fx</span><span class="o">.</span><span class="n">proxy</span><span class="o">.</span><span class="n">Proxy</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Override of `Tracer.create_proxy`. This override intercepts the recording</span>
-<span class="sd">        of every operation and stores away the current traced module&#39;s qualified</span>
+<span class="sd">        of every operation and stores away the current traced module's qualified</span>
 <span class="sd">        name in `node_to_qualname`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">proxy</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">create_proxy</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">type_expr</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">node_to_qualname</span><span class="p">[</span><span class="n">proxy</span><span class="o">.</span><span class="n">node</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_node_qualname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_module_qualname</span><span class="p">,</span> <span class="n">proxy</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">proxy</span>
@@ -515,12 +515,12 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_node_qualname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module_qualname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">fx</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">Node</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">node_qualname</span> <span class="o">=</span> <span class="n">module_qualname</span>
 
-        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">op</span> <span class="o">!=</span> <span class="s2">&quot;call_module&quot;</span><span class="p">:</span>
-            <span class="c1"># In this case module_qualname from torch.fx doesn&#39;t go all the</span>
+        <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">op</span> <span class="o">!=</span> <span class="s2">"call_module"</span><span class="p">:</span>
+            <span class="c1"># In this case module_qualname from torch.fx doesn't go all the</span>
             <span class="c1"># way to the leaf function/op, so we need to append it</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">node_qualname</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="c1"># Only append &#39;.&#39; if we are deeper than the top level module</span>
-                <span class="n">node_qualname</span> <span class="o">+=</span> <span class="s2">&quot;.&quot;</span>
+                <span class="c1"># Only append '.' if we are deeper than the top level module</span>
+                <span class="n">node_qualname</span> <span class="o">+=</span> <span class="s2">"."</span>
             <span class="n">node_qualname</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
 
         <span class="c1"># Now we need to add an _{index} postfix on any repeated node names</span>
@@ -528,40 +528,40 @@
         <span class="c1"># But for anything else, torch.fx already has a globally scoped</span>
         <span class="c1"># _{index} postfix. But we want it locally (relative to direct parent)</span>
         <span class="c1"># scoped. So first we need to undo the torch.fx postfix</span>
-        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;.+_[0-9]+$&quot;</span><span class="p">,</span> <span class="n">node_qualname</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">node_qualname</span> <span class="o">=</span> <span class="n">node_qualname</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">".+_[0-9]+$"</span><span class="p">,</span> <span class="n">node_qualname</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">node_qualname</span> <span class="o">=</span> <span class="n">node_qualname</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">"_"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
         <span class="c1"># ... and now we add on our own postfix</span>
         <span class="k">for</span> <span class="n">existing_qualname</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_to_qualname</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
             <span class="c1"># Check to see if existing_qualname is of the form</span>
             <span class="c1"># {node_qualname} or {node_qualname}_{int}</span>
-            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">node_qualname</span><span class="si">}</span><span class="s2">(_[0-9]+)?$&quot;</span><span class="p">,</span> <span class="n">existing_qualname</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">postfix</span> <span class="o">=</span> <span class="n">existing_qualname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">node_qualname</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">rf</span><span class="s2">"</span><span class="si">{</span><span class="n">node_qualname</span><span class="si">}</span><span class="s2">(_[0-9]+)?$"</span><span class="p">,</span> <span class="n">existing_qualname</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">postfix</span> <span class="o">=</span> <span class="n">existing_qualname</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">node_qualname</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">postfix</span><span class="p">):</span>
                     <span class="c1"># existing_qualname is of the form {node_qualname}_{int}</span>
                     <span class="n">next_index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">postfix</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">+</span> <span class="mi">1</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># existing_qualname is of the form {node_qualname}</span>
                     <span class="n">next_index</span> <span class="o">=</span> <span class="mi">1</span>
-                <span class="n">node_qualname</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">next_index</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">node_qualname</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"_</span><span class="si">{</span><span class="n">next_index</span><span class="si">}</span><span class="s2">"</span>
                 <span class="k">break</span>
 
         <span class="k">return</span> <span class="n">node_qualname</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_is_subseq</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if y is a subsequence of x</span>
+<span class="w">    </span><span class="sd">"""Check if y is a subsequence of x</span>
 <span class="sd">    https://stackoverflow.com/a/24017747/4391249</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">iter_x</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="nb">any</span><span class="p">(</span><span class="n">x_item</span> <span class="o">==</span> <span class="n">y_item</span> <span class="k">for</span> <span class="n">x_item</span> <span class="ow">in</span> <span class="n">iter_x</span><span class="p">)</span> <span class="k">for</span> <span class="n">y_item</span> <span class="ow">in</span> <span class="n">y</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_warn_graph_differences</span><span class="p">(</span><span class="n">train_tracer</span><span class="p">:</span> <span class="n">NodePathTracer</span><span class="p">,</span> <span class="n">eval_tracer</span><span class="p">:</span> <span class="n">NodePathTracer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Utility function for warning the user if there are differences between</span>
 <span class="sd">    the train graph nodes and the eval graph nodes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">train_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">train_tracer</span><span class="o">.</span><span class="n">node_to_qualname</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
     <span class="n">eval_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">eval_tracer</span><span class="o">.</span><span class="n">node_to_qualname</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
 
@@ -569,22 +569,22 @@
         <span class="k">return</span>
 
     <span class="n">suggestion_msg</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">&quot;When choosing nodes for feature extraction, you may need to specify &quot;</span>
-        <span class="s2">&quot;output nodes for train and eval mode separately.&quot;</span>
+        <span class="s2">"When choosing nodes for feature extraction, you may need to specify "</span>
+        <span class="s2">"output nodes for train and eval mode separately."</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">_is_subseq</span><span class="p">(</span><span class="n">train_nodes</span><span class="p">,</span> <span class="n">eval_nodes</span><span class="p">):</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;NOTE: The nodes obtained by tracing the model in eval mode &quot;</span>
-            <span class="s2">&quot;are a subsequence of those obtained in train mode. &quot;</span>
+            <span class="s2">"NOTE: The nodes obtained by tracing the model in eval mode "</span>
+            <span class="s2">"are a subsequence of those obtained in train mode. "</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="n">_is_subseq</span><span class="p">(</span><span class="n">eval_nodes</span><span class="p">,</span> <span class="n">train_nodes</span><span class="p">):</span>
         <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;NOTE: The nodes obtained by tracing the model in train mode &quot;</span>
-            <span class="s2">&quot;are a subsequence of those obtained in eval mode. &quot;</span>
+            <span class="s2">"NOTE: The nodes obtained by tracing the model in train mode "</span>
+            <span class="s2">"are a subsequence of those obtained in eval mode. "</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;The nodes obtained by tracing the model in train mode are different to those obtained in eval mode. &quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">"The nodes obtained by tracing the model in train mode are different to those obtained in eval mode. "</span>
     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span> <span class="o">+</span> <span class="n">suggestion_msg</span><span class="p">)</span>
 
 
@@ -601,14 +601,14 @@
     <span class="n">default_autowrap_modules</span> <span class="o">=</span> <span class="p">(</span><span class="n">math</span><span class="p">,</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
     <span class="n">default_leaf_modules</span> <span class="o">=</span> <span class="n">_get_leaf_modules_for_ops</span><span class="p">()</span>
     <span class="n">result_tracer_kwargs</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">original_tr_kwargs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">original_tr_kwargs</span>
-    <span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">&quot;autowrap_modules&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">&quot;autowrap_modules&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">default_autowrap_modules</span><span class="p">))</span>
-        <span class="k">if</span> <span class="s2">&quot;autowrap_modules&quot;</span> <span class="ow">in</span> <span class="n">result_tracer_kwargs</span>
+    <span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">"autowrap_modules"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">"autowrap_modules"</span><span class="p">]</span> <span class="o">+</span> <span class="n">default_autowrap_modules</span><span class="p">))</span>
+        <span class="k">if</span> <span class="s2">"autowrap_modules"</span> <span class="ow">in</span> <span class="n">result_tracer_kwargs</span>
         <span class="k">else</span> <span class="n">default_autowrap_modules</span>
     <span class="p">)</span>
-    <span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">&quot;leaf_modules&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">&quot;leaf_modules&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">default_leaf_modules</span><span class="p">))</span>
-        <span class="k">if</span> <span class="s2">&quot;leaf_modules&quot;</span> <span class="ow">in</span> <span class="n">result_tracer_kwargs</span>
+    <span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">"leaf_modules"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">"leaf_modules"</span><span class="p">]</span> <span class="o">+</span> <span class="n">default_leaf_modules</span><span class="p">))</span>
+        <span class="k">if</span> <span class="s2">"leaf_modules"</span> <span class="ow">in</span> <span class="n">result_tracer_kwargs</span>
         <span class="k">else</span> <span class="n">default_leaf_modules</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">result_tracer_kwargs</span>
@@ -620,11 +620,11 @@
     <span class="n">suppress_diff_warning</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">concrete_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Dev utility to return node names in order of execution. See note on node</span>
 <span class="sd">    names under :func:`create_feature_extractor`. Useful for seeing which node</span>
 <span class="sd">    names are available for feature extraction. There are two reasons that</span>
-<span class="sd">    node names can&#39;t easily be read directly from the code for a model:</span>
+<span class="sd">    node names can't easily be read directly from the code for a model:</span>
 
 <span class="sd">        1. Not all submodules are traced through. Modules from ``torch.nn`` all</span>
 <span class="sd">           fall within this category.</span>
@@ -639,12 +639,12 @@
 <span class="sd">    `documentation &lt;https://pytorch.org/vision/stable/feature_extraction.html&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        model (nn.Module): model for which we&#39;d like to print node names</span>
+<span class="sd">        model (nn.Module): model for which we'd like to print node names</span>
 <span class="sd">        tracer_kwargs (dict, optional): a dictionary of keyword arguments for</span>
 <span class="sd">            ``NodePathTracer`` (they are eventually passed onto</span>
 <span class="sd">            `torch.fx.Tracer &lt;https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer&gt;`_).</span>
 <span class="sd">            By default, it will be set to wrap and make leaf nodes all torchvision ops:</span>
-<span class="sd">            {&quot;autowrap_modules&quot;: (math, torchvision.ops,),&quot;leaf_modules&quot;: _get_leaf_modules_for_ops(),}</span>
+<span class="sd">            {"autowrap_modules": (math, torchvision.ops,),"leaf_modules": _get_leaf_modules_for_ops(),}</span>
 <span class="sd">            WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user</span>
 <span class="sd">            provided dictionary.</span>
 <span class="sd">        suppress_diff_warning (bool, optional): whether to suppress a warning</span>
@@ -653,7 +653,7 @@
 <span class="sd">        concrete_args (Optional[Dict[str, any]]): Concrete arguments that should</span>
 <span class="sd">            not be treated as Proxies. According to the `Pytorch docs</span>
 <span class="sd">            &lt;https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer.trace&gt;`_,</span>
-<span class="sd">            this parameter&#39;s API may not be guaranteed.</span>
+<span class="sd">            this parameter's API may not be guaranteed.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        tuple(list, list): a list of node names from tracing the model in</span>
@@ -663,7 +663,7 @@
 
 <span class="sd">        &gt;&gt;&gt; model = torchvision.models.resnet18()</span>
 <span class="sd">        &gt;&gt;&gt; train_nodes, eval_nodes = get_graph_node_names(model)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">tracer_kwargs</span> <span class="o">=</span> <span class="n">_set_default_tracer_kwargs</span><span class="p">(</span><span class="n">tracer_kwargs</span><span class="p">)</span>
     <span class="n">is_training</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">training</span>
     <span class="n">train_tracer</span> <span class="o">=</span> <span class="n">NodePathTracer</span><span class="p">(</span><span class="o">**</span><span class="n">tracer_kwargs</span><span class="p">)</span>
@@ -680,23 +680,23 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">DualGraphModule</span><span class="p">(</span><span class="n">fx</span><span class="o">.</span><span class="n">GraphModule</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A derivative of `fx.GraphModule`. Differs in the following ways:</span>
 <span class="sd">    - Requires a train and eval version of the underlying graph</span>
 <span class="sd">    - Copies submodules according to the nodes of both train and eval graphs.</span>
 <span class="sd">    - Calling train(mode) switches between train graph and eval graph.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">train_graph</span><span class="p">:</span> <span class="n">fx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">eval_graph</span><span class="p">:</span> <span class="n">fx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;GraphModule&quot;</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">train_graph</span><span class="p">:</span> <span class="n">fx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">eval_graph</span><span class="p">:</span> <span class="n">fx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"GraphModule"</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">            root (nn.Module): module from which the copied module hierarchy is</span>
 <span class="sd">                built</span>
 <span class="sd">            train_graph (fx.Graph): the graph that should be used in train mode</span>
 <span class="sd">            eval_graph (fx.Graph): the graph that should be used in eval mode</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">fx</span><span class="o">.</span><span class="n">GraphModule</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="n">class_name</span>
@@ -707,9 +707,9 @@
         <span class="c1"># Copy all get_attr and call_module ops (indicated by BOTH train and</span>
         <span class="c1"># eval graphs)</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">train_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">),</span> <span class="nb">iter</span><span class="p">(</span><span class="n">eval_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)):</span>
-            <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">op</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;get_attr&quot;</span><span class="p">,</span> <span class="s2">&quot;call_module&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">op</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"get_attr"</span><span class="p">,</span> <span class="s2">"call_module"</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;node.target should be of type str instead of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">target</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"node.target should be of type str instead of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">target</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="n">_copy_attr</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
 
         <span class="c1"># train mode by default</span>
@@ -724,18 +724,18 @@
         <span class="c1"># to re-create the Graph during deserialization.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval_graph</span><span class="o">.</span><span class="n">_tracer_cls</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Train mode and eval mode should use the same tracer class. Instead got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">eval_graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="si">}</span><span class="s2"> for eval vs </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="si">}</span><span class="s2"> for train&quot;</span>
+                <span class="sa">f</span><span class="s2">"Train mode and eval mode should use the same tracer class. Instead got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">eval_graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="si">}</span><span class="s2"> for eval vs </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="si">}</span><span class="s2"> for train"</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tracer_cls</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">_tracer_cls</span> <span class="ow">and</span> <span class="s2">&quot;&lt;locals&gt;&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">_tracer_cls</span> <span class="ow">and</span> <span class="s2">"&lt;locals&gt;"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_tracer_cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">_tracer_cls</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Swap out the graph depending on the selected training mode.</span>
 <span class="sd">        NOTE this should be safe when calling model.eval() because that just</span>
 <span class="sd">        calls this with mode == False.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># NOTE: Only set self.graph if the current graph is not the desired</span>
         <span class="c1"># one. This saves us from recompiling the graph where not necessary.</span>
         <span class="k">if</span> <span class="n">mode</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
@@ -749,30 +749,30 @@
         <span class="k">return</span> <span class="n">DualGraphModule</span><span class="o">.</span><span class="fm">__init__</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">):</span>
-        <span class="c1"># Same as the base class&#39; __deepcopy__ from pytorch, with minor</span>
+        <span class="c1"># Same as the base class' __deepcopy__ from pytorch, with minor</span>
         <span class="c1"># modification to account for train_graph and eval_graph</span>
         <span class="c1"># https://github.com/pytorch/pytorch/blob/f684dbd0026f98f8fa291cab74dbc4d61ba30580/torch/fx/graph_module.py#L875</span>
         <span class="c1">#</span>
         <span class="c1"># This is using a bunch of private stuff from torch, so if that breaks,</span>
-        <span class="c1"># we&#39;ll likely have to remove this, along with the associated</span>
+        <span class="c1"># we'll likely have to remove this, along with the associated</span>
         <span class="c1"># non-regression test.</span>
         <span class="n">res</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
         <span class="n">memo</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)]</span> <span class="o">=</span> <span class="n">res</span>
         <span class="n">fake_mod</span> <span class="o">=</span> <span class="n">_CodeOnlyModule</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">,</span> <span class="n">memo</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_deepcopy_init</span><span class="p">()(</span><span class="n">res</span><span class="p">,</span> <span class="n">fake_mod</span><span class="p">,</span> <span class="n">fake_mod</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;train_graph&quot;</span><span class="p">],</span> <span class="n">fake_mod</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;eval_graph&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deepcopy_init</span><span class="p">()(</span><span class="n">res</span><span class="p">,</span> <span class="n">fake_mod</span><span class="p">,</span> <span class="n">fake_mod</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">"train_graph"</span><span class="p">],</span> <span class="n">fake_mod</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">"eval_graph"</span><span class="p">])</span>
 
         <span class="n">extra_preserved_attrs</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;_state_dict_hooks&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_load_state_dict_pre_hooks&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_load_state_dict_post_hooks&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_replace_hook&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_create_node_hooks&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_erase_node_hooks&quot;</span><span class="p">,</span>
+            <span class="s2">"_state_dict_hooks"</span><span class="p">,</span>
+            <span class="s2">"_load_state_dict_pre_hooks"</span><span class="p">,</span>
+            <span class="s2">"_load_state_dict_post_hooks"</span><span class="p">,</span>
+            <span class="s2">"_replace_hook"</span><span class="p">,</span>
+            <span class="s2">"_create_node_hooks"</span><span class="p">,</span>
+            <span class="s2">"_erase_node_hooks"</span><span class="p">,</span>
         <span class="p">]</span>
         <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">extra_preserved_attrs</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
                 <span class="nb">setattr</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">attr</span><span class="p">],</span> <span class="n">memo</span><span class="p">))</span>
-        <span class="n">res</span><span class="o">.</span><span class="n">meta</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;meta&quot;</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">memo</span><span class="p">)</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">meta</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"meta"</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">memo</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">_USER_PRESERVED_ATTRIBUTES_KEY</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">meta</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">res</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="n">_USER_PRESERVED_ATTRIBUTES_KEY</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="nb">setattr</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
@@ -788,7 +788,7 @@
     <span class="n">suppress_diff_warning</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">concrete_args</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fx</span><span class="o">.</span><span class="n">GraphModule</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Creates a new graph module that returns intermediate nodes from a given</span>
 <span class="sd">    model as dictionary with user specified keys as strings, and the requested</span>
 <span class="sd">    outputs as values. This is achieved by re-writing the computation graph of</span>
@@ -802,13 +802,13 @@
 <span class="sd">    in the `documentation &lt;https://pytorch.org/vision/stable/feature_extraction.html&gt;`_.</span>
 
 <span class="sd">    Not all models will be FX traceable, although with some massaging they can</span>
-<span class="sd">    be made to cooperate. Here&#39;s a (not exhaustive) list of tips:</span>
+<span class="sd">    be made to cooperate. Here's a (not exhaustive) list of tips:</span>
 
-<span class="sd">        - If you don&#39;t need to trace through a particular, problematic</span>
-<span class="sd">          sub-module, turn it into a &quot;leaf module&quot; by passing a list of</span>
+<span class="sd">        - If you don't need to trace through a particular, problematic</span>
+<span class="sd">          sub-module, turn it into a "leaf module" by passing a list of</span>
 <span class="sd">          ``leaf_modules`` as one of the ``tracer_kwargs`` (see example below).</span>
 <span class="sd">          It will not be traced through, but rather, the resulting graph will</span>
-<span class="sd">          hold a reference to that module&#39;s forward method.</span>
+<span class="sd">          hold a reference to that module's forward method.</span>
 <span class="sd">        - Likewise, you may turn functions into leaf functions by passing a</span>
 <span class="sd">          list of ``autowrap_functions`` as one of the ``tracer_kwargs`` (see</span>
 <span class="sd">          example below).</span>
@@ -826,7 +826,7 @@
 <span class="sd">            containing the names (or partial names - see note above)</span>
 <span class="sd">            of the nodes for which the activations will be returned. If it is</span>
 <span class="sd">            a ``Dict``, the keys are the node names, and the values</span>
-<span class="sd">            are the user-specified keys for the graph module&#39;s returned</span>
+<span class="sd">            are the user-specified keys for the graph module's returned</span>
 <span class="sd">            dictionary. If it is a ``List``, it is treated as a ``Dict`` mapping</span>
 <span class="sd">            node specification strings directly to output names. In the case</span>
 <span class="sd">            that ``train_return_nodes`` and ``eval_return_nodes`` are specified,</span>
@@ -842,10 +842,10 @@
 <span class="sd">            If this is specified, ``train_return_nodes`` must also be specified,</span>
 <span class="sd">            and `return_nodes` should not be specified.</span>
 <span class="sd">        tracer_kwargs (dict, optional): a dictionary of keyword arguments for</span>
-<span class="sd">            ``NodePathTracer`` (which passes them onto it&#39;s parent class</span>
+<span class="sd">            ``NodePathTracer`` (which passes them onto it's parent class</span>
 <span class="sd">            `torch.fx.Tracer &lt;https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer&gt;`_).</span>
 <span class="sd">            By default, it will be set to wrap and make leaf nodes all torchvision ops:</span>
-<span class="sd">            {&quot;autowrap_modules&quot;: (math, torchvision.ops,),&quot;leaf_modules&quot;: _get_leaf_modules_for_ops(),}</span>
+<span class="sd">            {"autowrap_modules": (math, torchvision.ops,),"leaf_modules": _get_leaf_modules_for_ops(),}</span>
 <span class="sd">            WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user</span>
 <span class="sd">            provided dictionary.</span>
 <span class="sd">        suppress_diff_warning (bool, optional): whether to suppress a warning</span>
@@ -854,7 +854,7 @@
 <span class="sd">        concrete_args (Optional[Dict[str, any]]): Concrete arguments that should</span>
 <span class="sd">            not be treated as Proxies. According to the `Pytorch docs</span>
 <span class="sd">            &lt;https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer.trace&gt;`_,</span>
-<span class="sd">            this parameter&#39;s API may not be guaranteed.</span>
+<span class="sd">            this parameter's API may not be guaranteed.</span>
 
 <span class="sd">    Examples::</span>
 
@@ -862,11 +862,11 @@
 <span class="sd">        &gt;&gt;&gt; model = torchvision.models.resnet18()</span>
 <span class="sd">        &gt;&gt;&gt; # extract layer1 and layer3, giving as names `feat1` and feat2`</span>
 <span class="sd">        &gt;&gt;&gt; model = create_feature_extractor(</span>
-<span class="sd">        &gt;&gt;&gt;     model, {&#39;layer1&#39;: &#39;feat1&#39;, &#39;layer3&#39;: &#39;feat2&#39;})</span>
+<span class="sd">        &gt;&gt;&gt;     model, {'layer1': 'feat1', 'layer3': 'feat2'})</span>
 <span class="sd">        &gt;&gt;&gt; out = model(torch.rand(1, 3, 224, 224))</span>
 <span class="sd">        &gt;&gt;&gt; print([(k, v.shape) for k, v in out.items()])</span>
-<span class="sd">        &gt;&gt;&gt;     [(&#39;feat1&#39;, torch.Size([1, 64, 56, 56])),</span>
-<span class="sd">        &gt;&gt;&gt;      (&#39;feat2&#39;, torch.Size([1, 256, 14, 14]))]</span>
+<span class="sd">        &gt;&gt;&gt;     [('feat1', torch.Size([1, 64, 56, 56])),</span>
+<span class="sd">        &gt;&gt;&gt;      ('feat2', torch.Size([1, 256, 14, 14]))]</span>
 
 <span class="sd">        &gt;&gt;&gt; # Specifying leaf modules and leaf functions</span>
 <span class="sd">        &gt;&gt;&gt; def leaf_function(x):</span>
@@ -891,27 +891,27 @@
 <span class="sd">        &gt;&gt;&gt;         return self.leaf_module(x)</span>
 <span class="sd">        &gt;&gt;&gt;</span>
 <span class="sd">        &gt;&gt;&gt; model = create_feature_extractor(</span>
-<span class="sd">        &gt;&gt;&gt;     MyModule(), return_nodes=[&#39;leaf_module&#39;],</span>
-<span class="sd">        &gt;&gt;&gt;     tracer_kwargs={&#39;leaf_modules&#39;: [LeafModule],</span>
-<span class="sd">        &gt;&gt;&gt;                    &#39;autowrap_functions&#39;: [leaf_function]})</span>
+<span class="sd">        &gt;&gt;&gt;     MyModule(), return_nodes=['leaf_module'],</span>
+<span class="sd">        &gt;&gt;&gt;     tracer_kwargs={'leaf_modules': [LeafModule],</span>
+<span class="sd">        &gt;&gt;&gt;                    'autowrap_functions': [leaf_function]})</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">tracer_kwargs</span> <span class="o">=</span> <span class="n">_set_default_tracer_kwargs</span><span class="p">(</span><span class="n">tracer_kwargs</span><span class="p">)</span>
     <span class="n">is_training</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">training</span>
 
     <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">arg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="n">return_nodes</span><span class="p">,</span> <span class="n">train_return_nodes</span><span class="p">,</span> <span class="n">eval_return_nodes</span><span class="p">]):</span>
 
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified&quot;</span>
+            <span class="s2">"Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="p">(</span><span class="n">train_return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">eval_return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified&quot;</span>
+            <span class="s2">"If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="n">return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">train_return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"</span><span class="p">)</span>
 
     <span class="c1"># Put *_return_nodes into Dict[str, str] format</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_strdict</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
@@ -930,11 +930,11 @@
     <span class="c1"># Repeat the tracing and graph rewriting for train and eval mode</span>
     <span class="n">tracers</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">graphs</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">mode_return_nodes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;train&quot;</span><span class="p">:</span> <span class="n">train_return_nodes</span><span class="p">,</span> <span class="s2">&quot;eval&quot;</span><span class="p">:</span> <span class="n">eval_return_nodes</span><span class="p">}</span>
-    <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;eval&quot;</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+    <span class="n">mode_return_nodes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"train"</span><span class="p">:</span> <span class="n">train_return_nodes</span><span class="p">,</span> <span class="s2">"eval"</span><span class="p">:</span> <span class="n">eval_return_nodes</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"train"</span><span class="p">,</span> <span class="s2">"eval"</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"train"</span><span class="p">:</span>
             <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;eval&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"eval"</span><span class="p">:</span>
             <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
         <span class="c1"># Instantiate our NodePathTracer and use that to trace the model</span>
@@ -945,31 +945,31 @@
         <span class="n">graph_module</span> <span class="o">=</span> <span class="n">fx</span><span class="o">.</span><span class="n">GraphModule</span><span class="p">(</span><span class="n">tracer</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
         <span class="n">available_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tracer</span><span class="o">.</span><span class="n">node_to_qualname</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="c1"># FIXME We don&#39;t know if we should expect this to happen</span>
+        <span class="c1"># FIXME We don't know if we should expect this to happen</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">available_nodes</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">available_nodes</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues&quot;</span>
+                <span class="s2">"There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"</span>
             <span class="p">)</span>
         <span class="c1"># Check that all outputs in return_nodes are present in the model</span>
         <span class="k">for</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">mode_return_nodes</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="c1"># To check if a query is available we need to check that at least</span>
             <span class="c1"># one of the available names starts with it up to a .</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">([</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">rf</span><span class="s2">&quot;^</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">(\.|$)&quot;</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">available_nodes</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">([</span><span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">rf</span><span class="s2">"^</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">(\.|$)"</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">available_nodes</span><span class="p">]):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;node: &#39;</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&#39; is not present in model. Hint: use &quot;</span>
-                    <span class="s2">&quot;`get_graph_node_names` to make sure the &quot;</span>
-                    <span class="s2">&quot;`return_nodes` you specified are present. It may even &quot;</span>
-                    <span class="s2">&quot;be that you need to specify `train_return_nodes` and &quot;</span>
-                    <span class="s2">&quot;`eval_return_nodes` separately.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"node: '</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">' is not present in model. Hint: use "</span>
+                    <span class="s2">"`get_graph_node_names` to make sure the "</span>
+                    <span class="s2">"`return_nodes` you specified are present. It may even "</span>
+                    <span class="s2">"be that you need to specify `train_return_nodes` and "</span>
+                    <span class="s2">"`eval_return_nodes` separately."</span>
                 <span class="p">)</span>
 
         <span class="c1"># Remove existing output nodes (train mode)</span>
         <span class="n">orig_output_nodes</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">graph_module</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;output&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">op</span> <span class="o">==</span> <span class="s2">"output"</span><span class="p">:</span>
                 <span class="n">orig_output_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">orig_output_nodes</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No output nodes found in graph_module.graph.nodes&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No output nodes found in graph_module.graph.nodes"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">orig_output_nodes</span><span class="p">:</span>
             <span class="n">graph_module</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">erase_node</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
@@ -986,8 +986,8 @@
                 <span class="c1"># - When packing outputs into a named tuple like in InceptionV3</span>
                 <span class="k">continue</span>
             <span class="k">for</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">mode_return_nodes</span><span class="p">[</span><span class="n">mode</span><span class="p">]:</span>
-                <span class="n">depth</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_qualname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="n">query</span><span class="p">:</span>
+                <span class="n">depth</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"."</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s2">"."</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_qualname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[:</span> <span class="n">depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="n">query</span><span class="p">:</span>
                     <span class="n">output_nodes</span><span class="p">[</span><span class="n">mode_return_nodes</span><span class="p">[</span><span class="n">mode</span><span class="p">][</span><span class="n">query</span><span class="p">]]</span> <span class="o">=</span> <span class="n">n</span>
                     <span class="n">mode_return_nodes</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
                     <span class="k">break</span>
@@ -1008,10 +1008,10 @@
     <span class="c1"># Warn user if there are any discrepancies between the graphs of the</span>
     <span class="c1"># train and eval modes</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">suppress_diff_warning</span><span class="p">:</span>
-        <span class="n">_warn_graph_differences</span><span class="p">(</span><span class="n">tracers</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">],</span> <span class="n">tracers</span><span class="p">[</span><span class="s2">&quot;eval&quot;</span><span class="p">])</span>
+        <span class="n">_warn_graph_differences</span><span class="p">(</span><span class="n">tracers</span><span class="p">[</span><span class="s2">"train"</span><span class="p">],</span> <span class="n">tracers</span><span class="p">[</span><span class="s2">"eval"</span><span class="p">])</span>
 
     <span class="c1"># Build the final graph module</span>
-    <span class="n">graph_module</span> <span class="o">=</span> <span class="n">DualGraphModule</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">graphs</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">],</span> <span class="n">graphs</span><span class="p">[</span><span class="s2">&quot;eval&quot;</span><span class="p">],</span> <span class="n">class_name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">graph_module</span> <span class="o">=</span> <span class="n">DualGraphModule</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">graphs</span><span class="p">[</span><span class="s2">"train"</span><span class="p">],</span> <span class="n">graphs</span><span class="p">[</span><span class="s2">"eval"</span><span class="p">],</span> <span class="n">class_name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
 
     <span class="c1"># Restore original training mode</span>
     <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">is_training</span><span class="p">)</span>

@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -434,13 +434,13 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_setup_number_or_seq</span><span class="p">(</span><span class="n">arg</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> should be a number or a sequence of numbers. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> should be a number or a sequence of numbers. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;If </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is a sequence its length should be 1 or 2. Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"If </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is a sequence its length should be 1 or 2. Got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> should be a sequence of numbers. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">element</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> should be a sequence of numbers. Got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">element</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
         <span class="n">arg</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">arg</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">arg</span><span class="p">)]</span>
@@ -458,12 +458,12 @@
             <span class="n">_check_fill_arg</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">fill</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fill</span><span class="p">,</span> <span class="p">(</span><span class="n">numbers</span><span class="o">.</span><span class="n">Number</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Got inappropriate fill arg, only Numbers, tuples, lists and dicts are allowed.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"Got inappropriate fill arg, only Numbers, tuples, lists and dicts are allowed."</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_convert_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">:</span> <span class="n">_FillType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_FillTypeJIT</span><span class="p">:</span>
     <span class="c1"># Fill = 0 is not equivalent to None, https://github.com/pytorch/vision/issues/6517</span>
-    <span class="c1"># So, we can&#39;t reassign fill to 0</span>
+    <span class="c1"># So, we can't reassign fill to 0</span>
     <span class="c1"># if fill is None:</span>
     <span class="c1">#     fill = 0</span>
     <span class="k">if</span> <span class="n">fill</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -482,21 +482,21 @@
             <span class="n">fill</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">_convert_fill_arg</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">fill</span>  <span class="c1"># type: ignore[return-value]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;others&quot;</span><span class="p">:</span> <span class="n">_convert_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">)}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"others"</span><span class="p">:</span> <span class="n">_convert_fill_arg</span><span class="p">(</span><span class="n">fill</span><span class="p">)}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_get_fill</span><span class="p">(</span><span class="n">fill_dict</span><span class="p">,</span> <span class="n">inpt_type</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">inpt_type</span> <span class="ow">in</span> <span class="n">fill_dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">fill_dict</span><span class="p">[</span><span class="n">inpt_type</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="s2">&quot;others&quot;</span> <span class="ow">in</span> <span class="n">fill_dict</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">fill_dict</span><span class="p">[</span><span class="s2">&quot;others&quot;</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="s2">"others"</span> <span class="ow">in</span> <span class="n">fill_dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">fill_dict</span><span class="p">[</span><span class="s2">"others"</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;This should never happen, please open an issue on the torchvision repo if you hit this.&quot;</span><span class="p">)</span>
+        <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"This should never happen, please open an issue on the torchvision repo if you hit this."</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_check_padding_arg</span><span class="p">(</span><span class="n">padding</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 
-    <span class="n">err_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Padding must be an int or a 1, 2, or 4 element of tuple or list, got </span><span class="si">{</span><span class="n">padding</span><span class="si">}</span><span class="s2">.&quot;</span>
+    <span class="n">err_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Padding must be an int or a 1, 2, or 4 element of tuple or list, got </span><span class="si">{</span><span class="n">padding</span><span class="si">}</span><span class="s2">."</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">padding</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">padding</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">padding</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
@@ -504,15 +504,15 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_msg</span><span class="p">)</span>
 
 
-<span class="c1"># TODO: let&#39;s use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)</span>
+<span class="c1"># TODO: let's use torchvision._utils.StrEnum to have the best of both worlds (strings and enums)</span>
 <span class="c1"># https://github.com/pytorch/vision/issues/6250</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_check_padding_mode_arg</span><span class="p">(</span><span class="n">padding_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;constant&quot;</span><span class="p">,</span> <span class="s2">&quot;edge&quot;</span><span class="p">,</span> <span class="s2">&quot;reflect&quot;</span><span class="p">,</span> <span class="s2">&quot;symmetric&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">if</span> <span class="n">padding_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;constant&quot;</span><span class="p">,</span> <span class="s2">&quot;edge&quot;</span><span class="p">,</span> <span class="s2">&quot;reflect&quot;</span><span class="p">,</span> <span class="s2">&quot;symmetric&quot;</span><span class="p">]:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Padding mode should be either constant, edge, reflect or symmetric&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_check_padding_mode_arg</span><span class="p">(</span><span class="n">padding_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"constant"</span><span class="p">,</span> <span class="s2">"edge"</span><span class="p">,</span> <span class="s2">"reflect"</span><span class="p">,</span> <span class="s2">"symmetric"</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">padding_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"constant"</span><span class="p">,</span> <span class="s2">"edge"</span><span class="p">,</span> <span class="s2">"reflect"</span><span class="p">,</span> <span class="s2">"symmetric"</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Padding mode should be either constant, edge, reflect or symmetric"</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_find_labels_default_heuristic</span><span class="p">(</span><span class="n">inputs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This heuristic covers three cases:</span>
 
 <span class="sd">    1. The input is tuple or list whose second item is a labels tensor. This happens for already batched</span>
@@ -521,11 +521,11 @@
 <span class="sd">       under a label-like (see below) key. This happens for the inputs of detection models.</span>
 <span class="sd">    3. The input is a dictionary that is structured as the one from 2.</span>
 
-<span class="sd">    What is &quot;label-like&quot; key? We first search for an case-insensitive match of &#39;labels&#39; inside the keys of the</span>
-<span class="sd">    dictionary. This is the name our detection models expect. If we can&#39;t find that, we look for a case-insensitive</span>
-<span class="sd">    match of the term &#39;label&#39; anywhere inside the key, i.e. &#39;FooLaBeLBar&#39;. If we can&#39;t find that either, the dictionary</span>
-<span class="sd">    contains no &quot;label-like&quot; key.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    What is "label-like" key? We first search for an case-insensitive match of 'labels' inside the keys of the</span>
+<span class="sd">    dictionary. This is the name our detection models expect. If we can't find that, we look for a case-insensitive</span>
+<span class="sd">    match of the term 'label' anywhere inside the key, i.e. 'FooLaBeLBar'. If we can't find that either, the dictionary</span>
+<span class="sd">    contains no "label-like" key.</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
         <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -536,77 +536,77 @@
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;When using the default labels_getter, the input passed to forward must be a dictionary or a two-tuple &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;whose second item is a dictionary or a tensor, but got </span><span class="si">{</span><span class="n">inputs</span><span class="si">}</span><span class="s2"> instead.&quot;</span>
+            <span class="sa">f</span><span class="s2">"When using the default labels_getter, the input passed to forward must be a dictionary or a two-tuple "</span>
+            <span class="sa">f</span><span class="s2">"whose second item is a dictionary or a tensor, but got </span><span class="si">{</span><span class="n">inputs</span><span class="si">}</span><span class="s2"> instead."</span>
         <span class="p">)</span>
 
     <span class="n">candidate_key</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">with</span> <span class="n">suppress</span><span class="p">(</span><span class="ne">StopIteration</span><span class="p">):</span>
-        <span class="n">candidate_key</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">inputs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;labels&quot;</span><span class="p">)</span>
+        <span class="n">candidate_key</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">inputs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"labels"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">candidate_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">with</span> <span class="n">suppress</span><span class="p">(</span><span class="ne">StopIteration</span><span class="p">):</span>
-            <span class="n">candidate_key</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">inputs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="s2">&quot;label&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+            <span class="n">candidate_key</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">inputs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="s2">"label"</span> <span class="ow">in</span> <span class="n">key</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
     <span class="k">if</span> <span class="n">candidate_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Could not infer where the labels are in the sample. Try passing a callable as the labels_getter parameter?&quot;</span>
-            <span class="s2">&quot;If there are no labels in the sample by design, pass labels_getter=None.&quot;</span>
+            <span class="s2">"Could not infer where the labels are in the sample. Try passing a callable as the labels_getter parameter?"</span>
+            <span class="s2">"If there are no labels in the sample by design, pass labels_getter=None."</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">inputs</span><span class="p">[</span><span class="n">candidate_key</span><span class="p">]</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_parse_labels_getter</span><span class="p">(</span><span class="n">labels_getter</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="k">if</span> <span class="n">labels_getter</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">labels_getter</span> <span class="o">==</span> <span class="s2">"default"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">_find_labels_default_heuristic</span>
     <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">labels_getter</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">labels_getter</span>
     <span class="k">elif</span> <span class="n">labels_getter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="kc">None</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;labels_getter should either be &#39;default&#39;, a callable, or None, but got </span><span class="si">{</span><span class="n">labels_getter</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"labels_getter should either be 'default', a callable, or None, but got </span><span class="si">{</span><span class="n">labels_getter</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="get_bounding_boxes"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.get_bounding_boxes.html#torchvision.transforms.v2.get_bounding_boxes">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_bounding_boxes</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the Bounding Boxes in the input.</span>
+<span class="w">    </span><span class="sd">"""Return the Bounding Boxes in the input.</span>
 
 <span class="sd">    Assumes only one ``BoundingBoxes`` object is present.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># This assumes there is only one bbox per sample as per the general convention</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="n">inpt</span> <span class="k">for</span> <span class="n">inpt</span> <span class="ow">in</span> <span class="n">flat_inputs</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">BoundingBoxes</span><span class="p">))</span>
     <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No bounding boxes were found in the sample&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No bounding boxes were found in the sample"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="get_keypoints"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.get_keypoints.html#torchvision.transforms.v2.get_keypoints">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_keypoints</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">KeyPoints</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the keypoints in the input.</span>
+<span class="w">    </span><span class="sd">"""Return the keypoints in the input.</span>
 
 <span class="sd">    Assumes only one ``KeyPoints`` object is present.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># This assumes there is only one keypoint per sample as per the general convention</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="n">inpt</span> <span class="k">for</span> <span class="n">inpt</span> <span class="ow">in</span> <span class="n">flat_inputs</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">KeyPoints</span><span class="p">))</span>
     <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No keypoints were found in the sample&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No keypoints were found in the sample"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="query_chw"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.query_chw.html#torchvision.transforms.v2.query_chw">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">query_chw</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return Channel, Height, and Width.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Return Channel, Height, and Width."""</span>
     <span class="n">chws</span> <span class="o">=</span> <span class="p">{</span>
         <span class="nb">tuple</span><span class="p">(</span><span class="n">get_dimensions</span><span class="p">(</span><span class="n">inpt</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">inpt</span> <span class="ow">in</span> <span class="n">flat_inputs</span>
         <span class="k">if</span> <span class="n">check_type</span><span class="p">(</span><span class="n">inpt</span><span class="p">,</span> <span class="p">(</span><span class="n">is_pure_tensor</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">Video</span><span class="p">))</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">chws</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;No image or video was found in the sample&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"No image or video was found in the sample"</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">chws</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found multiple CxHxW dimensions in the sample: </span><span class="si">{</span><span class="n">sequence_to_str</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">chws</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Found multiple CxHxW dimensions in the sample: </span><span class="si">{</span><span class="n">sequence_to_str</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">chws</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">c</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">chws</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">c</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span></div>
 
 
 <div class="viewcode-block" id="query_size"><a class="viewcode-back" href="../../../../generated/torchvision.transforms.v2.query_size.html#torchvision.transforms.v2.query_size">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">query_size</span><span class="p">(</span><span class="n">flat_inputs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return Height and Width.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Return Height and Width."""</span>
     <span class="n">sizes</span> <span class="o">=</span> <span class="p">{</span>
         <span class="nb">tuple</span><span class="p">(</span><span class="n">get_size</span><span class="p">(</span><span class="n">inpt</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">inpt</span> <span class="ow">in</span> <span class="n">flat_inputs</span>
@@ -624,9 +624,9 @@
         <span class="p">)</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">sizes</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;No image, video, mask, bounding box of keypoint was found in the sample&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"No image, video, mask, bounding box of keypoint was found in the sample"</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found multiple HxW dimensions in the sample: </span><span class="si">{</span><span class="n">sequence_to_str</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">sizes</span><span class="p">))</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Found multiple HxW dimensions in the sample: </span><span class="si">{</span><span class="n">sequence_to_str</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">sizes</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">sizes</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span></div>
 

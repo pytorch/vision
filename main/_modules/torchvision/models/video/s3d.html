@@ -285,7 +285,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -317,7 +317,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -426,9 +426,9 @@
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;S3D&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;S3D_Weights&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;s3d&quot;</span><span class="p">,</span>
+    <span class="s2">"S3D"</span><span class="p">,</span>
+    <span class="s2">"S3D_Weights"</span><span class="p">,</span>
+    <span class="s2">"s3d"</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -503,7 +503,7 @@
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">S3D</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;S3D main class.</span>
+<span class="w">    </span><span class="sd">"""S3D main class.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        num_class (int): number of classes for the classification task.</span>
@@ -512,7 +512,7 @@
 
 <span class="sd">    Inputs:</span>
 <span class="sd">        x (Tensor): batch of videos with dimensions (batch, channel, time, height, width)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -566,39 +566,39 @@
 
 <div class="viewcode-block" id="S3D_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.s3d.html#torchvision.models.video.S3D_Weights">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">S3D_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">KINETICS400_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
-        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/s3d-d76dad2f.pth&quot;</span><span class="p">,</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">"https://download.pytorch.org/models/s3d-d76dad2f.pth"</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">VideoClassification</span><span class="p">,</span>
             <span class="n">crop_size</span><span class="o">=</span><span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="n">resize_size</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
         <span class="p">),</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
-            <span class="s2">&quot;min_temporal_size&quot;</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span>
-            <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_KINETICS400_CATEGORIES</span><span class="p">,</span>
-            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/video_classification#s3d&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="s2">&quot;The weights aim to approximate the accuracy of the paper. The accuracies are estimated on clip-level &quot;</span>
-                <span class="s2">&quot;with parameters `frame_rate=15`, `clips_per_video=1`, and `clip_len=128`.&quot;</span>
+            <span class="s2">"min_size"</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+            <span class="s2">"min_temporal_size"</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span>
+            <span class="s2">"categories"</span><span class="p">:</span> <span class="n">_KINETICS400_CATEGORIES</span><span class="p">,</span>
+            <span class="s2">"recipe"</span><span class="p">:</span> <span class="s2">"https://github.com/pytorch/vision/tree/main/references/video_classification#s3d"</span><span class="p">,</span>
+            <span class="s2">"_docs"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">"The weights aim to approximate the accuracy of the paper. The accuracies are estimated on clip-level "</span>
+                <span class="s2">"with parameters `frame_rate=15`, `clips_per_video=1`, and `clip_len=128`."</span>
             <span class="p">),</span>
-            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">8320048</span><span class="p">,</span>
-            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;Kinetics-400&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">68.368</span><span class="p">,</span>
-                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">88.050</span><span class="p">,</span>
+            <span class="s2">"num_params"</span><span class="p">:</span> <span class="mi">8320048</span><span class="p">,</span>
+            <span class="s2">"_metrics"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"Kinetics-400"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"acc@1"</span><span class="p">:</span> <span class="mf">68.368</span><span class="p">,</span>
+                    <span class="s2">"acc@5"</span><span class="p">:</span> <span class="mf">88.050</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_ops&quot;</span><span class="p">:</span> <span class="mf">17.979</span><span class="p">,</span>
-            <span class="s2">&quot;_file_size&quot;</span><span class="p">:</span> <span class="mf">31.972</span><span class="p">,</span>
+            <span class="s2">"_ops"</span><span class="p">:</span> <span class="mf">17.979</span><span class="p">,</span>
+            <span class="s2">"_file_size"</span><span class="p">:</span> <span class="mf">31.972</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">KINETICS400_V1</span></div>
 
 
 <div class="viewcode-block" id="s3d"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.video.s3d.html#torchvision.models.video.s3d">[docs]</a><span class="nd">@register_model</span><span class="p">()</span>
-<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">S3D_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">"pretrained"</span><span class="p">,</span> <span class="n">S3D_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">s3d</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">S3D_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">S3D</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct Separable 3D CNN model.</span>
+<span class="w">    </span><span class="sd">"""Construct Separable 3D CNN model.</span>
 
 <span class="sd">    Reference: `Rethinking Spatiotemporal Feature Learning &lt;https://arxiv.org/abs/1712.04851&gt;`__.</span>
 
@@ -618,11 +618,11 @@
 
 <span class="sd">    .. autoclass:: torchvision.models.video.S3D_Weights</span>
 <span class="sd">        :members:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">S3D_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">"num_classes"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"categories"</span><span class="p">]))</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="n">S3D</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 

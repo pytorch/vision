@@ -39,7 +39,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="decode_jpeg" href="torchvision.io.decode_jpeg.html" />
-    <link rel="prev" title="Decoding / Encoding images and videos" href="../io.html" />
+    <link rel="prev" title="[DEPRECATED] Decoding and Encoding images" href="../io.html" />
   <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -320,7 +320,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -377,7 +377,7 @@
       </li>
 
         
-          <li><a href="../io.html">Decoding / Encoding images and videos</a> &gt;</li>
+          <li><a href="../io.html">[DEPRECATED] Decoding and Encoding images</a> &gt;</li>
         
       <li>decode_image</li>
     
@@ -419,8 +419,17 @@
 <h1>decode_image<a class="headerlink" href="#decode-image" title="Permalink to this heading">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="torchvision.io.decode_image">
-<span class="sig-prename descclassname"><span class="pre">torchvision.io.</span></span><span class="sig-name descname"><span class="pre">decode_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.14)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.9)"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.image.ImageReadMode"><span class="pre">ImageReadMode</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">ImageReadMode.UNCHANGED</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_exif_orientation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.9)"><span class="pre">Tensor</span></a></span></span><a class="reference internal" href="../_modules/torchvision/io/image.html#decode_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.decode_image" title="Permalink to this definition">¶</a></dt>
-<dd><p>Decode an image into a uint8 tensor, from a path or from raw encoded bytes.</p>
+<span class="sig-prename descclassname"><span class="pre">torchvision.io.</span></span><span class="sig-name descname"><span class="pre">decode_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.14)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><span class="pre">Tensor</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.image.ImageReadMode"><span class="pre">ImageReadMode</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">ImageReadMode.UNCHANGED</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_exif_orientation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v2.14)"><span class="pre">Tensor</span></a></span></span><a class="reference internal" href="../_modules/torchvision/io/image.html#decode_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.io.decode_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>[DEPRECATED] Use TorchCodec instead.</p>
+<p>Decode an image into a uint8 tensor, from a path or from raw encoded bytes.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The image decoding and encoding capabilities of TorchVision are
+deprecated since torchvision 0.29 and will be removed in a future
+release. They are superseded by the more complete decoders and encoders
+of TorchCodec (from torchcodec 0.16). Please see <a class="reference external" href="https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html">this migration guide</a>
+on how to migrate your code.</p>
+</div>
 <p>Currently supported image formats are jpeg, png, gif and webp.</p>
 <p>The values of the output tensor are in uint8 in [0, 255] for most cases.</p>
 <p>If the image is a 16-bit png, then the output tensor is uint16 in [0, 65535]
@@ -441,10 +450,10 @@ formats, directly call  <a class="reference internal" href="torchvision.io.decod
 <li><p><strong>input</strong> (Tensor or str or <code class="docutils literal notranslate"><span class="pre">pathlib.Path</span></code>) – The image to decode. If a
 tensor is passed, it must be one dimensional uint8 tensor containing
 the raw bytes of the image. Otherwise, this must be a path to the image file.</p></li>
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference internal" href="torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – The mode to convert the image to, e.g. “RGB”.
+<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference internal" href="torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><em>ImageReadMode</em></a>) – The mode to convert the image to, e.g. “RGB”.
 Default is “UNCHANGED”.  See <a class="reference internal" href="torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImageReadMode</span></code></a>
 for available modes.</p></li>
-<li><p><strong>apply_exif_orientation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – apply EXIF orientation transformation to the output tensor.
+<li><p><strong>apply_exif_orientation</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) – apply EXIF orientation transformation to the output tensor.
 Only applies to JPEG and PNG images. Default: False.</p></li>
 </ul>
 </dd>
@@ -480,7 +489,7 @@ Only applies to JPEG and PNG images. Default: False.</p></li>
         <a href="torchvision.io.decode_jpeg.html" class="btn btn-neutral float-right" title="decode_jpeg" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="../io.html" class="btn btn-neutral" title="Decoding / Encoding images and videos" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="../io.html" class="btn btn-neutral" title="[DEPRECATED] Decoding and Encoding images" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   

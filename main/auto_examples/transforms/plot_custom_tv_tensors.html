@@ -288,7 +288,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.25.0a0+1e53952) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.30.0a0+9769007) &#x25BC</a>
     </div>
     
 
@@ -320,7 +320,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../io.html">Decoding / Encoding images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../io.html">[DEPRECATED] Decoding and Encoding images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
@@ -459,9 +459,9 @@ operation of our MyTVTensor class, and register it to the functional API.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.v2</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
 
 
-<span class="nd">@F</span><span class="o">.</span><span class="n">register_kernel</span><span class="p">(</span><span class="n">functional</span><span class="o">=</span><span class="s2">&quot;hflip&quot;</span><span class="p">,</span> <span class="n">tv_tensor_cls</span><span class="o">=</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">MyTVTensor</span></a><span class="p">)</span>
+<span class="nd">@F</span><span class="o">.</span><span class="n">register_kernel</span><span class="p">(</span><span class="n">functional</span><span class="o">=</span><span class="s2">"hflip"</span><span class="p">,</span> <span class="n">tv_tensor_cls</span><span class="o">=</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">MyTVTensor</span></a><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">hflip_my_tv_tensor</span><span class="p">(</span><span class="n">my_dp</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Flipping!&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Flipping!"</span><span class="p">)</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">my_dp</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">my_dp</span><span class="p">)</span>
 </pre></div>
@@ -513,7 +513,7 @@ the future.</p>
 to its <code class="xref py py-func docutils literal notranslate"><span class="pre">hflip()</span></code> functional. If you
 already defined and registered your own kernel as</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">hflip_my_tv_tensor</span><span class="p">(</span><span class="n">my_dp</span><span class="p">):</span>  <span class="c1"># noqa</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Flipping!&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Flipping!"</span><span class="p">)</span>
     <span class="n">out</span> <span class="o">=</span> <span class="n">my_dp</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">my_dp</span><span class="p">)</span>
 </pre></div>
@@ -525,7 +525,43 @@ accept it.</p>
 <code class="docutils literal notranslate"><span class="pre">*args,</span> <span class="pre">**kwargs</span></code> in their signature, as done above. This way, your kernel
 will be able to accept any new parameter that we may add in the future.
 (Technically, adding <cite>**kwargs</cite> only should be enough).</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.003 seconds)</p>
+</section>
+<section id="custom-tvtensor-with-metadata">
+<span id="custom-tv-tensor-with-metadata"></span><h2>Custom TVTensor with metadata<a class="headerlink" href="#custom-tvtensor-with-metadata" title="Permalink to this heading">¶</a></h2>
+<p>The example above shows a simple TVTensor with no metadata. If your TVTensor
+carries metadata (like <a class="reference internal" href="../../generated/torchvision.tv_tensors.BoundingBoxes.html#torchvision.tv_tensors.BoundingBoxes" title="torchvision.tv_tensors.BoundingBoxes"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoundingBoxes</span></code></a> carries
+<code class="docutils literal notranslate"><span class="pre">format</span></code> and <code class="docutils literal notranslate"><span class="pre">canvas_size</span></code>), you need to override the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">wrap()</span></code> classmethod so that the metadata
+is preserved when the tensor passes through transforms.</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">LabeledImage</span><span class="p">(</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">tv_tensors</span><span class="o">.</span><span class="n">TVTensor</span></a><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">requires_grad</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wrap</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">like</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">as_subclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="n">obj</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label"</span><span class="p">,</span> <span class="n">like</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">obj</span>
+
+
+<span class="n">labeled_img</span> <span class="o">=</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">LabeledImage</span></a><span class="p">(</span><a href="https://docs.pytorch.org/docs/stable/generated/torch.rand.html#torch.rand" title="torch.rand" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">rand</span></a><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">"cat"</span><span class="p">)</span>
+
+<span class="c1"># The ``wrap`` method is called by :func:`~torchvision.tv_tensors.wrap`, which</span>
+<span class="c1"># is used internally by the transforms. This ensures metadata is preserved:</span>
+<a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a> <span class="o">=</span> <span class="n">labeled_img</span> <span class="o">*</span> <span class="mi">2</span>  <span class="c1"># some operation that returns a plain Tensor</span>
+<span class="n">wrapped</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">labeled_img</span><span class="p">)</span>
+<span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wrapped</span><span class="p">,</span> <a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class"><span class="n">LabeledImage</span></a><span class="p">)</span>
+<span class="k">assert</span> <a href="https://docs.python.org/3/builtins/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">wrapped</span><span class="o">.</span><span class="n">label</span></a> <span class="o">==</span> <span class="s2">"cat"</span>
+
+<span class="c1"># You can also override specific metadata fields via kwargs:</span>
+<span class="n">wrapped_dog</span> <span class="o">=</span> <span class="n">tv_tensors</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><a href="https://docs.pytorch.org/docs/stable/tensors.html#torch.Tensor" title="torch.Tensor" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">output</span></a><span class="p">,</span> <span class="n">like</span><span class="o">=</span><span class="n">labeled_img</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"dog"</span><span class="p">)</span>
+<span class="k">assert</span> <a href="https://docs.python.org/3/builtins/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">wrapped_dog</span><span class="o">.</span><span class="n">label</span></a> <span class="o">==</span> <span class="s2">"dog"</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.004 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-transforms-plot-custom-tv-tensors-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/8b062cf0fa8a991b8cff18fa361c8ffe/plot_custom_tv_tensors.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_custom_tv_tensors.ipynb</span></code></a></p>
@@ -586,6 +622,7 @@ will be able to accept any new parameter that we may add in the future.
               <ul>
 <li><a class="reference internal" href="#">How to write your own TVTensor class</a><ul>
 <li><a class="reference internal" href="#parameter-forwarding-and-ensuring-future-compatibility-of-your-kernels">Parameter forwarding, and ensuring future compatibility of your kernels</a></li>
+<li><a class="reference internal" href="#custom-tvtensor-with-metadata">Custom TVTensor with metadata</a></li>
 </ul>
 </li>
 </ul>
