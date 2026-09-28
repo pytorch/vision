@@ -1,5 +1,5 @@
 <p align="center">
-  <b>English</b> · <a href="README.zh.md">简体中文</a>
+  <a href="README.md">English</a> · <b>简体中文</b>
 </p>
 
 # torchvision
@@ -7,20 +7,15 @@
 [![total torchvision downloads](https://pepy.tech/badge/torchvision)](https://pepy.tech/project/torchvision)
 [![documentation](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Ftorchvision%2Fjson&query=%24.info.version&colorB=brightgreen&prefix=v)](https://pytorch.org/vision/stable/index.html)
 
-The torchvision package consists of popular datasets, model architectures, and common image transformations for computer
-vision.
+`torchvision` 包含了计算机视觉领域广泛使用的热门数据集、主流模型架构以及常用的图像数据变换算子。
 
-## Installation
+## 安装指南
 
-Please refer to the [official
-instructions](https://pytorch.org/get-started/locally/) to install the stable
-versions of `torch` and `torchvision` on your system.
+请参阅[官方安装指南](https://pytorch.org/get-started/locally/)在您的系统上安装稳定版本的 `torch` 和 `torchvision`。
 
-To build source, refer to our [contributing
-page](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation).
+若需从源码构建，请参阅我们的[贡献指南页面](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#development-installation)。
 
-The following is the corresponding `torchvision` versions and supported Python
-versions.
+以下是 `torchvision` 版本与支持的 Python 版本对照表：
 
 | `torch`            | `torchvision`      | Python              |
 | ------------------ | ------------------ | ------------------- |
@@ -32,7 +27,7 @@ versions.
 
 
 <details>
-    <summary>older versions</summary>
+    <summary>历史版本</summary>
 
 | `torch` | `torchvision`     | Python                    |
 |---------|-------------------|---------------------------|
@@ -63,47 +58,40 @@ versions.
 
 </details>
 
-## Image Backends
+## 图像处理后端
 
-Torchvision currently supports the following image backends:
+Torchvision 目前支持以下图像处理后端：
 
-- torch tensors
-- PIL images:
+- torch 张量 (torch tensors)
+- PIL 图像：
     - [Pillow](https://python-pillow.org/)
-    - [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - a **much faster** drop-in replacement for Pillow with SIMD.
+    - [Pillow-SIMD](https://github.com/uploadcare/pillow-simd) - 基于 SIMD 硬件指令集加速的 Pillow 即插即用高性能替代方案（速度大幅提升）。
 
-Read more in in our [docs](https://pytorch.org/vision/stable/transforms.html).
+更多信息请阅读我们的[官方变换文档](https://pytorch.org/vision/stable/transforms.html)。
 
-## Documentation
+## 文档
 
-You can find the API documentation on the pytorch website: <https://pytorch.org/vision/stable/index.html>
+您可以在 PyTorch 官方网站查阅完整的 API 文档：<https://pytorch.org/vision/stable/index.html>
 
-## Contributing
+## 参与贡献
 
-See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out.
+关于如何参与贡献，请参阅 [CONTRIBUTING](CONTRIBUTING.md) 文件。
 
-## Disclaimer on Datasets
+## 数据集免责声明
 
-This is a utility library that downloads and prepares public datasets. We do not host or distribute these datasets,
-vouch for their quality or fairness, or claim that you have license to use the dataset. It is your responsibility to
-determine whether you have permission to use the dataset under the dataset's license.
+本项目是一个下载并预处理公开数据集的工具库。我们并不托管或分发这些数据集，亦不对其质量、公平性做任何担保，更不声明您拥有使用该数据集的许可。确定您是否有权根据该数据集的许可证使用该数据集，完全是您自身的责任。
 
-If you're a dataset owner and wish to update any part of it (description, citation, etc.), or do not want your dataset
-to be included in this library, please get in touch through a GitHub issue. Thanks for your contribution to the ML
-community!
+如果您是数据集所有者，并希望更新其中的任何部分（描述、引用文献等），或者不希望您的高价值数据集包含在本库中，请通过 GitHub Issue 与我们联系。感谢您对机器学习社区所做出的贡献！
 
-## Pre-trained Model License
+## 预训练模型许可证
 
-The pre-trained models provided in this library may have their own licenses or terms and conditions derived from the
-dataset used for training. It is your responsibility to determine whether you have permission to use the models for your
-use case.
+本库中提供的预训练模型可能具有根据训练所用数据集衍生的专属许可证或条款与条件。确定您是否有权在具体的应用场景中使用这些模型，完全是您自身的责任。
 
-More specifically, SWAG models are released under the CC-BY-NC 4.0 license. See
-[SWAG LICENSE](https://github.com/facebookresearch/SWAG/blob/main/LICENSE) for additional details.
+具体而言，SWAG 模型基于 CC-BY-NC 4.0 许可证发布。有关更多详情，请参阅 [SWAG LICENSE](https://github.com/facebookresearch/SWAG/blob/main/LICENSE)。
 
-## Citing TorchVision
+## 引用 TorchVision
 
-If you find TorchVision useful in your work, please consider citing the following BibTeX entry:
+如果您在工作或研究中发现 TorchVision 对您有所帮助，请考虑引用以下 BibTeX 条目：
 
 ```bibtex
 @software{torchvision2016,
@@ -115,3 +103,7 @@ If you find TorchVision useful in your work, please consider citing the followin
     howpublished = {\url{https://github.com/pytorch/vision}}
 }
 ```
+
+---
+
+> 💡 **文档维护说明**：本中文文档由社区志愿者（[@JasonYeYuhe](https://github.com/JasonYeYuhe)）翻译维护，最后同步更新于 2026年09月28日。如发现内容与官方英文原版存在差异或新特性滞后，欢迎提交 PR 共同完善！
