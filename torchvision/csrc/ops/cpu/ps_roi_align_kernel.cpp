@@ -75,6 +75,7 @@ void ps_roi_align_forward_kernel_impl(
     int num_rois,
     const T* input,
     const T spatial_scale,
+    int batch_size,
     int channels,
     int height,
     int width,
@@ -88,6 +89,9 @@ void ps_roi_align_forward_kernel_impl(
   for (int n = 0; n < num_rois; n++) {
     // [start, end) interval for spatial sampling
     const T* offset_rois = rois + n * 5;
+    STD_TORCH_CHECK(
+        offset_rois[0] >= 0 && offset_rois[0] < batch_size,
+        "rois batch index must be in [0, batch_size)");
     int roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
@@ -222,6 +226,7 @@ void ps_roi_align_backward_kernel_impl(
     const T* grad_output,
     const int* channel_mapping,
     const T spatial_scale,
+    int batch_size,
     int channels,
     int height,
     int width,
@@ -237,6 +242,9 @@ void ps_roi_align_backward_kernel_impl(
     int n = index / pooled_width / pooled_height / channels_out;
 
     const T* offset_rois = rois + n * 5;
+    STD_TORCH_CHECK(
+        offset_rois[0] >= 0 && offset_rois[0] < batch_size,
+        "rois batch index must be in [0, batch_size)");
     int roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
@@ -252,6 +260,9 @@ void ps_roi_align_backward_kernel_impl(
     T bin_size_w = roi_width / static_cast<T>(pooled_width);
 
     int c_in = channel_mapping[index];
+    STD_TORCH_CHECK(
+        c_in >= 0 && c_in < channels,
+        "channel_mapping values must be in [0, channels)");
     T* grad_input_offset =
         grad_input + (roi_batch_ind * channels + c_in) * height * width;
 
@@ -329,6 +340,7 @@ std::tuple<Tensor, Tensor> ps_roi_align_forward_kernel(
       "input should have the same type as rois");
 
   int num_rois = rois.size(0);
+  int batch_size = input.size(0);
   int channels = input.size(1);
   int height = input.size(2);
   int width = input.size(3);
@@ -359,6 +371,7 @@ std::tuple<Tensor, Tensor> ps_roi_align_forward_kernel(
             num_rois,
             input_.const_data_ptr<scalar_t>(),
             spatial_scale,
+            batch_size,
             channels,
             height,
             width,
@@ -393,6 +406,8 @@ Tensor ps_roi_align_backward_kernel(
   STD_TORCH_CHECK(
       channel_mapping.is_cpu(), "channel_mapping must be a CPU tensor");
   STD_TORCH_CHECK(
+      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
+  STD_TORCH_CHECK(
       grad.scalar_type() == rois.scalar_type(),
       "grad should have the same type as rois");
 
@@ -405,8 +420,17 @@ Tensor ps_roi_align_backward_kernel(
   }
 
   int channels_out = channels / (pooled_height * pooled_width);
+  STD_TORCH_CHECK(
+      grad.dim() == 4 && grad.size(0) == rois.size(0) &&
+          grad.size(1) == channels_out && grad.size(2) == pooled_height &&
+          grad.size(3) == pooled_width,
+      "grad should have shape [K, channels / (pooled_height * pooled_width), pooled_height, pooled_width]");
+  STD_TORCH_CHECK(
+      channel_mapping.sizes().equals(grad.sizes()),
+      "channel_mapping should have the same shape as grad");
 
   auto grad_ = torch::stable::contiguous(grad);
+  auto channel_mapping_ = torch::stable::contiguous(channel_mapping);
   auto rois_ = torch::stable::contiguous(rois);
   THO_DISPATCH_V2(
       grad.scalar_type(),
@@ -415,8 +439,9 @@ Tensor ps_roi_align_backward_kernel(
         ps_roi_align_backward_kernel_impl<scalar_t>(
             grad.numel(),
             grad_.const_data_ptr<scalar_t>(),
-            channel_mapping.const_data_ptr<int>(),
+            channel_mapping_.const_data_ptr<int>(),
             spatial_scale,
+            batch_size,
             channels,
             height,
             width,
