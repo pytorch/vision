@@ -65,7 +65,6 @@ jobs:
       - uses: ./.github/actions/test-abi3-wheel
         with:
           python-version: "3.15"
-          # The macOS build matrix pins .0 point versions, but the artifact name
-          # is built from the short version. It carries no arch suffix.
-          artifact-pattern: "*_3.10_cpu_*"
+          # macOS artifact names carry no arch suffix.
+          artifact-pattern: "*_cpu_*"
           wheel-glob: "dist/torchvision-*-abi3-macosx_*_arm64.whl"

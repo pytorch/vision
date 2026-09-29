@@ -68,5 +68,5 @@ jobs:
       - uses: ./.github/actions/test-abi3-wheel
         with:
           python-version: "3.15"
-          artifact-pattern: "*_3.10_cpu_aarch64"
+          artifact-pattern: "*_cpu_aarch64"
           wheel-glob: "dist/torchvision-*-abi3-manylinux*_aarch64.whl"

@@ -69,7 +69,5 @@ jobs:
       - uses: ./.github/actions/test-abi3-wheel
         with:
           python-version: "3.15"
-          # The build job names its artifact after the interpreter it built with,
-          # which for the abi3 wheel is the oldest supported one.
-          artifact-pattern: "*_3.10_cpu_x86_64"
+          artifact-pattern: "*_cpu_x86_64"
           wheel-glob: "dist/torchvision-*-abi3-manylinux*_x86_64.whl"
