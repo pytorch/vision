@@ -87,7 +87,7 @@ def evaluate(model, data_loader, device, num_classes):
     if (
         hasattr(data_loader.dataset, "__len__")
         and len(data_loader.dataset) != num_processed_samples
-        and torch.distributed.get_rank() == 0
+        and utils.is_main_process()
     ):
         # See FIXME above
         warnings.warn(
