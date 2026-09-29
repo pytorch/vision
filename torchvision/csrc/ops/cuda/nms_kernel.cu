@@ -198,7 +198,7 @@ Tensor nms_kernel(
   auto order_t = std::get<1>(stable_helpers::sort(
       scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
   auto dets_sorted =
-      torch::stable::contiguous(stable_helpers::index_select(dets, 0, order_t));
+      torch::stable::contiguous(torch::stable::index_select(dets, 0, order_t));
 
   int dets_num = static_cast<int>(dets.size(0));
   const int col_blocks = ceil_div(dets_num, threadsPerBlock);

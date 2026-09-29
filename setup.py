@@ -92,6 +92,12 @@ def write_version_file(version, sha):
         f.write("    cuda = _check_cuda_version()\n")
 
 
+# We're ABI stable w.r.t. torch 2.14. TORCH_MIN_VERSION and TORCH_TARGET_VERSION
+# must be kept in sync.
+TORCH_MIN_VERSION = (2, 14, 0)
+TORCH_TARGET_VERSION = "0x020e000000000000"
+
+
 def get_requirements():
     def get_dist(pkgname):
         try:
@@ -100,14 +106,17 @@ def get_requirements():
             return None
 
     pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
-    if version_pin := os.getenv("PYTORCH_VERSION"):
-        pytorch_dep += "==" + version_pin
-    elif (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
+    if (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
         # This branch and the associated env vars exist to help third-party
         # builds like in https://github.com/pytorch/vision/pull/8936. This is
         # supported on a best-effort basis, we don't guarantee that this won't
         # eventually break (and we don't test it.)
         pytorch_dep += f">={version_pin_ge},<{version_pin_lt}"
+    else:
+        # Before being ABI stable w.r.t. 2.14, we used to pin to
+        # torch==PYTORCH_VERSION where PYTORCH_VERSION was set by test-infra. We
+        # now ignore it and always pin to `torch >= 2.14`.
+        pytorch_dep += ">=" + ".".join(str(v) for v in TORCH_MIN_VERSION)
 
     requirements = [
         "numpy",
@@ -120,9 +129,6 @@ def get_requirements():
     requirements.append(pillow_req + pillow_ver)
 
     return requirements
-
-
-TORCH_TARGET_VERSION = "0x020e000000000000"
 
 
 def get_macros_and_flags():
