@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:33.319** total execution time for 13 files **from all galleries**:
+**00:34.216** total execution time for 13 files **from all galleries**:
 
 .. container::
 
@@ -33,41 +33,41 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py` (``../../gallery/others/plot_visualization_utils.py``)
-     - 00:08.743
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_transforms_plot_rotated_box_transforms.py` (``../../gallery/transforms/plot_rotated_box_transforms.py``)
-     - 00:05.851
+     - 00:09.077
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py` (``../../gallery/others/plot_optical_flow.py``)
-     - 00:05.767
+     - 00:05.882
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_transforms_plot_rotated_box_transforms.py` (``../../gallery/transforms/plot_rotated_box_transforms.py``)
+     - 00:05.802
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py` (``../../gallery/transforms/plot_transforms_illustrations.py``)
-     - 00:04.621
+     - 00:04.715
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``../../gallery/transforms/plot_transforms_e2e.py``)
-     - 00:03.103
+     - 00:03.205
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_keypoints_transforms.py` (``../../gallery/transforms/plot_keypoints_transforms.py``)
-     - 00:02.325
+     - 00:02.346
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py` (``../../gallery/others/plot_repurposing_annotations.py``)
-     - 00:01.378
+     - 00:01.549
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py` (``../../gallery/others/plot_scripted_tensor_transforms.py``)
-     - 00:00.868
+     - 00:00.909
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` (``../../gallery/transforms/plot_transforms_getting_started.py``)
-     - 00:00.501
+     - 00:00.506
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` (``../../gallery/transforms/plot_cutmix_mixup.py``)
-     - 00:00.146
+     - 00:00.186
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py` (``../../gallery/transforms/plot_custom_tv_tensors.py``)
+     - 00:00.027
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` (``../../gallery/transforms/plot_custom_transforms.py``)
-     - 00:00.006
+     - 00:00.007
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_tv_tensors.py` (``../../gallery/transforms/plot_tv_tensors.py``)
      - 00:00.006
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_tv_tensors.py` (``../../gallery/transforms/plot_custom_tv_tensors.py``)
-     - 00:00.004
      - 0.0
