@@ -5423,7 +5423,7 @@ class TestPerspective:
 
     @pytest.mark.parametrize(("startpoints", "endpoints"), START_END_POINTS)
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
-    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32, torch.float16, torch.bfloat16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_correctness_perspective_bounding_boxes(self, startpoints, endpoints, format, dtype, device):
         if not dtype.is_floating_point and tv_tensors.is_rotated_bounding_format(format):
@@ -5484,7 +5484,7 @@ class TestPerspective:
         )
 
     @pytest.mark.parametrize(("startpoints", "endpoints"), START_END_POINTS)
-    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32, torch.float16, torch.bfloat16])
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_correctness_perspective_keypoints(self, startpoints, endpoints, dtype, device):
         keypoints = make_keypoints(dtype=dtype, device=device)
