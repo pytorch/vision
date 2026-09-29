@@ -67,15 +67,30 @@
 // modified from
 // https://github.com/open-mmlab/mmdetection/blob/master/mmdet/ops/dcn/src/deform_conv_cuda.cpp
 
-#include <ATen/ATen.h>
-#include <torch/library.h>
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/csrc/stable/tensor.h>
+#include <torch/headeronly/core/Dispatch_v2.h>
+#include "../StableABICompat.h"
+
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <tuple>
 
 namespace vision {
 namespace ops {
 
 namespace {
 
+using torch::stable::Tensor;
+
 const int kMaxParallelImgs = 32;
+
+// TODO(stable-abi): use torch::stable::add once the shim adds aten::add.Tensor.
+Tensor add_tensors(const Tensor& self, const Tensor& other) {
+  return torch::stable::subtract(self, other, -1.0);
+}
 
 template <typename scalar_t>
 scalar_t bilinear_interpolate(
@@ -194,9 +209,9 @@ void deformable_im2col_kernel(
 }
 
 void deformable_im2col(
-    const at::Tensor& input,
-    const at::Tensor& data_offset,
-    const at::Tensor& data_mask,
+    const Tensor& input,
+    const Tensor& data_offset,
+    const Tensor& data_mask,
     int n_in_channels,
     int height,
     int width,
@@ -213,16 +228,18 @@ void deformable_im2col(
     int parallel_imgs,
     int deformable_group,
     bool use_mask,
-    at::Tensor data_col) {
+    Tensor data_col) {
   int num_kernels = n_in_channels * out_h * out_w * parallel_imgs;
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "deformable_im2col", ([&] {
+  THO_DISPATCH_V2(
+      input.scalar_type(),
+      "deformable_im2col",
+      AT_WRAP([&]() {
         deformable_im2col_kernel(
             num_kernels,
-            input.data_ptr<scalar_t>(),
-            data_offset.data_ptr<scalar_t>(),
-            data_mask.data_ptr<scalar_t>(),
+            input.const_data_ptr<scalar_t>(),
+            data_offset.const_data_ptr<scalar_t>(),
+            data_mask.const_data_ptr<scalar_t>(),
             height,
             width,
             weight_h,
@@ -239,8 +256,10 @@ void deformable_im2col(
             out_h,
             out_w,
             use_mask,
-            data_col.data_ptr<scalar_t>());
-      }));
+            data_col.mutable_data_ptr<scalar_t>());
+      }),
+      AT_EXPAND(AT_FLOATING_TYPES),
+      torch::headeronly::ScalarType::Half);
 }
 
 int get_greatest_divisor_below_bound(int n, int bound) {
@@ -329,9 +348,9 @@ void deformable_col2im_kernel(
 }
 
 void compute_grad_input(
-    const at::Tensor& columns,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
+    const Tensor& columns,
+    const Tensor& offset,
+    const Tensor& mask,
     int channels,
     int height,
     int width,
@@ -346,7 +365,7 @@ void compute_grad_input(
     int parallel_imgs,
     int n_offset_grps,
     bool use_mask,
-    at::Tensor grad_im) {
+    Tensor grad_im) {
   int out_h =
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
   int out_w =
@@ -354,13 +373,15 @@ void compute_grad_input(
   int num_kernels =
       channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "compute_grad_input", ([&] {
+  THO_DISPATCH_V2(
+      columns.scalar_type(),
+      "compute_grad_input",
+      AT_WRAP([&]() {
         deformable_col2im_kernel(
             num_kernels,
-            columns.data_ptr<scalar_t>(),
-            offset.data_ptr<scalar_t>(),
-            mask.data_ptr<scalar_t>(),
+            columns.const_data_ptr<scalar_t>(),
+            offset.const_data_ptr<scalar_t>(),
+            mask.const_data_ptr<scalar_t>(),
             channels,
             height,
             width,
@@ -377,8 +398,10 @@ void compute_grad_input(
             out_h,
             out_w,
             use_mask,
-            grad_im.data_ptr<scalar_t>());
-      }));
+            grad_im.mutable_data_ptr<scalar_t>());
+      }),
+      AT_EXPAND(AT_FLOATING_TYPES),
+      torch::headeronly::ScalarType::Half);
 }
 
 template <typename scalar_t>
@@ -528,10 +551,10 @@ void deformable_col2im_coord_kernel(
 }
 
 void compute_grad_offset_and_mask(
-    const at::Tensor& columns,
-    const at::Tensor& input,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
+    const Tensor& columns,
+    const Tensor& input,
+    const Tensor& offset,
+    const Tensor& mask,
     int channels,
     int height,
     int width,
@@ -546,8 +569,8 @@ void compute_grad_offset_and_mask(
     int parallel_imgs,
     int n_offset_grps,
     bool use_mask,
-    at::Tensor grad_offset,
-    at::Tensor grad_mask) {
+    Tensor grad_offset,
+    Tensor grad_mask) {
   int out_h =
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
   int out_w =
@@ -555,14 +578,16 @@ void compute_grad_offset_and_mask(
   int num_kernels =
       out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * parallel_imgs;
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
+  THO_DISPATCH_V2(
+      columns.scalar_type(),
+      "compute_grad_offset_and_mask",
+      AT_WRAP([&]() {
         deformable_col2im_coord_kernel(
             num_kernels,
-            columns.data_ptr<scalar_t>(),
-            input.data_ptr<scalar_t>(),
-            offset.data_ptr<scalar_t>(),
-            mask.data_ptr<scalar_t>(),
+            columns.const_data_ptr<scalar_t>(),
+            input.const_data_ptr<scalar_t>(),
+            offset.const_data_ptr<scalar_t>(),
+            mask.const_data_ptr<scalar_t>(),
             channels,
             height,
             width,
@@ -580,17 +605,19 @@ void compute_grad_offset_and_mask(
             out_h,
             out_w,
             use_mask,
-            grad_offset.data_ptr<scalar_t>(),
-            grad_mask.data_ptr<scalar_t>());
-      }));
+            grad_offset.mutable_data_ptr<scalar_t>(),
+            grad_mask.mutable_data_ptr<scalar_t>());
+      }),
+      AT_EXPAND(AT_FLOATING_TYPES),
+      torch::headeronly::ScalarType::Half);
 }
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
-    at::Tensor input,
-    at::Tensor weight,
-    at::Tensor offset,
-    at::Tensor mask,
-    at::Tensor grad_out,
+std::tuple<Tensor, Tensor, Tensor> backward_gradient_inputs(
+    Tensor input,
+    Tensor weight,
+    Tensor offset,
+    Tensor mask,
+    Tensor grad_out,
     int stride_h,
     int stride_w,
     int pad_h,
@@ -617,31 +644,35 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
   long out_w =
       (in_w + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
 
-  auto grad_input = at::zeros_like(input);
-  auto grad_offset = at::zeros_like(offset);
-  auto grad_mask = at::zeros_like(mask);
+  auto grad_input = torch::stable::new_zeros(input, input.sizes());
+  auto grad_offset = torch::stable::new_zeros(offset, offset.sizes());
+  auto grad_mask = torch::stable::new_zeros(mask, mask.sizes());
 
   if (batch_sz == 0) {
     return std::make_tuple(grad_input, grad_offset, grad_mask);
   }
 
-  auto columns = at::empty(
-      {n_in_channels * weight_w * weight_h, n_parallel_imgs * out_h * out_w},
-      input.options());
+  auto columns = torch::stable::new_empty(
+      input,
+      {n_in_channels * weight_w * weight_h, n_parallel_imgs * out_h * out_w});
 
   // Separate into blocks
-  grad_input = grad_input.reshape(
+  grad_input = torch::stable::reshape(
+      grad_input,
       {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
-  input = input.reshape(
+  input = torch::stable::reshape(
+      input,
       {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
 
-  grad_offset = grad_offset.reshape(
+  grad_offset = torch::stable::reshape(
+      grad_offset,
       {batch_sz / n_parallel_imgs,
        n_parallel_imgs,
        n_offset_grps * 2 * weight_h * weight_w,
        out_h,
        out_w});
-  offset = offset.reshape(
+  offset = torch::stable::reshape(
+      offset,
       {batch_sz / n_parallel_imgs,
        n_parallel_imgs,
        n_offset_grps * 2 * weight_h * weight_w,
@@ -649,13 +680,15 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
        out_w});
 
   if (use_mask) {
-    grad_mask = grad_mask.reshape(
+    grad_mask = torch::stable::reshape(
+        grad_mask,
         {batch_sz / n_parallel_imgs,
          n_parallel_imgs,
          n_offset_grps * weight_h * weight_w,
          out_h,
          out_w});
-    mask = mask.reshape(
+    mask = torch::stable::reshape(
+        mask,
         {batch_sz / n_parallel_imgs,
          n_parallel_imgs,
          n_offset_grps * weight_h * weight_w,
@@ -663,39 +696,47 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
          out_w});
   }
 
-  grad_out = grad_out
-                 .reshape(
-                     {batch_sz / n_parallel_imgs,
-                      n_parallel_imgs,
-                      n_weight_grps,
-                      n_out_channels / n_weight_grps,
-                      out_h,
-                      out_w})
-                 .permute({0, 2, 3, 1, 4, 5});
+  grad_out = torch::stable::permute(
+      torch::stable::reshape(
+          grad_out,
+          {batch_sz / n_parallel_imgs,
+           n_parallel_imgs,
+           n_weight_grps,
+           n_out_channels / n_weight_grps,
+           out_h,
+           out_w}),
+      {0, 2, 3, 1, 4, 5});
 
-  weight = weight.reshape(
+  weight = torch::stable::reshape(
+      weight,
       {n_weight_grps,
        weight.size(0) / n_weight_grps,
        weight.size(1),
        weight.size(2),
        weight.size(3)});
 
-  columns = columns.view(
+  columns = torch::stable::view(
+      columns,
       {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
 
   for (int elt = 0; elt < batch_sz / n_parallel_imgs; elt++) {
-    columns.zero_();
+    torch::stable::zero_(columns);
     // Separate into weight groups
     for (int g = 0; g < n_weight_grps; g++) {
-      columns[g] = columns[g].addmm_(
-          weight[g].flatten(1).transpose(0, 1), grad_out[elt][g].flatten(1));
+      auto columns_g = torch::stable::select(columns, 0, g);
+      auto weight_g = torch::stable::transpose(
+          torch::stable::flatten(torch::stable::select(weight, 0, g), 1), 0, 1);
+      auto grad_out_g = torch::stable::flatten(
+          torch::stable::select(torch::stable::select(grad_out, 0, elt), 0, g),
+          1);
+      stable_helpers::mm_out(weight_g, grad_out_g, columns_g);
     }
 
     compute_grad_offset_and_mask(
         columns,
-        input[elt],
-        offset[elt],
-        mask[elt],
+        torch::stable::select(input, 0, elt),
+        torch::stable::select(offset, 0, elt),
+        torch::stable::select(mask, 0, elt),
         n_in_channels,
         in_h,
         in_w,
@@ -710,13 +751,13 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
         n_parallel_imgs,
         n_offset_grps,
         use_mask,
-        grad_offset[elt],
-        grad_mask[elt]);
+        torch::stable::select(grad_offset, 0, elt),
+        torch::stable::select(grad_mask, 0, elt));
 
     compute_grad_input(
         columns,
-        offset[elt],
-        mask[elt],
+        torch::stable::select(offset, 0, elt),
+        torch::stable::select(mask, 0, elt),
         n_in_channels,
         in_h,
         in_w,
@@ -731,27 +772,30 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
         n_parallel_imgs,
         n_offset_grps,
         use_mask,
-        grad_input[elt]);
+        torch::stable::select(grad_input, 0, elt));
   }
 
-  grad_input = grad_input.view({batch_sz, n_in_channels, in_h, in_w});
-  grad_offset = grad_offset.view(
+  grad_input =
+      torch::stable::view(grad_input, {batch_sz, n_in_channels, in_h, in_w});
+  grad_offset = torch::stable::view(
+      grad_offset,
       {batch_sz, n_offset_grps * 2 * weight_h * weight_w, out_h, out_w});
 
   if (use_mask) {
-    grad_mask = grad_mask.view(
+    grad_mask = torch::stable::view(
+        grad_mask,
         {batch_sz, n_offset_grps * weight_h * weight_w, out_h, out_w});
   }
 
   return std::make_tuple(grad_input, grad_offset, grad_mask);
 }
 
-at::Tensor backward_gradient_parameters(
-    at::Tensor input,
-    const at::Tensor& weight,
-    at::Tensor offset,
-    at::Tensor mask,
-    const at::Tensor& grad_out,
+Tensor backward_gradient_parameters(
+    Tensor input,
+    const Tensor& weight,
+    Tensor offset,
+    Tensor mask,
+    const Tensor& grad_out,
     int stride_h,
     int stride_w,
     int pad_h,
@@ -776,26 +820,28 @@ at::Tensor backward_gradient_parameters(
   long out_h = grad_out.size(2);
   long out_w = grad_out.size(3);
 
-  auto grad_weight = at::zeros_like(weight);
+  auto grad_weight = torch::stable::new_zeros(weight, weight.sizes());
   if (batch_sz == 0) {
     return grad_weight;
   }
 
-  at::Tensor grad_out_buf = grad_out
-                                .reshape(
-                                    {batch_sz / n_parallel_imgs,
-                                     n_parallel_imgs,
-                                     n_weight_grps,
-                                     n_out_channels / n_weight_grps,
-                                     out_h,
-                                     out_w})
-                                .permute({0, 2, 3, 1, 4, 5})
-                                .contiguous();
+  Tensor grad_out_buf = torch::stable::contiguous(torch::stable::permute(
+      torch::stable::reshape(
+          grad_out,
+          {batch_sz / n_parallel_imgs,
+           n_parallel_imgs,
+           n_weight_grps,
+           n_out_channels / n_weight_grps,
+           out_h,
+           out_w}),
+      {0, 2, 3, 1, 4, 5}));
 
-  input = input.reshape(
+  input = torch::stable::reshape(
+      input,
       {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
 
-  offset = offset.reshape(
+  offset = torch::stable::reshape(
+      offset,
       {batch_sz / n_parallel_imgs,
        n_parallel_imgs,
        n_offset_grps * 2 * weight_h * weight_w,
@@ -803,7 +849,8 @@ at::Tensor backward_gradient_parameters(
        out_w});
 
   if (use_mask) {
-    mask = mask.reshape(
+    mask = torch::stable::reshape(
+        mask,
         {batch_sz / n_parallel_imgs,
          n_parallel_imgs,
          n_offset_grps * weight_h * weight_w,
@@ -811,24 +858,25 @@ at::Tensor backward_gradient_parameters(
          out_w});
   }
 
-  grad_weight = grad_weight.view(
+  grad_weight = torch::stable::view(
+      grad_weight,
       {n_weight_grps,
        grad_weight.size(0) / n_weight_grps,
        grad_weight.size(1),
        grad_weight.size(2),
        grad_weight.size(3)});
 
-  auto columns = at::empty(
+  auto columns = torch::stable::new_empty(
+      input,
       {n_weight_grps,
        n_in_channels * weight_w * weight_h / n_weight_grps,
-       n_parallel_imgs * out_h * out_w},
-      input.options());
+       n_parallel_imgs * out_h * out_w});
 
   for (int elt = 0; elt < batch_sz / n_parallel_imgs; elt++) {
     deformable_im2col(
-        input[elt],
-        offset[elt],
-        mask[elt],
+        torch::stable::select(input, 0, elt),
+        torch::stable::select(offset, 0, elt),
+        torch::stable::select(mask, 0, elt),
         n_in_channels,
         in_h,
         in_w,
@@ -848,16 +896,21 @@ at::Tensor backward_gradient_parameters(
         columns);
 
     for (int g = 0; g < n_weight_grps; g++) {
-      grad_weight[g] =
-          grad_weight[g]
-              .flatten(1)
-              .addmm_(
-                  grad_out_buf[elt][g].flatten(1), columns[g].transpose(1, 0))
-              .view_as(grad_weight[g]);
+      auto grad_weight_g =
+          torch::stable::flatten(torch::stable::select(grad_weight, 0, g), 1);
+      auto grad_out_buf_g = torch::stable::flatten(
+          torch::stable::select(
+              torch::stable::select(grad_out_buf, 0, elt), 0, g),
+          1);
+      auto columns_g =
+          torch::stable::transpose(torch::stable::select(columns, 0, g), 1, 0);
+      auto update = torch::stable::matmul(grad_out_buf_g, columns_g);
+      torch::stable::copy_(grad_weight_g, add_tensors(grad_weight_g, update));
     }
   }
 
-  grad_weight = grad_weight.view(
+  grad_weight = torch::stable::view(
+      grad_weight,
       {grad_weight.size(0) * grad_weight.size(1),
        grad_weight.size(2),
        grad_weight.size(3),
@@ -865,12 +918,12 @@ at::Tensor backward_gradient_parameters(
   return grad_weight;
 }
 
-at::Tensor deform_conv2d_forward_kernel(
-    const at::Tensor& input,
-    const at::Tensor& weight,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
-    const at::Tensor& bias,
+Tensor deform_conv2d_forward_kernel(
+    const Tensor& input,
+    const Tensor& weight,
+    const Tensor& offset,
+    const Tensor& mask,
+    const Tensor& bias,
     int64_t stride_h,
     int64_t stride_w,
     int64_t pad_h,
@@ -880,17 +933,17 @@ at::Tensor deform_conv2d_forward_kernel(
     int64_t n_weight_grps,
     int64_t n_offset_grps,
     bool use_mask) {
-  at::Tensor input_c = input.contiguous();
-  at::Tensor offset_c = offset.contiguous();
-  at::Tensor weight_c = weight.contiguous();
-  at::Tensor mask_c = mask.contiguous();
-  at::Tensor bias_c = bias.contiguous();
+  Tensor input_c = torch::stable::contiguous(input);
+  Tensor offset_c = torch::stable::contiguous(offset);
+  Tensor weight_c = torch::stable::contiguous(weight);
+  Tensor mask_c = torch::stable::contiguous(mask);
+  Tensor bias_c = torch::stable::contiguous(bias);
 
-  TORCH_CHECK(input_c.ndimension() == 4);
-  TORCH_CHECK(offset_c.ndimension() == 4);
-  TORCH_CHECK(!use_mask || mask_c.ndimension() == 4);
-  TORCH_CHECK(weight_c.ndimension() == 4);
-  TORCH_CHECK(input_c.device().is_cpu(), "input must be a CPU tensor");
+  STD_TORCH_CHECK(input_c.dim() == 4);
+  STD_TORCH_CHECK(offset_c.dim() == 4);
+  STD_TORCH_CHECK(!use_mask || mask_c.dim() == 4);
+  STD_TORCH_CHECK(weight_c.dim() == 4);
+  STD_TORCH_CHECK(input_c.is_cpu(), "input must be a CPU tensor");
 
   int batch_sz = input_c.size(0);
   int n_in_channels = input_c.size(1);
@@ -910,45 +963,46 @@ at::Tensor deform_conv2d_forward_kernel(
   int out_h = ((in_h + 2 * pad_h - ker_h) / stride_h) + 1;
   int out_w = ((in_w + 2 * pad_w - ker_w) / stride_w) + 1;
 
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       weight_h > 0 && weight_w > 0,
       "weight_h: ",
       weight_h,
       " weight_w: ",
       weight_w);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       stride_h > 0 && stride_w > 0,
       "stride_h: ",
       stride_h,
       " stride_w: ",
       stride_w);
-  TORCH_CHECK(pad_h >= 0 && pad_w >= 0, "pad_h: ", pad_h, " pad_w: ", pad_w);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
+      pad_h >= 0 && pad_w >= 0, "pad_h: ", pad_h, " pad_w: ", pad_w);
+  STD_TORCH_CHECK(
       dilation_h > 0 && dilation_w > 0,
       "dilation_h: ",
       dilation_h,
       " dilation_w: ",
       dilation_w);
 
-  TORCH_CHECK(weight_c.size(1) * n_weight_grps == input_c.size(1));
-  TORCH_CHECK(weight_c.size(0) % n_weight_grps == 0);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(weight_c.size(1) * n_weight_grps == input_c.size(1));
+  STD_TORCH_CHECK(weight_c.size(0) % n_weight_grps == 0);
+  STD_TORCH_CHECK(
       (offset_c.size(1) == n_offset_grps * 2 * weight_h * weight_w),
       "offset.shape[1] is not valid: got: ",
       offset_c.size(1),
       " expected: ",
       n_offset_grps * 2 * weight_h * weight_w);
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       (!use_mask || mask_c.size(1) == n_offset_grps * weight_h * weight_w),
       "mask.shape[1] is not valid: got: ",
       mask_c.size(1),
       " expected: ",
       n_offset_grps * weight_h * weight_w);
-  TORCH_CHECK(input_c.size(1) % n_offset_grps == 0);
+  STD_TORCH_CHECK(input_c.size(1) % n_offset_grps == 0);
 
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       (offset_c.size(0) == input_c.size(0)), "invalid batch size of offset");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       (offset_c.size(2) == out_h && offset_c.size(3) == out_w),
       "offset output dims: (",
       offset_c.size(2),
@@ -960,9 +1014,9 @@ at::Tensor deform_conv2d_forward_kernel(
       ", ",
       out_w,
       ")");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       (mask_c.size(0) == input_c.size(0)), "invalid batch size of mask");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       (!use_mask || (mask_c.size(2) == out_h && mask_c.size(3) == out_w)),
       "mask output dims: (",
       mask_c.size(2),
@@ -974,7 +1028,7 @@ at::Tensor deform_conv2d_forward_kernel(
       ", ",
       out_w,
       ")");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       out_h > 0 && out_w > 0,
       "Calculated output size too small - out_h: ",
       out_h,
@@ -982,22 +1036,25 @@ at::Tensor deform_conv2d_forward_kernel(
       out_w);
 
   auto out =
-      at::zeros({batch_sz, out_channels, out_h, out_w}, input_c.options());
+      torch::stable::new_zeros(input_c, {batch_sz, out_channels, out_h, out_w});
   if (batch_sz == 0) {
     return out;
   }
 
   // Separate batches into blocks
-  out = out.view(
+  out = torch::stable::view(
+      out,
       {batch_sz / n_parallel_imgs,
        n_parallel_imgs,
        out_channels,
        out_h,
        out_w});
-  input_c = input_c.view(
+  input_c = torch::stable::view(
+      input_c,
       {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
 
-  offset_c = offset_c.view(
+  offset_c = torch::stable::view(
+      offset_c,
       {batch_sz / n_parallel_imgs,
        n_parallel_imgs,
        n_offset_grps * 2 * weight_h * weight_w,
@@ -1005,7 +1062,8 @@ at::Tensor deform_conv2d_forward_kernel(
        out_w});
 
   if (use_mask) {
-    mask_c = mask_c.view(
+    mask_c = torch::stable::view(
+        mask_c,
         {batch_sz / n_parallel_imgs,
          n_parallel_imgs,
          n_offset_grps * weight_h * weight_w,
@@ -1013,21 +1071,23 @@ at::Tensor deform_conv2d_forward_kernel(
          out_w});
   }
 
-  at::Tensor out_buf = at::zeros(
+  Tensor out_buf = torch::stable::new_zeros(
+      out,
       {batch_sz / n_parallel_imgs,
        out_channels,
        n_parallel_imgs * out_h,
-       out_w},
-      out.options());
+       out_w});
 
   // Separate channels into convolution groups
-  out_buf = out_buf.view(
+  out_buf = torch::stable::view(
+      out_buf,
       {out_buf.size(0),
        n_weight_grps,
        out_buf.size(1) / n_weight_grps,
        out_buf.size(2),
        out_buf.size(3)});
-  weight_c = weight_c.view(
+  weight_c = torch::stable::view(
+      weight_c,
       {n_weight_grps,
        weight_c.size(0) / n_weight_grps,
        weight_c.size(1),
@@ -1035,14 +1095,14 @@ at::Tensor deform_conv2d_forward_kernel(
        weight_c.size(3)});
 
   // Sample points and perform convolution
-  auto columns = at::zeros(
-      {n_in_channels * weight_h * weight_w, n_parallel_imgs * out_h * out_w},
-      input_c.options());
+  auto columns = torch::stable::new_zeros(
+      input_c,
+      {n_in_channels * weight_h * weight_w, n_parallel_imgs * out_h * out_w});
   for (int b = 0; b < batch_sz / n_parallel_imgs; b++) {
     deformable_im2col(
-        input_c[b],
-        offset_c[b],
-        mask_c[b],
+        torch::stable::select(input_c, 0, b),
+        torch::stable::select(offset_c, 0, b),
+        torch::stable::select(mask_c, 0, b),
         n_in_channels,
         in_h,
         in_w,
@@ -1061,39 +1121,42 @@ at::Tensor deform_conv2d_forward_kernel(
         use_mask,
         columns);
 
-    columns = columns.view(
+    columns = torch::stable::view(
+        columns,
         {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
     for (int g = 0; g < n_weight_grps; g++) {
-      out_buf[b][g] = out_buf[b][g]
-                          .flatten(1)
-                          .addmm_(weight_c[g].flatten(1), columns[g])
-                          .view_as(out_buf[b][g]);
+      auto out_buf_g = torch::stable::flatten(
+          torch::stable::select(torch::stable::select(out_buf, 0, b), 0, g), 1);
+      auto weight_g =
+          torch::stable::flatten(torch::stable::select(weight_c, 0, g), 1);
+      auto columns_g = torch::stable::select(columns, 0, g);
+      stable_helpers::mm_out(weight_g, columns_g, out_buf_g);
     }
-    columns =
-        columns.view({columns.size(0) * columns.size(1), columns.size(2)});
+    columns = torch::stable::view(
+        columns, {columns.size(0) * columns.size(1), columns.size(2)});
   }
 
-  out_buf = out_buf.view(
+  out_buf = torch::stable::view(
+      out_buf,
       {batch_sz / n_parallel_imgs,
        out_channels,
        n_parallel_imgs,
        out_h,
        out_w});
-  out_buf.transpose_(1, 2);
-  out.copy_(out_buf);
-  out = out.view({batch_sz, out_channels, out_h, out_w});
+  out_buf = torch::stable::transpose(out_buf, 1, 2);
+  torch::stable::copy_(out, out_buf);
+  out = torch::stable::view(out, {batch_sz, out_channels, out_h, out_w});
 
-  return out + bias_c.view({1, out_channels, 1, 1});
+  return add_tensors(out, torch::stable::view(bias_c, {1, out_channels, 1, 1}));
 }
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
-deform_conv2d_backward_kernel(
-    const at::Tensor& grad_out,
-    const at::Tensor& input,
-    const at::Tensor& weight,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
-    const at::Tensor& bias,
+std::tuple<Tensor, Tensor, Tensor, Tensor, Tensor> deform_conv2d_backward_kernel(
+    const Tensor& grad_out,
+    const Tensor& input,
+    const Tensor& weight,
+    const Tensor& offset,
+    const Tensor& mask,
+    const Tensor& bias,
     int64_t stride_h,
     int64_t stride_w,
     int64_t pad_h,
@@ -1103,12 +1166,12 @@ deform_conv2d_backward_kernel(
     int64_t n_weight_grps,
     int64_t n_offset_grps,
     bool use_mask) {
-  at::Tensor grad_out_c = grad_out.contiguous();
-  at::Tensor input_c = input.contiguous();
-  at::Tensor weight_c = weight.contiguous();
-  at::Tensor offset_c = offset.contiguous();
-  at::Tensor mask_c = mask.contiguous();
-  at::Tensor bias_c = bias.contiguous();
+  Tensor grad_out_c = torch::stable::contiguous(grad_out);
+  Tensor input_c = torch::stable::contiguous(input);
+  Tensor weight_c = torch::stable::contiguous(weight);
+  Tensor offset_c = torch::stable::contiguous(offset);
+  Tensor mask_c = torch::stable::contiguous(mask);
+  Tensor bias_c = torch::stable::contiguous(bias);
 
   const int batch_sz = input_c.size(0);
   const int n_parallel_imgs =
@@ -1152,7 +1215,11 @@ deform_conv2d_backward_kernel(
       n_parallel_imgs,
       use_mask);
 
-  auto grad_bias = at::ones_like(bias_c) * grad_out_c.sum({0, 2, 3});
+  std::array<int64_t, 3> bias_sum_dims{0, 2, 3};
+  auto grad_out_sum = torch::stable::sum(
+      grad_out_c, torch::headeronly::IntHeaderOnlyArrayRef(bias_sum_dims));
+  auto grad_bias = add_tensors(
+      torch::stable::new_zeros(bias_c, bias_c.sizes()), grad_out_sum);
 
   return std::make_tuple(
       grad_input, grad_weight, grad_offset, grad_mask, grad_bias);
@@ -1160,13 +1227,9 @@ deform_conv2d_backward_kernel(
 
 } // namespace
 
-TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::deform_conv2d"),
-      TORCH_FN(deform_conv2d_forward_kernel));
-  m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::_deform_conv2d_backward"),
-      TORCH_FN(deform_conv2d_backward_kernel));
+STABLE_TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
+  m.impl("deform_conv2d", TORCH_BOX(&deform_conv2d_forward_kernel));
+  m.impl("_deform_conv2d_backward", TORCH_BOX(&deform_conv2d_backward_kernel));
 }
 
 } // namespace ops

@@ -80,6 +80,12 @@ def write_version_file(version, sha):
         f.write("    cuda = _check_cuda_version()\n")
 
 
+# We're ABI stable w.r.t. torch 2.14. TORCH_MIN_VERSION and TORCH_TARGET_VERSION
+# must be kept in sync.
+TORCH_MIN_VERSION = (2, 14, 0)
+TORCH_TARGET_VERSION = "0x020e000000000000"
+
+
 def get_requirements():
     def get_dist(pkgname):
         try:
@@ -88,14 +94,17 @@ def get_requirements():
             return None
 
     pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
-    if version_pin := os.getenv("PYTORCH_VERSION"):
-        pytorch_dep += "==" + version_pin
-    elif (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
+    if (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
         # This branch and the associated env vars exist to help third-party
         # builds like in https://github.com/pytorch/vision/pull/8936. This is
         # supported on a best-effort basis, we don't guarantee that this won't
         # eventually break (and we don't test it.)
         pytorch_dep += f">={version_pin_ge},<{version_pin_lt}"
+    else:
+        # Before being ABI stable w.r.t. 2.14, we used to pin to
+        # torch==PYTORCH_VERSION where PYTORCH_VERSION was set by test-infra. We
+        # now ignore it and always pin to `torch >= 2.14`.
+        pytorch_dep += ">=" + ".".join(str(v) for v in TORCH_MIN_VERSION)
 
     requirements = [
         "numpy",
@@ -148,12 +157,50 @@ def get_macros_and_flags():
     else:
         extra_compile_args["cxx"].append("-g0")
 
+    tv = f"-DTORCH_TARGET_VERSION={TORCH_TARGET_VERSION}"
+    extra_compile_args["cxx"].append(tv)
+    if "nvcc" in extra_compile_args:
+        extra_compile_args["nvcc"].append(tv)
+        if not IS_ROCM:
+            # Some torch APIs like aoti_torch_get_current_cuda_stream (used by
+            # ops/cuda/cuda_helpers.h) are only exposed when USE_CUDA is defined.
+            # https://github.com/pytorch/pytorch/blob/98e36864e640023a716e058d894ea2d20e76e5f7/torch/csrc/inductor/aoti_torch/c/shim.h#L573-L602
+            extra_compile_args["nvcc"].append("-DUSE_CUDA")
+            # The jpeg decode .cpp also calls these shims (incl.
+            # torch_get_cuda_stream_from_pool), so cxx needs USE_CUDA too.
+            extra_compile_args["cxx"].append("-DUSE_CUDA")
+    if torch.backends.mps.is_available() or FORCE_MPS:
+        extra_compile_args["cxx"].append("-DUSE_MPS")
+
     return define_macros, extra_compile_args
 
 
-def make_C_extension():
-    print("Building _C extension")
+_HIPIFIED = False
 
+
+def ensure_hipified():
+    # ROCm: rewrite ops/cuda/*.{cu,h} -> ops/hip/* once per build (no-op otherwise).
+    global _HIPIFIED
+    if _HIPIFIED or not IS_ROCM:
+        return
+    from torch.utils.hipify import hipify_python
+
+    hipify_python.hipify(
+        project_directory=str(ROOT_DIR),
+        output_directory=str(ROOT_DIR),
+        includes="torchvision/csrc/ops/cuda/*",
+        show_detailed=True,
+        is_pytorch_extension=True,
+    )
+    for header in CSRS_DIR.glob("ops/cuda/*.h"):
+        shutil.copy(str(header), str(CSRS_DIR / "ops/hip"))
+    _HIPIFIED = True
+
+
+def make_C_stable_extension():
+    print("Building _C_stable extension")
+
+    ensure_hipified()
     sources = (
         list(CSRS_DIR.glob("*.cpp"))
         + list(CSRS_DIR.glob("ops/*.cpp"))
@@ -163,18 +210,7 @@ def make_C_extension():
     mps_sources = list(CSRS_DIR.glob("ops/mps/*.mm"))
 
     if IS_ROCM:
-        from torch.utils.hipify import hipify_python
-
-        hipify_python.hipify(
-            project_directory=str(ROOT_DIR),
-            output_directory=str(ROOT_DIR),
-            includes="torchvision/csrc/ops/cuda/*",
-            show_detailed=True,
-            is_pytorch_extension=True,
-        )
         cuda_sources = list(CSRS_DIR.glob("ops/hip/*.hip"))
-        for header in CSRS_DIR.glob("ops/cuda/*.h"):
-            shutil.copy(str(header), str(CSRS_DIR / "ops/hip"))
     else:
         cuda_sources = list(CSRS_DIR.glob("ops/cuda/*.cu"))
 
@@ -188,7 +224,7 @@ def make_C_extension():
 
     define_macros, extra_compile_args = get_macros_and_flags()
     return Extension(
-        name="torchvision._C",
+        name="torchvision._C_stable",
         sources=sorted(str(s) for s in sources),
         include_dirs=[CSRS_DIR],
         define_macros=define_macros,
@@ -279,33 +315,28 @@ def find_library(header):
     return False, None, None
 
 
-def make_image_extension():
-    print("Building image extension")
+def make_image_stable_extension():
+    print("Building image_stable extension")
 
     include_dirs = TORCHVISION_INCLUDE.copy()
     library_dirs = TORCHVISION_LIBRARY.copy()
-
     libraries = []
     define_macros, extra_compile_args = get_macros_and_flags()
 
     image_dir = CSRS_DIR / "io/image"
-    sources = list(image_dir.glob("*.cpp")) + list(image_dir.glob("cpu/*.cpp")) + list(image_dir.glob("cpu/giflib/*.c"))
-
-    if IS_ROCM:
-        sources += list(image_dir.glob("hip/*.cpp"))
-        # we need to exclude this in favor of the hipified source
-        sources.remove(image_dir / "image.cpp")
-    else:
-        sources += list(image_dir.glob("cuda/*.cpp"))
+    sources = (
+        list(image_dir.glob("*.cpp"))
+        + list(image_dir.glob("cpu/*.cpp"))
+        + list(image_dir.glob("cpu/giflib/*.c"))
+        + list(image_dir.glob("cuda/*.cpp"))
+    )
 
     Extension = CppExtension
 
     if USE_PNG:
         png_found, png_include_dir, png_library_dir, png_library = find_libpng()
         if png_found:
-            print("Building torchvision with PNG support")
-            print(f"{png_include_dir = }")
-            print(f"{png_library_dir = }")
+            print("Building torchvision with PNG image support")
             include_dirs.append(png_include_dir)
             library_dirs.append(png_library_dir)
             libraries.append(png_library)
@@ -316,11 +347,8 @@ def make_image_extension():
     if USE_JPEG:
         jpeg_found, jpeg_include_dir, jpeg_library_dir = find_library(header="jpeglib.h")
         if jpeg_found:
-            print("Building torchvision with JPEG support")
-            print(f"{jpeg_include_dir = }")
-            print(f"{jpeg_library_dir = }")
+            print("Building torchvision with JPEG image support")
             if jpeg_include_dir is not None and jpeg_library_dir is not None:
-                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
                 include_dirs.append(jpeg_include_dir)
                 library_dirs.append(jpeg_library_dir)
             libraries.append("jpeg")
@@ -346,19 +374,14 @@ def make_image_extension():
 
     if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
-
         if nvjpeg_found:
             print("Building torchvision with NVJPEG image support")
             libraries.append("nvjpeg")
             define_macros += [("NVJPEG_FOUND", 1)]
             Extension = CUDAExtension
-        else:
-            warnings.warn("Building torchvision without NVJPEG support")
-    elif USE_NVJPEG:
-        warnings.warn("Building torchvision without NVJPEG support")
 
     return Extension(
-        name="torchvision.image",
+        name="torchvision.image_stable",
         sources=sorted(str(s) for s in sources),
         include_dirs=include_dirs,
         library_dirs=library_dirs,
@@ -393,8 +416,8 @@ if __name__ == "__main__":
         readme = f.read()
 
     extensions = [
-        make_C_extension(),
-        make_image_extension(),
+        make_C_stable_extension(),
+        make_image_stable_extension(),
     ]
 
     setup(

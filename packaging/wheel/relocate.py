@@ -216,7 +216,7 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
             subprocess.check_output([patchelf, "--print-rpath", new_library_name], cwd=new_libraries_path)
 
     print("Update library dependencies")
-    library_dependencies = binary_dependencies[binary]
+    library_dependencies = binary_dependencies.get(binary, [])
     for dep in library_dependencies:
         new_dep = osp.basename(new_names[dep])
         print(f"{binary}: {dep} -> {new_dep}")
@@ -315,9 +315,8 @@ def patch_linux():
     wheels = glob.glob(osp.join(PACKAGE_ROOT, "dist", "*.whl"))
     output_dir = osp.join(PACKAGE_ROOT, "dist", ".wheel-process")
 
-    image_binary = "image.so"
-    video_binary = "video_reader.so"
-    torchvision_binaries = [image_binary, video_binary]
+    image_stable_binary = "image_stable.so"
+    torchvision_binaries = [image_stable_binary]
     for wheel in wheels:
         if osp.exists(output_dir):
             shutil.rmtree(output_dir)
@@ -351,9 +350,8 @@ def patch_win():
     wheels = glob.glob(osp.join(PACKAGE_ROOT, "dist", "*.whl"))
     output_dir = osp.join(PACKAGE_ROOT, "dist", ".wheel-process")
 
-    image_binary = "image.pyd"
-    video_binary = "video_reader.pyd"
-    torchvision_binaries = [image_binary, video_binary]
+    image_stable_binary = "image_stable.pyd"
+    torchvision_binaries = [image_stable_binary]
     for wheel in wheels:
         if osp.exists(output_dir):
             shutil.rmtree(output_dir)

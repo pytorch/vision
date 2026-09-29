@@ -1,5 +1,11 @@
-#include <ATen/ATen.h>
-#include <torch/library.h>
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/csrc/stable/tensor.h>
+#include <torch/headeronly/core/Dispatch_v2.h>
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
 
 #include "../../cpu/roi_align_common.h"
 
@@ -7,6 +13,8 @@ namespace vision {
 namespace ops {
 
 namespace {
+
+using torch::stable::Tensor;
 
 template <typename T>
 inline float dequantize_val(float scale, int64_t zero_point, T value) {
@@ -16,7 +24,7 @@ inline float dequantize_val(float scale, int64_t zero_point, T value) {
 template <typename T, typename R>
 void qroi_align_forward_kernel_impl(
     int n_rois,
-    const at::Tensor& t_input,
+    const Tensor& t_input,
     double input_scale,
     int64_t input_zero_point,
     const float& spatial_scale,
@@ -27,16 +35,16 @@ void qroi_align_forward_kernel_impl(
     int pooled_width,
     int sampling_ratio,
     bool aligned,
-    const at::Tensor& t_rois,
+    const Tensor& t_rois,
     double rois_scale,
     int64_t rois_zero_point,
     T* output) {
   // Don't delete these otherwise the .data_ptr() data might be undefined
-  auto t_input_cont = t_input.contiguous();
-  auto t_rois_cont = t_rois.contiguous();
+  auto t_input_cont = torch::stable::contiguous(t_input);
+  auto t_rois_cont = torch::stable::contiguous(t_rois);
 
-  const T* input = t_input_cont.data_ptr<T>();
-  const R* rois = t_rois_cont.data_ptr<R>();
+  const T* input = t_input_cont.const_data_ptr<T>();
+  const R* rois = t_rois_cont.const_data_ptr<R>();
 
   float input_scale_f = static_cast<float>(input_scale);
   float rois_scale_f = static_cast<float>(rois_scale);
@@ -158,9 +166,9 @@ void qroi_align_forward_kernel_impl(
   } // for n
 }
 
-at::Tensor qroi_align_forward_kernel(
-    const at::Tensor& input,
-    const at::Tensor& rois,
+Tensor qroi_align_forward_kernel(
+    const Tensor& input,
+    const Tensor& rois,
     double input_scale,
     int64_t input_zero_point,
     double rois_scale,
@@ -170,35 +178,36 @@ at::Tensor qroi_align_forward_kernel(
     int64_t pooled_width,
     int64_t sampling_ratio,
     bool aligned) {
-  TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
-  TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
-  TORCH_CHECK(rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
+  STD_TORCH_CHECK(input.is_cpu(), "input must be a CPU tensor");
+  STD_TORCH_CHECK(rois.is_cpu(), "rois must be a CPU tensor");
+  STD_TORCH_CHECK(rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
   // The kernel hardcodes roi_batch_ind to 0, so only batch size 1 is supported.
   // This restriction originates from quantized inputs where not all batch
   // indices are representable depending on the quantization parameters
   // (e.g. 1, 3, 5... can't be represented when qscale is 2).
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       input.size(0) == 1, "Only one image per batch is allowed in qroi_align.");
-
-  at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
-  at::CheckedFrom c = "qroi_align_forward_kernel";
-  at::checkAllSameType(c, {input_t, rois_t});
+  STD_TORCH_CHECK(
+      input.scalar_type() == rois.scalar_type(),
+      "input should have the same type as rois");
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
   auto height = input.size(2);
   auto width = input.size(3);
 
-  at::Tensor output = at::empty(
-      {num_rois, channels, pooled_height, pooled_width}, input.options());
+  Tensor output = torch::stable::new_empty(
+      input, {num_rois, channels, pooled_height, pooled_width});
 
   if (output.numel() == 0) {
     return output;
   }
 
-  AT_DISPATCH_INTEGRAL_TYPES(
-      input.scalar_type(), "qroi_align_forward_kernel", [&] {
-        qroi_align_forward_kernel_impl<scalar_t, scalar_t>(
+  THO_DISPATCH_V2(
+      input.scalar_type(),
+      "qroi_align_forward_kernel",
+      AT_WRAP([&]() {
+        (qroi_align_forward_kernel_impl<scalar_t, scalar_t>(
             num_rois,
             input,
             input_scale,
@@ -214,22 +223,21 @@ at::Tensor qroi_align_forward_kernel(
             rois,
             rois_scale,
             rois_zero_point,
-            output.data_ptr<scalar_t>());
-      });
+            output.mutable_data_ptr<scalar_t>()));
+      }),
+      AT_EXPAND(AT_INTEGRAL_TYPES));
   return output;
 }
 
 } // namespace
 
-TORCH_LIBRARY_FRAGMENT(torchvision, m) {
-  m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::qroi_align(Tensor input, Tensor rois, float input_scale, int input_zero_point, float rois_scale, int rois_zero_point, float spatial_scale, SymInt pooled_height, SymInt pooled_width, int sampling_ratio, bool aligned) -> Tensor"));
+STABLE_TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def(
+      "qroi_align(Tensor input, Tensor rois, float input_scale, int input_zero_point, float rois_scale, int rois_zero_point, float spatial_scale, SymInt pooled_height, SymInt pooled_width, int sampling_ratio, bool aligned) -> Tensor");
 }
 
-TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::qroi_align"),
-      TORCH_FN(qroi_align_forward_kernel));
+STABLE_TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
+  m.impl("qroi_align", TORCH_BOX(&qroi_align_forward_kernel));
 }
 
 } // namespace ops

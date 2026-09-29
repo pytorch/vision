@@ -1,13 +1,13 @@
 #pragma once
 
-#include <torch/types.h>
-#include "../common.h"
+#include <torch/csrc/stable/tensor.h>
+#include "../common_stable.h"
 
 namespace vision {
 namespace image {
 
-C10_EXPORT torch::Tensor decode_webp(
-    const torch::Tensor& encoded_data,
+torch::stable::Tensor decode_webp(
+    const torch::stable::Tensor& encoded_data,
     ImageReadMode mode = IMAGE_READ_MODE_UNCHANGED);
 
 } // namespace image
