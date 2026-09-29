@@ -840,6 +840,108 @@ def test_deform_conv2d_padding_symint():
     _check_symint(f, [torch.empty(pad) for pad in (2, 3, 4, 5)])
 
 
+class TestRoIOpsInvalidInputs:
+    # All ops are called with 1x1 pooling on a (1, 1, 4, 4) input, so for the ps_* ops channels_out == channels == 1.
+    FORWARD = {
+        "roi_pool": lambda x, rois: torch.ops.torchvision.roi_pool(x, rois, 1.0, 1, 1),
+        "roi_align": lambda x, rois: torch.ops.torchvision.roi_align(x, rois, 1.0, 1, 1, 1, False),
+        "ps_roi_pool": lambda x, rois: torch.ops.torchvision.ps_roi_pool(x, rois, 1.0, 1, 1),
+        "ps_roi_align": lambda x, rois: torch.ops.torchvision.ps_roi_align(x, rois, 1.0, 1, 1, 1),
+    }
+    # idx is the argmax (roi_pool) or channel_mapping (ps_*) tensor. roi_align has none.
+    BACKWARD = {
+        "roi_pool": lambda g, rois, idx: torch.ops.torchvision._roi_pool_backward(g, rois, idx, 1.0, 1, 1, 1, 1, 4, 4),
+        "roi_align": lambda g, rois, idx: torch.ops.torchvision._roi_align_backward(
+            g, rois, 1.0, 1, 1, 1, 1, 4, 4, 1, False
+        ),
+        "ps_roi_pool": lambda g, rois, idx: torch.ops.torchvision._ps_roi_pool_backward(
+            g, rois, idx, 1.0, 1, 1, 1, 1, 4, 4
+        ),
+        "ps_roi_align": lambda g, rois, idx: torch.ops.torchvision._ps_roi_align_backward(
+            g, rois, idx, 1.0, 1, 1, 1, 1, 1, 4, 4
+        ),
+    }
+    OPS_WITH_IDX = ("roi_pool", "ps_roi_pool", "ps_roi_align")
+
+    @pytest.mark.parametrize("op", FORWARD.keys())
+    @pytest.mark.parametrize("batch_ind", (-1, 1, 1e10))
+    def test_forward_batch_index(self, op, batch_ind):
+        rois = torch.tensor([[batch_ind, 0, 0, 3, 3]], dtype=torch.float)
+        with pytest.raises(RuntimeError, match="batch index must be in"):
+            self.FORWARD[op](torch.rand(1, 1, 4, 4), rois)
+
+    @pytest.mark.parametrize("op", BACKWARD.keys())
+    @pytest.mark.parametrize("batch_ind", (-1, 1, 1e10))
+    def test_backward_batch_index(self, op, batch_ind):
+        rois = torch.tensor([[batch_ind, 0, 0, 3, 3]], dtype=torch.float)
+        idx = torch.zeros(1, 1, 1, 1, dtype=torch.int32)
+        with pytest.raises(RuntimeError, match="batch index must be in"):
+            self.BACKWARD[op](torch.ones(1, 1, 1, 1), rois, idx)
+
+    def test_forward_rois_shape(self):
+        with pytest.raises(RuntimeError, match=r"Tensor\[K, 5\]"):
+            self.FORWARD["roi_pool"](torch.rand(1, 1, 4, 4), torch.zeros(1, 4))
+
+    @pytest.mark.parametrize("op", ("roi_align", "ps_roi_pool", "ps_roi_align"))
+    def test_backward_rois_shape(self, op):
+        idx = torch.zeros(1, 1, 1, 1, dtype=torch.int32)
+        with pytest.raises(RuntimeError, match=r"Tensor\[K, 5\]"):
+            self.BACKWARD[op](torch.ones(1, 1, 1, 1), torch.zeros(1, 4), idx)
+
+    @pytest.mark.parametrize("op", BACKWARD.keys())
+    def test_backward_grad_shape(self, op):
+        rois = torch.tensor([[0.0, 0, 0, 3, 3]])
+        idx = torch.zeros(2, 1, 1, 1, dtype=torch.int32)
+        with pytest.raises(RuntimeError, match="grad should have shape"):
+            self.BACKWARD[op](torch.ones(2, 1, 1, 1), rois, idx)
+
+    @pytest.mark.parametrize("op", OPS_WITH_IDX)
+    def test_backward_idx_shape(self, op):
+        rois = torch.tensor([[0.0, 0, 0, 3, 3]])
+        idx = torch.zeros(1, dtype=torch.int32)
+        with pytest.raises(RuntimeError, match="should have the same shape as grad"):
+            self.BACKWARD[op](torch.ones(1, 1, 1, 1), rois, idx)
+
+    @pytest.mark.parametrize(
+        "op, bad_value",
+        (
+            ("roi_pool", -2),
+            ("roi_pool", 16),  # height * width
+            ("ps_roi_pool", -1),
+            ("ps_roi_pool", 1),  # channels
+            ("ps_roi_align", -1),
+            ("ps_roi_align", 1),  # channels
+        ),
+    )
+    def test_backward_idx_values(self, op, bad_value):
+        rois = torch.tensor([[0.0, 0, 0, 3, 3]])
+        idx = torch.full((1, 1, 1, 1), bad_value, dtype=torch.int32)
+        with pytest.raises(RuntimeError, match="values must be in"):
+            self.BACKWARD[op](torch.ones(1, 1, 1, 1), rois, idx)
+
+    @pytest.mark.parametrize("op", OPS_WITH_IDX)
+    def test_backward_idx_non_contiguous(self, op):
+        rois = torch.tensor([[0.0, 0, 0, 3, 3], [0.0, 0, 0, 3, 3]])
+        # The 99s are out of range and must never be read.
+        idx = torch.tensor([0, 99, 0, 99], dtype=torch.int32)[::2].view(2, 1, 1, 1)
+        assert not idx.is_contiguous()
+        grad = torch.ones(2, 1, 1, 1)
+        expected = self.BACKWARD[op](grad, rois, idx.contiguous())
+        torch.testing.assert_close(self.BACKWARD[op](grad, rois, idx), expected)
+
+    @pytest.mark.parametrize(
+        "sampling_ratio, roi_size",
+        (
+            (2**16, 3),
+            (0, 2**16),  # adaptive sampling: the grid size is derived from the RoI size
+        ),
+    )
+    def test_roi_align_sampling_grid_overflow(self, sampling_ratio, roi_size):
+        rois = torch.tensor([[0.0, 0, 0, roi_size, roi_size]])
+        with pytest.raises(RuntimeError, match="sampling grid is too large"):
+            torch.ops.torchvision.roi_align(torch.rand(1, 1, 4, 4), rois, 1.0, 1, 1, sampling_ratio, False)
+
+
 class TestMultiScaleRoIAlign:
     def make_obj(self, fmap_names=None, output_size=(7, 7), sampling_ratio=2, wrap=False):
         if fmap_names is None:
