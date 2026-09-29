@@ -235,6 +235,36 @@ class TestDatasetsUtils:
         with open(file) as fh:
             assert fh.read() == content
 
+    def test_extract_tar_path_traversal(self, tmpdir):
+        # See https://github.com/pytorch/vision/issues/9517
+        src = os.path.join(tmpdir, "src.txt")
+        with open(src, "w") as fh:
+            fh.write("pwned")
+
+        extract_root = os.path.join(tmpdir, "extract")
+        os.makedirs(extract_root)
+        archive = os.path.join(tmpdir, "malicious.tar")
+        with tarfile.open(archive, "w") as tar:
+            tar.add(src, arcname="../evil.txt")
+
+        with pytest.raises((RuntimeError, tarfile.TarError)):
+            utils.extract_archive(archive, extract_root)
+
+        assert not os.path.exists(os.path.join(tmpdir, "evil.txt"))
+
+    def test_extract_zip_path_traversal(self, tmpdir):
+        # See https://github.com/pytorch/vision/issues/9517
+        extract_root = os.path.join(tmpdir, "extract")
+        os.makedirs(extract_root)
+        archive = os.path.join(tmpdir, "malicious.zip")
+        with zipfile.ZipFile(archive, "w") as zf:
+            zf.writestr("../evil.txt", "pwned")
+
+        with pytest.raises(RuntimeError):
+            utils.extract_archive(archive, extract_root)
+
+        assert not os.path.exists(os.path.join(tmpdir, "evil.txt"))
+
     def test_verify_str_arg(self):
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
         pytest.raises(ValueError, utils.verify_str_arg, 0, ("a",), "arg")
