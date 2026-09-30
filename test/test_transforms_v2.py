@@ -7585,6 +7585,27 @@ class TestSanitizeBoundingBoxes:
         with pytest.raises(ValueError, match="bounding_boxes must be a tv_tensors.BoundingBoxes instance or a"):
             F.sanitize_bounding_boxes(good_bbox.tolist())
 
+    @pytest.mark.parametrize("angle", (0, 30, -45))
+    @pytest.mark.parametrize("format", ("CXCYWHR", "XYWHR", "XYXYXYXY"))
+    def test_rotated_boxes_min_size_min_area(self, angle, format):
+        canvas_size = (40, 40)
+        # (cx, cy, w, h), expected validity for min_size=1, min_area=5
+        boxes_and_validity = [
+            ([20, 20, 10, 0.5], False),  # h < min_size
+            ([20, 20, 0.5, 10], False),  # w < min_size
+            ([20, 20, 2, 2], False),  # w * h < min_area
+            ([20, 20, 10, 10], True),
+        ]
+        cxcywhr = torch.tensor([box + [angle] for box, _ in boxes_and_validity], dtype=torch.float32)
+        boxes = F.convert_bounding_box_format(
+            tv_tensors.BoundingBoxes(cxcywhr, format="CXCYWHR", canvas_size=canvas_size), new_format=format
+        )
+        expected = torch.tensor([valid for _, valid in boxes_and_validity])
+
+        _, valid = F.sanitize_bounding_boxes(boxes, min_size=1, min_area=5)
+
+        torch.testing.assert_close(valid, expected)
+
 
 class TestSanitizeKeyPoints:
     def _make_keypoints_with_validity(
