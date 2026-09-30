@@ -5737,6 +5737,30 @@ class TestClampBoundingBoxes:
     def test_transform(self):
         check_transform(transforms.ClampBoundingBoxes(), make_bounding_boxes())
 
+    @pytest.mark.parametrize("clamping_mode", ("soft", "hard"))
+    @pytest.mark.parametrize("angle", (-0.05, -0.2, 179.9))
+    @pytest.mark.parametrize("dtype", (torch.float32, torch.float64))
+    def test_small_tilt_is_not_collapsed(self, clamping_mode, angle, dtype):
+        # A box that sticks out of the left edge of the canvas, tilted by a fraction of a degree in the direction that
+        # puts its bottom-left corner slightly left of its top-left corner. The point ordering used to pick the
+        # top-left corner as the first point anyway and the box was clamped down to a single point.
+        canvas_size = (200, 300)
+
+        def make(r):
+            return tv_tensors.BoundingBoxes(
+                [[13.355, 19.723, 75.347, 48.114, r]],
+                format="CXCYWHR",
+                canvas_size=canvas_size,
+                clamping_mode=clamping_mode,
+                dtype=dtype,
+            )
+
+        out = F.clamp_bounding_boxes(make(angle))
+        assert out[0, 2] > 1 and out[0, 3] > 1  # width and height in pixels, both were 0 before the fix
+        if clamping_mode == "soft":
+            # A tilt this small has to give almost the same box as no tilt at all
+            torch.testing.assert_close(out[0, :4], F.clamp_bounding_boxes(make(0.0))[0, :4], atol=0.3, rtol=0)
+
     @pytest.mark.parametrize("rotated", (True, False))
     @pytest.mark.parametrize("constructor_clamping_mode", ("soft", "hard", None))
     @pytest.mark.parametrize("clamping_mode", ("soft", "hard", None, "auto"))
