@@ -7,15 +7,17 @@ from torchvision.models.detection.image_list import ImageList
 
 class Tester:
     def test_incorrect_anchors(self):
+        # Test that legacy tuple-of-tuples API still raises on mismatch
+        # 2 sizes tuples for 1 feature map should fail
         incorrect_sizes = (
             (2, 4, 8),
             (32, 8),
         )
-        incorrect_aspects = (0.5, 1.0)
+        incorrect_aspects = ((0.5, 1.0),) * 2  # Match legacy format
         anc = AnchorGenerator(incorrect_sizes, incorrect_aspects)
         image1 = torch.randn(3, 800, 800)
         image_list = ImageList(image1, [(800, 800)])
-        feature_maps = [torch.randn(1, 50)]
+        feature_maps = [torch.randn(1, 50)]  # Only 1 feature map
         pytest.raises(AssertionError, anc, image_list, feature_maps)
 
     def _init_test_anchor_generator(self):
@@ -67,11 +69,12 @@ class Tester:
         )
 
         assert num_anchors_estimated == 9
-        assert len(anchors) == 2
-        assert tuple(anchors[0].shape) == (9, 4)
-        assert tuple(anchors[1].shape) == (9, 4)
-        assert_equal(anchors[0], anchors_output)
-        assert_equal(anchors[1], anchors_output)
+        assert len(anchors) == 2  # batch size
+        assert len(anchors[0]) == 1  # 1 feature map
+        assert tuple(anchors[0][0].shape) == (9, 4)
+        assert tuple(anchors[1][0].shape) == (9, 4)
+        assert_equal(anchors[0][0], anchors_output)
+        assert_equal(anchors[1][0], anchors_output)
 
     def test_defaultbox_generator(self):
         images = torch.zeros(2, 3, 15, 15)
