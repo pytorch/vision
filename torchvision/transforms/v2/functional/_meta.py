@@ -3,6 +3,19 @@ from typing import Optional, Union
 import PIL.Image
 import torch
 from torchvision import tv_tensors
+from torchvision.ops._box_convert import (
+    _box_cxcywh_to_xywh,
+    _box_cxcywh_to_xyxy,
+    _box_cxcywhr_to_xywhr,
+    _box_xywh_to_cxcywh,
+    _box_xywh_to_xyxy,
+    _box_xywhr_to_cxcywhr,
+    _box_xywhr_to_xyxyxyxy,
+    _box_xyxy_to_cxcywh,
+    _box_xyxy_to_xywh,
+    _box_xyxyxyxy_to_xywhr,
+    _half_wh,
+)
 from torchvision.transforms import _functional_pil as _FP
 from torchvision.tv_tensors import BoundingBoxFormat
 from torchvision.tv_tensors._bounding_boxes import CLAMPING_MODE_TYPE
@@ -143,94 +156,69 @@ def get_num_frames_video(video: torch.Tensor) -> int:
     return video.shape[-4]
 
 
+def _apply_ops_convert(original: torch.Tensor, converted: torch.Tensor, inplace: bool) -> torch.Tensor:
+    """Write an ops kernel result back with v2 inplace / dtype semantics."""
+    if converted.dtype != original.dtype:
+        converted = converted.to(original.dtype)
+    if inplace and converted.shape == original.shape:
+        original.copy_(converted)
+        return original
+    return converted
+
+
 def _xywh_to_xyxy(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
-    xyxy = xywh if inplace else xywh.clone()
-    xyxy[..., 2:] += xyxy[..., :2]
-    return xyxy
+    return _apply_ops_convert(xywh, _box_xywh_to_xyxy(xywh), inplace)
 
 
 def _xyxy_to_xywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
-    xywh = xyxy if inplace else xyxy.clone()
-    xywh[..., 2:] -= xywh[..., :2]
-    return xywh
+    return _apply_ops_convert(xyxy, _box_xyxy_to_xywh(xyxy), inplace)
 
 
 def _xywh_to_cxcywh(xywh: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if xywh.is_floating_point():
+        return _apply_ops_convert(xywh, _box_xywh_to_cxcywh(xywh), inplace)
+
+    # Integer path: keep dtype via floor-div (ops.box_convert promotes to float).
     if not inplace:
         xywh = xywh.clone()
-
-    # cx = x + width / 2, cy = y + height / 2, width and height stay the same
-    xywh[..., :2].add_(xywh[..., 2:].div(2, rounding_mode=None if xywh.is_floating_point() else "floor"))
-
+    xywh[..., :2].add_(_half_wh(xywh[..., 2:], preserve_dtype=True))
     return xywh
 
 
 def _cxcywh_to_xywh(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
-    # For integer tensors, use float arithmetic to match the behavior of the
-    # two-step conversion CXCYWH -> XYXY -> XYWH (where _cxcywh_to_xyxy uses
-    # float arithmetic, see PR #9322).
+    if cxcywh.is_floating_point():
+        return _apply_ops_convert(cxcywh, _box_cxcywh_to_xywh(cxcywh), inplace)
+
+    # Integer path: float arithmetic then recompute w/h so CXCYWH -> XYWH matches
+    # the two-step CXCYWH -> XYXY -> XYWH truncation (PR #9322).
     original = cxcywh
     dtype = cxcywh.dtype
-    need_cast = not cxcywh.is_floating_point()
-
-    if need_cast:
-        cxcywh = cxcywh.float()
-    elif not inplace:
-        cxcywh = cxcywh.clone()
-
-    half_wh = cxcywh[..., 2:] / 2
-    # x = cx - w/2, y = cy - h/2
+    cxcywh = cxcywh.float()
+    half_wh = _half_wh(cxcywh[..., 2:])
     cxcywh[..., :2].sub_(half_wh)
-
-    if need_cast:
-        # For integer types, truncation of x1/y1 and x2/y2 (= x1 + w, y1 + h) can change
-        # the effective width/height. Recompute w/h to match the two-step path.
-        x2y2 = (cxcywh[..., :2] + cxcywh[..., 2:]).to(dtype)
-        cxcywh = cxcywh.to(dtype)
-        cxcywh[..., 2:] = x2y2 - cxcywh[..., :2]
-        if inplace:
-            original[:] = cxcywh
-            return original
-
+    x2y2 = (cxcywh[..., :2] + cxcywh[..., 2:]).to(dtype)
+    cxcywh = cxcywh.to(dtype)
+    cxcywh[..., 2:] = x2y2 - cxcywh[..., :2]
+    if inplace:
+        original.copy_(cxcywh)
+        return original
     return cxcywh
 
 
 def _cxcywh_to_xyxy(cxcywh: torch.Tensor, inplace: bool) -> torch.Tensor:
-    # For integer tensors, use float arithmetic to match the behavior of
-    # `torchvision.ops._box_convert._box_cxcywh_to_xyxy`.
-    original = cxcywh
-    dtype = cxcywh.dtype
-    need_cast = not cxcywh.is_floating_point()
-
-    if need_cast:
-        cxcywh = cxcywh.float()
-    elif not inplace:
-        cxcywh = cxcywh.clone()
-
-    half_wh = cxcywh[..., 2:] / 2
-    # (cx - width / 2) = x1, same for y1
-    cxcywh[..., :2].sub_(half_wh)
-    # (x1 + width) = x2, same for y2
-    cxcywh[..., 2:].add_(cxcywh[..., :2])
-
-    if need_cast:
-        cxcywh = cxcywh.to(dtype)
-        if inplace:
-            original[:] = cxcywh
-            return original
-
-    return cxcywh
+    # Integer tensors go through the ops kernel's float arithmetic, then cast back.
+    return _apply_ops_convert(cxcywh, _box_cxcywh_to_xyxy(cxcywh), inplace)
 
 
 def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
+    if xyxy.is_floating_point():
+        return _apply_ops_convert(xyxy, _box_xyxy_to_cxcywh(xyxy), inplace)
+
+    # Integer path: overflow-safe x1 + floor(width/2), keeping dtype.
     if not inplace:
         xyxy = xyxy.clone()
-
-    # (x2 - x1) = width, same for height
     xyxy[..., 2:].sub_(xyxy[..., :2])
-    # (x1 * 2 + width) / 2 = x1 + width / 2 = x1 + (x2-x1)/2 = (x1 + x2)/2 = cx, same for cy
-    xyxy[..., :2].mul_(2).add_(xyxy[..., 2:]).div_(2, rounding_mode=None if xyxy.is_floating_point() else "floor")
-
+    xyxy[..., :2].add_(_half_wh(xyxy[..., 2:], preserve_dtype=True))
     return xyxy
 
 
@@ -243,86 +231,29 @@ def _xyxyxyxy_to_keypoints(bounding_boxes: torch.Tensor) -> torch.Tensor:
 
 
 def _cxcywhr_to_xywhr(cxcywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
-    if not inplace:
-        cxcywhr = cxcywhr.clone()
-
-    half_wh = cxcywhr[..., 2:-1].div(-2, rounding_mode=None if cxcywhr.is_floating_point() else "floor").abs_()
-    r_rad = cxcywhr[..., 4].mul(torch.pi).div(180.0)
-    cos, sin = r_rad.cos(), r_rad.sin()
-    # (cx - width / 2 * cos - height / 2 * sin) = x1
-    cxcywhr[..., 0].sub_(half_wh[..., 0].mul(cos)).sub_(half_wh[..., 1].mul(sin))
-    # (cy + width / 2 * sin - height / 2 * cos) = y1
-    cxcywhr[..., 1].add_(half_wh[..., 0].mul(sin)).sub_(half_wh[..., 1].mul(cos))
-
-    return cxcywhr
+    return _apply_ops_convert(cxcywhr, _box_cxcywhr_to_xywhr(cxcywhr), inplace)
 
 
 def _xywhr_to_cxcywhr(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
-    if not inplace:
-        xywhr = xywhr.clone()
-
-    half_wh = xywhr[..., 2:-1].div(-2, rounding_mode=None if xywhr.is_floating_point() else "floor").abs_()
-    r_rad = xywhr[..., 4].mul(torch.pi).div(180.0)
-    cos, sin = r_rad.cos(), r_rad.sin()
-    # (x1 + width / 2 * cos + height / 2 * sin) = cx
-    xywhr[..., 0].add_(half_wh[..., 0].mul(cos)).add_(half_wh[..., 1].mul(sin))
-    # (y1 - width / 2 * sin + height / 2 * cos) = cy
-    xywhr[..., 1].sub_(half_wh[..., 0].mul(sin)).add_(half_wh[..., 1].mul(cos))
-
-    return xywhr
+    return _apply_ops_convert(xywhr, _box_xywhr_to_cxcywhr(xywhr), inplace)
 
 
 def _xywhr_to_xyxyxyxy(xywhr: torch.Tensor, inplace: bool) -> torch.Tensor:
-    # NOTE: This function cannot modify the input tensor inplace as it requires a dimension change.
-    if not inplace:
-        xywhr = xywhr.clone()
-
-    wh = xywhr[..., 2:-1]
-    r_rad = xywhr[..., 4].mul(torch.pi).div(180.0)
-    cos, sin = r_rad.cos(), r_rad.sin()
-    xywhr = xywhr[..., :2].tile((1, 4))
-    # x1 + w * cos = x2
-    xywhr[..., 2].add_(wh[..., 0].mul(cos))
-    # y1 - w * sin = y2
-    xywhr[..., 3].sub_(wh[..., 0].mul(sin))
-    # x1 + w * cos + h * sin = x3
-    xywhr[..., 4].add_(wh[..., 0].mul(cos).add(wh[..., 1].mul(sin)))
-    # y1 - w * sin + h * cos = y3
-    xywhr[..., 5].sub_(wh[..., 0].mul(sin).sub(wh[..., 1].mul(cos)))
-    # x1 + h * sin = x4
-    xywhr[..., 6].add_(wh[..., 1].mul(sin))
-    # y1 + h * cos = y4
-    xywhr[..., 7].add_(wh[..., 1].mul(cos))
-
-    return xywhr
+    # Cannot write back inplace: output last-dim is 8 rather than 5.
+    return _box_xywhr_to_xyxyxyxy(xywhr)
 
 
 def _xyxyxyxy_to_xywhr(xyxyxyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
-    # NOTE: This function cannot modify the input tensor inplace as it requires a dimension change.
-    if not inplace:
-        xyxyxyxy = xyxyxyxy.clone()
-
+    # Cannot write back inplace: output last-dim is 5 rather than 8.
+    # Upcast low-precision floats so CPU/GPU stay consistent (ops only special-cases integers).
     dtype = xyxyxyxy.dtype
-    acceptable_dtypes = [torch.float32, torch.float64]  # Ensure consistency between CPU and GPU.
+    acceptable_dtypes = [torch.float32, torch.float64]
     need_cast = dtype not in acceptable_dtypes
+    boxes = xyxyxyxy.to(torch.float32) if need_cast else xyxyxyxy
+    converted = _box_xyxyxyxy_to_xywhr(boxes)
     if need_cast:
-        # Up-case to avoid overflow for square operations
-        xyxyxyxy = xyxyxyxy.to(torch.float32)
-
-    r_rad = torch.atan2(xyxyxyxy[..., 1].sub(xyxyxyxy[..., 3]), xyxyxyxy[..., 2].sub(xyxyxyxy[..., 0]))
-    # x1, y1, (x2 - x1), (y2 - y1), (x3 - x2), (y3 - y2) x4, y4
-    xyxyxyxy[..., 4:6].sub_(xyxyxyxy[..., 2:4])
-    xyxyxyxy[..., 2:4].sub_(xyxyxyxy[..., :2])
-    # sqrt((x2 - x1) ** 2 + (y1 - y2) ** 2) = w
-    xyxyxyxy[..., 2] = xyxyxyxy[..., 2].pow(2).add(xyxyxyxy[..., 3].pow(2)).sqrt()
-    # sqrt((x2 - x3) ** 2 + (y2 - y3) ** 2) = h
-    xyxyxyxy[..., 3] = xyxyxyxy[..., 4].pow(2).add(xyxyxyxy[..., 5].pow(2)).sqrt()
-    xyxyxyxy[..., 4] = r_rad.div_(torch.pi).mul_(180.0)
-
-    if need_cast:
-        xyxyxyxy = xyxyxyxy.to(dtype)
-
-    return xyxyxyxy[..., :5]
+        converted = converted.to(dtype)
+    return converted
 
 
 def _convert_bounding_box_format(
