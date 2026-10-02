@@ -2063,6 +2063,7 @@ class ElasticTransform(torch.nn.Module):
     Args:
         alpha (float or sequence of floats): Magnitude of displacements. Default is 50.0.
         sigma (float or sequence of floats): Smoothness of displacements. Default is 5.0.
+            Values must be non-negative.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -2104,6 +2105,8 @@ class ElasticTransform(torch.nn.Module):
             sigma = [float(sigma), float(sigma)]
         if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
             sigma = [sigma[0], sigma[0]]
+        if any(s < 0 for s in sigma):
+            raise ValueError(f"sigma should have non-negative values. Got {list(sigma)}")
 
         self.sigma = sigma
 
