@@ -1056,6 +1056,50 @@ class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
         with pytest.raises(datasets_utils.lazy_importer.lmdb.Error):
             super().test_not_found_or_corrupted()
 
+    def test_class_name_verification(self):
+        err_msg = (
+            "Unknown value '{}' for LSUN class. "
+            "The valid value is one of 'train', 'val' or 'test' or a list of categories "
+            "e.g. ['bedroom_train', 'bedroom_val', 'bridge_train', 'bridge_val', "
+            "'church_outdoor_train', 'church_outdoor_val', 'classroom_train', 'classroom_val', "
+            "'conference_room_train', 'conference_room_val', 'dining_room_train', 'dining_room_val', "
+            "'kitchen_train', 'kitchen_val', 'living_room_train', 'living_room_val', "
+            "'restaurant_train', 'restaurant_val', 'tower_train', 'tower_val']."
+        )
+
+        cases = [
+            "bedroom",
+            "bedroom_train",
+        ]
+        for case in cases:
+            with pytest.raises(
+                ValueError,
+                match=re.escape(err_msg.format(case)),
+            ):
+                with self.create_dataset(classes=case):
+                    pass
+
+        for case in [
+            ["bedroom_train", "bedroom"],
+            ["bedroom_train", "bedroommmmmmmm_val"],
+        ]:
+            with pytest.raises(
+                ValueError,
+                match=re.escape(err_msg.format(case[-1])),
+            ):
+                with self.create_dataset(classes=case):
+                    pass
+
+        for case in [[None], [1]]:
+            with pytest.raises(
+                TypeError,
+                match=re.escape(
+                    f"Expected type str for elements in argument classes, but got type {type(case[0]).__name__}."
+                ),
+            ):
+                with self.create_dataset(classes=case):
+                    pass
+
 
 class KineticsTestCase(datasets_utils.VideoDatasetTestCase):
     DATASET_CLASS = datasets.Kinetics
