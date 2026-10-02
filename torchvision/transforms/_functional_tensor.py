@@ -589,15 +589,23 @@ def _gen_affine_grid(
     # 1) we normalize grid values after applying theta
     # 2) we can normalize by other image size, such that it covers "extend" option like in PIL.Image.rotate
 
+    # The grid is built and returned in at least float32. Half precision does not have enough
+    # mantissa bits to keep neighbouring sample positions distinct: at 512x512 an fp16 grid
+    # collapses ~262k distinct x coordinates down to ~16k, so blocks of adjacent output pixels
+    # read from an identical source location. float64 input is preserved, not downcast.
+    dtype = torch.promote_types(theta.dtype, torch.float32)
+
     d = 0.5
-    base_grid = torch.empty(1, oh, ow, 3, dtype=theta.dtype, device=theta.device)
+    base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=theta.device)
     x_grid = torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow, device=theta.device)
     base_grid[..., 0].copy_(x_grid)
     y_grid = torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh, device=theta.device).unsqueeze_(-1)
     base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
-    rescaled_theta = theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h], dtype=theta.dtype, device=theta.device)
+    rescaled_theta = theta.transpose(1, 2).to(dtype) / torch.tensor(
+        [0.5 * w, 0.5 * h], dtype=dtype, device=theta.device
+    )
     output_grid = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta)
     return output_grid.view(1, oh, ow, 2)
 
@@ -610,7 +618,10 @@ def affine(
 ) -> Tensor:
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
 
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    # Match the grid's precision: half precision theta coefficients alone are enough to
+    # collapse distinct sample positions. Equivalent to the previous expression for every
+    # dtype except float16/bfloat16, and float64 is still preserved.
+    dtype = torch.promote_types(img.dtype, torch.float32)
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     shape = img.shape
     # grid will be generated on the same device as theta and img
@@ -661,7 +672,10 @@ def rotate(
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
     w, h = img.shape[-1], img.shape[-2]
     ow, oh = _compute_affine_output_size(matrix, w, h) if expand else (w, h)
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    # Match the grid's precision: half precision theta coefficients alone are enough to
+    # collapse distinct sample positions. Equivalent to the previous expression for every
+    # dtype except float16/bfloat16, and float64 is still preserved.
+    dtype = torch.promote_types(img.dtype, torch.float32)
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
@@ -677,6 +691,10 @@ def _perspective_grid(coeffs: list[float], ow: int, oh: int, dtype: torch.dtype,
     # x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #
+    # See the note in _gen_affine_grid: the grid is built and returned in at least float32 so that
+    # neighbouring sample positions stay distinct. float64 is preserved, not downcast.
+    dtype = torch.promote_types(dtype, torch.float32)
+
     theta1 = torch.tensor(
         [[[coeffs[0], coeffs[1], coeffs[2]], [coeffs[3], coeffs[4], coeffs[5]]]], dtype=dtype, device=device
     )
@@ -719,7 +737,10 @@ def perspective(
     )
 
     ow, oh = img.shape[-1], img.shape[-2]
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    # Match the grid's precision: half precision theta coefficients alone are enough to
+    # collapse distinct sample positions. Equivalent to the previous expression for every
+    # dtype except float16/bfloat16, and float64 is still preserved.
+    dtype = torch.promote_types(img.dtype, torch.float32)
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=img.device)
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
