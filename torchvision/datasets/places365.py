@@ -38,7 +38,7 @@ class Places365(VisionDataset):
     """
 
     _SPLITS = ("train-standard", "train-challenge", "val", "test")
-    _BASE_URL = "http://data.csail.mit.edu/places/places365/"
+    _BASE_URL = "https://data.csail.mit.edu/places/places365/"
     # {variant: (archive, md5)}
     _DEVKIT_META = {
         "standard": ("filelist_places365-standard.tar", "35a0585fee1fa656440f3ab298f8479c"),
