@@ -180,6 +180,7 @@ Base classes for custom datasets
 
     DatasetFolder
     ImageFolder
+    UnlabeledImageDataset
     VisionDataset
 
 Transforms v2
