@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import PIL.Image
 import torch
@@ -13,7 +13,12 @@ from torchvision.utils import _log_api_usage_once
 
 from ._meta import _convert_bounding_box_format
 
-from ._utils import _get_kernel, _register_kernel_internal, is_pure_tensor
+from ._utils import _get_kernel, _import_cvcuda, _is_cvcuda_available, _register_kernel_internal, is_pure_tensor
+
+CVCUDA_AVAILABLE = _is_cvcuda_available()
+
+if TYPE_CHECKING:
+    import cvcuda  # type: ignore[import-not-found]
 
 
 def normalize(
@@ -229,6 +234,35 @@ def _gaussian_noise_pil(
     video: torch.Tensor, mean: float = 0.0, sigma: float = 0.1, clip: bool = True
 ) -> PIL.Image.Image:
     raise ValueError("Gaussian Noise is not implemented for PIL images.")
+
+
+def _gaussian_noise_image_cvcuda(
+    image: "cvcuda.Tensor",
+    mean: float = 0.0,
+    sigma: float = 0.1,
+    clip: bool = True,
+) -> "cvcuda.Tensor":
+    cvcuda = _import_cvcuda()
+
+    batch_size = image.shape[0]
+    mu_tensor = cvcuda.as_tensor(torch.full((batch_size,), mean, dtype=torch.float32).cuda(), "N")
+    sigma_tensor = cvcuda.as_tensor(torch.full((batch_size,), sigma, dtype=torch.float32).cuda(), "N")
+
+    # per-channel means each channel gets unique random noise, same behavior as torch.randn_like
+    # produce a seed with torch RNG, if seed is manually set then this will be deterministic
+    # note: clip is not supported in CV-CUDA, so we don't need to clamp the values
+    # by default, clamping is done for floats, and uint8 overflows so is clamped from 0-255 anyways
+    return cvcuda.gaussiannoise(
+        image,
+        mu=mu_tensor,
+        sigma=sigma_tensor,
+        per_channel=True,
+        seed=int(torch.empty((), dtype=torch.int64).random_().item()),
+    )
+
+
+if CVCUDA_AVAILABLE:
+    _register_kernel_internal(gaussian_noise, _import_cvcuda().Tensor)(_gaussian_noise_image_cvcuda)
 
 
 def to_dtype(inpt: torch.Tensor, dtype: torch.dtype = torch.float, scale: bool = False) -> torch.Tensor:
