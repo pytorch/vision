@@ -288,13 +288,18 @@ def init_distributed_mode(args):
     torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
 
-
 def reduce_across_processes(val):
     if not is_dist_avail_and_initialized():
         # nothing to sync, but we still convert to tensor for consistency with the distributed case.
-        return torch.tensor(val)
+        if isinstance(val, torch.Tensor):
+            return val
+        else:
+            return torch.tensor(val)
 
-    t = torch.tensor(val, device="cuda")
+    if isinstance(val, torch.Tensor):
+        t = val.clone().detach().to("cuda")
+    else:
+        t = torch.tensor(val, device="cuda")
     dist.barrier()
     dist.all_reduce(t)
     return t
