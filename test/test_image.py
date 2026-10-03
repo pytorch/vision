@@ -160,6 +160,61 @@ def test_decode_bad_huffman_images():
     decode_jpeg(bad_huff)
 
 
+def test_encode_jpeg_privateuseone_custom_backend():
+    privateuseone_name = torch._C._get_privateuse1_backend_name()
+    device = torch.device(privateuseone_name)
+
+    data = torch.randint(0, 256, size=(3, 4, 5), dtype=torch.uint8, device=device)
+
+    with pytest.raises(RuntimeError, match="encode_jpegs_privateuseone"):
+        encode_jpeg(data)
+
+    lib = torch.library.Library("image", "FRAGMENT")
+    called = {}
+
+    try:
+        lib.define("encode_jpegs_privateuseone(Tensor[] input, int quality=75) -> Tensor[]")
+
+        @torch.library.impl(lib, "encode_jpegs_privateuseone", "PrivateUse1")
+        def _encode_jpegs_privateuseone(input, quality=75):
+            called["value"] = True
+            return input
+    except RuntimeError:
+        pass
+    encoded = encode_jpeg(data)
+    assert called.get("value") is True
+    torch.testing.assert_close(encoded, data.cpu())
+
+
+def test_decode_jpeg_privateuseone_custom_backend():
+    privateuseone_name = torch._C._get_privateuse1_backend_name()
+    device = torch.device(privateuseone_name)
+    data = torch.full((1, 2, 3), 233, dtype=torch.uint8)
+    # When the custom operator is not registered, an error should
+    # be reported and prompted to register decode_jpegs_privateuseone.
+    with pytest.raises(RuntimeError, match="decode_jpegs_privateuseone"):
+        decode_jpeg(data, device=device)
+
+    # Register a simple custom implementation to return the original data
+    called = {}
+    lib = torch.library.Library("image", "FRAGMENT")
+    try:
+        lib.define(
+            "decode_jpegs_privateuseone(Tensor[] input, int mode=0, bool apply_exif_orientation=False) -> Tensor[]"
+        )
+
+        @torch.library.impl(lib, "decode_jpegs_privateuseone", "CPU")
+        def _decode_jpegs_privateuseone(input, mode=0, apply_exif_orientation=False):
+            called["value"] = True
+            return input
+    except RuntimeError:
+        pass
+
+    output = decode_jpeg(data, device=device)
+    assert called.get("value") is True
+    torch.testing.assert_close(output, data)
+
+
 @pytest.mark.parametrize(
     "img_path",
     [
