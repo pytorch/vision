@@ -209,8 +209,56 @@ def download_file_from_google_drive(
 def _extract_tar(
     from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
 ) -> None:
-    with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
-        tar.extractall(to_path)
+    to_path = os.fspath(to_path) or "."
+    mode = "r:" + compression[1:] if compression else "r"
+    with tarfile.open(from_path, mode) as tar:
+        if hasattr(tarfile, "data_filter"):
+            tar.extractall(to_path, filter=_filter_tar_member)
+        else:
+            # Extraction filters were added in Python 3.12 and backported to
+            # some earlier releases. Keep older supported Python versions safe
+            # by validating each member before extracting it.
+            os.makedirs(to_path, exist_ok=True)
+            for member in tar:
+                _validate_tar_member(member, to_path)
+                tar.extract(member, to_path)
+
+
+def _filter_tar_member(member: tarfile.TarInfo, path: str) -> Optional[tarfile.TarInfo]:
+    member = tarfile.data_filter(member, path)
+    if member is not None:
+        # Older extraction filters do not normalize link targets consistently.
+        # Recheck after their metadata and file-type restrictions are applied.
+        _validate_tar_member(member, path)
+    return member
+
+
+def _validate_tar_member(member: tarfile.TarInfo, path: Union[str, pathlib.Path]) -> None:
+    if os.path.isabs(member.name):
+        raise tarfile.TarError(f"Absolute path in tar archive: {member.name!r}")
+
+    extraction_root = os.path.realpath(path)
+    member_path = os.path.realpath(os.path.join(path, member.name))
+    if not _is_within_directory(extraction_root, member_path):
+        raise tarfile.TarError(f"Attempted path traversal in tar archive: {member.name!r}")
+
+    if member.issym() or member.islnk():
+        if os.path.isabs(member.linkname):
+            raise tarfile.TarError(f"Absolute link in tar archive: {member.name!r}")
+        link_base = os.path.dirname(member_path) if member.issym() else path
+        link_path = os.path.realpath(os.path.join(link_base, member.linkname))
+        if not _is_within_directory(extraction_root, link_path):
+            raise tarfile.TarError(f"Attempted link traversal in tar archive: {member.name!r}")
+    elif not (member.isfile() or member.isdir()):
+        raise tarfile.TarError(f"Unsupported special file in tar archive: {member.name!r}")
+
+
+def _is_within_directory(directory: str, path: str) -> bool:
+    try:
+        return os.path.commonpath((directory, path)) == directory
+    except ValueError:
+        # The paths are on different drives on Windows.
+        return False
 
 
 _ZIP_COMPRESSION_MAP: dict[str, int] = {
