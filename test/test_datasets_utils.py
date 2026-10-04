@@ -1,5 +1,6 @@
 import contextlib
 import gzip
+import io
 import os
 import pathlib
 import re
@@ -234,6 +235,52 @@ class TestDatasetsUtils:
 
         with open(file) as fh:
             assert fh.read() == content
+
+    @pytest.mark.parametrize("use_legacy_fallback", (False, True))
+    @pytest.mark.parametrize("absolute_path", (False, True))
+    def test_extract_tar_rejects_path_traversal(self, tmpdir, monkeypatch, use_legacy_fallback, absolute_path):
+        archive = pathlib.Path(tmpdir) / "malicious.tar"
+        extraction_dir = pathlib.Path(tmpdir) / "extracted"
+        outside_file = pathlib.Path(tmpdir) / "outside.txt"
+        extraction_dir.mkdir()
+
+        with tarfile.open(archive, "w") as tar:
+            member_name = str(outside_file) if absolute_path else "../outside.txt"
+            member = tarfile.TarInfo(member_name)
+            member.size = len(b"outside")
+            tar.addfile(member, io.BytesIO(b"outside"))
+
+        if use_legacy_fallback and hasattr(tarfile, "data_filter"):
+            monkeypatch.delattr(tarfile, "data_filter")
+        elif not use_legacy_fallback and not hasattr(tarfile, "data_filter"):
+            pytest.skip("Python's tarfile module has no extraction filters")
+
+        with pytest.raises(tarfile.TarError, match="outside|traversal|absolute|path"):
+            utils.extract_archive(archive, extraction_dir)
+
+        assert not outside_file.exists()
+
+    @pytest.mark.parametrize("use_legacy_fallback", (False, True))
+    def test_extract_tar_rejects_outside_symlink(self, tmpdir, monkeypatch, use_legacy_fallback):
+        archive = pathlib.Path(tmpdir) / "malicious.tar"
+        extraction_dir = pathlib.Path(tmpdir) / "extracted"
+        extraction_dir.mkdir()
+
+        with tarfile.open(archive, "w") as tar:
+            link = tarfile.TarInfo("escape")
+            link.type = tarfile.SYMTYPE
+            link.linkname = "../outside"
+            tar.addfile(link)
+
+        if use_legacy_fallback and hasattr(tarfile, "data_filter"):
+            monkeypatch.delattr(tarfile, "data_filter")
+        elif not use_legacy_fallback and not hasattr(tarfile, "data_filter"):
+            pytest.skip("Python's tarfile module has no extraction filters")
+
+        with pytest.raises(tarfile.TarError, match="outside|traversal|absolute|path"):
+            utils.extract_archive(archive, extraction_dir)
+
+        assert not (pathlib.Path(tmpdir) / "outside").exists()
 
     def test_verify_str_arg(self):
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
