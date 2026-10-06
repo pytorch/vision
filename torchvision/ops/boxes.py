@@ -102,6 +102,11 @@ def _batched_nms_coordinate_trick(
     # from different classes do not overlap
     if boxes.numel() == 0:
         return torch.empty((0,), dtype=torch.int64, device=boxes.device)
+    if boxes.dtype == torch.float16 or boxes.dtype == torch.bfloat16:
+        # The offsets reach num_classes * max_coordinate. In half precision that rounds the shifted
+        # coordinates to multiples of several pixels and overflows to inf past 65504, so do the
+        # arithmetic in float32; the kept indices do not depend on the dtype of the shifted boxes.
+        boxes, scores = boxes.float(), scores.float()
     max_coordinate = boxes.max()
     offsets = idxs.to(boxes) * (max_coordinate + torch.tensor(1).to(boxes))
     boxes_for_nms = boxes + offsets[:, None]
