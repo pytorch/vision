@@ -26,7 +26,7 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       with-xpu: enable
-      python-abi3: enable
+      build-python-only: enable
   build:
     needs: generate-matrix
     strategy:
@@ -58,14 +58,18 @@ jobs:
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
   # See the equivalent job in build-wheels-linux.yml for why this exists.
-  test-abi3-wheel:
+  test-py3-none-wheel:
     needs: build
-    name: test-abi3-wheel-py3.15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.15", "3.14t", "3.15t"]
+    name: test-py3-none-wheel-py${{ matrix.python-version }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/test-abi3-wheel
+      - uses: ./.github/actions/test-py3-none-wheel
         with:
-          python-version: "3.15"
+          python-version: ${{ matrix.python-version }}
           artifact-pattern: "*_cpu_x64"
-          wheel-glob: "dist/torchvision-*-abi3-win_amd64.whl"
+          wheel-glob: "dist/torchvision-*-py3-none-win_amd64.whl"

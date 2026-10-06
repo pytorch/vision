@@ -1,7 +1,7 @@
-name: Test abi3 wheel
+name: Test py3-none wheel
 description: >
-  Install the abi3 wheel built by the build job into a different Python version
-  than the one it was built with, and run the smoke test.
+  Install the py3-none wheel built by the build job into a different Python
+  version than the one it was built with, and run the smoke test.
 
 inputs:
   python-version:
@@ -9,10 +9,9 @@ inputs:
     required: true
   artifact-pattern:
     description: >
-      Pattern matching the CPU wheel artifacts. It may match several, e.g. the
-      free-threaded builds; wheel-glob picks the abi3 one. Avoid Python versions in
-      the pattern: artifacts are named after the build interpreter, which is
-      whatever the oldest in the test-infra matrix currently is.
+      Pattern matching the CPU wheel artifact. Avoid Python versions in the pattern:
+      artifacts are named after the build interpreter, which is whatever the oldest
+      in the test-infra matrix currently is.
     required: true
   wheel-glob:
     description: Glob that must match exactly one downloaded wheel, asserting its tags

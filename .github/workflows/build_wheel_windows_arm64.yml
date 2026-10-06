@@ -27,6 +27,9 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       with-cuda: disable
+      build-python-only: enable
+      # windows-arm64 pins its own Python versions, ignoring build-python-only. This
+      # keeps only the first one.
       python-abi3: enable
 
   build:
