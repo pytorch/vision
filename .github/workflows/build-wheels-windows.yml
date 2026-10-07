@@ -27,8 +27,8 @@ jobs:
       test-infra-ref: main
       with-xpu: enable
       build-python-only: enable
-  # setup.py tags wheels py3-none, so a second build of the same variant would produce
-  # the same wheel filename.
+  # Fails if the matrix builds an accelerator variant (cpu, cu134, ...) more than once.
+  # The py3-none wheel covers every Python, so each variant needs a single build.
   check-one-build-per-variant:
     needs: generate-matrix
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.15", "3.14t", "3.15t"]
+        python-version: ["3.14", "3.15", "3.15t"]
     name: test-py3-none-wheel-py${{ matrix.python-version }}
     runs-on: windows-latest
     steps:

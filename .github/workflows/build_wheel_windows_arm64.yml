@@ -32,8 +32,8 @@ jobs:
       # keeps only the first one.
       python-abi3: enable
 
-  # setup.py tags wheels py3-none, so a second build of the same variant would produce
-  # the same wheel filename.
+  # Fails if the matrix builds an accelerator variant (cpu, cu134, ...) more than once.
+  # The py3-none wheel covers every Python, so each variant needs a single build.
   check-one-build-per-variant:
     needs: generate-matrix
     runs-on: ubuntu-latest

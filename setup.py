@@ -228,6 +228,7 @@ def make_C_stable_extension():
         include_dirs=[CSRS_DIR],
         define_macros=define_macros,
         extra_compile_args=extra_compile_args,
+        # Stops torch from linking libtorch_python, which is built per Python version.
         py_limited_api=True,
     )
 
@@ -388,19 +389,14 @@ def make_image_stable_extension():
         define_macros=define_macros,
         libraries=libraries,
         extra_compile_args=extra_compile_args,
+        # Stops torch from linking libtorch_python, which is built per Python version.
         py_limited_api=True,
     )
 
 
 class bdist_wheel(setuptools.command.bdist_wheel.bdist_wheel):
     """Tag the wheel py3-none so that a single wheel covers every CPython, including
-    the free-threaded ones.
-
-    The extensions aren't Python extension modules: torch.ops.load_library dlopens
-    them, and they only use the torch stable ABI, none of the Python C API. The
-    extensions' py_limited_api=True has nothing to do with the Python limited API; it
-    is what keeps torch from linking them against libtorch_python.
-    """
+    the free-threaded ones."""
 
     def get_tag(self):
         _, _, platform_tag = super().get_tag()
