@@ -27,9 +27,27 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: release/2.15
       with-cuda: disable
+      build-python-only: enable
+      # We don't build abi3 wheels, we build py3-none (which is better!)
+      # But we still need to set this until
+      # https://github.com/pytorch/test-infra/pull/9047 lands
+      python-abi3: enable
 
-  build:
+  # We should only need one build per `arch x accelerator` variant (no need for
+  # per-Python-version wheels!). This fails if the matrix builds an accelerator
+  # variant (cpu, cu134, ...) more than once.
+  check-one-build-per-variant:
     needs: generate-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          MATRIX: ${{ needs.generate-matrix.outputs.matrix }}
+        run: |
+          dupes=$(jq -r '.include | group_by(.desired_cuda) | map(select(length > 1)
+            | "\(.[0].desired_cuda): \(map(.python_version) | join(", "))") | .[]' <<< "$MATRIX")
+          [[ -z "$dupes" ]] || { echo "More than one build per variant:"; echo "$dupes"; exit 1; }
+  build:
+    needs: [generate-matrix, check-one-build-per-variant]
     strategy:
       fail-fast: false
       matrix:

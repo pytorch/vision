@@ -27,8 +27,22 @@ jobs:
       test-infra-ref: release/2.15
       runner-fleet: osdc
       with-xpu: enable
-  build:
+      build-python-only: enable
+  # We should only need one build per `arch x accelerator` variant (no need for
+  # per-Python-version wheels!). This fails if the matrix builds an accelerator
+  # variant (cpu, cu134, ...) more than once.
+  check-one-build-per-variant:
     needs: generate-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          MATRIX: ${{ needs.generate-matrix.outputs.matrix }}
+        run: |
+          dupes=$(jq -r '.include | group_by(.desired_cuda) | map(select(length > 1)
+            | "\(.[0].desired_cuda): \(map(.python_version) | join(", "))") | .[]' <<< "$MATRIX")
+          [[ -z "$dupes" ]] || { echo "More than one build per variant:"; echo "$dupes"; exit 1; }
+  build:
+    needs: [generate-matrix, check-one-build-per-variant]
     strategy:
       fail-fast: false
       matrix:
@@ -55,3 +69,22 @@ jobs:
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+  # Download the wheel that was built and run the smoke tests on different
+  # Python versions, including free-threaded versions. The smoke tests were
+  # already ran on the `build` job that built the wheel, but the point here is
+  # to ensure that same wheel works *across* Python versions.
+  test-py3-none-wheel:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.14", "3.15", "3.15t"]
+    name: test-py3-none-wheel-py${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/test-py3-none-wheel
+        with:
+          python-version: ${{ matrix.python-version }}
+          artifact-pattern: "*_cpu_x86_64"
+          wheel-glob: "dist/torchvision-*-py3-none-manylinux*_x86_64.whl"
