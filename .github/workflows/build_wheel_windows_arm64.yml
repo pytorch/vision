@@ -28,12 +28,14 @@ jobs:
       test-infra-ref: main
       with-cuda: disable
       build-python-only: enable
-      # windows-arm64 pins its own Python versions, ignoring build-python-only. This
-      # keeps only the first one.
+      # We don't build abi3 wheels, we build py3-none (which is better!)
+      # But we still need to set this until
+      # https://github.com/pytorch/test-infra/pull/9047 lands
       python-abi3: enable
 
-  # Fails if the matrix builds an accelerator variant (cpu, cu134, ...) more than once.
-  # The py3-none wheel covers every Python, so each variant needs a single build.
+  # We should only need one build per `arch x accelerator` variant (no need for
+  # per-Python-version wheels!). This fails if the matrix builds an accelerator
+  # variant (cpu, cu134, ...) more than once.
   check-one-build-per-variant:
     needs: generate-matrix
     runs-on: ubuntu-latest

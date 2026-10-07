@@ -26,8 +26,9 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       build-python-only: enable
-  # Fails if the matrix builds an accelerator variant (cpu, cu134, ...) more than once.
-  # The py3-none wheel covers every Python, so each variant needs a single build.
+  # We should only need one build per `arch x accelerator` variant (no need for
+  # per-Python-version wheels!). This fails if the matrix builds an accelerator
+  # variant (cpu, cu134, ...) more than once.
   check-one-build-per-variant:
     needs: generate-matrix
     runs-on: ubuntu-latest
