@@ -6,10 +6,11 @@ import shlex
 import shutil
 import subprocess
 import sys
-import sysconfig
 import warnings
 from importlib.metadata import distribution, PackageNotFoundError
 from pathlib import Path
+
+import setuptools.command.bdist_wheel
 
 import torch
 from packaging.version import parse as parse_version
@@ -142,8 +143,6 @@ def get_macros_and_flags():
             extra_compile_args["nvcc"].append("-Xcompiler")
             extra_compile_args["nvcc"].append("/Zc:preprocessor")
             extra_compile_args["nvcc"].append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING")
-        if sysconfig.get_config_var("Py_GIL_DISABLED"):
-            extra_compile_args["cxx"].append("-DPy_GIL_DISABLED")
 
     if DEBUG:
         extra_compile_args["cxx"].append("-g")
@@ -229,6 +228,8 @@ def make_C_stable_extension():
         include_dirs=[CSRS_DIR],
         define_macros=define_macros,
         extra_compile_args=extra_compile_args,
+        # Stops torch from linking libtorch_python, which is built per Python version.
+        py_limited_api=True,
     )
 
 
@@ -388,7 +389,18 @@ def make_image_stable_extension():
         define_macros=define_macros,
         libraries=libraries,
         extra_compile_args=extra_compile_args,
+        # Stops torch from linking libtorch_python, which is built per Python version.
+        py_limited_api=True,
     )
+
+
+class bdist_wheel(setuptools.command.bdist_wheel.bdist_wheel):
+    """Tag the wheel py3-none so that a single wheel covers every CPython, including
+    the free-threaded ones."""
+
+    def get_tag(self):
+        _, _, platform_tag = super().get_tag()
+        return "py3", "none", platform_tag
 
 
 class clean(distutils.command.clean.clean):
@@ -442,6 +454,7 @@ if __name__ == "__main__":
         python_requires=">=3.10,!=3.14.1",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
+            "bdist_wheel": bdist_wheel,
             "clean": clean,
         },
     )
