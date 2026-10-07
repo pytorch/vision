@@ -27,8 +27,20 @@ jobs:
       test-infra-ref: main
       with-xpu: enable
       build-python-only: enable
-  build:
+  # setup.py tags wheels py3-none, so a second build of the same variant would produce
+  # the same wheel filename.
+  check-one-build-per-variant:
     needs: generate-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          MATRIX: ${{ needs.generate-matrix.outputs.matrix }}
+        run: |
+          dupes=$(jq -r '.include | group_by(.desired_cuda) | map(select(length > 1)
+            | "\(.[0].desired_cuda): \(map(.python_version) | join(", "))") | .[]' <<< "$MATRIX")
+          [[ -z "$dupes" ]] || { echo "More than one build per variant:"; echo "$dupes"; exit 1; }
+  build:
+    needs: [generate-matrix, check-one-build-per-variant]
     strategy:
       fail-fast: false
       matrix:

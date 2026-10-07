@@ -6,7 +6,6 @@ import shlex
 import shutil
 import subprocess
 import sys
-import sysconfig
 import warnings
 from importlib.metadata import distribution, PackageNotFoundError
 from pathlib import Path
@@ -26,10 +25,6 @@ USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
-
-# torch compiles py_limited_api extensions with -DPy_LIMITED_API, which free-threaded
-# CPython rejects before 3.15.
-USE_PY_LIMITED_API = not sysconfig.get_config_var("Py_GIL_DISABLED")
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
 TORCHVISION_LIBRARY = os.environ.get("TORCHVISION_LIBRARY", "")
@@ -52,7 +47,6 @@ print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
 print(f"{USE_NVJPEG = }")
 print(f"{NVCC_FLAGS = }")
-print(f"{USE_PY_LIMITED_API = }")
 print(f"{TORCHVISION_INCLUDE = }")
 print(f"{TORCHVISION_LIBRARY = }")
 print(f"{IS_ROCM = }")
@@ -149,8 +143,6 @@ def get_macros_and_flags():
             extra_compile_args["nvcc"].append("-Xcompiler")
             extra_compile_args["nvcc"].append("/Zc:preprocessor")
             extra_compile_args["nvcc"].append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING")
-        if sysconfig.get_config_var("Py_GIL_DISABLED"):
-            extra_compile_args["cxx"].append("-DPy_GIL_DISABLED")
 
     if DEBUG:
         extra_compile_args["cxx"].append("-g")
@@ -236,7 +228,7 @@ def make_C_stable_extension():
         include_dirs=[CSRS_DIR],
         define_macros=define_macros,
         extra_compile_args=extra_compile_args,
-        py_limited_api=USE_PY_LIMITED_API,
+        py_limited_api=True,
     )
 
 
@@ -396,7 +388,7 @@ def make_image_stable_extension():
         define_macros=define_macros,
         libraries=libraries,
         extra_compile_args=extra_compile_args,
-        py_limited_api=USE_PY_LIMITED_API,
+        py_limited_api=True,
     )
 
 
@@ -405,15 +397,13 @@ class bdist_wheel(setuptools.command.bdist_wheel.bdist_wheel):
     the free-threaded ones.
 
     The extensions aren't Python extension modules: torch.ops.load_library dlopens
-    them, and they only use the torch stable ABI, none of the Python C API.
-    py_limited_api is what keeps torch from linking them against libtorch_python,
-    which is built per Python version.
+    them, and they only use the torch stable ABI, none of the Python C API. The
+    extensions' py_limited_api=True has nothing to do with the Python limited API; it
+    is what keeps torch from linking them against libtorch_python.
     """
 
     def get_tag(self):
-        python_tag, abi_tag, platform_tag = super().get_tag()
-        if not USE_PY_LIMITED_API:
-            return python_tag, abi_tag, platform_tag
+        _, _, platform_tag = super().get_tag()
         return "py3", "none", platform_tag
 
 
