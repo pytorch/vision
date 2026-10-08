@@ -2208,6 +2208,14 @@ def test_elastic_transformation():
         transforms.ElasticTransform(alpha=2.0, sigma=[1.0, True])
     with pytest.raises(ValueError, match=r"sigma is a sequence its length should be 2"):
         transforms.ElasticTransform(alpha=2.0, sigma=[1.0, 0.0, 1.0])
+    with pytest.raises(ValueError, match=r"sigma should have non-negative values"):
+        transforms.ElasticTransform(alpha=2.0, sigma=-100.0)
+    with pytest.raises(ValueError, match=r"sigma should have non-negative values"):
+        transforms.ElasticTransform(alpha=2.0, sigma=[-100.0, -100.0])
+    with pytest.raises(ValueError, match=r"sigma should have non-negative values"):
+        transforms.ElasticTransform(alpha=2.0, sigma=[-100.0, 100.0])
+    with pytest.raises(ValueError, match=r"sigma should have non-negative values"):
+        transforms.ElasticTransform(alpha=2.0, sigma=[100.0, -100.0])
 
     t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=Image.BILINEAR)
     assert t.interpolation == transforms.InterpolationMode.BILINEAR
