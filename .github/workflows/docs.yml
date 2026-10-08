@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.15
+    uses: pytorch/test-infra/.github/workflows/linux_job_v3.yml@release/2.15
     permissions:
       id-token: write
       contents: read
@@ -73,16 +73,17 @@ jobs:
 
         cp -r build/html "${RUNNER_ARTIFACT_DIR}"
 
-        # On PRs we also want to upload the docs into our S3 bucket for preview.
-        if [[ ${{ github.event_name == 'pull_request' }} ]]; then
-          cp -r build/html/* "${RUNNER_DOCS_DIR}"
+        # On PRs, upload-docs-preview.yml picks up this artifact and publishes it to S3 for preview. This job can't
+        # upload it directly: fork PRs get no OIDC token and thus no AWS credentials.
+        if [[ ${{ github.event_name }} == pull_request ]]; then
+          echo "PR_NUMBER=${{ github.event.pull_request.number }}" > "${RUNNER_ARTIFACT_DIR}/pr-metadata.txt"
         fi
 
   upload:
     needs: build
     if: github.repository == 'pytorch/vision' && github.event_name == 'push' &&
         ((github.ref_type == 'branch' && github.ref_name == 'main') || github.ref_type == 'tag')
-    uses: pytorch/test-infra/.github/workflows/linux_job_v2.yml@release/2.15
+    uses: pytorch/test-infra/.github/workflows/linux_job_v3.yml@release/2.15
     permissions:
       id-token: write
       contents: write
