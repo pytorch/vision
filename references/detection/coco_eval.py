@@ -3,36 +3,74 @@ import io
 from contextlib import redirect_stdout
 
 import numpy as np
-import pycocotools.mask as mask_util
 import torch
 import utils
-from pycocotools.coco import COCO
-from pycocotools.cocoeval import COCOeval
+
+
+def _load_coco_backend(backend):
+    if backend == "pycocotools":
+        import pycocotools.mask as mask_util
+        from pycocotools.coco import COCO
+        from pycocotools.cocoeval import COCOeval
+    elif backend == "ultrafast":
+        try:
+            import ultrafast_pycocotools.mask as mask_util
+            from ultrafast_pycocotools import COCO, COCOeval
+        except ModuleNotFoundError as exc:
+            raise ModuleNotFoundError(
+                'The ultrafast backend requires pip install "ultrafast-pycocotools>=0.1.11,<0.2".'
+            ) from exc
+    else:
+        raise ValueError(f"Unknown COCO backend {backend!r}; choose 'pycocotools' or 'ultrafast'.")
+    return COCO, COCOeval, mask_util
 
 
 class CocoEvaluator:
-    def __init__(self, coco_gt, iou_types):
+    def __init__(self, coco_gt, iou_types, backend="pycocotools"):
         if not isinstance(iou_types, (list, tuple)):
             raise TypeError(f"This constructor expects iou_types of type list or tuple, instead  got {type(iou_types)}")
         coco_gt = copy.deepcopy(coco_gt)
+        self._coco, cocoeval, mask_util = _load_coco_backend(backend)
+        self._encode_mask = mask_util.encode
+        if not isinstance(coco_gt, self._coco):
+            # Dataset loaders can keep their own COCO implementation.
+            converted = self._coco()
+            converted.dataset = coco_gt.dataset
+            with redirect_stdout(io.StringIO()):
+                converted.createIndex()
+            coco_gt = converted
         self.coco_gt = coco_gt
+        self.backend = backend
 
         self.iou_types = iou_types
         self.coco_eval = {}
         for iou_type in iou_types:
-            self.coco_eval[iou_type] = COCOeval(coco_gt, iouType=iou_type)
+            kwargs = {"store_eval_imgs": True} if backend == "ultrafast" else {}
+            self.coco_eval[iou_type] = cocoeval(coco_gt, iouType=iou_type, **kwargs)
 
         self.img_ids = []
         self.eval_imgs = {k: [] for k in iou_types}
+        self._predictions = {k: {} for k in iou_types}
 
     def update(self, predictions):
         img_ids = list(np.unique(list(predictions.keys())))
+        if not img_ids:
+            return
         self.img_ids.extend(img_ids)
 
         for iou_type in self.iou_types:
             results = self.prepare(predictions, iou_type)
+            if self.backend == "ultrafast":
+                # This backend evaluates and accumulates together. Gather predictions
+                # before evaluation instead of assigning externally merged evalImgs.
+                per_image = {image_id: [] for image_id in img_ids}
+                for result in results:
+                    per_image[result["image_id"]].append(result)
+                for image_id in img_ids:
+                    self._predictions[iou_type].setdefault(image_id, per_image[image_id])
+                continue
             with redirect_stdout(io.StringIO()):
-                coco_dt = COCO.loadRes(self.coco_gt, results) if results else COCO()
+                coco_dt = self.coco_gt.loadRes(results) if results else self._coco()
             coco_eval = self.coco_eval[iou_type]
 
             coco_eval.cocoDt = coco_dt
@@ -43,7 +81,27 @@ class CocoEvaluator:
 
     def synchronize_between_processes(self):
         for iou_type in self.iou_types:
-            self.eval_imgs[iou_type] = np.concatenate(self.eval_imgs[iou_type], 2)
+            if self.backend == "ultrafast":
+                merged = {}
+                for per_rank in utils.all_gather(self._predictions[iou_type]):
+                    for image_id, results in per_rank.items():
+                        merged.setdefault(image_id, results)
+                # Match merge(): sorted IDs, first occurrence across ranks/batches.
+                image_ids = sorted(merged)
+                results = [result for image_id in image_ids for result in merged[image_id]]
+                evaluator = self.coco_eval[iou_type]
+                with redirect_stdout(io.StringIO()):
+                    evaluator.cocoDt = self.coco_gt.loadRes(results) if results else self._coco()
+                evaluator.params.imgIds = image_ids
+                _, self.eval_imgs[iou_type] = evaluate(evaluator)
+                self._predictions[iou_type].clear()
+                continue
+            params = self.coco_eval[iou_type].params
+            self.eval_imgs[iou_type] = (
+                np.concatenate(self.eval_imgs[iou_type], 2)
+                if self.eval_imgs[iou_type]
+                else np.empty((len(params.catIds) if params.useCats else 1, len(params.areaRng), 0), dtype=object)
+            )
             create_common_coco_eval(self.coco_eval[iou_type], self.img_ids, self.eval_imgs[iou_type])
 
     def accumulate(self):
@@ -104,7 +162,7 @@ class CocoEvaluator:
             labels = prediction["labels"].tolist()
 
             rles = [
-                mask_util.encode(np.array(mask[0, :, :, np.newaxis], dtype=np.uint8, order="F"))[0] for mask in masks
+                self._encode_mask(np.array(mask[0, :, :, np.newaxis], dtype=np.uint8, order="F"))[0] for mask in masks
             ]
             for rle in rles:
                 rle["counts"] = rle["counts"].decode("utf-8")
@@ -189,4 +247,7 @@ def create_common_coco_eval(coco_eval, img_ids, eval_imgs):
 def evaluate(imgs):
     with redirect_stdout(io.StringIO()):
         imgs.evaluate()
-    return imgs.params.imgIds, np.asarray(imgs.evalImgs).reshape(-1, len(imgs.params.areaRng), len(imgs.params.imgIds))
+    categories = len(imgs.params.catIds) if imgs.params.useCats else 1
+    return imgs.params.imgIds, np.asarray(imgs.evalImgs).reshape(
+        categories, len(imgs.params.areaRng), len(imgs.params.imgIds)
+    )
