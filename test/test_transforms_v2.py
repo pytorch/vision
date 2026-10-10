@@ -68,6 +68,7 @@ pytestmark = [pytest.mark.filterwarnings("error")]
 # Since torchscript is deprecated, we are explicitly ignoring those warnings.
 # Otherwise we'd error on warnings due to the pytestmark filter above.
 pytestmark.append(pytest.mark.filterwarnings("ignore::DeprecationWarning"))
+pytestmark.append(pytest.mark.filterwarnings("ignore::FutureWarning"))
 
 
 @pytest.fixture(autouse=True)
@@ -7913,6 +7914,15 @@ class TestJPEG:
 
     def test_kernel_video(self):
         check_kernel(F.jpeg_video, make_video(), quality=5)
+
+    def test_kernel_non_contiguous_leading_dimensions(self):
+        image = torch.randint(0, 256, (2, 3, 3, 16, 16), dtype=torch.uint8).transpose(0, 1)
+        assert not image.is_contiguous()
+
+        actual = F.jpeg_image(image, quality=75)
+        expected = F.jpeg_image(image.contiguous(), quality=75)
+
+        assert_equal(actual, expected)
 
     @pytest.mark.parametrize("make_input", [make_image_tensor, make_image_pil, make_image, make_video])
     def test_functional(self, make_input):

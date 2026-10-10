@@ -1,7 +1,16 @@
-Decoding and Encoding images
-============================
+[DEPRECATED] Decoding and Encoding images
+=========================================
 
 .. currentmodule:: torchvision.io
+
+.. warning::
+
+    The image decoding and encoding capabilities of TorchVision are deprecated
+    since torchvision 0.29 and will be removed in a future release. They are
+    superseded by the more complete decoders and encoders of TorchCodec (from
+    torchcodec 0.16). Please see `this migration guide
+    <https://meta-pytorch.org/torchcodec/0.16/generated_examples/migration/torchvision_migration.html>`__
+    on how to migrate your code.
 
 The :mod:`torchvision.io` module provides utilities for decoding and encoding
 images. For videos and audio, please use `TorchCodec

@@ -1,4 +1,3 @@
-#include <torch/csrc/inductor/aoti_torch/c/shim.h>
 #include <torch/csrc/stable/accelerator.h>
 #include <torch/csrc/stable/library.h>
 #include <torch/csrc/stable/macros.h>
@@ -199,7 +198,7 @@ Tensor nms_kernel(
   auto order_t = std::get<1>(stable_helpers::sort(
       scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
   auto dets_sorted =
-      torch::stable::contiguous(stable_helpers::index_select(dets, 0, order_t));
+      torch::stable::contiguous(torch::stable::index_select(dets, 0, order_t));
 
   int dets_num = static_cast<int>(dets.size(0));
   const int col_blocks = ceil_div(dets_num, threadsPerBlock);
@@ -212,10 +211,7 @@ Tensor nms_kernel(
   dim3 blocks(col_blocks, col_blocks);
   dim3 threads(threadsPerBlock);
 
-  void* stream_ptr = nullptr;
-  TORCH_ERROR_CODE_CHECK(
-      aoti_torch_get_current_cuda_stream(dets.get_device_index(), &stream_ptr));
-  cudaStream_t stream = static_cast<cudaStream_t>(stream_ptr);
+  cudaStream_t stream = get_current_cuda_stream(dets.get_device_index());
 
   THO_DISPATCH_V2(
       dets_sorted.scalar_type(),

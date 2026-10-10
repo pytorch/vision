@@ -6,10 +6,11 @@ import shlex
 import shutil
 import subprocess
 import sys
-import sysconfig
 import warnings
 from importlib.metadata import distribution, PackageNotFoundError
 from pathlib import Path
+
+import setuptools.command.bdist_wheel
 
 import torch
 from packaging.version import parse as parse_version
@@ -23,7 +24,6 @@ USE_PNG = os.getenv("TORCHVISION_USE_PNG", "1") == "1"
 USE_JPEG = os.getenv("TORCHVISION_USE_JPEG", "1") == "1"
 USE_WEBP = os.getenv("TORCHVISION_USE_WEBP", "1") == "1"
 USE_NVJPEG = os.getenv("TORCHVISION_USE_NVJPEG", "1") == "1"
-USE_ROCJPEG = os.getenv("TORCHVISION_USE_ROCJPEG", "1") == "1"
 NVCC_FLAGS = os.getenv("NVCC_FLAGS", None)
 
 TORCHVISION_INCLUDE = os.environ.get("TORCHVISION_INCLUDE", "")
@@ -46,7 +46,6 @@ print(f"{USE_PNG = }")
 print(f"{USE_JPEG = }")
 print(f"{USE_WEBP = }")
 print(f"{USE_NVJPEG = }")
-print(f"{USE_ROCJPEG = }")
 print(f"{NVCC_FLAGS = }")
 print(f"{TORCHVISION_INCLUDE = }")
 print(f"{TORCHVISION_LIBRARY = }")
@@ -82,6 +81,12 @@ def write_version_file(version, sha):
         f.write("    cuda = _check_cuda_version()\n")
 
 
+# We're ABI stable w.r.t. torch 2.14. TORCH_MIN_VERSION and TORCH_TARGET_VERSION
+# must be kept in sync.
+TORCH_MIN_VERSION = (2, 14, 0)
+TORCH_TARGET_VERSION = "0x020e000000000000"
+
+
 def get_requirements():
     def get_dist(pkgname):
         try:
@@ -90,14 +95,17 @@ def get_requirements():
             return None
 
     pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
-    if version_pin := os.getenv("PYTORCH_VERSION"):
-        pytorch_dep += "==" + version_pin
-    elif (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
+    if (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
         # This branch and the associated env vars exist to help third-party
         # builds like in https://github.com/pytorch/vision/pull/8936. This is
         # supported on a best-effort basis, we don't guarantee that this won't
         # eventually break (and we don't test it.)
         pytorch_dep += f">={version_pin_ge},<{version_pin_lt}"
+    else:
+        # Before being ABI stable w.r.t. 2.14, we used to pin to
+        # torch==PYTORCH_VERSION where PYTORCH_VERSION was set by test-infra. We
+        # now ignore it and always pin to `torch >= 2.14`.
+        pytorch_dep += ">=" + ".".join(str(v) for v in TORCH_MIN_VERSION)
 
     requirements = [
         "numpy",
@@ -135,8 +143,6 @@ def get_macros_and_flags():
             extra_compile_args["nvcc"].append("-Xcompiler")
             extra_compile_args["nvcc"].append("/Zc:preprocessor")
             extra_compile_args["nvcc"].append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING")
-        if sysconfig.get_config_var("Py_GIL_DISABLED"):
-            extra_compile_args["cxx"].append("-DPy_GIL_DISABLED")
 
     if DEBUG:
         extra_compile_args["cxx"].append("-g")
@@ -150,39 +156,22 @@ def get_macros_and_flags():
     else:
         extra_compile_args["cxx"].append("-g0")
 
+    tv = f"-DTORCH_TARGET_VERSION={TORCH_TARGET_VERSION}"
+    extra_compile_args["cxx"].append(tv)
+    if "nvcc" in extra_compile_args:
+        extra_compile_args["nvcc"].append(tv)
+        if not IS_ROCM:
+            # Some torch APIs like aoti_torch_get_current_cuda_stream (used by
+            # ops/cuda/cuda_helpers.h) are only exposed when USE_CUDA is defined.
+            # https://github.com/pytorch/pytorch/blob/98e36864e640023a716e058d894ea2d20e76e5f7/torch/csrc/inductor/aoti_torch/c/shim.h#L573-L602
+            extra_compile_args["nvcc"].append("-DUSE_CUDA")
+            # The jpeg decode .cpp also calls these shims (incl.
+            # torch_get_cuda_stream_from_pool), so cxx needs USE_CUDA too.
+            extra_compile_args["cxx"].append("-DUSE_CUDA")
+    if torch.backends.mps.is_available() or FORCE_MPS:
+        extra_compile_args["cxx"].append("-DUSE_MPS")
+
     return define_macros, extra_compile_args
-
-
-TORCH_TARGET_VERSION = "0x020b000000000000"
-
-# Files migrated to the stable ABI: subtracted from make_C_extension()'s globs and
-# built into _C_stable instead. Add an op's files here as it migrates.
-# TODO(stable-abi): when all ops migrate, drop make_C_extension()/STABLE_SOURCES and glob _C_stable.
-STABLE_SOURCES = {
-    CSRS_DIR / "vision_stable.cpp",
-    CSRS_DIR / "ops/nms.cpp",
-    CSRS_DIR / "ops/cpu/nms_kernel.cpp",
-    CSRS_DIR / "ops/mps/nms_kernel.mm",
-    CSRS_DIR / "ops/quantized/cpu/qnms_kernel.cpp",
-    CSRS_DIR / "io/image/common_stable.cpp",
-    CSRS_DIR / "io/image/cpu/encode_png.cpp",
-    CSRS_DIR / "io/image/cpu/encode_jpeg.cpp",
-    CSRS_DIR / "io/image/cpu/read_write_file.cpp",
-    CSRS_DIR / "io/image/cpu/decode_image.cpp",
-}
-STABLE_SOURCES.add(CSRS_DIR / ("ops/hip/nms_kernel.hip" if IS_ROCM else "ops/cuda/nms_kernel.cu"))
-STABLE_SOURCES.add(
-    CSRS_DIR / ("io/image/hip/decode_jpegs_cuda.cpp" if IS_ROCM else "io/image/cuda/decode_jpegs_cuda.cpp")
-)
-STABLE_SOURCES.add(CSRS_DIR / "io/image/cuda/encode_jpegs_cuda.cpp")
-
-
-def _not_stable(paths):
-    return [p for p in paths if p not in STABLE_SOURCES]
-
-
-def _stable(paths):
-    return [p for p in paths if p in STABLE_SOURCES]
 
 
 _HIPIFIED = False
@@ -190,8 +179,6 @@ _HIPIFIED = False
 
 def ensure_hipified():
     # ROCm: rewrite ops/cuda/*.{cu,h} -> ops/hip/* once per build (no-op otherwise).
-    # Both _C and _C_stable consume ops/hip/*, so neither depends on the other's build
-    # order, and this survives make_C_extension() being dropped at the end state.
     global _HIPIFIED
     if _HIPIFIED or not IS_ROCM:
         return
@@ -209,75 +196,22 @@ def ensure_hipified():
     _HIPIFIED = True
 
 
-def make_C_extension():
-    print("Building _C extension")
-
-    ensure_hipified()
-    sources = (
-        _not_stable(CSRS_DIR.glob("*.cpp"))
-        + _not_stable(CSRS_DIR.glob("ops/*.cpp"))
-        + _not_stable(CSRS_DIR.glob("ops/cpu/*.cpp"))
-        + _not_stable(CSRS_DIR.glob("ops/quantized/cpu/*.cpp"))
-    )
-    mps_sources = _not_stable(CSRS_DIR.glob("ops/mps/*.mm"))
-
-    if IS_ROCM:
-        cuda_sources = _not_stable(CSRS_DIR.glob("ops/hip/*.hip"))
-    else:
-        cuda_sources = _not_stable(CSRS_DIR.glob("ops/cuda/*.cu"))
-
-    if BUILD_CUDA_SOURCES:
-        Extension = CUDAExtension
-        sources += cuda_sources
-    else:
-        Extension = CppExtension
-        if torch.backends.mps.is_available() or FORCE_MPS:
-            sources += mps_sources
-
-    define_macros, extra_compile_args = get_macros_and_flags()
-    return Extension(
-        name="torchvision._C",
-        sources=sorted(str(s) for s in sources),
-        include_dirs=[CSRS_DIR],
-        define_macros=define_macros,
-        extra_compile_args=extra_compile_args,
-    )
-
-
-def get_stable_macros_and_flags():
-    # TODO(stable-abi): merge into get_macros_and_flags() once the migration is done.
-    define_macros, extra_compile_args = get_macros_and_flags()
-    tv = f"-DTORCH_TARGET_VERSION={TORCH_TARGET_VERSION}"
-    extra_compile_args["cxx"].append(tv)
-    if "nvcc" in extra_compile_args:
-        extra_compile_args["nvcc"].append(tv)
-        if not IS_ROCM:
-            # Some torch APIs like aoti_torch_get_current_cuda_stream (used by
-            # ops/cuda/nms_kernel.cu) are only exposed when USE_CUDA is defined.
-            # https://github.com/pytorch/pytorch/blob/98e36864e640023a716e058d894ea2d20e76e5f7/torch/csrc/inductor/aoti_torch/c/shim.h#L573-L602
-            extra_compile_args["nvcc"].append("-DUSE_CUDA")
-            # The jpeg decode .cpp also calls these shims (incl.
-            # torch_get_cuda_stream_from_pool), so cxx needs USE_CUDA too.
-            extra_compile_args["cxx"].append("-DUSE_CUDA")
-    return define_macros, extra_compile_args
-
-
 def make_C_stable_extension():
     print("Building _C_stable extension")
 
     ensure_hipified()
     sources = (
-        _stable(CSRS_DIR.glob("*.cpp"))
-        + _stable(CSRS_DIR.glob("ops/*.cpp"))
-        + _stable(CSRS_DIR.glob("ops/cpu/*.cpp"))
-        + _stable(CSRS_DIR.glob("ops/quantized/cpu/*.cpp"))
+        list(CSRS_DIR.glob("*.cpp"))
+        + list(CSRS_DIR.glob("ops/*.cpp"))
+        + list(CSRS_DIR.glob("ops/cpu/*.cpp"))
+        + list(CSRS_DIR.glob("ops/quantized/cpu/*.cpp"))
     )
-    mps_sources = _stable(CSRS_DIR.glob("ops/mps/*.mm"))
+    mps_sources = list(CSRS_DIR.glob("ops/mps/*.mm"))
 
     if IS_ROCM:
-        cuda_sources = _stable(CSRS_DIR.glob("ops/hip/*.hip"))
+        cuda_sources = list(CSRS_DIR.glob("ops/hip/*.hip"))
     else:
-        cuda_sources = _stable(CSRS_DIR.glob("ops/cuda/*.cu"))
+        cuda_sources = list(CSRS_DIR.glob("ops/cuda/*.cu"))
 
     if BUILD_CUDA_SOURCES:
         Extension = CUDAExtension
@@ -287,13 +221,15 @@ def make_C_stable_extension():
         if torch.backends.mps.is_available() or FORCE_MPS:
             sources += mps_sources
 
-    define_macros, extra_compile_args = get_stable_macros_and_flags()
+    define_macros, extra_compile_args = get_macros_and_flags()
     return Extension(
         name="torchvision._C_stable",
         sources=sorted(str(s) for s in sources),
         include_dirs=[CSRS_DIR],
         define_macros=define_macros,
         extra_compile_args=extra_compile_args,
+        # Stops torch from linking libtorch_python, which is built per Python version.
+        py_limited_api=True,
     )
 
 
@@ -380,101 +316,21 @@ def find_library(header):
     return False, None, None
 
 
-def make_image_extension():
-    print("Building image extension")
-
-    include_dirs = TORCHVISION_INCLUDE.copy()
-    library_dirs = TORCHVISION_LIBRARY.copy()
-
-    libraries = []
-    define_macros, extra_compile_args = get_macros_and_flags()
-
-    image_dir = CSRS_DIR / "io/image"
-    sources = (
-        _not_stable(image_dir.glob("*.cpp"))
-        + _not_stable(image_dir.glob("cpu/*.cpp"))
-        + _not_stable(image_dir.glob("cpu/giflib/*.c"))
-    )
-
-    if IS_ROCM:
-        sources += _not_stable(image_dir.glob("hip/*.cpp"))
-    else:
-        sources += _not_stable(image_dir.glob("cuda/*.cpp"))
-
-    Extension = CppExtension
-
-    if USE_PNG:
-        png_found, png_include_dir, png_library_dir, png_library = find_libpng()
-        if png_found:
-            print("Building torchvision with PNG support")
-            print(f"{png_include_dir = }")
-            print(f"{png_library_dir = }")
-            include_dirs.append(png_include_dir)
-            library_dirs.append(png_library_dir)
-            libraries.append(png_library)
-            define_macros += [("PNG_FOUND", 1)]
-        else:
-            warnings.warn("Building torchvision without PNG support")
-
-    if USE_JPEG:
-        jpeg_found, jpeg_include_dir, jpeg_library_dir = find_library(header="jpeglib.h")
-        if jpeg_found:
-            print("Building torchvision with JPEG support")
-            print(f"{jpeg_include_dir = }")
-            print(f"{jpeg_library_dir = }")
-            if jpeg_include_dir is not None and jpeg_library_dir is not None:
-                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
-                include_dirs.append(jpeg_include_dir)
-                library_dirs.append(jpeg_library_dir)
-            libraries.append("jpeg")
-            define_macros += [("JPEG_FOUND", 1)]
-        else:
-            warnings.warn("Building torchvision without JPEG support")
-
-    if USE_WEBP:
-        webp_found, webp_include_dir, webp_library_dir = find_library(header="webp/decode.h")
-        if webp_found:
-            print("Building torchvision with WEBP support")
-            print(f"{webp_include_dir = }")
-            print(f"{webp_library_dir = }")
-            if webp_include_dir is not None and webp_library_dir is not None:
-                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
-                include_dirs.append(webp_include_dir)
-                library_dirs.append(webp_library_dir)
-            webp_library = "libwebp" if sys.platform == "win32" else "webp"
-            libraries.append(webp_library)
-            define_macros += [("WEBP_FOUND", 1)]
-        else:
-            warnings.warn("Building torchvision without WEBP support")
-
-    return Extension(
-        name="torchvision.image",
-        sources=sorted(str(s) for s in sources),
-        include_dirs=include_dirs,
-        library_dirs=library_dirs,
-        define_macros=define_macros,
-        libraries=libraries,
-        extra_compile_args=extra_compile_args,
-    )
-
-
 def make_image_stable_extension():
-    # Stable-ABI sibling of make_image_extension(): only the migrated (_stable) image TUs.
     print("Building image_stable extension")
 
     include_dirs = TORCHVISION_INCLUDE.copy()
     library_dirs = TORCHVISION_LIBRARY.copy()
     libraries = []
-    define_macros, extra_compile_args = get_stable_macros_and_flags()
+    define_macros, extra_compile_args = get_macros_and_flags()
 
     image_dir = CSRS_DIR / "io/image"
     sources = (
-        _stable(image_dir.glob("*.cpp"))
-        + _stable(image_dir.glob("cpu/*.cpp"))
-        + _stable(image_dir.glob("hip/*.cpp" if IS_ROCM else "cuda/*.cpp"))
+        list(image_dir.glob("*.cpp"))
+        + list(image_dir.glob("cpu/*.cpp"))
+        + list(image_dir.glob("cpu/giflib/*.c"))
+        + list(image_dir.glob("cuda/*.cpp"))
     )
-    # Shared libjpeg glue. Legacy decode_jpeg still needs it, so it builds into both extensions.
-    sources.append(image_dir / "cpu/common_jpeg.cpp")
 
     Extension = CppExtension
 
@@ -501,6 +357,22 @@ def make_image_stable_extension():
         else:
             warnings.warn("Building torchvision without JPEG support")
 
+    if USE_WEBP:
+        webp_found, webp_include_dir, webp_library_dir = find_library(header="webp/decode.h")
+        if webp_found:
+            print("Building torchvision with WEBP support")
+            print(f"{webp_include_dir = }")
+            print(f"{webp_library_dir = }")
+            if webp_include_dir is not None and webp_library_dir is not None:
+                # if those are None it means they come from standard paths that are already in the search paths, which we don't need to re-add.
+                include_dirs.append(webp_include_dir)
+                library_dirs.append(webp_library_dir)
+            webp_library = "libwebp" if sys.platform == "win32" else "webp"
+            libraries.append(webp_library)
+            define_macros += [("WEBP_FOUND", 1)]
+        else:
+            warnings.warn("Building torchvision without WEBP support")
+
     if USE_NVJPEG and (torch.cuda.is_available() or FORCE_CUDA):
         nvjpeg_found = CUDA_HOME is not None and (Path(CUDA_HOME) / "include/nvjpeg.h").exists()
         if nvjpeg_found:
@@ -508,16 +380,6 @@ def make_image_stable_extension():
             libraries.append("nvjpeg")
             define_macros += [("NVJPEG_FOUND", 1)]
             Extension = CUDAExtension
-
-    if USE_ROCJPEG and IS_ROCM and (torch.cuda.is_available() or FORCE_CUDA):
-        rocjpeg_found = ROCM_HOME is not None and (Path(ROCM_HOME) / "include/rocjpeg/rocjpeg.h").exists()
-        if rocjpeg_found:
-            print("Building torchvision with ROCJPEG image support")
-            libraries.append("rocjpeg")
-            define_macros += [("ROCJPEG_FOUND", 1)]
-            Extension = CUDAExtension
-        else:
-            warnings.warn("Building torchvision without ROCJPEG support")
 
     return Extension(
         name="torchvision.image_stable",
@@ -527,7 +389,18 @@ def make_image_stable_extension():
         define_macros=define_macros,
         libraries=libraries,
         extra_compile_args=extra_compile_args,
+        # Stops torch from linking libtorch_python, which is built per Python version.
+        py_limited_api=True,
     )
+
+
+class bdist_wheel(setuptools.command.bdist_wheel.bdist_wheel):
+    """Tag the wheel py3-none so that a single wheel covers every CPython, including
+    the free-threaded ones."""
+
+    def get_tag(self):
+        _, _, platform_tag = super().get_tag()
+        return "py3", "none", platform_tag
 
 
 class clean(distutils.command.clean.clean):
@@ -555,9 +428,7 @@ if __name__ == "__main__":
         readme = f.read()
 
     extensions = [
-        make_C_extension(),
         make_C_stable_extension(),
-        make_image_extension(),
         make_image_stable_extension(),
     ]
 
@@ -583,6 +454,7 @@ if __name__ == "__main__":
         python_requires=">=3.10,!=3.14.1",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
+            "bdist_wheel": bdist_wheel,
             "clean": clean,
         },
     )
