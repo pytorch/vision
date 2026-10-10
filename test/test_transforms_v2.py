@@ -8048,3 +8048,179 @@ class TestUtils:
     def test_no_valid_input(self, query):
         with pytest.raises(TypeError, match="No image"):
             query(["blah"])
+
+
+class TestGridPrecision:
+    """Regression tests for https://github.com/pytorch/vision/issues/9029.
+
+    The affine/perspective sampling grid used to be built and returned at the input image's
+    dtype. For float16/bfloat16 images that leaves too few mantissa bits to keep neighbouring
+    sample positions apart, so blocks of adjacent output pixels collapse onto an identical
+    source location. The symptom is not a large numerical error but a loss of *distinct*
+    sample positions, which is what these tests measure.
+    """
+
+    # Large enough that half precision cannot represent every position; the bug needs
+    # more distinct coordinates than the dtype can hold before it shows up.
+    SIZE = 512
+    HALF_DTYPES = [torch.float16, torch.bfloat16]
+
+    @staticmethod
+    def _capture_grid(module, fn, image):
+        """Run ``fn(image)`` and return the grid handed to ``_apply_grid_transform``."""
+        captured = []
+        original = module._apply_grid_transform
+
+        def spy(img, grid, *args, **kwargs):
+            captured.append(grid)
+            return original(img, grid, *args, **kwargs)
+
+        module._apply_grid_transform = spy
+        try:
+            fn(image)
+        finally:
+            module._apply_grid_transform = original
+
+        assert len(captured) == 1
+        return captured[0]
+
+    def _distinct_positions(self, dtype, fn):
+        import torchvision.transforms.v2.functional._geometry as _geometry
+
+        image = torch.rand(3, self.SIZE, self.SIZE, dtype=torch.float32).to(dtype)
+        grid = self._capture_grid(_geometry, fn, image)
+        return grid[..., 0].unique().numel(), grid[..., 1].unique().numel()
+
+    @pytest.mark.parametrize("dtype", HALF_DTYPES)
+    def test_rotate_half_precision_grid_resolution(self, dtype):
+        import torchvision.transforms.v2.functional._geometry as _geometry
+
+        def rotate(image):
+            return _geometry.rotate_image(image, 30.0)
+
+        ref_x, ref_y = self._distinct_positions(torch.float32, rotate)
+        x, y = self._distinct_positions(dtype, rotate)
+
+        assert x >= 0.99 * ref_x, f"{dtype}: {x} distinct x positions vs {ref_x} for float32"
+        assert y >= 0.99 * ref_y, f"{dtype}: {y} distinct y positions vs {ref_y} for float32"
+
+    @pytest.mark.parametrize("dtype", HALF_DTYPES)
+    def test_perspective_half_precision_grid_resolution(self, dtype):
+        import torchvision.transforms.v2.functional._geometry as _geometry
+
+        s = self.SIZE
+        startpoints = [[0, 0], [s - 1, 0], [s - 1, s - 1], [0, s - 1]]
+        endpoints = [[30, 20], [s - 40, 10], [s - 15, s - 25], [20, s - 35]]
+
+        def perspective(image):
+            return _geometry.perspective_image(image, startpoints, endpoints)
+
+        ref_x, ref_y = self._distinct_positions(torch.float32, perspective)
+        x, y = self._distinct_positions(dtype, perspective)
+
+        assert x >= 0.99 * ref_x, f"{dtype}: {x} distinct x positions vs {ref_x} for float32"
+        assert y >= 0.99 * ref_y, f"{dtype}: {y} distinct y positions vs {ref_y} for float32"
+
+    def _case(self, fn_name, dtype):
+        """Return a (callable, image) pair for the requested transform."""
+        import torchvision.transforms.v2.functional as _F
+
+        s = self.SIZE
+        if fn_name == "rotate":
+
+            def fn(img):
+                return _F.rotate(img, 30.0, interpolation=transforms.InterpolationMode.BILINEAR)
+
+        else:
+            startpoints = [[0, 0], [s - 1, 0], [s - 1, s - 1], [0, s - 1]]
+            endpoints = [[30, 20], [s - 40, 10], [s - 15, s - 25], [20, s - 35]]
+
+            def fn(img):
+                return _F.perspective(img, startpoints, endpoints)
+
+        return fn, torch.rand(3, s, s, dtype=torch.float32).to(dtype)
+
+    @pytest.mark.parametrize("dtype", HALF_DTYPES)
+    @pytest.mark.parametrize("fn_name", ["rotate", "perspective"])
+    def test_half_precision_output_is_finite(self, dtype, fn_name):
+        """A half precision grid overflows during grid_sample and yields NaN/Inf pixels."""
+        torch.manual_seed(0)
+        fn, image = self._case(fn_name, dtype)
+        out = fn(image)
+        assert torch.isfinite(out.to(torch.float32)).all(), (
+            f"{dtype} {fn_name}: output contains "
+            f"{(~torch.isfinite(out.to(torch.float32))).sum().item()} non-finite values"
+        )
+
+    @pytest.mark.parametrize("dtype", HALF_DTYPES)
+    @pytest.mark.parametrize("fn_name", ["rotate", "perspective"])
+    def test_half_precision_output_matches_float32(self, dtype, fn_name):
+        """With a collapsed grid the half precision output diverges from the float32 result."""
+        torch.manual_seed(0)
+        fn, image = self._case(fn_name, dtype)
+        ref = fn(image.to(torch.float32))
+        out = fn(image).to(torch.float32)
+
+        # Compare only where the reference sampled real content; the zero padding outside the
+        # sampled region matches trivially. The observed error is ~1e-4 (float16) and ~8e-4
+        # (bfloat16) once the grid is promoted, versus ~0.25 with a half precision grid, so
+        # this threshold has a wide margin on both sides.
+        mask = ref != 0
+        error = (out - ref).abs()[mask].mean().item()
+        assert error < 0.01, f"{dtype} {fn_name}: mean absolute error vs float32 is {error:.4f}"
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_full_precision_grid_dtype_is_unchanged(self, dtype):
+        """float32 must stay float32 and float64 must not be downcast to float32."""
+        import torchvision.transforms.v2.functional._geometry as _geometry
+
+        grid = self._capture_grid(
+            _geometry,
+            lambda img: _geometry.rotate_image(img, 30.0),
+            torch.rand(3, 16, 16, dtype=torch.float32).to(dtype),
+        )
+        assert grid.dtype == dtype
+
+
+class TestApplyGridTransformDtypes:
+    """Dtype round trip through ``_apply_grid_transform``.
+
+    The kernel casts the image to the grid's dtype, samples, then casts back. Rounding on the
+    way back must be keyed off the *input* dtype and apply to integer images only - rounding a
+    float image would quantise every pixel to 0.0 or 1.0. That cast is taken whenever the grid
+    dtype differs from the image dtype: today for integer images, and for half precision images
+    once the grid is promoted to float32.
+    """
+
+    HALF_DTYPES = [torch.float16, torch.bfloat16]
+    ROUND_TRIP_DTYPES = [torch.float16, torch.bfloat16, torch.float32, torch.float64, torch.uint8]
+
+    @staticmethod
+    def _image(dtype, size=32):
+        if dtype == torch.uint8:
+            return torch.randint(0, 256, (3, size, size), dtype=dtype)
+        return torch.rand(3, size, size, dtype=torch.float32).to(dtype)
+
+    @pytest.mark.parametrize("dtype", ROUND_TRIP_DTYPES)
+    def test_output_dtype_is_preserved(self, dtype):
+        image = self._image(dtype)
+        assert F.rotate(image, 30.0).dtype == dtype
+        assert F.perspective(image, None, None, coefficients=TestPerspective.COEFFICIENTS[0]).dtype == dtype
+
+    @pytest.mark.parametrize("dtype", HALF_DTYPES)
+    def test_float_output_is_not_rounded_to_integers(self, dtype):
+        """A float image must survive the round trip as a float, not as 0.0/1.0."""
+        image = torch.rand(3, 64, 64, dtype=torch.float32)
+        out = F.rotate(image.to(dtype), 30.0).to(torch.float32)
+        assert not torch.all((out == 0) | (out == 1)), "output was rounded to integer values"
+        # Zero padding drops corner content, so the float32 output - not the input - is the
+        # right reference for the mean.
+        torch.testing.assert_close(out.mean(), F.rotate(image, 30.0).mean(), atol=0.02, rtol=0.02)
+
+    def test_integer_output_is_rounded(self):
+        """Integer images must still be rounded before the cast back, not truncated."""
+        image = torch.randint(0, 256, (3, 64, 64), dtype=torch.uint8)
+        kwargs = dict(interpolation=transforms.InterpolationMode.BILINEAR)
+        out = F.rotate(image, 30.0, **kwargs)
+        expected = F.rotate(image.to(torch.float32), 30.0, **kwargs).round_().to(torch.uint8)
+        assert_equal(out, expected)
