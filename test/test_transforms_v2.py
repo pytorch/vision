@@ -7554,13 +7554,61 @@ class TestSanitizeBoundingBoxes:
             bad_labels_key = {"bbox": good_bbox, "BAD_KEY": torch.arange(good_bbox.shape[0])}
             transforms.SanitizeBoundingBoxes()(bad_labels_key)
 
-        with pytest.raises(ValueError, match="must be a tensor"):
-            not_a_tensor = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0]).tolist()}
-            transforms.SanitizeBoundingBoxes()(not_a_tensor)
+        with pytest.raises(ValueError, match="must be a tensor, numpy array, sequence"):
+            transforms.SanitizeBoundingBoxes()({"bbox": good_bbox, "labels": 0})
+
+        with pytest.raises(ValueError, match="must be a tensor, numpy array, sequence"):
+            transforms.SanitizeBoundingBoxes(labels_getter=lambda sample: (sample["labels"], None))(
+                {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0])}
+            )
 
         with pytest.raises(ValueError, match="Number of boxes"):
             different_sizes = {"bbox": good_bbox, "labels": torch.arange(good_bbox.shape[0] + 3)}
             transforms.SanitizeBoundingBoxes()(different_sizes)
+
+    @pytest.mark.parametrize(
+        "make_labels",
+        (
+            lambda n: torch.arange(n),
+            lambda n: torch.arange(n).tolist(),
+            lambda n: tuple(range(n)),
+            lambda n: np.arange(n),
+        ),
+        ids=("tensor", "list", "tuple", "numpy"),
+    )
+    def test_indexable_labels(self, make_labels):
+        H, W, min_size, min_area = 256, 128, 10, 10
+        boxes, expected_valid_mask = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size, min_area=min_area)
+        valid_indices = [i for (i, is_valid) in enumerate(expected_valid_mask) if is_valid]
+        labels = make_labels(boxes.shape[0])
+
+        out = transforms.SanitizeBoundingBoxes(min_size=min_size, min_area=min_area)(
+            {"boxes": boxes, "labels": labels}
+        )
+
+        assert type(out["labels"]) is type(labels)
+        assert list(out["labels"]) == valid_indices
+        assert out["boxes"].shape[0] == len(valid_indices)
+
+    def test_multiple_indexable_label_entries(self):
+        H, W, min_size, min_area = 256, 128, 10, 10
+        boxes, expected_valid_mask = self._get_boxes_and_valid_mask(H=H, W=W, min_size=min_size, min_area=min_area)
+        valid_indices = [i for (i, is_valid) in enumerate(expected_valid_mask) if is_valid]
+        sample = {
+            "boxes": boxes,
+            "labels": list(range(boxes.shape[0])),
+            "other_labels": np.arange(boxes.shape[0]),
+        }
+
+        out = transforms.SanitizeBoundingBoxes(
+            min_size=min_size,
+            min_area=min_area,
+            labels_getter=lambda inputs: (inputs["labels"], inputs["other_labels"]),
+        )(sample)
+
+        assert out["labels"] == valid_indices
+        assert isinstance(out["other_labels"], np.ndarray)
+        assert list(out["other_labels"]) == valid_indices
 
     def test_errors_functional(self):
 
@@ -7843,15 +7891,41 @@ class TestSanitizeKeyPoints:
             bad_sample = {"keypoints": good_keypoints, "BAD_KEY": torch.tensor([0])}
             transforms.SanitizeKeyPoints(labels_getter="default")(bad_sample)
 
-        # Test labels not a tensor
-        with pytest.raises(ValueError, match="must be a tensor"):
-            bad_sample = {"keypoints": good_keypoints, "labels": [0]}
+        with pytest.raises(ValueError, match="must be a tensor, numpy array, sequence"):
+            bad_sample = {"keypoints": good_keypoints, "labels": 0}
             transforms.SanitizeKeyPoints(labels_getter="default")(bad_sample)
+
+        with pytest.raises(ValueError, match="must be a tensor, numpy array, sequence"):
+            bad_sample = {"keypoints": good_keypoints, "labels": torch.tensor([0])}
+            transforms.SanitizeKeyPoints(labels_getter=lambda sample: (sample["labels"], None))(bad_sample)
 
         # Test mismatched sizes
         with pytest.raises(ValueError, match="Number of"):
             bad_sample = {"keypoints": good_keypoints, "labels": torch.tensor([0, 1, 2])}
             transforms.SanitizeKeyPoints(labels_getter="default")(bad_sample)
+
+    @pytest.mark.parametrize(
+        "make_labels",
+        (
+            lambda n: torch.arange(n),
+            lambda n: torch.arange(n).tolist(),
+            lambda n: tuple(range(n)),
+            lambda n: np.arange(n),
+        ),
+        ids=("tensor", "list", "tuple", "numpy"),
+    )
+    def test_indexable_labels(self, make_labels):
+        canvas_size = (40, 40)
+        keypoints, expected_validity = self._make_keypoints_with_validity(canvas_size=canvas_size, shape="2d")
+        keypoints = tv_tensors.KeyPoints(keypoints, canvas_size=canvas_size)
+        valid_indices = [i for i, is_valid in enumerate(expected_validity) if is_valid]
+        labels = make_labels(keypoints.shape[0])
+
+        out = transforms.SanitizeKeyPoints(labels_getter="default")({"keypoints": keypoints, "labels": labels})
+
+        assert type(out["labels"]) is type(labels)
+        assert list(out["labels"]) == valid_indices
+        assert out["keypoints"].shape[0] == len(valid_indices)
 
     def test_no_label(self):
         """Test transform without labels."""
