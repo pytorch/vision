@@ -1149,6 +1149,30 @@ class TestNMS:
         empty = torch.empty((0,), dtype=torch.int64)
         torch.testing.assert_close(empty, ops.batched_nms(empty, None, None, None))
 
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", (torch.float16, torch.bfloat16))
+    @pytest.mark.opcheck_only_one()
+    def test_batched_nms_coordinate_trick_half(self, device, dtype):
+        """The class offsets must not be added in half precision, where they round the coordinates and overflow"""
+        torch.random.manual_seed(0)
+        # 40 objects on a 1333 x 800 image with 25 jittered duplicates each and labels up to 90 as in COCO, so the
+        # offsets reach 90 times the largest coordinate. In float16 the shifted coordinates round to multiples of up
+        # to 32 px and overflow to inf past 65504 for about half of the labels, in bfloat16 they round to multiples
+        # of up to 512 px.
+        num_objects, num_duplicates = 40, 25
+        centers = torch.rand(num_objects, 2) * torch.tensor([1333.0, 800.0])
+        sizes = 20 + torch.rand(num_objects, 2) * 300
+        boxes = torch.cat((centers - sizes / 2, centers + sizes / 2), dim=1).repeat_interleave(num_duplicates, dim=0)
+        boxes += torch.randn_like(boxes) * sizes.repeat(1, 2).repeat_interleave(num_duplicates, dim=0) * 0.05
+        boxes = boxes.clamp(min=0).to(device=device, dtype=dtype)
+        scores = torch.rand(num_objects * num_duplicates).to(device=device, dtype=dtype)
+        idxs = torch.randint(1, 91, (num_objects,)).repeat_interleave(num_duplicates).to(device)
+
+        keep = ops.boxes._batched_nms_coordinate_trick(boxes, scores, idxs, 0.5)
+        keep_ref = ops.boxes._batched_nms_vanilla(boxes.float(), scores.float(), idxs, 0.5)
+        # scores tie in half precision, so compare the kept sets rather than the score order
+        assert_equal(keep.sort().values, keep_ref.sort().values)
+
 
 optests.generate_opcheck_tests(
     testcase=TestNMS,
