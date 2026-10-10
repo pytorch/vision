@@ -33,6 +33,8 @@ class SVHN(VisionDataset):
 
     """
 
+    # ufldl.stanford.edu serves a certificate valid only for ai.stanford.edu, so https
+    # fails hostname verification. Contents are checksummed below.
     split_list = {
         "train": [
             "http://ufldl.stanford.edu/housenumbers/train_32x32.mat",

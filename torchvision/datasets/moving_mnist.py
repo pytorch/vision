@@ -25,7 +25,7 @@ class MovingMNIST(VisionDataset):
             and returns a transformed version. E.g, ``transforms.RandomCrop``
     """
 
-    _URL = "http://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"
+    _URL = "https://www.cs.toronto.edu/~nitish/unsupervised_video/mnist_test_seq.npy"
 
     def __init__(
         self,
