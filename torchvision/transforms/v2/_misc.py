@@ -152,18 +152,19 @@ class Normalize(Transform):
         This transform acts out of place, i.e., it does not mutate the input tensor.
 
     Args:
-        mean (sequence): Sequence of means for each channel.
-        std (sequence): Sequence of standard deviations for each channel.
+        mean (sequence or Tensor): Sequence of means for each channel. A tensor can
+            be provided to keep the statistics on the same device as the input.
+        std (sequence or Tensor): Sequence of standard deviations for each channel.
         inplace(bool,optional): Bool to make this operation in-place.
 
     """
 
     _v1_transform_cls = _transforms.Normalize
 
-    def __init__(self, mean: Sequence[float], std: Sequence[float], inplace: bool = False):
+    def __init__(self, mean: Sequence[float] | torch.Tensor, std: Sequence[float] | torch.Tensor, inplace: bool = False):
         super().__init__()
-        self.mean = list(mean)
-        self.std = list(std)
+        self.mean = mean if isinstance(mean, torch.Tensor) else list(mean)
+        self.std = std if isinstance(std, torch.Tensor) else list(std)
         self.inplace = inplace
 
     def check_inputs(self, sample: Any) -> Any:
