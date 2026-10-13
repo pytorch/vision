@@ -1,5 +1,10 @@
 #include "decode_image.h"
 
+#include <torch/csrc/stable/library.h>
+#include <torch/headeronly/util/Exception.h>
+
+#include <cstring>
+
 #include "decode_gif.h"
 #include "decode_jpeg.h"
 #include "decode_png.h"
@@ -8,14 +13,16 @@
 namespace vision {
 namespace image {
 
-torch::Tensor decode_image(
-    const torch::Tensor& data,
+torch::stable::Tensor decode_image(
+    const torch::stable::Tensor& data,
     ImageReadMode mode,
     bool apply_exif_orientation) {
   // Check that tensor is a CPU tensor
-  STD_TORCH_CHECK(data.device() == torch::kCPU, "Expected a CPU tensor");
+  STD_TORCH_CHECK(data.is_cpu(), "Expected a CPU tensor");
   // Check that the input tensor dtype is uint8
-  STD_TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
+  STD_TORCH_CHECK(
+      data.scalar_type() == torch::headeronly::ScalarType::Byte,
+      "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
   STD_TORCH_CHECK(
       data.dim() == 1 && data.numel() > 0,
@@ -24,7 +31,7 @@ torch::Tensor decode_image(
   auto err_msg =
       "Unsupported image file. Only jpeg, png, webp and gif are currently supported. For avif and heic format, please rely on `decode_avif` and `decode_heic` directly.";
 
-  auto datap = data.data_ptr<uint8_t>();
+  auto datap = data.const_data_ptr<uint8_t>();
 
   const uint8_t jpeg_signature[3] = {255, 216, 255}; // == "\xFF\xD8\xFF"
   STD_TORCH_CHECK(data.numel() >= 3, err_msg);
@@ -58,6 +65,15 @@ torch::Tensor decode_image(
   }
 
   STD_TORCH_CHECK(false, err_msg);
+}
+
+STABLE_TORCH_LIBRARY_FRAGMENT(image, m) {
+  m.def(
+      "decode_image(Tensor data, int mode, bool apply_exif_orientation=False) -> Tensor");
+}
+
+STABLE_TORCH_LIBRARY_IMPL(image, CompositeExplicitAutograd, m) {
+  m.impl("decode_image", TORCH_BOX(&decode_image));
 }
 
 } // namespace image

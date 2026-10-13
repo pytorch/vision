@@ -50,7 +50,7 @@ echo "*" > .venv/.gitignore
 source .venv/Scripts/activate
 
 # Install dependencies
-pip install numpy==2.2.3
+pip install numpy==2.3.5
 
 if [ "$CHANNEL" = "release" ]; then
   echo "Installing latest stable version of PyTorch."

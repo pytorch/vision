@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ATen/ATen.h>
+#include <vector>
 
 namespace vision {
 namespace ops {

@@ -1,11 +1,22 @@
-#include <ATen/native/mps/OperationUtils.h>
+#pragma once
+
+// Metal shader source for all MPS ops, plus the shared shader library and
+// the kernel lookup the ops use to run them. MetalShaderLibrary is not part
+// of the stable ABI, so the library is compiled at runtime from this string
+// with aoti_torch_mps_create_shader_library.
+
+#include <torch/csrc/inductor/aoti_torch/c/shim_mps.h>
+#include <torch/headeronly/core/ScalarType.h>
+#include <torch/headeronly/util/shim_utils.h>
+
+#include <string>
 
 namespace vision {
 namespace ops {
 
 namespace mps {
 
-static at::native::mps::MetalShaderLibrary lib(R"VISION_METAL(
+inline constexpr char metal_shaders[] = R"VISION_METAL(
 
 #include <metal_atomic>
 #include <metal_stdlib>
@@ -486,11 +497,15 @@ kernel void roi_align_backward(
     constant int64_t & c_stride       [[buffer(13)]],
     constant int64_t & h_stride       [[buffer(14)]],
     constant int64_t & w_stride       [[buffer(15)]],
-    uint2     tgid   [[threadgroup_position_in_grid]],
-    uint2     tptg   [[threads_per_threadgroup]],
-    uint2     tid2   [[thread_position_in_threadgroup]]){
+    uint     index   [[thread_position_in_grid]]){
 
-  MPS_1D_KERNEL_LOOP(index, output_size, 1) {
+  // One thread per pooled-output element. Dispatched via dispatchThreads, so
+  // each element is processed exactly once; redundant passes would otherwise
+  // be silently summed by the atomic_add below (overlapping RoIs share pixels).
+  if (index >= static_cast<uint>(output_size)) {
+    return;
+  }
+  {
     // (n, c, ph, pw) is an element in the pooled output
     integer_t pw = index % pooled_width;
     integer_t ph = (index / pooled_width) % pooled_height;
@@ -602,9 +617,7 @@ kernel void roi_align_backward<DTYPE, INT_DTYPE>(          \
     constant int64_t & c_stride       [[buffer(13)]],      \
     constant int64_t & h_stride       [[buffer(14)]],      \
     constant int64_t & w_stride       [[buffer(15)]],      \
-    uint2     tgid   [[threadgroup_position_in_grid]],     \
-    uint2     tptg   [[threads_per_threadgroup]],          \
-    uint2     tid2   [[thread_position_in_threadgroup]]);
+    uint     index   [[thread_position_in_grid]]);
 
 template<typename T, typename integer_t>
 kernel void roi_pool(
@@ -710,11 +723,15 @@ kernel void roi_pool_backward(
     constant int64_t & c_stride      [[buffer(12)]],
     constant int64_t & h_stride      [[buffer(13)]],
     constant int64_t & w_stride      [[buffer(14)]],
-    uint2     tgid   [[threadgroup_position_in_grid]],
-    uint2     tptg   [[threads_per_threadgroup]],
-    uint2     tid2   [[thread_position_in_threadgroup]]){
+    uint     index   [[thread_position_in_grid]]){
 
-  MPS_1D_KERNEL_LOOP(index, output_size, 1) {
+  // One thread per pooled-output element. Dispatched via dispatchThreads, so
+  // each element is processed exactly once; redundant passes would otherwise
+  // be silently summed by the atomic_add below (overlapping RoIs share pixels).
+  if (index >= static_cast<uint>(output_size)) {
+    return;
+  }
+  {
     // (n, c, ph, pw) is an element in the pooled output
     integer_t pw = index % pooled_width;
     integer_t ph = (index / pooled_width) % pooled_height;
@@ -756,9 +773,7 @@ kernel void roi_pool_backward<DTYPE, INT_DTYPE>(          \
     constant int64_t & c_stride      [[buffer(12)]],      \
     constant int64_t & h_stride      [[buffer(13)]],      \
     constant int64_t & w_stride      [[buffer(14)]],      \
-    uint2     tgid   [[threadgroup_position_in_grid]],    \
-    uint2     tptg   [[threads_per_threadgroup]],         \
-    uint2     tid2   [[thread_position_in_threadgroup]]);
+    uint     index   [[thread_position_in_grid]]);
 
 template<typename T, typename integer_t>
 kernel void ps_roi_align(
@@ -873,11 +888,15 @@ kernel void ps_roi_align_backward(
     constant int64_t & sampling_ratio  [[buffer(10)]],
     constant int64_t & channels_out    [[buffer(11)]],
     constant float   & spatial_scale   [[buffer(12)]],
-    uint2     tgid   [[threadgroup_position_in_grid]],
-    uint2     tptg   [[threads_per_threadgroup]],
-    uint2     tid2   [[thread_position_in_threadgroup]]){
+    uint     index   [[thread_position_in_grid]]){
 
-  MPS_1D_KERNEL_LOOP(index, output_size, 1) {
+  // One thread per pooled-output element. Dispatched via dispatchThreads, so
+  // each element is processed exactly once; redundant passes would otherwise
+  // be silently summed by the atomic_add below (overlapping RoIs share pixels).
+  if (index >= static_cast<uint>(output_size)) {
+    return;
+  }
+  {
     // (n, *, ph, pw) is an element in the pooled output
     integer_t pw = index % pooled_width;
     integer_t ph = (index / pooled_width) % pooled_height;
@@ -976,9 +995,7 @@ kernel void ps_roi_align_backward<DTYPE, INT_DTYPE>(          \
     constant int64_t & sampling_ratio  [[buffer(10)]],        \
     constant int64_t & channels_out    [[buffer(11)]],        \
     constant float   & spatial_scale   [[buffer(12)]],        \
-    uint2     tgid   [[threadgroup_position_in_grid]],        \
-    uint2     tptg   [[threads_per_threadgroup]],             \
-    uint2     tid2   [[thread_position_in_threadgroup]]);
+    uint     index   [[thread_position_in_grid]]);
 
 template<typename T, typename integer_t>
 kernel void ps_roi_pool(
@@ -1083,11 +1100,15 @@ kernel void ps_roi_pool_backward(
     constant int64_t & pooled_width    [[buffer(9)]],
     constant int64_t & channels_out    [[buffer(10)]],
     constant float   & spatial_scale   [[buffer(11)]],
-    uint2     tgid   [[threadgroup_position_in_grid]],
-    uint2     tptg   [[threads_per_threadgroup]],
-    uint2     tid2   [[thread_position_in_threadgroup]]){
+    uint     index   [[thread_position_in_grid]]){
 
-  MPS_1D_KERNEL_LOOP(index, output_size, 1) {
+  // One thread per pooled-output element. Dispatched via dispatchThreads, so
+  // each element is processed exactly once; redundant passes would otherwise
+  // be silently summed by the atomic_add below (overlapping RoIs share pixels).
+  if (index >= static_cast<uint>(output_size)) {
+    return;
+  }
+  {
     // (n, *, ph, pw) is an element in the pooled output
     integer_t pw = index % pooled_width;
     integer_t ph = (index / pooled_width) % pooled_height;
@@ -1150,9 +1171,7 @@ kernel void ps_roi_pool_backward<DTYPE, INT_DTYPE>(          \
     constant int64_t & pooled_width    [[buffer(9)]],        \
     constant int64_t & channels_out    [[buffer(10)]],       \
     constant float   & spatial_scale   [[buffer(11)]],       \
-    uint2     tgid   [[threadgroup_position_in_grid]],       \
-    uint2     tptg   [[threads_per_threadgroup]],            \
-    uint2     tid2   [[thread_position_in_threadgroup]]);
+    uint     index   [[thread_position_in_grid]]);
 
 REGISTER_NMS_OP(float);
 REGISTER_NMS_OP(half);
@@ -1175,14 +1194,43 @@ REGISTER_PS_ROI_POOL_OP(half, int64_t);
 REGISTER_PS_ROI_POOL_BACKWARD_OP(float, int64_t);
 REGISTER_PS_ROI_POOL_BACKWARD_OP(half, int64_t);
 
-)VISION_METAL");
+)VISION_METAL";
 
-static id<MTLComputePipelineState> visionPipelineState(
-    id<MTLDevice> device,
+// Compiles the shader library on first use. The handle lives for the whole
+// process.
+inline AOTIMetalShaderLibraryHandle shaderLibrary() {
+  static AOTIMetalShaderLibraryHandle library = []() {
+    AOTIMetalShaderLibraryHandle handle = nullptr;
+    TORCH_ERROR_CODE_CHECK(
+        aoti_torch_mps_create_shader_library(metal_shaders, &handle));
+    return handle;
+  }();
+  return library;
+}
+
+// Maps a dtype to the suffix used in the kernel names above. Unsupported
+// dtypes map to "", so the kernel lookup fails.
+inline const char* metal_type_string(
+    torch::headeronly::ScalarType scalar_type) {
+  if (scalar_type == torch::headeronly::ScalarType::Float) {
+    return "float";
+  }
+  if (scalar_type == torch::headeronly::ScalarType::Half) {
+    return "half";
+  }
+  return "";
+}
+
+// Looks up a kernel by name in the shared shader library.
+inline AOTIMetalKernelFunctionHandle visionKernelFunction(
     const std::string& kernel) {
-  return lib.getPipelineStateForFunc(kernel);
+  AOTIMetalKernelFunctionHandle func = nullptr;
+  TORCH_ERROR_CODE_CHECK(aoti_torch_mps_get_kernel_function(
+      shaderLibrary(), kernel.c_str(), &func));
+  return func;
 }
 
 } // namespace mps
+
 } // namespace ops
 } // namespace vision

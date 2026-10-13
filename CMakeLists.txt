@@ -97,9 +97,21 @@ FOREACH(DIR ${ALLOW_LISTED})
 ENDFOREACH()
 
 add_library(${PROJECT_NAME} SHARED ${ALL_SOURCES})
+target_compile_definitions(${PROJECT_NAME} PRIVATE TORCH_TARGET_VERSION=0x020e000000000000)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES})
 
+if(WITH_CUDA)
+  # Some torch APIs like aoti_torch_get_current_cuda_stream (used by
+  # ops/cuda/cuda_helpers.h) are only exposed when USE_CUDA is defined.
+  # https://github.com/pytorch/pytorch/blob/98e36864e640023a716e058d894ea2d20e76e5f7/torch/csrc/inductor/aoti_torch/c/shim.h#L573-L602
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_CUDA)
+endif()
+
 if(WITH_MPS)
+  # Some torch APIs like torch_mps_set_arg_bytes (used by
+  # ops/mps/roi_align_kernel.mm) are only exposed when USE_MPS is defined.
+  # https://github.com/pytorch/pytorch/blob/7b260c057d76d7a37d1c28cbc8c79042d107f334/torch/csrc/stable/c/shim.h#L300-L312
+  target_compile_definitions(${PROJECT_NAME} PRIVATE USE_MPS)
   find_library(metal NAMES Metal)
   find_library(foundation NAMES Foundation)
   target_link_libraries(${PROJECT_NAME} PRIVATE ${metal} ${foundation})

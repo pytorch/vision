@@ -1,10 +1,10 @@
 import concurrent.futures
-import contextlib
 import glob
 import io
 import os
 import re
 import sys
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -890,6 +890,64 @@ def test_decode_gif(tmpdir, name, scripted):
             torch.testing.assert_close(tv_frame, pil_frame, atol=0, rtol=0)
 
 
+@pytest.mark.parametrize("scripted", (True, False))
+@pytest.mark.parametrize(
+    "frame1_left, frame1_top, is_out_of_bounds",
+    [
+        (0, 0, False),  # in-bounds control (verifies the crafted bytes decode)
+        (10, 10, True),  # frame fully outside the 1x1 canvas
+        (0, 30000, True),  # large Top offset
+    ],
+)
+def test_decode_gif_frame_outside_canvas(scripted, frame1_left, frame1_top, is_out_of_bounds):
+    # Non-regression test: a frame whose Image Descriptor places it (partly) outside
+    # the logical screen must be clipped to the output tensor, not written past
+    # its allocation.
+    # Before the fix the (10,10) and (0,30000) cases wrote to
+    # out[1][c][top][left] on a 1x1 allocation -> heap OOB write (SIGSEGV /
+    # glibc heap corruption).
+    def le16(v):
+        return bytes([v & 0xFF, (v >> 8) & 0xFF])
+
+    # Hand-crafted 2-frame GIF: 1x1 logical screen, 2-color global colormap,
+    # frame 0 = 1x1 @ (0,0) white, frame 1 = 1x1 @ (frame1_left, frame1_top) black.
+    encoded = (
+        b"GIF89a"
+        + le16(1)
+        + le16(1)
+        + bytes([0x80, 0, 0])  # LSD: 1x1, GCT present (2 colors)
+        + bytes([0, 0, 0, 255, 255, 255])  # GCT: black, white
+        # frame 0: 1x1 @ (0,0), pixel = color 1 (white)
+        + bytes([0x2C])
+        + le16(0)
+        + le16(0)
+        + le16(1)
+        + le16(1)
+        + bytes([0])
+        + bytes([2, 2, 0x4C, 0x01, 0])  # LZW min=2, [Clear, 1, EOI]
+        # frame 1: 1x1 @ (frame1_left, frame1_top), pixel = color 0 (black)
+        + bytes([0x2C])
+        + le16(frame1_left)
+        + le16(frame1_top)
+        + le16(1)
+        + le16(1)
+        + bytes([0])
+        + bytes([2, 2, 0x44, 0x01, 0])  # LZW min=2, [Clear, 0, EOI]
+        + bytes([0x3B])  # trailer
+    )
+    f = torch.jit.script(decode_gif) if scripted else decode_gif
+    out = f(torch.frombuffer(bytearray(encoded), dtype=torch.uint8))
+
+    assert out.shape == (2, 3, 1, 1)
+    assert (out[0] == 255).all()  # frame 0 is in-bounds and white
+    # frame 1 (black) lands on the canvas only when in-bounds; otherwise it's
+    # clipped away and the previous frame (white) shows through.
+    if is_out_of_bounds:
+        assert (out[1] == 255).all()
+    else:
+        assert (out[1] == 0).all()
+
+
 @pytest.mark.parametrize(
     "decode_fun, match",
     [
@@ -936,7 +994,7 @@ def test_decode_webp(decode_fun, scripted):
 
 
 @pytest.mark.parametrize("decode_fun", (decode_webp, decode_image))
-def test_decode_webp_grayscale(decode_fun, capfd):
+def test_decode_webp_grayscale(decode_fun):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
 
     # We warn at the C++ layer because for decode_image(), we don't do the image
@@ -944,17 +1002,10 @@ def test_decode_webp_grayscale(decode_fun, capfd):
     # warn at the Python layer in decode_webp(), but then users would get a
     # double wanring: one from the Python layer and one from the C++ layer.
     #
-    # Because we use the TORCH_WARN_ONCE macro, we need to do this dance to
-    # temporarily always warn so we can test.
-    @contextlib.contextmanager
-    def set_always_warn():
-        torch._C._set_warnAlways(True)
-        yield
-        torch._C._set_warnAlways(False)
-
-    with set_always_warn():
+    # torch surfaces the C++ warning as a Python warning, see
+    # https://github.com/pytorch/pytorch/pull/193451.
+    with pytest.warns(UserWarning, match="Webp does not support grayscale conversions"):
         img = decode_fun(encoded_bytes, mode=ImageReadMode.GRAY)
-        assert "Webp does not support grayscale conversions" in capfd.readouterr().err
 
         # Note that because we do not support grayscale conversions, we expect
         # that the number of color channels is still 3.
@@ -1124,6 +1175,60 @@ def test_mode_str():
     assert decode_image(path, mode="rGb").shape[0] == 3
     assert decode_image(path, mode="GRAY").shape[0] == 1
     assert decode_image(path, mode="RGBA").shape[0] == 4
+
+
+def _deprecated_calls(tmp_path):
+    # Zero-arg thunks calling each deprecated entry point with valid inputs.
+    img = torch.randint(0, 256, (3, 8, 8), dtype=torch.uint8)
+    png = encode_png(img)
+    jpg = encode_jpeg(img)
+    path = str(tmp_path / "img.png")
+    write_file(path, png)
+    return {
+        "read_file": lambda: read_file(path),
+        "write_file": lambda: write_file(str(tmp_path / "out.bin"), png),
+        "decode_png": lambda: decode_png(png),
+        "encode_png": lambda: encode_png(img),
+        "write_png": lambda: write_png(img, str(tmp_path / "out.png")),
+        "decode_jpeg": lambda: decode_jpeg(jpg),
+        "encode_jpeg": lambda: encode_jpeg(img),
+        "write_jpeg": lambda: write_jpeg(img, str(tmp_path / "out.jpg")),
+        "decode_image": lambda: decode_image(png),
+        "read_image": lambda: read_image(path),
+    }
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "read_file",
+        "write_file",
+        "decode_png",
+        "encode_png",
+        "write_png",
+        "decode_jpeg",
+        "encode_jpeg",
+        "write_jpeg",
+        "decode_image",
+        "read_image",
+    ],
+)
+def test_deprecation_warning(name, tmp_path):
+    call = _deprecated_calls(tmp_path)[name]
+    with pytest.warns(DeprecationWarning, match="deprecated since torchvision 0.29"):
+        call()
+
+
+def test_deprecation_warning_only_once(tmp_path):
+    calls = _deprecated_calls(tmp_path)
+    with warnings.catch_warnings(record=True) as caught:
+        # "default" (rather than "always") is what dedups per warn() location,
+        # which is how users see this warning at most once.
+        warnings.simplefilter("default")
+        for call in calls.values():
+            call()
+            call()
+    assert [w.category for w in caught].count(DeprecationWarning) == 1
 
 
 if __name__ == "__main__":

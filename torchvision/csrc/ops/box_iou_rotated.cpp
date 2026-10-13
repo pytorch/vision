@@ -6,25 +6,29 @@
 
 #include "box_iou_rotated.h"
 
-#include <ATen/core/dispatch/Dispatcher.h>
-#include <torch/library.h>
-#include <torch/types.h>
+#include <torch/csrc/stable/c/shim.h>
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/stableivalue_conversions.h>
+#include <torch/headeronly/util/shim_utils.h>
+#include <torch/headeronly/version.h>
+
+#include <array>
 
 namespace vision {
 namespace ops {
 
-at::Tensor box_iou_rotated(const at::Tensor& boxes1, const at::Tensor& boxes2) {
-  C10_LOG_API_USAGE_ONCE(
-      "torchvision.csrc.ops.box_iou_rotated.box_iou_rotated");
-  static auto op = c10::Dispatcher::singleton()
-                       .findSchemaOrThrow("torchvision::box_iou_rotated", "")
-                       .typed<decltype(box_iou_rotated)>();
-  return op.call(boxes1, boxes2);
+using torch::stable::Tensor;
+
+Tensor box_iou_rotated(const Tensor& boxes1, const Tensor& boxes2) {
+  std::array<StableIValue, 2> stack{
+      torch::stable::detail::from(boxes1), torch::stable::detail::from(boxes2)};
+  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
+      "torchvision::box_iou_rotated", "", stack.data(), TORCH_ABI_VERSION));
+  return torch::stable::detail::to<Tensor>(stack[0]);
 }
 
-TORCH_LIBRARY_FRAGMENT(torchvision, m) {
-  m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::box_iou_rotated(Tensor boxes1, Tensor boxes2) -> Tensor"));
+STABLE_TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def("box_iou_rotated(Tensor boxes1, Tensor boxes2) -> Tensor");
 }
 
 } // namespace ops

@@ -1,13 +1,17 @@
 #pragma once
 
-#include <torch/types.h>
+#include <torch/csrc/stable/tensor.h>
+
+#include <string>
 
 namespace vision {
 namespace image {
 
-C10_EXPORT torch::Tensor read_file(const std::string& filename);
+torch::stable::Tensor read_file(const std::string& filename);
 
-C10_EXPORT void write_file(const std::string& filename, torch::Tensor& data);
+torch::stable::Tensor write_file(
+    const std::string& filename,
+    torch::stable::Tensor& data);
 
 } // namespace image
 } // namespace vision

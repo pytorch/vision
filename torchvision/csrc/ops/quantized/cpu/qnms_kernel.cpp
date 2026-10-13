@@ -1,46 +1,61 @@
-#include <ATen/ATen.h>
-#include <torch/library.h>
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/csrc/stable/tensor.h>
+#include <torch/headeronly/core/Dispatch_v2.h>
+#include <torch/headeronly/core/ScalarType.h>
+#include <torch/headeronly/util/Exception.h>
+#include "../../StableABICompat.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <tuple>
 
 namespace vision {
 namespace ops {
 
 namespace {
 
+using torch::stable::Tensor;
+
 template <typename scalar_t>
-at::Tensor qnms_kernel_impl(
-    const at::Tensor& dets,
-    const at::Tensor& scores,
+Tensor qnms_kernel_impl(
+    const Tensor& dets,
+    const Tensor& scores,
     double iou_threshold) {
-  TORCH_CHECK(!dets.is_cuda(), "dets must be a CPU tensor");
-  TORCH_CHECK(!scores.is_cuda(), "scores must be a CPU tensor");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(!dets.is_cuda(), "dets must be a CPU tensor");
+  STD_TORCH_CHECK(!scores.is_cuda(), "scores must be a CPU tensor");
+  STD_TORCH_CHECK(
       dets.scalar_type() == scores.scalar_type(),
       "dets should have the same type as scores");
 
   if (dets.numel() == 0) {
-    return at::empty({0}, dets.options().dtype(at::kLong));
+    return torch::stable::new_empty(
+        dets, {0}, torch::headeronly::ScalarType::Long);
   }
 
   const auto ndets = dets.size(0);
 
-  auto x1_t = dets.select(1, 0).contiguous();
-  auto y1_t = dets.select(1, 1).contiguous();
-  auto x2_t = dets.select(1, 2).contiguous();
-  auto y2_t = dets.select(1, 3).contiguous();
-  auto order_t = std::get<1>(
-      scores.sort(/*stable=*/true, /*dim=*/0, /* descending=*/true));
-  at::Tensor suppressed_t = at::zeros({ndets}, dets.options().dtype(at::kByte));
-  at::Tensor keep_t = at::zeros({ndets}, dets.options().dtype(at::kLong));
-  at::Tensor areas_t = at::zeros({ndets}, dets.options().dtype(at::kFloat));
+  auto x1_t = torch::stable::contiguous(torch::stable::select(dets, 1, 0));
+  auto y1_t = torch::stable::contiguous(torch::stable::select(dets, 1, 1));
+  auto x2_t = torch::stable::contiguous(torch::stable::select(dets, 1, 2));
+  auto y2_t = torch::stable::contiguous(torch::stable::select(dets, 1, 3));
+  auto order_t = std::get<1>(stable_helpers::sort(
+      scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
+  Tensor suppressed_t = torch::stable::new_zeros(
+      dets, {ndets}, torch::headeronly::ScalarType::Byte);
+  Tensor keep_t = torch::stable::new_zeros(
+      dets, {ndets}, torch::headeronly::ScalarType::Long);
+  Tensor areas_t = torch::stable::new_zeros(
+      dets, {ndets}, torch::headeronly::ScalarType::Float);
 
-  auto suppressed = suppressed_t.data_ptr<uint8_t>();
-  auto keep = keep_t.data_ptr<int64_t>();
-  auto order = order_t.data_ptr<int64_t>();
-  auto x1 = x1_t.data_ptr<scalar_t>();
-  auto y1 = y1_t.data_ptr<scalar_t>();
-  auto x2 = x2_t.data_ptr<scalar_t>();
-  auto y2 = y2_t.data_ptr<scalar_t>();
-  auto areas = areas_t.data_ptr<float>();
+  auto suppressed = suppressed_t.mutable_data_ptr<uint8_t>();
+  auto keep = keep_t.mutable_data_ptr<int64_t>();
+  auto order = order_t.const_data_ptr<int64_t>();
+  auto x1 = x1_t.const_data_ptr<scalar_t>();
+  auto y1 = y1_t.const_data_ptr<scalar_t>();
+  auto x2 = x2_t.const_data_ptr<scalar_t>();
+  auto y2 = y2_t.const_data_ptr<scalar_t>();
+  auto areas = areas_t.mutable_data_ptr<float>();
 
   for (int64_t i = 0; i < ndets; i++) {
     // Note 1: To get the exact area we'd need to multiply by scale**2, but this
@@ -55,7 +70,6 @@ at::Tensor qnms_kernel_impl(
   }
 
   int64_t num_to_keep = 0;
-
   for (int64_t _i = 0; _i < ndets; _i++) {
     auto i = order[_i];
     if (suppressed[i] == 1) {
@@ -90,25 +104,26 @@ at::Tensor qnms_kernel_impl(
       }
     }
   }
-  return keep_t.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep);
+  return torch::stable::narrow(
+      keep_t, /*dim=*/0, /*start=*/0, /*length=*/num_to_keep);
 }
 
-at::Tensor qnms_kernel(
-    const at::Tensor& dets,
-    const at::Tensor& scores,
+Tensor qnms_kernel(
+    const Tensor& dets,
+    const Tensor& scores,
     double iou_threshold) {
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       dets.size(1) == 4,
       "boxes should have 4 elements in dimension 1, got ",
       dets.size(1));
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       scores.dim() == 1,
       "scores should be a 1d tensor, got ",
       scores.dim(),
       "D");
-  TORCH_CHECK(
+  STD_TORCH_CHECK(
       dets.size(0) == scores.size(0),
       "boxes and scores should have same number of elements in ",
       "dimension 0, got ",
@@ -116,23 +131,26 @@ at::Tensor qnms_kernel(
       " and ",
       scores.size(0));
 
-  auto result = at::empty({0});
-
-  AT_DISPATCH_INTEGRAL_TYPES(dets.scalar_type(), "qnms_kernel", [&] {
-    result = qnms_kernel_impl<scalar_t>(dets, scores, iou_threshold);
-  });
+  Tensor result =
+      torch::stable::new_empty(dets, {0}, torch::headeronly::ScalarType::Long);
+  THO_DISPATCH_V2(
+      dets.scalar_type(),
+      "qnms_kernel",
+      AT_WRAP([&]() {
+        result = qnms_kernel_impl<scalar_t>(dets, scores, iou_threshold);
+      }),
+      AT_EXPAND(AT_INTEGRAL_TYPES));
   return result;
 }
 
 } // namespace
 
-TORCH_LIBRARY_FRAGMENT(torchvision, m) {
-  m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::qnms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor"));
+STABLE_TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def("qnms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor");
 }
 
-TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl(TORCH_SELECTIVE_NAME("torchvision::qnms"), TORCH_FN(qnms_kernel));
+STABLE_TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
+  m.impl("qnms", TORCH_BOX(&qnms_kernel));
 }
 
 } // namespace ops
