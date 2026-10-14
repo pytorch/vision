@@ -258,17 +258,6 @@ def omniglot():
     )
 
 
-def phototour():
-    return itertools.chain.from_iterable(
-        [
-            collect_urls(datasets.PhotoTour, ROOT, name=name, download=True)
-            # The names postfixed with '_harris' point to the domain 'matthewalunbrown.com'. For some reason all
-            # requests timeout from within CI. They are disabled until this is resolved.
-            for name in ("notredame", "yosemite", "liberty")  # "notredame_harris", "yosemite_harris", "liberty_harris"
-        ]
-    )
-
-
 def sbdataset():
     return collect_urls(datasets.SBDataset, ROOT, download=True)
 
@@ -351,7 +340,6 @@ def url_parametrization(*dataset_urls_and_ids_fns):
     emnist,
     qmnist,
     omniglot,
-    phototour,
     sbdataset,
     semeion,
     stl10,
