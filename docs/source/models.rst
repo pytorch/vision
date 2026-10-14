@@ -175,7 +175,7 @@ Most pre-trained models can be accessed directly via PyTorch Hub without having 
     weights = torch.hub.load(
         "pytorch/vision",
         "get_weight",
-        weights="ResNet50_Weights.IMAGENET1K_V2",
+        name="ResNet50_Weights.IMAGENET1K_V2",
     )
     model = torch.hub.load("pytorch/vision", "resnet50", weights=weights)
 
