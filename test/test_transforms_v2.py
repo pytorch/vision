@@ -5030,6 +5030,25 @@ class TestCenterCrop:
 
         assert_equal(actual, expected)
 
+    @pytest.mark.parametrize("output_size", [(8, 8), (12, 12), (8, 3), (3, 8), (6, 6), (7, 7), (3, 3), (5, 5)])
+    @pytest.mark.parametrize("dtype", [torch.int64, torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    def test_annotations_match_image(self, output_size, dtype, device):
+        image = tv_tensors.Image(torch.zeros((1, 5, 5), dtype=torch.uint8, device=device))
+        image[0, 2, 2] = 1
+        boxes = tv_tensors.BoundingBoxes([[2, 2, 3, 3]], format="XYXY", canvas_size=(5, 5), dtype=dtype, device=device)
+        keypoints = tv_tensors.KeyPoints([[2, 2]], canvas_size=(5, 5), dtype=dtype, device=device)
+
+        output_image, output_boxes, output_keypoints = transforms.CenterCrop(output_size)(image, boxes, keypoints)
+
+        expected_keypoints = output_image[0].nonzero().flip(-1).to(dtype)
+        expected_boxes = torch.cat((expected_keypoints, expected_keypoints + 1), dim=-1)
+
+        torch.testing.assert_close(output_keypoints.as_subclass(torch.Tensor), expected_keypoints)
+        torch.testing.assert_close(output_boxes.as_subclass(torch.Tensor), expected_boxes)
+        assert output_keypoints.canvas_size == output_size
+        assert output_boxes.canvas_size == output_size
+
     def _reference_center_crop_bounding_boxes(self, bounding_boxes, output_size):
         image_height, image_width = bounding_boxes.canvas_size
         if isinstance(output_size, int):
@@ -5038,8 +5057,8 @@ class TestCenterCrop:
             output_size *= 2
         crop_height, crop_width = output_size
 
-        top = int(round((image_height - crop_height) / 2))
-        left = int(round((image_width - crop_width) / 2))
+        top = int(round(max(image_height - crop_height, 0) / 2)) - max(crop_height - image_height, 0) // 2
+        left = int(round(max(image_width - crop_width, 0) / 2)) - max(crop_width - image_width, 0) // 2
 
         affine_matrix = np.array(
             [
@@ -5077,8 +5096,8 @@ class TestCenterCrop:
             output_size *= 2
         crop_height, crop_width = output_size
 
-        top = int(round((image_height - crop_height) / 2))
-        left = int(round((image_width - crop_width) / 2))
+        top = int(round(max(image_height - crop_height, 0) / 2)) - max(crop_height - image_height, 0) // 2
+        left = int(round(max(image_width - crop_width, 0) / 2)) - max(crop_width - image_width, 0) // 2
 
         affine_matrix = np.array(
             [
