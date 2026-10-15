@@ -2573,8 +2573,9 @@ def _center_crop_compute_padding(crop_height: int, crop_width: int, image_height
 def _center_crop_compute_crop_anchor(
     crop_height: int, crop_width: int, image_height: int, image_width: int
 ) -> tuple[int, int]:
-    crop_top = int(round((image_height - crop_height) / 2.0))
-    crop_left = int(round((image_width - crop_width) / 2.0))
+    pad_left, pad_top, _, _ = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
+    crop_top = int(round(max(image_height - crop_height, 0) / 2.0)) - pad_top
+    crop_left = int(round(max(image_width - crop_width, 0) / 2.0)) - pad_left
     return crop_top, crop_left
 
 
