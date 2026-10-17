@@ -4299,6 +4299,14 @@ class TestAutoAugmentTransforms:
         ):
             transforms.RandAugment(num_ops=num_ops)
 
+    @pytest.mark.parametrize("magnitude", [-1, 3.5, None, [3]])
+    def test_rand_augment_magnitude_error(self, magnitude):
+        with pytest.raises(
+            ValueError,
+            match=re.escape(f"magnitude should be a non-negative integer, but got {magnitude} instead."),
+        ):
+            transforms.RandAugment(magnitude=magnitude)
+
 
 class TestConvertBoundingBoxFormat:
     old_new_formats = list(
