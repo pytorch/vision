@@ -109,7 +109,9 @@ def adjust_hue(img: Image.Image, hue_factor: float) -> Image.Image:
     if input_mode in {"L", "1", "I", "F"}:
         return img
 
-    h, s, v = img.convert("HSV").split()
+    alpha = img.getchannel("A") if "A" in img.getbands() else None
+    rgb_img = img.convert("RGB")
+    h, s, v = rgb_img.convert("HSV").split()
 
     np_h = np.array(h, dtype=np.uint8)
     # This will over/underflow, as desired
@@ -117,7 +119,10 @@ def adjust_hue(img: Image.Image, hue_factor: float) -> Image.Image:
 
     h = _Image_fromarray(np_h, "L")
 
-    img = Image.merge("HSV", (h, s, v)).convert(input_mode)
+    img = Image.merge("HSV", (h, s, v)).convert("RGB")
+    if alpha is not None:
+        img.putalpha(alpha)
+        img = img.convert(input_mode)
     return img
 
 
