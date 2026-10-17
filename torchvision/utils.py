@@ -179,58 +179,25 @@ def _Image_fromarray(
     mode: str,
 ) -> Image.Image:
     """
-    A wrapper around PIL.Image.fromarray to mitigate the deprecation of the
-    mode parameter. See:
-      https://pillow.readthedocs.io/en/stable/releasenotes/11.3.0.html#image-fromarray-mode-parameter
+    A wrapper around PIL.Image.fromarray that preserves the historical
+    ``mode`` behavior used by ``to_pil_image`` / ``ToPILImage``.
+
+    Pillow 11.3 deprecated/removed that parameter (mode is inferred from the
+    array). Pillow 12.0 restored the needed ``fromarray(obj, mode)`` behavior.
+    See https://github.com/python-pillow/Pillow/pull/9063.
     """
 
-    # This may throw if the version string is from an install that comes from a
-    # non-stable or development version. We'll fall back to the old behavior in
-    # such cases.
+    # Non-stable version strings may not parse; fall back to fromarray().
     try:
         PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION_STRING.split("."))
     except Exception:
         PILLOW_VERSION = None
 
-    if PILLOW_VERSION is not None and PILLOW_VERSION >= (11, 3):
-        # The actual PR that implements the deprecation has more context for why
-        # it was done, and also points out some problems:
-        #
-        #    https://github.com/python-pillow/Pillow/pull/9018
-        #
-        # Our use case falls into those problems. We actually rely on the old
-        # behavior of Image.fromarray():
-        #
-        #    new behavior: PIL will infer the image mode from the data passed
-        #                  in. That is, the type and shape determines the mode.
-        #
-        #    old behavior: The mode will change how PIL reads the image,
-        #                  regardless of the data. That is, it will make the
-        #                  data work with the mode.
-        #
-        # Our uses of Image.fromarray() are effectively a "turn into PIL image
-        # AND convert the kind" operation. In particular, in
-        # functional.to_pil_image() and transforms.ToPILImage.
-        #
-        # However, Image.frombuffer() still performs this conversion. The code
-        # below is lifted from the new implementation of Image.fromarray(). We
-        # omit the code that infers the mode, and use the code that figures out
-        # from the data passed in (obj) what the correct parameters are to
-        # Image.frombuffer().
-        #
-        # Note that the alternate solution below does not work:
-        #
-        #    img = Image.fromarray(obj)
-        #    img = img.convert(mode)
-        #
-        # The resulting image has very different actual pixel values than before.
-        #
-        # TODO: Issue #9151. Pillow has an open PR to restore the functionality
-        #       we rely on:
-        #
-        #       https://github.com/python-pillow/Pillow/pull/9063
-        #
-        #       When that is part of a release, we can revisit this hack below.
+    if PILLOW_VERSION is not None and (11, 3) <= PILLOW_VERSION < (12, 0):
+        # Pillow 11.3 infers mode from dtype/shape. We need the old behavior:
+        # ``mode`` controls how the buffer is interpreted. Image.frombuffer()
+        # still does that. ``fromarray().convert(mode)`` does not: it changes
+        # pixel values.
         arr = obj.__array_interface__
         shape = arr["shape"]
         ndim = len(shape)
@@ -239,8 +206,6 @@ def _Image_fromarray(
         strides = arr.get("strides", None)
         contiguous_obj: Union[np.ndarray, bytes] = obj
         if strides is not None:
-            # We require that the data is contiguous; if it is not, we need to
-            # convert it into a contiguous format.
             if hasattr(obj, "tobytes"):
                 contiguous_obj = obj.tobytes()
             elif hasattr(obj, "tostring"):
