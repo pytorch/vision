@@ -295,14 +295,15 @@ class TestDatasetsUtils:
         assert not outside_file.exists()
 
     @pytest.mark.parametrize("use_legacy_fallback", (False, True))
-    def test_extract_tar_rejects_outside_symlink(self, tmpdir, monkeypatch, use_legacy_fallback):
+    @pytest.mark.parametrize("link_type", [tarfile.SYMTYPE, tarfile.LNKTYPE])
+    def test_extract_tar_rejects_outside_links(self, tmpdir, monkeypatch, use_legacy_fallback, link_type):
         root = pathlib.Path(tmpdir)
         extraction_dir = root / "extracted"
         extraction_dir.mkdir()
-        archive = root / "symlink.tar"
+        archive = root / "link.tar"
         with tarfile.open(archive, "w") as tar:
             link = tarfile.TarInfo("escape")
-            link.type = tarfile.SYMTYPE
+            link.type = link_type
             link.linkname = "../outside"
             tar.addfile(link)
 
@@ -315,6 +316,25 @@ class TestDatasetsUtils:
             utils.extract_archive(archive, extraction_dir)
 
         assert not (root / "outside").exists()
+
+    @pytest.mark.parametrize("use_legacy_fallback", (False, True))
+    def test_extract_tar_rejects_special_files(self, tmpdir, monkeypatch, use_legacy_fallback):
+        root = pathlib.Path(tmpdir)
+        extraction_dir = root / "extracted"
+        extraction_dir.mkdir()
+        archive = root / "special.tar"
+        with tarfile.open(archive, "w") as tar:
+            member = tarfile.TarInfo("device")
+            member.type = tarfile.FIFOTYPE
+            tar.addfile(member)
+
+        if use_legacy_fallback:
+            monkeypatch.delattr(tarfile, "data_filter", raising=False)
+        elif not hasattr(tarfile, "data_filter"):
+            pytest.skip("Python's tarfile module has no extraction filters")
+
+        with pytest.raises(tarfile.TarError, match="special|Special"):
+            utils.extract_archive(archive, extraction_dir)
 
     def test_verify_str_arg(self):
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
