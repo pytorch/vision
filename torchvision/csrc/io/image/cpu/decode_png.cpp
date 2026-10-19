@@ -232,7 +232,7 @@ torch::stable::Tensor decode_png(
 
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
 
-  auto output = stable_permute(*tensor, {2, 0, 1});
+  auto output = torch::stable::permute(*tensor, {2, 0, 1});
   if (apply_exif_orientation) {
     return exif_orientation_transform(output, exif_orientation);
   }
