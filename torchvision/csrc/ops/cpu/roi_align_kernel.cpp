@@ -4,6 +4,7 @@
 #include <torch/headeronly/core/Dispatch_v2.h>
 
 #include <algorithm>
+#include <climits>
 #include <cmath>
 
 #include "./roi_align_common.h"
@@ -20,6 +21,7 @@ void roi_align_forward_kernel_impl(
     int n_rois,
     const T* input,
     const T& spatial_scale,
+    int batch_size,
     int channels,
     int height,
     int width,
@@ -36,18 +38,19 @@ void roi_align_forward_kernel_impl(
     int index_n = n * channels * pooled_width * pooled_height;
 
     const T* offset_rois = rois + n * 5;
+    STD_TORCH_CHECK(
+        offset_rois[0] >= 0 && offset_rois[0] < batch_size,
+        "rois batch index must be in [0, batch_size)");
 
-    // A ROI with a non-finite batch index or coordinate (NaN or +/-inf) is
-    // malformed. Every comparison against NaN is false, and inf coordinates
-    // produce a NaN width (inf - inf), so such a ROI slips past the bilinear
-    // bounds check below; casting a non-finite value to int then yields a
-    // garbage index that reads out of bounds and segfaults (and ceil() of a
-    // non-finite value is UB when sampling_ratio <= 0). Guard on the raw ROI
-    // before the batch-index cast just below, which is itself UB on a
-    // non-finite value. Treat the ROI as empty: leave zeros for it.
+    // A ROI with a non-finite coordinate (NaN or +/-inf) is malformed. Every
+    // comparison against NaN is false, and inf coordinates produce a NaN width
+    // (inf - inf), so such a ROI slips past the bilinear bounds check below;
+    // casting a non-finite value to int then yields a garbage index that reads
+    // out of bounds and segfaults (and ceil() of a non-finite value is UB when
+    // sampling_ratio <= 0). A non-finite batch index is already rejected by the
+    // check above. Treat the ROI as empty: leave zeros for it.
     // https://github.com/pytorch/vision/issues/9273
-    if (!std::isfinite(static_cast<double>(offset_rois[0])) ||
-        !std::isfinite(static_cast<double>(offset_rois[1])) ||
+    if (!std::isfinite(static_cast<double>(offset_rois[1])) ||
         !std::isfinite(static_cast<double>(offset_rois[2])) ||
         !std::isfinite(static_cast<double>(offset_rois[3])) ||
         !std::isfinite(static_cast<double>(offset_rois[4]))) {
@@ -84,6 +87,12 @@ void roi_align_forward_kernel_impl(
     // We do average (integral) pooling inside a bin
     // When the grid is empty, output zeros.
     const T count = std::max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
+
+    STD_TORCH_CHECK(
+        static_cast<double>(roi_bin_grid_h) * roi_bin_grid_w * pooled_width *
+                pooled_height <=
+            INT_MAX,
+        "roi_align sampling grid is too large, reduce sampling_ratio or the RoI size");
 
     // we want to precalculate indices and weights shared by all channels,
     // this is the key point of optimization
@@ -203,6 +212,7 @@ void roi_align_backward_kernel_impl(
     int nthreads,
     const T* grad_output,
     const T& spatial_scale,
+    int batch_size,
     int channels,
     int height,
     int width,
@@ -224,18 +234,19 @@ void roi_align_backward_kernel_impl(
     int n = index / pooled_width / pooled_height / channels;
 
     const T* offset_rois = rois + n * 5;
+    STD_TORCH_CHECK(
+        offset_rois[0] >= 0 && offset_rois[0] < batch_size,
+        "rois batch index must be in [0, batch_size)");
 
-    // A ROI with a non-finite batch index or coordinate (NaN or +/-inf) is
-    // malformed. Every comparison against NaN is false, and inf coordinates
-    // produce a NaN width (inf - inf), so such a ROI slips past the bilinear
-    // bounds check below; casting a non-finite value to int then yields a
-    // garbage index that reads out of bounds and segfaults (and ceil() of a
-    // non-finite value is UB when sampling_ratio <= 0). Guard on the raw ROI
-    // before the batch-index cast just below, which is itself UB on a
-    // non-finite value. Treat the ROI as empty: leave zeros for it.
+    // A ROI with a non-finite coordinate (NaN or +/-inf) is malformed. Every
+    // comparison against NaN is false, and inf coordinates produce a NaN width
+    // (inf - inf), so such a ROI slips past the bilinear bounds check below;
+    // casting a non-finite value to int then yields a garbage index that reads
+    // out of bounds and segfaults (and ceil() of a non-finite value is UB when
+    // sampling_ratio <= 0). A non-finite batch index is already rejected by the
+    // check above. Treat the ROI as empty: leave zeros for it.
     // https://github.com/pytorch/vision/issues/9273
-    if (!std::isfinite(static_cast<double>(offset_rois[0])) ||
-        !std::isfinite(static_cast<double>(offset_rois[1])) ||
+    if (!std::isfinite(static_cast<double>(offset_rois[1])) ||
         !std::isfinite(static_cast<double>(offset_rois[2])) ||
         !std::isfinite(static_cast<double>(offset_rois[3])) ||
         !std::isfinite(static_cast<double>(offset_rois[4]))) {
@@ -340,6 +351,7 @@ Tensor roi_align_forward_kernel(
       "input should have the same type as rois");
 
   auto num_rois = rois.size(0);
+  auto batch_size = input.size(0);
   auto channels = input.size(1);
   auto height = input.size(2);
   auto width = input.size(3);
@@ -361,6 +373,7 @@ Tensor roi_align_forward_kernel(
             num_rois,
             input_.const_data_ptr<scalar_t>(),
             spatial_scale,
+            batch_size,
             channels,
             height,
             width,
@@ -390,9 +403,15 @@ Tensor roi_align_backward_kernel(
     bool aligned) {
   STD_TORCH_CHECK(grad.is_cpu(), "grad must be a CPU tensor");
   STD_TORCH_CHECK(rois.is_cpu(), "rois must be a CPU tensor");
+  STD_TORCH_CHECK(rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
   STD_TORCH_CHECK(
       grad.scalar_type() == rois.scalar_type(),
       "grad should have the same type as rois");
+  STD_TORCH_CHECK(
+      grad.dim() == 4 && grad.size(0) == rois.size(0) &&
+          grad.size(1) == channels && grad.size(2) == pooled_height &&
+          grad.size(3) == pooled_width,
+      "grad should have shape [K, channels, pooled_height, pooled_width]");
 
   Tensor grad_input =
       torch::stable::new_zeros(grad, {batch_size, channels, height, width});
@@ -417,6 +436,7 @@ Tensor roi_align_backward_kernel(
             grad.numel(),
             grad.const_data_ptr<scalar_t>(),
             spatial_scale,
+            batch_size,
             channels,
             height,
             width,
