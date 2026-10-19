@@ -93,7 +93,7 @@ torch::stable::Tensor decode_webp(
       torch::headeronly::ScalarType::Byte,
       deleter);
 
-  return stable_permute(out, {2, 0, 1});
+  return torch::stable::permute(out, {2, 0, 1});
 }
 #endif // WEBP_FOUND
 
