@@ -83,7 +83,7 @@ torch::stable::Tensor encode_jpeg(
   int channels = data.size(0);
   int height = data.size(1);
   int width = data.size(2);
-  input = torch::stable::contiguous(stable_permute(data, {1, 2, 0}));
+  input = torch::stable::contiguous(torch::stable::permute(data, {1, 2, 0}));
 
   STD_TORCH_CHECK(
       channels == 1 || channels == 3,
