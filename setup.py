@@ -6,10 +6,11 @@ import shlex
 import shutil
 import subprocess
 import sys
-import sysconfig
 import warnings
 from importlib.metadata import distribution, PackageNotFoundError
 from pathlib import Path
+
+import setuptools.command.bdist_wheel
 
 import torch
 from packaging.version import parse as parse_version
@@ -80,6 +81,12 @@ def write_version_file(version, sha):
         f.write("    cuda = _check_cuda_version()\n")
 
 
+# We're ABI stable w.r.t. torch 2.14. TORCH_MIN_VERSION and TORCH_TARGET_VERSION
+# must be kept in sync.
+TORCH_MIN_VERSION = (2, 14, 0)
+TORCH_TARGET_VERSION = "0x020e000000000000"
+
+
 def get_requirements():
     def get_dist(pkgname):
         try:
@@ -88,14 +95,17 @@ def get_requirements():
             return None
 
     pytorch_dep = os.getenv("TORCH_PACKAGE_NAME", "torch")
-    if version_pin := os.getenv("PYTORCH_VERSION"):
-        pytorch_dep += "==" + version_pin
-    elif (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
+    if (version_pin_ge := os.getenv("PYTORCH_VERSION_GE")) and (version_pin_lt := os.getenv("PYTORCH_VERSION_LT")):
         # This branch and the associated env vars exist to help third-party
         # builds like in https://github.com/pytorch/vision/pull/8936. This is
         # supported on a best-effort basis, we don't guarantee that this won't
         # eventually break (and we don't test it.)
         pytorch_dep += f">={version_pin_ge},<{version_pin_lt}"
+    else:
+        # Before being ABI stable w.r.t. 2.14, we used to pin to
+        # torch==PYTORCH_VERSION where PYTORCH_VERSION was set by test-infra. We
+        # now ignore it and always pin to `torch >= 2.14`.
+        pytorch_dep += ">=" + ".".join(str(v) for v in TORCH_MIN_VERSION)
 
     requirements = [
         "numpy",
@@ -108,9 +118,6 @@ def get_requirements():
     requirements.append(pillow_req + pillow_ver)
 
     return requirements
-
-
-TORCH_TARGET_VERSION = "0x020e000000000000"
 
 
 def get_macros_and_flags():
@@ -136,8 +143,6 @@ def get_macros_and_flags():
             extra_compile_args["nvcc"].append("-Xcompiler")
             extra_compile_args["nvcc"].append("/Zc:preprocessor")
             extra_compile_args["nvcc"].append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING")
-        if sysconfig.get_config_var("Py_GIL_DISABLED"):
-            extra_compile_args["cxx"].append("-DPy_GIL_DISABLED")
 
     if DEBUG:
         extra_compile_args["cxx"].append("-g")
@@ -223,6 +228,8 @@ def make_C_stable_extension():
         include_dirs=[CSRS_DIR],
         define_macros=define_macros,
         extra_compile_args=extra_compile_args,
+        # Stops torch from linking libtorch_python, which is built per Python version.
+        py_limited_api=True,
     )
 
 
@@ -382,7 +389,18 @@ def make_image_stable_extension():
         define_macros=define_macros,
         libraries=libraries,
         extra_compile_args=extra_compile_args,
+        # Stops torch from linking libtorch_python, which is built per Python version.
+        py_limited_api=True,
     )
+
+
+class bdist_wheel(setuptools.command.bdist_wheel.bdist_wheel):
+    """Tag the wheel py3-none so that a single wheel covers every CPython, including
+    the free-threaded ones."""
+
+    def get_tag(self):
+        _, _, platform_tag = super().get_tag()
+        return "py3", "none", platform_tag
 
 
 class clean(distutils.command.clean.clean):
@@ -436,6 +454,7 @@ if __name__ == "__main__":
         python_requires=">=3.10,!=3.14.1",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
+            "bdist_wheel": bdist_wheel,
             "clean": clean,
         },
     )

@@ -25,6 +25,7 @@ template <typename T>
 void roi_pool_forward_kernel_impl(
     const T* input,
     const T spatial_scale,
+    int batch_size,
     int channels,
     int height,
     int width,
@@ -36,6 +37,9 @@ void roi_pool_forward_kernel_impl(
     int* argmax_data) {
   for (int n = 0; n < num_rois; ++n) {
     const T* offset_rois = rois + n * 5;
+    STD_TORCH_CHECK(
+        offset_rois[0] >= 0 && offset_rois[0] < batch_size,
+        "rois batch index must be in [0, batch_size)");
     int roi_batch_ind = offset_rois[0];
     int roi_start_w = round(offset_rois[1] * spatial_scale);
     int roi_start_h = round(offset_rois[2] * spatial_scale);
@@ -95,6 +99,7 @@ void roi_pool_backward_kernel_impl(
     const T* grad_output,
     const int* argmax_data,
     int num_rois,
+    int batch_size,
     int channels,
     int height,
     int width,
@@ -108,6 +113,9 @@ void roi_pool_backward_kernel_impl(
     int w_stride) {
   for (int n = 0; n < num_rois; ++n) {
     const T* offset_rois = rois + n * 5;
+    STD_TORCH_CHECK(
+        offset_rois[0] >= 0 && offset_rois[0] < batch_size,
+        "rois batch index must be in [0, batch_size)");
     int roi_batch_ind = offset_rois[0];
 
     for (int c = 0; c < channels; ++c) {
@@ -121,6 +129,9 @@ void roi_pool_backward_kernel_impl(
           int output_offset = n * n_stride + c * c_stride;
           int argmax = argmax_data_offset[ph * pooled_width + pw];
 
+          STD_TORCH_CHECK(
+              argmax >= -1 && argmax < height * width,
+              "argmax values must be in [-1, height * width)");
           if (argmax != -1) {
             add(grad_input_offset + argmax,
                 static_cast<T>(
@@ -142,10 +153,13 @@ std::tuple<Tensor, Tensor> roi_pool_forward_kernel(
   STD_TORCH_CHECK(input.is_cpu(), "input must be a CPU tensor");
   STD_TORCH_CHECK(rois.is_cpu(), "rois must be a CPU tensor");
   STD_TORCH_CHECK(
+      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
+  STD_TORCH_CHECK(
       input.scalar_type() == rois.scalar_type(),
       "input should have the same type as rois");
 
   int num_rois = rois.size(0);
+  int batch_size = input.size(0);
   int channels = input.size(1);
   int height = input.size(2);
   int width = input.size(3);
@@ -170,6 +184,7 @@ std::tuple<Tensor, Tensor> roi_pool_forward_kernel(
         roi_pool_forward_kernel_impl<scalar_t>(
             input_.const_data_ptr<scalar_t>(),
             spatial_scale,
+            batch_size,
             channels,
             height,
             width,
@@ -207,6 +222,13 @@ Tensor roi_pool_backward_kernel(
       "grad should have the same type as rois");
 
   auto num_rois = rois.size(0);
+  STD_TORCH_CHECK(
+      grad.dim() == 4 && grad.size(0) == num_rois && grad.size(1) == channels &&
+          grad.size(2) == pooled_height && grad.size(3) == pooled_width,
+      "grad should have shape [K, channels, pooled_height, pooled_width]");
+  STD_TORCH_CHECK(
+      argmax.sizes().equals(grad.sizes()),
+      "argmax should have the same shape as grad");
 
   Tensor grad_input =
       torch::stable::new_zeros(grad, {batch_size, channels, height, width});
@@ -222,6 +244,7 @@ Tensor roi_pool_backward_kernel(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
+  auto argmax_ = torch::stable::contiguous(argmax);
   auto rois_ = torch::stable::contiguous(rois);
   THO_DISPATCH_V2(
       grad.scalar_type(),
@@ -229,8 +252,9 @@ Tensor roi_pool_backward_kernel(
       AT_WRAP([&]() {
         roi_pool_backward_kernel_impl<scalar_t>(
             grad.const_data_ptr<scalar_t>(),
-            argmax.const_data_ptr<int>(),
+            argmax_.const_data_ptr<int>(),
             num_rois,
+            batch_size,
             channels,
             height,
             width,
