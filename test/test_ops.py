@@ -516,9 +516,7 @@ class TestRoIAlign(RoIOpTester):
         with pytest.raises(RuntimeError, match="batch index must be in"):
             ops.roi_align(torch.zeros(2, 3, 15, 19), rois, (7, 7), spatial_scale=0.1)
         with pytest.raises(RuntimeError, match="batch index must be in"):
-            torch.ops.torchvision._roi_align_backward(
-                torch.ones(1, 3, 7, 7), rois, 0.1, 7, 7, 2, 3, 15, 19, -1, False
-            )
+            torch.ops.torchvision._roi_align_backward(torch.ones(1, 3, 7, 7), rois, 0.1, 7, 7, 2, 3, 15, 19, -1, False)
 
     @needs_mps
     @pytest.mark.parametrize("seed", range(3))
