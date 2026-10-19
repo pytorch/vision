@@ -493,7 +493,7 @@ class TestRoIAlign(RoIOpTester):
         # inf coords yield NaN widths), get cast to int and read out of bounds,
         # segfaulting the whole process. A malformed ROI must instead be
         # treated as empty (zero output / zero gradient).
-        x = torch.zeros(2, 3, 15, 19, dtype=dtype, requires_grad=True)
+        x = torch.rand(2, 3, 15, 19, dtype=dtype, requires_grad=True)
         row = [1.0, 0.0, 0.0, 1.0, 1.0]
         row[bad_col] = bad_value
         rois = torch.tensor([row], dtype=dtype)
@@ -504,9 +504,9 @@ class TestRoIAlign(RoIOpTester):
         assert (y == 0).all()
 
         # Backward must be crash-free too (the same hazard lives in the gradient
-        # kernel) and must not propagate non-finite values into the input grad.
+        # kernel) and the skipped ROI must contribute no gradient.
         y.sum().backward()
-        assert torch.isfinite(x.grad).all()
+        assert (x.grad == 0).all()
 
     @pytest.mark.parametrize("aligned", (True, False))
     @pytest.mark.parametrize("sampling_ratio", (1, -1))
@@ -517,14 +517,14 @@ class TestRoIAlign(RoIOpTester):
         # Same hazard as test_nonfinite_rois_no_segfault, reached through
         # overflow: the infinite ROI size yields NaN sample points that used to
         # be cast to int and read out of bounds.
-        x = torch.zeros(1, 3, 15, 19, dtype=torch.float16, requires_grad=True)
+        x = torch.rand(1, 3, 15, 19, dtype=torch.float16, requires_grad=True)
         rois = torch.tensor([[0.0, x1, 0.0, x2, 1.0]], dtype=torch.float16)
 
         y = ops.roi_align(x, rois, (7, 7), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned)
         assert (y == 0).all()
 
         y.sum().backward()
-        assert torch.isfinite(x.grad).all()
+        assert (x.grad == 0).all()
 
     @needs_mps
     @pytest.mark.parametrize("seed", range(3))
