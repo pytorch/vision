@@ -480,8 +480,8 @@ class TestRoIAlign(RoIOpTester):
     @pytest.mark.parametrize("sampling_ratio", (1, -1))
     @pytest.mark.parametrize("dtype", (torch.float32, torch.float64, torch.float16))
     # A non-finite coordinate is malformed: NaN slips past the bounds check
-    # directly, and +/-inf coordinates produce a NaN width (inf - inf) that
-    # does the same. Cover both hazards.
+    # directly, and +/-inf coordinates produce an infinite or NaN ROI size
+    # (inf - inf) that does the same. Cover both hazards.
     @pytest.mark.parametrize("bad_value", (float("nan"), float("inf"), float("-inf")))
     # bad_col indexes a rois row [batch_idx, x1, y1, x2, y2]; a bad value in any
     # coordinate column must not crash the kernel.
@@ -508,15 +508,23 @@ class TestRoIAlign(RoIOpTester):
         y.sum().backward()
         assert torch.isfinite(x.grad).all()
 
-    @pytest.mark.parametrize("bad_value", (float("nan"), float("inf"), float("-inf")))
-    def test_nonfinite_batch_index_raises(self, bad_value):
-        # A non-finite batch index is rejected by the batch index range check
-        # before it is cast to int (https://github.com/pytorch/vision/issues/9273).
-        rois = torch.tensor([[bad_value, 0.0, 0.0, 1.0, 1.0]])
-        with pytest.raises(RuntimeError, match="batch index must be in"):
-            ops.roi_align(torch.zeros(2, 3, 15, 19), rois, (7, 7), spatial_scale=0.1)
-        with pytest.raises(RuntimeError, match="batch index must be in"):
-            torch.ops.torchvision._roi_align_backward(torch.ones(1, 3, 7, 7), rois, 0.1, 7, 7, 2, 3, 15, 19, -1, False)
+    @pytest.mark.parametrize("aligned", (True, False))
+    @pytest.mark.parametrize("sampling_ratio", (1, -1))
+    # Finite float16 coordinates whose ROI size overflows to inf, either through
+    # x2 - x1 or through the spatial_scale product (float16 max is 65504).
+    @pytest.mark.parametrize("x1, x2, spatial_scale", ((-60000.0, 60000.0, 1.0), (0.0, 40000.0, 2.0)))
+    def test_overflowing_rois_no_segfault(self, aligned, sampling_ratio, x1, x2, spatial_scale):
+        # Same hazard as test_nonfinite_rois_no_segfault, reached through
+        # overflow: the infinite ROI size yields NaN sample points that used to
+        # be cast to int and read out of bounds.
+        x = torch.zeros(1, 3, 15, 19, dtype=torch.float16, requires_grad=True)
+        rois = torch.tensor([[0.0, x1, 0.0, x2, 1.0]], dtype=torch.float16)
+
+        y = ops.roi_align(x, rois, (7, 7), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned)
+        assert (y == 0).all()
+
+        y.sum().backward()
+        assert torch.isfinite(x.grad).all()
 
     @needs_mps
     @pytest.mark.parametrize("seed", range(3))

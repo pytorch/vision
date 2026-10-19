@@ -41,22 +41,6 @@ void roi_align_forward_kernel_impl(
     STD_TORCH_CHECK(
         offset_rois[0] >= 0 && offset_rois[0] < batch_size,
         "rois batch index must be in [0, batch_size)");
-
-    // A ROI with a non-finite coordinate (NaN or +/-inf) is malformed. Every
-    // comparison against NaN is false, and inf coordinates produce a NaN width
-    // (inf - inf), so such a ROI slips past the bilinear bounds check below;
-    // casting a non-finite value to int then yields a garbage index that reads
-    // out of bounds and segfaults (and ceil() of a non-finite value is UB when
-    // sampling_ratio <= 0). A non-finite batch index is already rejected by the
-    // check above. Treat the ROI as empty: leave zeros for it.
-    // https://github.com/pytorch/vision/issues/9273
-    if (!std::isfinite(static_cast<double>(offset_rois[1])) ||
-        !std::isfinite(static_cast<double>(offset_rois[2])) ||
-        !std::isfinite(static_cast<double>(offset_rois[3])) ||
-        !std::isfinite(static_cast<double>(offset_rois[4]))) {
-      continue;
-    }
-
     int roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
@@ -68,6 +52,14 @@ void roi_align_forward_kernel_impl(
 
     T roi_width = roi_end_w - roi_start_w;
     T roi_height = roi_end_h - roi_start_h;
+    // A non-finite ROI size comes from a NaN/inf coordinate or an overflow in
+    // T. It would slip past the bilinear bounds check below and be cast to a
+    // garbage index, so skip the ROI: its output and gradient stay zero.
+    // https://github.com/pytorch/vision/issues/9273
+    if (!std::isfinite(static_cast<double>(roi_width)) ||
+        !std::isfinite(static_cast<double>(roi_height))) {
+      continue;
+    }
     if (!aligned) {
       // Force malformed ROIs to be 1x1
       roi_width = std::max(roi_width, (T)1.);
@@ -237,22 +229,6 @@ void roi_align_backward_kernel_impl(
     STD_TORCH_CHECK(
         offset_rois[0] >= 0 && offset_rois[0] < batch_size,
         "rois batch index must be in [0, batch_size)");
-
-    // A ROI with a non-finite coordinate (NaN or +/-inf) is malformed. Every
-    // comparison against NaN is false, and inf coordinates produce a NaN width
-    // (inf - inf), so such a ROI slips past the bilinear bounds check below;
-    // casting a non-finite value to int then yields a garbage index that reads
-    // out of bounds and segfaults (and ceil() of a non-finite value is UB when
-    // sampling_ratio <= 0). A non-finite batch index is already rejected by the
-    // check above. Treat the ROI as empty: leave zeros for it.
-    // https://github.com/pytorch/vision/issues/9273
-    if (!std::isfinite(static_cast<double>(offset_rois[1])) ||
-        !std::isfinite(static_cast<double>(offset_rois[2])) ||
-        !std::isfinite(static_cast<double>(offset_rois[3])) ||
-        !std::isfinite(static_cast<double>(offset_rois[4]))) {
-      continue;
-    }
-
     int roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
@@ -264,6 +240,14 @@ void roi_align_backward_kernel_impl(
 
     T roi_width = roi_end_w - roi_start_w;
     T roi_height = roi_end_h - roi_start_h;
+    // A non-finite ROI size comes from a NaN/inf coordinate or an overflow in
+    // T. It would slip past the bilinear bounds check below and be cast to a
+    // garbage index, so skip the ROI: its output and gradient stay zero.
+    // https://github.com/pytorch/vision/issues/9273
+    if (!std::isfinite(static_cast<double>(roi_width)) ||
+        !std::isfinite(static_cast<double>(roi_height))) {
+      continue;
+    }
     if (!aligned) {
       // Force malformed ROIs to be 1x1
       roi_width = std::max(roi_width, (T)1.);
