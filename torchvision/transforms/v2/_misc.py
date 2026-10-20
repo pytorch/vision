@@ -207,7 +207,8 @@ class GaussianBlur(Transform):
             raise ValueError(f"sigma values should be positive and of the form (min, max). Got {self.sigma}")
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
-        sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1]).item()
+        g = torch.thread_safe_generator()
+        sigma = torch.empty(1).uniform_(self.sigma[0], self.sigma[1], generator=g).item()
         return dict(sigma=[sigma, sigma])
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
