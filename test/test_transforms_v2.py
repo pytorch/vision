@@ -3276,6 +3276,51 @@ class TestPermuteChannels:
 
 
 class TestElastic:
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64, torch.int64])
+    @pytest.mark.parametrize("shift", [(0.0, 0.0), (0.5, -0.25)])
+    @pytest.mark.parametrize("batch", [False, True])
+    def test_keypoints_constant_displacement(self, dtype, shift, batch):
+        # Cropping can leave invisible points, and resize produces subpixel points.
+        points = torch.tensor([[1.25, 2.75], [-1.5, 9.25]], dtype=dtype)
+        if batch:
+            points = points.unsqueeze(0)
+        keypoints = tv_tensors.KeyPoints(points, canvas_size=(8, 8))
+        original = keypoints.clone()
+        offset = torch.tensor(shift, dtype=torch.float64)
+        displacement = (offset / 4).expand(1, 8, 8, 2).clone()
+        actual = F.elastic(keypoints, displacement)
+        expected = (points.to(torch.float64) - offset).to(dtype)
+        torch.testing.assert_close(actual, expected)
+        torch.testing.assert_close(keypoints, original)
+        assert actual.canvas_size == keypoints.canvas_size
+        assert actual.dtype == dtype
+        assert actual.shape == points.shape
+        assert actual.device == points.device
+
+    def test_keypoints_displacement_lookup(self):
+        points = tv_tensors.KeyPoints([[1.25, 2.75], [-1.5, 9.25]], canvas_size=(8, 8))
+        displacement = torch.zeros(1, 8, 8, 2)
+        displacement[0, 2, 1] = torch.tensor([0.125, -0.25])
+        displacement[0, 7, 0] = torch.tensor([-0.25, 0.125])
+        original_displacement = displacement.clone()
+        expected = torch.tensor([[0.75, 3.75], [-0.5, 8.75]])
+        torch.testing.assert_close(F.elastic(points, displacement), expected)
+        torch.testing.assert_close(displacement, original_displacement)
+
+    def test_empty_keypoints(self):
+        points = tv_tensors.KeyPoints(torch.empty(2, 0, 2), canvas_size=(8, 8))
+        actual = F.elastic(points, torch.zeros(1, 8, 8, 2))
+        torch.testing.assert_close(actual, points)
+        assert actual.canvas_size == points.canvas_size
+
+    def test_resized_keypoints_zero_displacement(self):
+        points = tv_tensors.KeyPoints([[1.0, 2.0], [4.0, 5.0]], canvas_size=(7, 7))
+        points = F.resize(points, [8, 8])
+        image = tv_tensors.Image(torch.arange(3 * 8 * 8, dtype=torch.float32).reshape(3, 8, 8))
+        displacement = torch.zeros(1, 8, 8, 2)
+        torch.testing.assert_close(F.elastic(points, displacement), points)
+        torch.testing.assert_close(F.elastic(image, displacement), image)
+
     def _make_displacement(self, inpt):
         return torch.rand(
             1,
