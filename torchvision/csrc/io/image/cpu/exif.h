@@ -58,10 +58,11 @@ direct,
 #include <png.h>
 #endif
 
+#include <cstdint>
+
 #include <torch/headeronly/util/Exception.h>
 
 #include <torch/csrc/stable/ops.h>
-#include "../common_stable.h"
 
 namespace vision {
 namespace image {
@@ -236,21 +237,22 @@ inline torch::stable::Tensor exif_orientation_transform(
   if (orientation == IMAGE_ORIENTATION_TL) {
     return image;
   } else if (orientation == IMAGE_ORIENTATION_TR) {
-    return stable_flip(image, {-1});
+    return torch::stable::flip(image, {-1});
   } else if (orientation == IMAGE_ORIENTATION_BR) {
     // needs 180 rotation equivalent to
     // flip both horizontally and vertically
-    return stable_flip(image, {-2, -1});
+    return torch::stable::flip(image, {-2, -1});
   } else if (orientation == IMAGE_ORIENTATION_BL) {
-    return stable_flip(image, {-2});
+    return torch::stable::flip(image, {-2});
   } else if (orientation == IMAGE_ORIENTATION_LT) {
     return torch::stable::transpose(image, -1, -2);
   } else if (orientation == IMAGE_ORIENTATION_RT) {
-    return stable_flip(torch::stable::transpose(image, -1, -2), {-1});
+    return torch::stable::flip(torch::stable::transpose(image, -1, -2), {-1});
   } else if (orientation == IMAGE_ORIENTATION_RB) {
-    return stable_flip(torch::stable::transpose(image, -1, -2), {-2, -1});
+    return torch::stable::flip(
+        torch::stable::transpose(image, -1, -2), {-2, -1});
   } else if (orientation == IMAGE_ORIENTATION_LB) {
-    return stable_flip(torch::stable::transpose(image, -1, -2), {-2});
+    return torch::stable::flip(torch::stable::transpose(image, -1, -2), {-2});
   }
   return image;
 }
