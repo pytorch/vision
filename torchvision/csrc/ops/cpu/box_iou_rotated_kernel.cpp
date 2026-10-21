@@ -62,28 +62,22 @@ Tensor box_iou_rotated_cpu(
     const Tensor& boxes2) {
   STD_TORCH_CHECK(boxes1.is_cpu(), "boxes1 must be a CPU tensor");
   STD_TORCH_CHECK(boxes2.is_cpu(), "boxes2 must be a CPU tensor");
-  // Stable-ABI sizes() is not streamable so the checks split to guard size(1):
-  // https://github.com/meta-pytorch/torchcodec/blob/1dc85b7a7900d91fee207ccdc02f211a051688fe/src/torchcodec/_core/Encoder.cpp#L140-L147
-  // TODO(stable-abi): print sizes() in the error message once it can be
-  // streamed.
   STD_TORCH_CHECK(
       boxes1.dim() == 2,
-      "boxes1 should be a 2d tensor, got ",
-      boxes1.dim(),
-      "D");
+      "boxes1 should be a 2d tensor, got shape ",
+      boxes1.sizes());
   STD_TORCH_CHECK(
       boxes1.size(1) == 5,
-      "boxes1 should have 5 elements in dimension 1, got ",
-      boxes1.size(1));
+      "boxes1 should have 5 elements in dimension 1, got shape ",
+      boxes1.sizes());
   STD_TORCH_CHECK(
       boxes2.dim() == 2,
-      "boxes2 should be a 2d tensor, got ",
-      boxes2.dim(),
-      "D");
+      "boxes2 should be a 2d tensor, got shape ",
+      boxes2.sizes());
   STD_TORCH_CHECK(
       boxes2.size(1) == 5,
-      "boxes2 should have 5 elements in dimension 1, got ",
-      boxes2.size(1));
+      "boxes2 should have 5 elements in dimension 1, got shape ",
+      boxes2.sizes());
   STD_TORCH_CHECK(
       boxes1.scalar_type() == boxes2.scalar_type(),
       "boxes1 and boxes2 must have the same dtype");
