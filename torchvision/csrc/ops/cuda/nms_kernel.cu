@@ -3,10 +3,10 @@
 #include <torch/csrc/stable/macros.h>
 #include <torch/csrc/stable/ops.h>
 #include <torch/csrc/stable/tensor.h>
+#include <torch/headeronly/core/AccumulateType.h>
 #include <torch/headeronly/core/Dispatch_v2.h>
 #include <torch/headeronly/core/ScalarType.h>
 #include <torch/headeronly/util/Exception.h>
-#include <torch/headeronly/util/Half.h>
 
 #include <cuda_runtime.h>
 
@@ -24,19 +24,6 @@ using torch::stable::Tensor;
 
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
 
-// Accumulate type for IoU. Only correct for the types we dispatch (float,
-// double, Half), not general: BFloat16 should accumulate in float but maps to
-// itself. Safe here since THO_DISPATCH_V2 controls the inputs.
-// TODO(stable-abi): drop once torch/headeronly ships an acc_type trait.
-template <typename T>
-struct AccType {
-  using type = T;
-};
-template <>
-struct AccType<torch::headeronly::Half> {
-  using type = float;
-};
-
 template <typename T>
 __device__ inline bool devIoU(
     T const* const a,
@@ -45,7 +32,7 @@ __device__ inline bool devIoU(
   T left = max(a[0], b[0]), right = min(a[2], b[2]);
   T top = max(a[1], b[1]), bottom = min(a[3], b[3]);
   T width = max(right - left, (T)0), height = max(bottom - top, (T)0);
-  using acc_T = typename AccType<T>::type;
+  using acc_T = torch::headeronly::acc_type<T, true>;
   acc_T interS = (acc_T)width * height;
   acc_T Sa = ((acc_T)a[2] - a[0]) * (a[3] - a[1]);
   acc_T Sb = ((acc_T)b[2] - b[0]) * (b[3] - b[1]);
