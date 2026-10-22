@@ -33,7 +33,7 @@ jobs:
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.10
+        export PYTHON_VERSION=3.11
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
         ./.github/scripts/cmake.sh
