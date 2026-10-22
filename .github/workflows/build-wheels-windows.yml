@@ -57,8 +57,8 @@ jobs:
     with:
       repository: ${{ matrix.repository }}
       ref: ""
-      test-infra-repository: pytorch/test-infra
-      test-infra-ref: main
+      test-infra-repository: nicolashug/test-infra
+      test-infra-ref: fix-windows-base-py39-conda
       build-matrix: ${{ needs.generate-matrix.outputs.matrix }}
       pre-script: ${{ matrix.pre-script }}
       env-script: ${{ matrix.env-script }}
