@@ -977,6 +977,21 @@ def test_adjust_hue():
     torch.testing.assert_close(y_np, y_ans)
 
 
+def test_adjust_hue_rgba_preserves_alpha():
+    x_shape = [2, 2, 4]
+    x_data = [0, 5, 13, 200, 54, 135, 226, 100, 37, 8, 234, 50, 90, 255, 1, 255]
+    x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+    x_pil = _Image_fromarray(x_np, mode="RGBA")
+
+    original_alpha = np.array(x_pil.split()[-1])
+
+    for factor in (-0.5, -0.25, 0, 0.25, 0.5):
+        y_pil = F.adjust_hue(x_pil, factor)
+        assert y_pil.mode == "RGBA"
+        y_alpha = np.array(y_pil.split()[-1])
+        torch.testing.assert_close(y_alpha, original_alpha)
+
+
 def test_adjust_sharpness():
     x_shape = [4, 4, 3]
     x_data = [
