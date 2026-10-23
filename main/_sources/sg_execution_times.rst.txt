@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:33.402** total execution time for 13 files **from all galleries**:
+**00:33.469** total execution time for 13 files **from all galleries**:
 
 .. container::
 
@@ -33,34 +33,34 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_examples_others_plot_visualization_utils.py` (``../../gallery/others/plot_visualization_utils.py``)
-     - 00:08.320
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py` (``../../gallery/others/plot_optical_flow.py``)
-     - 00:05.938
+     - 00:07.848
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_rotated_box_transforms.py` (``../../gallery/transforms/plot_rotated_box_transforms.py``)
-     - 00:05.837
+     - 00:06.352
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_others_plot_optical_flow.py` (``../../gallery/others/plot_optical_flow.py``)
+     - 00:06.296
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_illustrations.py` (``../../gallery/transforms/plot_transforms_illustrations.py``)
-     - 00:04.646
+     - 00:04.214
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_e2e.py` (``../../gallery/transforms/plot_transforms_e2e.py``)
-     - 00:03.170
+     - 00:03.224
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_keypoints_transforms.py` (``../../gallery/transforms/plot_keypoints_transforms.py``)
-     - 00:02.318
+     - 00:02.334
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_repurposing_annotations.py` (``../../gallery/others/plot_repurposing_annotations.py``)
-     - 00:01.581
+     - 00:01.673
      - 0.0
    * - :ref:`sphx_glr_auto_examples_others_plot_scripted_tensor_transforms.py` (``../../gallery/others/plot_scripted_tensor_transforms.py``)
-     - 00:00.917
+     - 00:00.845
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_transforms_getting_started.py` (``../../gallery/transforms/plot_transforms_getting_started.py``)
-     - 00:00.505
+     - 00:00.496
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_cutmix_mixup.py` (``../../gallery/transforms/plot_cutmix_mixup.py``)
-     - 00:00.154
+     - 00:00.170
      - 0.0
    * - :ref:`sphx_glr_auto_examples_transforms_plot_custom_transforms.py` (``../../gallery/transforms/plot_custom_transforms.py``)
      - 00:00.006

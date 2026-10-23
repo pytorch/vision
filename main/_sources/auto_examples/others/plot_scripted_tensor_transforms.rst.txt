@@ -91,8 +91,10 @@ Most transforms support torchscript. For composing transforms, we use
 
  .. code-block:: none
 
-    /opt/conda/envs/ci/lib/python3.10/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
-      warnings.warn(
+    /__w/vision/vision/pytorch/vision/gallery/others/plot_scripted_tensor_transforms.py:50: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+      scripted_transforms = torch.jit.script(transforms)
+    /opt/conda/envs/ci/lib/python3.11/site-packages/torch/jit/_recursive.py:991: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+      return torch.jit.script(fn, _rcb=rcb)
 
 
 
@@ -181,8 +183,10 @@ apply it on multiple tensor images of the same size
  .. code-block:: none
 
     Downloading: "https://download.pytorch.org/models/resnet18-f37072fd.pth" to /root/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth
-    /opt/conda/envs/ci/lib/python3.10/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
-      warnings.warn(
+    /__w/vision/vision/pytorch/vision/gallery/others/plot_scripted_tensor_transforms.py:104: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+      scripted_predictor = torch.jit.script(predictor).to(device)
+    /opt/conda/envs/ci/lib/python3.11/site-packages/torch/jit/_recursive.py:991: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+      return torch.jit.script(fn, _rcb=rcb)
 
 
 
@@ -246,8 +250,8 @@ Since the model is scripted, it can be easily dumped on disk and re-used
 
  .. code-block:: none
 
-    /opt/conda/envs/ci/lib/python3.10/site-packages/torch/jit/_serialization.py:176: FutureWarning: `torch.jit.load` is deprecated. Please switch to `torch.export`.
-      warnings.warn(
+    /__w/vision/vision/pytorch/vision/gallery/others/plot_scripted_tensor_transforms.py:132: FutureWarning: `torch.jit.load` is deprecated. Please switch to `torch.export`.
+      dumped_scripted_predictor = torch.jit.load(f.name)
 
 
 
@@ -255,7 +259,7 @@ Since the model is scripted, it can be easily dumped on disk and re-used
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.917 seconds)
+   **Total running time of the script:** (0 minutes 0.845 seconds)
 
 
 .. _sphx_glr_download_auto_examples_others_plot_scripted_tensor_transforms.py:
