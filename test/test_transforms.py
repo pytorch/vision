@@ -283,9 +283,9 @@ class TestToTensor:
         torch.testing.assert_close(output.numpy(), expected_output)
 
         input_data = torch.as_tensor(np_rng.rand(channels, height, width).astype(np.float32))
-        img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
+        img = transforms.ToPILImage()(input_data)  # CHW -> HWC and rint(* 255) to uint8
         output = trans(img)  # HWC -> CHW
-        expected_output = (input_data * 255).byte()
+        expected_output = (input_data * 255).round().clamp(0, 255).to(torch.uint8)
         torch.testing.assert_close(output, expected_output)
 
         # separate test for mode '1' PIL images
@@ -607,7 +607,7 @@ def test_autocontrast_equal_minmax():
 class TestToPil:
     def _get_1_channel_tensor_various_types():
         img_data_float = torch.Tensor(1, 4, 4).uniform_()
-        expected_output = img_data_float.mul(255).int().float().div(255).numpy()
+        expected_output = img_data_float.mul(255).round().clamp(0, 255).div(255).numpy()
         yield img_data_float, expected_output, "L"
 
         img_data_byte = torch.ByteTensor(1, 4, 4).random_(0, 255)
@@ -624,7 +624,7 @@ class TestToPil:
 
     def _get_2d_tensor_various_types():
         img_data_float = torch.Tensor(4, 4).uniform_()
-        expected_output = img_data_float.mul(255).int().float().div(255).numpy()
+        expected_output = img_data_float.mul(255).round().clamp(0, 255).div(255).numpy()
         yield img_data_float, expected_output, "L"
 
         img_data_byte = torch.ByteTensor(4, 4).random_(0, 255)
@@ -673,7 +673,7 @@ class TestToPil:
         img = transform(img_data)
         assert img.mode == expected_mode
         if np.issubdtype(img_data.dtype, np.floating):
-            img_data = (img_data * 255).astype(np.uint8)
+            img_data = np.clip(np.rint(img_data * 255.0), 0, 255).astype(np.uint8)
         # note: we explicitly convert img's dtype because pytorch doesn't support uint16
         # and otherwise assert_close wouldn't be able to construct a tensor from the uint16 array
         torch.testing.assert_close(img_data[:, :, 0], np.asarray(img).astype(img_data.dtype))
@@ -707,7 +707,7 @@ class TestToPil:
     @pytest.mark.parametrize("expected_mode", [None, "LA"])
     def test_2_channel_tensor_to_pil_image(self, expected_mode):
         img_data = torch.Tensor(2, 4, 4).uniform_()
-        expected_output = img_data.mul(255).int().float().div(255)
+        expected_output = img_data.mul(255).round().clamp(0, 255).div(255)
         if expected_mode is None:
             img = transforms.ToPILImage()(img_data)
             assert img.mode == "LA"  # default should assume LA
@@ -755,13 +755,13 @@ class TestToPil:
         img = transform(img_data)
         assert img.mode == expected_mode
         if np.issubdtype(img_data.dtype, np.floating):
-            img_data = (img_data * 255).astype(np.uint8)
+            img_data = np.clip(np.rint(img_data * 255.0), 0, 255).astype(np.uint8)
         np.testing.assert_allclose(img_data, img)
 
     @pytest.mark.parametrize("expected_mode", [None, "RGB", "HSV", "YCbCr"])
     def test_3_channel_tensor_to_pil_image(self, expected_mode):
         img_data = torch.Tensor(3, 4, 4).uniform_()
-        expected_output = img_data.mul(255).int().float().div(255)
+        expected_output = img_data.mul(255).round().clamp(0, 255).div(255)
 
         if expected_mode is None:
             img = transforms.ToPILImage()(img_data)
@@ -819,7 +819,7 @@ class TestToPil:
     @pytest.mark.parametrize("expected_mode", [None, "RGBA", "CMYK", "RGBX"])
     def test_4_channel_tensor_to_pil_image(self, expected_mode):
         img_data = torch.Tensor(4, 4, 4).uniform_()
-        expected_output = img_data.mul(255).int().float().div(255)
+        expected_output = img_data.mul(255).round().clamp(0, 255).div(255)
 
         if expected_mode is None:
             img = transforms.ToPILImage()(img_data)
@@ -890,6 +890,19 @@ class TestToPil:
             transforms.ToPILImage()(torch.ones(1, 3, 4, 4))
         with pytest.raises(ValueError, match=r"pic should not have > 4 channels. Got \d+ channels."):
             transforms.ToPILImage()(torch.ones(6, 4, 4))
+
+    @pytest.mark.parametrize("as_tensor", [True, False])
+    def test_to_pil_image_float_rounds_to_nearest(self, as_tensor):
+        # Regression for https://github.com/pytorch/vision/issues/8141:
+        # float values must be rounded to nearest uint8, not truncated.
+        values = np.array([0.0, 0.001, 0.9999, 1.0], dtype=np.float32)
+        expected = np.array([[0, 0, 255, 255]], dtype=np.uint8)
+        if as_tensor:
+            pic = torch.from_numpy(values).reshape(1, 1, -1)
+        else:
+            pic = values.reshape(1, -1, 1)
+        img = F.to_pil_image(pic)
+        np.testing.assert_array_equal(np.asarray(img), expected)
 
 
 def test_adjust_brightness():
