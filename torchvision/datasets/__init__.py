@@ -41,7 +41,6 @@ from .moving_mnist import MovingMNIST
 from .omniglot import Omniglot
 from .oxford_iiit_pet import OxfordIIITPet
 from .pcam import PCAM
-from .phototour import PhotoTour
 from .places365 import Places365
 from .rendered_sst2 import RenderedSST2
 from .sbd import SBDataset
@@ -77,7 +76,6 @@ __all__ = (
     "STL10",
     "SUN397",
     "SVHN",
-    "PhotoTour",
     "SEMEION",
     "Omniglot",
     "SBU",
