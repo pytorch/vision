@@ -18,7 +18,7 @@ jobs:
             gpu-arch-type: cpu
           - runner: mt-l-x86aavx2-11-41-a10g
             gpu-arch-type: cuda
-            gpu-arch-version: "12.6"
+            gpu-arch-version: "13.2"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job_v3.yml@main
     permissions:
@@ -33,7 +33,7 @@ jobs:
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION=3.10
+        export PYTHON_VERSION=3.11
         export GPU_ARCH_TYPE=${{ matrix.gpu-arch-type }}
         export GPU_ARCH_VERSION=${{ matrix.gpu-arch-version }}
         ./.github/scripts/cmake.sh
