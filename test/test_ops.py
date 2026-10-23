@@ -1666,6 +1666,16 @@ class TestBoxConvert:
         box_xywhr = ops.box_convert(box_xyxyxyxy, in_fmt="xyxyxyxy", out_fmt="xywhr")
         torch.testing.assert_close(box_xywhr, box_tensor)
 
+    @pytest.mark.parametrize("dtype", (torch.float16, torch.bfloat16))
+    def test_bbox_xyxyxyxy_to_xywhr_half_precision(self, dtype):
+        # The squares of the side lengths overflow float16 above 256 pixels, so the conversion has to upcast
+        box_tensor = torch.tensor([[400, 500, 400, 100, 600, 100, 600, 500]], dtype=dtype)
+        exp_xywhr = torch.tensor([[400, 500, 400, 200, 90]], dtype=dtype)
+
+        box_xywhr = ops.box_convert(box_tensor, in_fmt="xyxyxyxy", out_fmt="xywhr")
+        assert box_xywhr.dtype == dtype
+        torch.testing.assert_close(box_xywhr, exp_xywhr)
+
     @pytest.mark.parametrize("inv_infmt", ["xwyh", "cxwyh", "xwyhr", "cxwyhr", "xxxxyyyy"])
     @pytest.mark.parametrize("inv_outfmt", ["xwcx", "xhwcy", "xwcxr", "xhwcyr", "xyxyxxyy"])
     def test_bbox_invalid(self, inv_infmt, inv_outfmt):
