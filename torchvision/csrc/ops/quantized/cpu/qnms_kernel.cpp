@@ -4,7 +4,6 @@
 #include <torch/headeronly/core/Dispatch_v2.h>
 #include <torch/headeronly/core/ScalarType.h>
 #include <torch/headeronly/util/Exception.h>
-#include "../../StableABICompat.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -39,7 +38,7 @@ Tensor qnms_kernel_impl(
   auto y1_t = torch::stable::contiguous(torch::stable::select(dets, 1, 1));
   auto x2_t = torch::stable::contiguous(torch::stable::select(dets, 1, 2));
   auto y2_t = torch::stable::contiguous(torch::stable::select(dets, 1, 3));
-  auto order_t = std::get<1>(stable_helpers::sort(
+  auto order_t = std::get<1>(torch::stable::sort(
       scores, /*stable=*/true, /*dim=*/0, /*descending=*/true));
   Tensor suppressed_t = torch::stable::new_zeros(
       dets, {ndets}, torch::headeronly::ScalarType::Byte);
