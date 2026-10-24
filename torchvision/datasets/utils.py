@@ -314,7 +314,9 @@ def _decompress(
         raise RuntimeError(f"Couldn't detect a compression from suffix {suffix}.")
 
     if to_path is None:
-        to_path = pathlib.Path(os.fspath(from_path).replace(suffix, archive_type if archive_type is not None else ""))
+        to_path = pathlib.Path(
+            os.fspath(from_path).removesuffix(suffix) + (archive_type if archive_type is not None else "")
+        )
 
     # We don't need to check for a missing key here, since this was already done in _detect_file_type()
     compressed_file_opener = _COMPRESSED_FILE_OPENERS[compression]
@@ -361,7 +363,7 @@ def extract_archive(
     if not archive_type:
         ret_path = _decompress(
             from_path,
-            os.path.join(to_path, os.path.basename(from_path).replace(suffix, "")),
+            os.path.join(to_path, os.fspath(os.path.basename(from_path)).removesuffix(suffix)),
             remove_finished=remove_finished,
         )
         return path_or_str(ret_path)
