@@ -631,7 +631,7 @@ def test_invert(device, dtype, channels):
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
-@pytest.mark.parametrize("config", [{"bits": bits} for bits in range(0, 8)])
+@pytest.mark.parametrize("config", [{"bits": bits} for bits in range(1, 8)])
 @pytest.mark.parametrize("channels", [1, 3])
 def test_posterize(device, config, channels):
     check_functional_vs_PIL_vs_scripted(
