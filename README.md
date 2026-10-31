@@ -1,3 +1,7 @@
+<div align=center>
+    <img src="/logo/torchvision_orginal.svg"/>
+</div>
+
 # torchvision
 
 [![total torchvision downloads](https://pepy.tech/badge/torchvision)](https://pepy.tech/project/torchvision)
