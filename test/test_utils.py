@@ -194,6 +194,21 @@ def test_draw_boxes_with_coloured_label_text_boxes():
 
 
 @pytest.mark.skipif(PILLOW_VERSION < (10, 1), reason="The reference image is only valid for PIL >= 10.1")
+@pytest.mark.parametrize("font_size", [None, 15, 20])
+def test_draw_boxes_with_default_font_size(font_size):
+    img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
+    labels = ["a", "b", "c", "d"]
+    colors = ["green", "#FF00FF", (0, 255, 0), "red"]
+    result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors, fill=True, font_size=font_size)
+
+    path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", f"draw_boxes_default_font_size{font_size}.png"
+    )
+    expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+    assert_equal(result, expected)
+
+
+@pytest.mark.skipif(PILLOW_VERSION < (10, 1), reason="The reference image is only valid for PIL >= 10.1")
 def test_draw_rotated_boxes():
     img = torch.full((3, 500, 500), 255, dtype=torch.uint8)
     colors = ["blue", "yellow", (0, 255, 0), "black"]
@@ -289,10 +304,15 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_correct, boxes_wrong)
 
 
+@pytest.mark.skipif(PILLOW_VERSION >= (10, 1), reason="The warning is only valid for PIL < 10.1")
 def test_draw_boxes_warning():
     img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
 
-    with pytest.warns(UserWarning, match=re.escape("Argument 'font_size' will be ignored since 'font' is not set.")):
+    warning_txt = (
+        "Argument 'font_size' will be ignored since 'font' is not set. "
+        "To use 'font_size' with the default font, please upgrade to Pillow >= 10.1."
+    )
+    with pytest.warns(UserWarning, match=re.escape(warning_txt)):
         utils.draw_bounding_boxes(img, boxes, font_size=11)
 
 
