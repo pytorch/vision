@@ -71,6 +71,8 @@ The following vision-specific loss functions are implemented:
     distance_box_iou_loss
     generalized_box_iou_loss
     sigmoid_focal_loss
+    stochastic_depth
+    poly_loss
 
 
 Layers
