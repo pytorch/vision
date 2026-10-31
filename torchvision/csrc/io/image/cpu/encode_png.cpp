@@ -55,16 +55,19 @@ void torch_png_write_data(
       (struct torch_mem_encode*)png_get_io_ptr(png_ptr);
   size_t nsize = p->size + length;
 
-  /* allocate or grow buffer */
-  if (p->buffer) {
-    p->buffer = (char*)realloc(p->buffer, nsize);
-  } else {
-    p->buffer = (char*)malloc(nsize);
-  }
+  /* Allocate or grow the buffer. The result has to land in a temporary: on
+   * failure realloc() returns NULL without freeing the original block, so
+   * assigning it straight back to p->buffer would discard the only pointer to
+   * that block and leak it. The error path below frees p->buffer, but only sees
+   * it if we leave it intact here. realloc(NULL, n) is equivalent to malloc(n),
+   * so the first call needs no special case. */
+  char* nbuf = (char*)realloc(p->buffer, nsize);
 
-  if (!p->buffer) {
+  if (!nbuf) {
+    /* p->buffer still owns the original block and is freed by the caller. */
     png_error(png_ptr, "Write Error");
   }
+  p->buffer = nbuf;
 
   /* copy new bytes to end of buffer */
   memcpy(p->buffer + p->size, data, length);
@@ -145,8 +148,14 @@ torch::stable::Tensor encode_png(
   // Initialize PNG structures
   png_write = png_create_write_struct(
       PNG_LIBPNG_VER_STRING, &err_ptr, torch_png_error, nullptr);
+  STD_TORCH_CHECK(png_write, "libpng write structure allocation failed!");
 
   info_ptr = png_create_info_struct(png_write);
+  if (!info_ptr) {
+    png_destroy_write_struct(&png_write, nullptr);
+    // Seems redundant with the if statement. done here to avoid leaking memory.
+    STD_TORCH_CHECK(info_ptr, "libpng info structure allocation failed!");
+  }
 
   // Define custom buffer output
   png_set_write_fn(png_write, &buf_info, torch_png_write_data, nullptr);
