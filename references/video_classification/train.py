@@ -182,6 +182,7 @@ def main(args):
                 "mp4",
             ),
             output_format="TCHW",
+            download=True,
         )
         if args.cache_dataset:
             print(f"Saving dataset_train to {cache_path}")
