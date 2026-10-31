@@ -6,7 +6,11 @@ import torch
 from torch.nn.functional import conv2d, pad as torch_pad
 
 from torchvision import tv_tensors
-from torchvision.transforms._functional_tensor import _max_value
+from torchvision.transforms._functional_tensor import (
+    _max_value,
+    _separable_gaussian_blur,
+    _should_use_separable_gaussian_blur,
+)
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 from torchvision.utils import _log_api_usage_once
@@ -144,15 +148,21 @@ def gaussian_blur_image(
         image = image.reshape((-1,) + shape[-3:])
 
     fp = torch.is_floating_point(image)
-    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype if fp else torch.float32, device=image.device)
-    kernel = kernel.expand(shape[-3], 1, kernel.shape[0], kernel.shape[1])
-
     output = image if fp else image.to(dtype=torch.float32)
 
-    # padding = (left, right, top, bottom)
-    padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
-    output = torch_pad(output, padding, mode="reflect")
-    output = conv2d(output, kernel, groups=shape[-3])
+    # Two passes reduce large-kernel compute and convolution workspace, but
+    # their overhead is not worthwhile for small or one-dimensional kernels.
+    if _should_use_separable_gaussian_blur(output, kernel_size):
+        kernel_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0], output.dtype, output.device)
+        kernel_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1], output.dtype, output.device)
+        output = _separable_gaussian_blur(output, kernel_x, kernel_y)
+    else:
+        kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=output.dtype, device=output.device)
+        kernel = kernel.expand(shape[-3], 1, kernel.shape[0], kernel.shape[1])
+        # padding = (left, right, top, bottom)
+        padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
+        output = torch_pad(output, padding, mode="reflect")
+        output = conv2d(output, kernel, groups=shape[-3])
 
     if ndim == 3:
         output = output.squeeze(dim=0)
