@@ -16,16 +16,25 @@ class AnchorGenerator(nn.Module):
     per feature map. This module assumes aspect ratio = height / width for
     each anchor.
 
-    sizes and aspect_ratios should have the same number of elements, and it should
-    correspond to the number of feature maps.
+    For ``N`` feature maps, ``sizes`` and ``aspect_ratios`` should each contain
+    ``N`` tuples. The values in ``sizes[i]`` and ``aspect_ratios[i]`` are used
+    only for feature map ``i``; they are not distributed across feature maps.
+    ``AnchorGenerator`` outputs ``len(sizes[i]) * len(aspect_ratios[i])`` anchors
+    per spatial location on that feature map.
 
-    sizes[i] and aspect_ratios[i] can have an arbitrary number of elements,
-    and AnchorGenerator will output a set of sizes[i] * aspect_ratios[i] anchors
-    per spatial location for feature map i.
+    ``AnchorGenerator`` itself supports a different number of anchors per location
+    on each feature map. However, detection heads that share prediction layers
+    across feature maps, such as :class:`~torchvision.models.detection.rpn.RPNHead`,
+    require the number of anchors per location to be the same for every feature map.
 
     Args:
-        sizes (Tuple[Tuple[int]]):
-        aspect_ratios (Tuple[Tuple[float]]):
+        sizes (Tuple[Tuple[int]]): Anchor sizes for each feature map. For example,
+            ``((32, 64, 128),)`` applies all three sizes to a single feature map,
+            while ``((32,), (64,), (128,))`` applies one size to each of three
+            feature maps.
+        aspect_ratios (Tuple[Tuple[float]]): Anchor aspect ratios for each feature
+            map, expressed as height divided by width. The outer tuple follows the
+            same one-to-one feature-map mapping as ``sizes``.
     """
 
     __annotations__ = {
