@@ -1051,9 +1051,11 @@ class ElasticTransform(Transform):
 
     Args:
         alpha (float or sequence of floats, optional): Magnitude of displacements.
-            Default is 50.0. A single value is ``[alpha, alpha]``.
+            Default is 50.0. A single value is ``[alpha, alpha]``, specifying the strength of the
+            displacement along the x and y axes, respectively.
         sigma (float or sequence of floats, optional): Smoothness of displacements.
-            Default is 5.0. A single value is ``[sigma, sigma]``.
+            Default is 5.0. A single value is ``[sigma, sigma]``, specifying the smoothness of the
+            displacement along the x and y axes, respectively.
         interpolation (str or InterpolationMode, optional): Desired interpolation enum defined by
             :class:`torchvision.transforms.v2.InterpolationMode`.
             Accepted string values are ``"nearest"``, ``"nearest-exact"``, ``"bilinear"``, ``"bicubic"``,
@@ -1087,27 +1089,28 @@ class ElasticTransform(Transform):
         self._fill = _setup_fill_arg(fill)
 
     def make_params(self, flat_inputs: list[Any]) -> dict[str, Any]:
-        height, width = query_size(flat_inputs)
-
-        dx = torch.rand(1, 1, height, width) * 2 - 1
-        if self.sigma[0] > 0.0:
-            kx = int(8 * self.sigma[0] + 1)
-            # if kernel size is even we have to make it odd
-            if kx % 2 == 0:
-                kx += 1
-            dx = self._call_kernel(F.gaussian_blur, dx, [kx, kx], list(self.sigma))
-        dx = dx * self.alpha[0] / width
-
-        dy = torch.rand(1, 1, height, width) * 2 - 1
-        if self.sigma[1] > 0.0:
-            ky = int(8 * self.sigma[1] + 1)
-            # if kernel size is even we have to make it odd
-            if ky % 2 == 0:
-                ky += 1
-            dy = self._call_kernel(F.gaussian_blur, dy, [ky, ky], list(self.sigma))
-        dy = dy * self.alpha[1] / height
+        height, width = list(query_size(flat_inputs))
+        dx = self._make_displacement_field(0, [height, width]) * self.alpha[0] / width
+        dy = self._make_displacement_field(1, [height, width]) * self.alpha[1] / height
         displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
         return dict(displacement=displacement)
+
+    def _make_displacement_field(self, axis: Literal[0, 1], size: list[int]) -> torch.Tensor:
+        # Sample random displacement field
+        d = torch.rand([1, 1] + size) * 2 - 1
+
+        # Apply Gaussian smoothing to the random field
+        sigma = self.sigma[axis]
+        if sigma > 0.0:
+            ks = int(8 * sigma + 1)
+            # if kernel size is even we have to make it odd
+            if ks % 2 == 0:
+                ks += 1
+            sigma_x, sigma_y = self.sigma
+            d = self._call_kernel(F.gaussian_blur, d, [ks, 1], [sigma_x, 1.0])
+            d = self._call_kernel(F.gaussian_blur, d, [1, ks], [1.0, sigma_y])
+
+        return d
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
         fill = _get_fill(self._fill, type(inpt))
