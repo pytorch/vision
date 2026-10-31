@@ -3596,7 +3596,9 @@ class TestDatasetWrapper:
             datasets.wrap_dataset_for_transforms_v2(dataset)
 
     def test_missing_wrapper(self):
-        dataset = datasets.FakeData()
+        # Use an official dataset that is not registered for transforms v2 wrapping.
+        # Construct via ``__new__`` so the test does not require dataset files.
+        dataset = datasets.SBU.__new__(datasets.SBU)
 
         with pytest.raises(TypeError, match="please open an issue"):
             datasets.wrap_dataset_for_transforms_v2(dataset)
