@@ -318,6 +318,33 @@ class TestDatasetsUtils:
         assert not (root / "outside").exists()
 
     @pytest.mark.parametrize("use_legacy_fallback", (False, True))
+    def test_extract_tar_allows_internal_hardlinks(self, tmpdir, monkeypatch, use_legacy_fallback):
+        root = pathlib.Path(tmpdir)
+        extraction_dir = root / "extracted"
+        extraction_dir.mkdir()
+        archive = root / "internal-link.tar"
+        payload = b"safe payload"
+        with tarfile.open(archive, "w") as tar:
+            target = tarfile.TarInfo("target.txt")
+            target.size = len(payload)
+            tar.addfile(target, io.BytesIO(payload))
+
+            link = tarfile.TarInfo("nested/hardlink.txt")
+            link.type = tarfile.LNKTYPE
+            link.linkname = "target.txt"
+            tar.addfile(link)
+
+        if use_legacy_fallback:
+            monkeypatch.delattr(tarfile, "data_filter", raising=False)
+        elif not hasattr(tarfile, "data_filter"):
+            pytest.skip("Python's tarfile module has no extraction filters")
+
+        utils.extract_archive(archive, extraction_dir)
+
+        assert (extraction_dir / "target.txt").read_bytes() == payload
+        assert (extraction_dir / "nested" / "hardlink.txt").read_bytes() == payload
+
+    @pytest.mark.parametrize("use_legacy_fallback", (False, True))
     def test_extract_tar_rejects_special_files(self, tmpdir, monkeypatch, use_legacy_fallback):
         root = pathlib.Path(tmpdir)
         extraction_dir = root / "extracted"
