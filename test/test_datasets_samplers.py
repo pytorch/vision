@@ -93,5 +93,56 @@ class TestDatasetsSamplers:
         assert_equal(indices, torch.tensor([5, 7, 9, 0, 2, 4]))
 
 
+@pytest.mark.filterwarnings("ignore:There aren't enough frames in the current video:UserWarning")
+@pytest.mark.parametrize("sampler_cls", [UniformClipSampler, RandomClipSampler])
+class TestClipSamplersMetadata:
+    def make_video_clips(self, frame_counts):
+        video_paths = [f"video_{i}.mp4" for i in range(len(frame_counts))]
+        return VideoClips(
+            video_paths,
+            clip_length_in_frames=5,
+            frames_between_clips=5,
+            _precomputed_metadata={
+                "video_paths": video_paths,
+                "video_pts": [torch.arange(count) for count in frame_counts],
+                "video_fps": [30.0] * len(frame_counts),
+            },
+        )
+
+    @pytest.mark.parametrize("frame_counts", [[], [0], [4], [0, 3, 4]])
+    def test_no_clips(self, sampler_cls, frame_counts):
+        sampler = sampler_cls(self.make_video_clips(frame_counts), 3)
+        assert len(sampler) == 0
+        assert list(sampler) == []
+
+        for rank in range(2):
+            distributed_sampler = DistributedSampler(sampler, num_replicas=2, rank=rank, group_size=3)
+            assert len(distributed_sampler) == 0
+            assert list(distributed_sampler) == []
+
+    @pytest.mark.parametrize(
+        "frame_counts, expected_uniform",
+        [([5], [0, 0, 0]), ([10, 25], [0, 0, 1, 2, 4, 6]), ([0, 10, 0, 25, 0], [0, 0, 1, 2, 4, 6])],
+    )
+    def test_nonempty_clips(self, sampler_cls, frame_counts, expected_uniform):
+        video_clips = self.make_video_clips(frame_counts)
+        sampler = sampler_cls(video_clips, 3)
+        indices = list(sampler)
+        assert len(indices) == len(sampler)
+        if sampler_cls is UniformClipSampler:
+            assert indices == expected_uniform
+        else:
+            assert len(set(indices)) == len(indices)
+            offset = 0
+            for clips in video_clips.clips:
+                assert sum(offset <= index < offset + len(clips) for index in indices) == min(len(clips), 3)
+                offset += len(clips)
+
+    def test_zero_requested_clips(self, sampler_cls):
+        sampler = sampler_cls(self.make_video_clips([10, 25]), 0)
+        assert len(sampler) == 0
+        assert list(sampler) == []
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
