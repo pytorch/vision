@@ -941,6 +941,20 @@ class TestRoIOpsInvalidInputs:
         with pytest.raises(RuntimeError, match="sampling grid is too large"):
             torch.ops.torchvision.roi_align(torch.rand(1, 1, 4, 4), rois, 1.0, 1, 1, sampling_ratio, False)
 
+    @pytest.mark.parametrize(
+        "sampling_ratio, roi_size, rois_scale",
+        (
+            (2**16, 3, 1),
+            (0, 2**16, 2**10),  # adaptive sampling; the rois scale lets quint8 represent the large RoI
+        ),
+    )
+    def test_qroi_align_sampling_grid_overflow(self, sampling_ratio, roi_size, rois_scale):
+        qx = torch.quantize_per_tensor(torch.rand(1, 1, 4, 4), scale=1, zero_point=0, dtype=torch.quint8)
+        rois = torch.tensor([[0.0, 0, 0, roi_size, roi_size]])
+        qrois = torch.quantize_per_tensor(rois, scale=rois_scale, zero_point=0, dtype=torch.quint8)
+        with pytest.raises(RuntimeError, match="sampling grid is too large"):
+            ops.roi_align(qx, qrois, output_size=1, sampling_ratio=sampling_ratio)
+
 
 class TestMultiScaleRoIAlign:
     def make_obj(self, fmap_names=None, output_size=(7, 7), sampling_ratio=2, wrap=False):
