@@ -14,32 +14,6 @@
 namespace vision {
 namespace image {
 
-#ifndef _WIN32
-namespace {
-// Shim for the from_file op missing in stable ABI.
-// TODO(stable-abi): remove once from_file lands in the stable ABI upstream.
-torch::stable::Tensor stable_from_file(
-    const std::string& filename,
-    bool shared,
-    int64_t size,
-    torch::headeronly::ScalarType dtype) {
-  const auto num_args = 7;
-  std::array<StableIValue, num_args> stack{
-      torch::stable::detail::from(filename),
-      torch::stable::detail::from(std::optional<bool>(shared)),
-      torch::stable::detail::from(std::optional<int64_t>(size)),
-      torch::stable::detail::from(
-          std::optional<torch::headeronly::ScalarType>(dtype)),
-      torch::stable::detail::from(std::nullopt), // layout
-      torch::stable::detail::from(std::nullopt), // device
-      torch::stable::detail::from(std::nullopt)}; // pin_memory
-  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
-      "aten::from_file", "", stack.data(), TORCH_ABI_VERSION));
-  return torch::stable::detail::to<torch::stable::Tensor>(stack[0]);
-}
-} // namespace
-#endif
-
 #ifdef _WIN32
 namespace {
 std::wstring utf8_decode(const std::string& str) {
@@ -98,7 +72,7 @@ torch::stable::Tensor read_file(const std::string& filename) {
   fread(dataBytes, sizeof(uint8_t), size, infile);
   fclose(infile);
 #else
-  auto data = stable_from_file(
+  auto data = torch::stable::from_file(
       filename,
       /*shared=*/false,
       /*size=*/size,
