@@ -250,7 +250,7 @@ Tensor nms_kernel(
       dets_num);
   STD_CUDA_KERNEL_LAUNCH_CHECK();
 
-  return stable_helpers::masked_select(order_t, keep);
+  return torch::stable::masked_select(order_t, keep);
 }
 
 } // namespace
