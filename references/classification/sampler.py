@@ -46,7 +46,11 @@ class RASampler(torch.utils.data.Sampler):
 
         # Add extra samples to make it evenly divisible
         indices = [ele for ele in indices for i in range(self.repetitions)]
-        indices += indices[: (self.total_size - len(indices))]
+        padding_size = self.total_size - len(indices)
+        if padding_size <= len(indices):
+            indices += indices[:padding_size]
+        else:
+            indices += (indices * math.ceil(padding_size / len(indices)))[:padding_size]
         assert len(indices) == self.total_size
 
         # Subsample
