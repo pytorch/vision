@@ -222,11 +222,11 @@ def make_eval_loader(dataset_name: str, args: argparse.Namespace) -> torch.utils
             if disp is not None and not isinstance(disp, torch.Tensor):
                 disp = torch.from_numpy(disp)
                 if W_t != W_o:
-                    disp = resize(disp, (H_t, W_t), mode=InterpolationMode.BILINEAR) * scale_factor
+                    disp = resize(disp, (H_t, W_t), interpolation=InterpolationMode.BILINEAR) * scale_factor
             if valid_disp_mask is not None and not isinstance(valid_disp_mask, torch.Tensor):
                 valid_disp_mask = torch.from_numpy(valid_disp_mask)
                 if W_t != W_o:
-                    valid_disp_mask = resize(valid_disp_mask, (H_t, W_t), mode=InterpolationMode.NEAREST)
+                    valid_disp_mask = resize(valid_disp_mask, (H_t, W_t), interpolation=InterpolationMode.NEAREST)
             return image_left, image_right, disp, valid_disp_mask
 
     else:
