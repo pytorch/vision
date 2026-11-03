@@ -375,7 +375,7 @@ def coco_dectection_wrapper_factory(dataset, target_keys):
         image, target = sample
 
         if not target:
-            return image, dict(image_id=image_id)
+            return image, dict(image_id=image_id) if "image_id" in target_keys else {}
 
         canvas_size = tuple(F.get_size(image))
 
