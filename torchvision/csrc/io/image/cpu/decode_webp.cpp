@@ -1,6 +1,7 @@
 #include "decode_webp.h"
 
 #include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/macros.h>
 #include <torch/csrc/stable/ops.h>
 
 #include "../common_stable.h"
@@ -59,12 +60,7 @@ torch::stable::Tensor decode_webp(
       !features.has_animation, "Animated webp files are not supported.");
 
   if (mode == IMAGE_READ_MODE_GRAY || mode == IMAGE_READ_MODE_GRAY_ALPHA) {
-    // TODO(stable-abi): warn once per process currently not available, replace
-    // when a stable warn-once lands.
-    aoti_torch_warn(
-        __func__,
-        __FILE__,
-        static_cast<uint32_t>(__LINE__),
+    STABLE_TORCH_WARN_ONCE(
         "Webp does not support grayscale conversions. "
         "The returned tensor will be in the colorspace of the original image.");
   }
