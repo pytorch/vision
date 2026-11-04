@@ -68,15 +68,15 @@ void roi_align_forward_kernel_impl(
     int roi_bin_grid_w =
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
 
-    // We do average (integral) pooling inside a bin
-    // When the grid is empty, output zeros.
-    const T count = std::max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
-
     STD_TORCH_CHECK(
         static_cast<double>(roi_bin_grid_h) * roi_bin_grid_w * pooled_width *
                 pooled_height <=
             INT_MAX,
         "roi_align sampling grid is too large, reduce sampling_ratio or the RoI size");
+
+    // We do average (integral) pooling inside a bin
+    // When the grid is empty, output zeros.
+    const T count = std::max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
 
     // we want to precalculate indices and weights shared by all channels,
     // this is the key point of optimization
