@@ -87,11 +87,6 @@ using torch::stable::Tensor;
 
 const int kMaxParallelImgs = 32;
 
-// TODO(stable-abi): use torch::stable::add once the shim adds aten::add.Tensor.
-Tensor add_tensors(const Tensor& self, const Tensor& other) {
-  return torch::stable::subtract(self, other, -1.0);
-}
-
 template <typename scalar_t>
 scalar_t bilinear_interpolate(
     const scalar_t* in,
@@ -905,7 +900,8 @@ Tensor backward_gradient_parameters(
       auto columns_g =
           torch::stable::transpose(torch::stable::select(columns, 0, g), 1, 0);
       auto update = torch::stable::matmul(grad_out_buf_g, columns_g);
-      torch::stable::copy_(grad_weight_g, add_tensors(grad_weight_g, update));
+      torch::stable::copy_(
+          grad_weight_g, torch::stable::add(grad_weight_g, update));
     }
   }
 
@@ -1147,7 +1143,8 @@ Tensor deform_conv2d_forward_kernel(
   torch::stable::copy_(out, out_buf);
   out = torch::stable::view(out, {batch_sz, out_channels, out_h, out_w});
 
-  return add_tensors(out, torch::stable::view(bias_c, {1, out_channels, 1, 1}));
+  return torch::stable::add(
+      out, torch::stable::view(bias_c, {1, out_channels, 1, 1}));
 }
 
 std::tuple<Tensor, Tensor, Tensor, Tensor, Tensor> deform_conv2d_backward_kernel(
@@ -1218,7 +1215,7 @@ std::tuple<Tensor, Tensor, Tensor, Tensor, Tensor> deform_conv2d_backward_kernel
   std::array<int64_t, 3> bias_sum_dims{0, 2, 3};
   auto grad_out_sum = torch::stable::sum(
       grad_out_c, torch::headeronly::IntHeaderOnlyArrayRef(bias_sum_dims));
-  auto grad_bias = add_tensors(
+  auto grad_bias = torch::stable::add(
       torch::stable::new_zeros(bias_c, bias_c.sizes()), grad_out_sum);
 
   return std::make_tuple(
