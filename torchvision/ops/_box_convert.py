@@ -193,6 +193,10 @@ def _box_xyxyxyxy_to_xywhr(boxes: Tensor) -> Tensor:
     """
     dtype = boxes.dtype
     need_cast = not boxes.is_floating_point()
+    acceptable_dtypes = [torch.float32, torch.float64]  # Ensure consistency between CPU and GPU.
+    if dtype not in acceptable_dtypes:
+        # Up-cast to avoid overflow for square operations
+        boxes = boxes.to(torch.float32)
     x1, y1, x2, y2, x3, y3, x4, y4 = boxes.unbind(-1)
     r_rad = torch.atan2(y1 - y2, x2 - x1)
     r = r_rad * 180 / torch.pi
@@ -203,5 +207,6 @@ def _box_xyxyxyxy_to_xywhr(boxes: Tensor) -> Tensor:
     boxes = torch.stack((x1, y1, w, h, r), dim=-1)
     if need_cast:
         boxes.round_()
+    if dtype not in acceptable_dtypes:
         boxes = boxes.to(dtype)
     return boxes
