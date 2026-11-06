@@ -156,6 +156,7 @@ def get_extensions():
             project_directory=this_dir,
             output_directory=this_dir,
             includes="torchvision/csrc/ops/cuda/*",
+            ignores=("torchvision/csrc/vision_stable.cpp",),
             show_detailed=True,
             is_pytorch_extension=True,
         )
