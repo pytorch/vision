@@ -14,15 +14,15 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.10"
+          - "3.11"
           - "3.14"
         runner: ["mt-l-x86iavx512-48-384"]
         gpu-arch-type: ["cpu"]
         include:
-          - python-version: "3.10"
+          - python-version: "3.11"
             runner: mt-l-x86aavx2-11-41-a10g
             gpu-arch-type: cuda
-            gpu-arch-version: "12.6"
+            gpu-arch-version: "13.2"
       fail-fast: false
     uses: pytorch/test-infra/.github/workflows/linux_job_v3.yml@main
     permissions:
@@ -48,7 +48,7 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - "3.10"
+          - "3.11"
           - "3.14"
         runner: ["macos-m1-stable"]
       fail-fast: false
@@ -116,7 +116,7 @@ jobs:
       script: |
         set -euo pipefail
 
-        export PYTHON_VERSION="3.10"
+        export PYTHON_VERSION="3.11"
         export GPU_ARCH_TYPE=cpu
         export GPU_ARCH_VERSION=''
 

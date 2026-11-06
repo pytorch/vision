@@ -362,6 +362,9 @@ def invert(img: Image.Image) -> Image.Image:
 def posterize(img: Image.Image, bits: int) -> Image.Image:
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
+    if bits == 0:
+        # Pillow >= 13 rejects bits=0, which maps every value to 0.
+        return img.point(lambda _: 0)
     return ImageOps.posterize(img, bits)
 
 
