@@ -638,5 +638,25 @@ def test_flow_to_image_errors(input_flow, match):
         utils.flow_to_image(flow=input_flow)
 
 
+@pytest.mark.parametrize(
+    "arr, mode",
+    [
+        (np.array([[0.25, 0.5], [1.0, 1.5]], dtype=np.float32), "F"),
+        (np.array([[[10, 20, 30], [40, 50, 60]], [[70, 80, 90], [100, 110, 120]]], dtype=np.uint8), "RGB"),
+        (np.array([[[10, 20, 30], [40, 50, 60]], [[70, 80, 90], [100, 110, 120]]], dtype=np.uint8), "YCbCr"),
+    ],
+)
+def test_image_fromarray_mode_and_values(arr, mode):
+    # _Image_fromarray must honor mode and keep the raw pixel values.
+    # fromarray().convert(mode) would change values (e.g. RGB -> YCbCr).
+    img = utils._Image_fromarray(arr, mode)
+    assert img.mode == mode
+    np.testing.assert_array_equal(np.asarray(img), arr)
+
+    pil = F.to_pil_image(arr, mode=mode)
+    assert pil.mode == mode
+    np.testing.assert_array_equal(np.asarray(pil), arr)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
