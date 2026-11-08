@@ -637,7 +637,11 @@ class RetinaNet(nn.Module):
         head_outputs = self.head(features)
 
         # create the set of anchors
-        anchors = self.anchor_generator(images, features)
+        anchors_per_image_per_level = self.anchor_generator(images, features)
+        
+        # Flatten anchors across feature levels for compatibility with existing code
+        # anchors_per_image_per_level: list[list[Tensor]] -> anchors: list[Tensor]
+        anchors = [torch.cat(anchors_per_level, dim=0) for anchors_per_level in anchors_per_image_per_level]
 
         losses = {}
         detections: list[dict[str, Tensor]] = []
