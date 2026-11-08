@@ -288,6 +288,15 @@ class TestToTensor:
         expected_output = (input_data * 255).byte()
         torch.testing.assert_close(output, expected_output)
 
+        for mode in ("I;16", "I;16B"):
+            input_data = torch.tensor([[1, 258], [3, 4]], dtype=torch.int16)
+            array = input_data.numpy()
+            if mode == "I;16B":
+                array = array.byteswap()
+            img = Image.fromarray(array, mode=mode)
+            output = trans(img)
+            torch.testing.assert_close(input_data.unsqueeze(0), output)
+
         # separate test for mode '1' PIL images
         input_data = torch.ByteTensor(1, height, width).bernoulli_()
         img = transforms.ToPILImage()(input_data.mul(255)).convert("1")
