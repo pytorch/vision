@@ -242,9 +242,6 @@ detection_models_input_dims = {
 )
 @run_if_test_with_extended
 def test_schema_meta_validation(model_fn):
-    if model_fn.__name__ == "maskrcnn_resnet50_fpn_v2":
-        pytest.skip(reason="FIXME https://github.com/pytorch/vision/issues/7349")
-
     # list of all possible supported high-level fields for weights meta-data
     permitted_fields = {
         "backend",
