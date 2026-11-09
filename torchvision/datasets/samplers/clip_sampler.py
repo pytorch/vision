@@ -133,6 +133,8 @@ class UniformClipSampler(Sampler):
             sampled = torch.linspace(s, s + length - 1, steps=self.num_clips_per_video).floor().to(torch.int64)
             s += length
             idxs.append(sampled)
+        if not idxs:
+            return iter([])
         return iter(cast(list[int], torch.cat(idxs).tolist()))
 
     def __len__(self) -> int:
@@ -164,6 +166,8 @@ class RandomClipSampler(Sampler):
             sampled = torch.randperm(length)[:size] + s
             s += length
             idxs.append(sampled)
+        if not idxs:
+            return iter([])
         idxs_ = torch.cat(idxs)
         # shuffle all clips randomly
         perm = torch.randperm(len(idxs_))
