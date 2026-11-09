@@ -35,9 +35,12 @@ def drop_block2d(
         return input
 
     N, C, H, W = input.size()
-    block_size = min(block_size, W, H)
     if block_size % 2 == 0:
         raise ValueError(f"block size should be odd. Got {block_size} which is even.")
+    block_size = min(block_size, W, H)
+    if block_size % 2 == 0:
+        # the input is smaller than the block: use the largest odd size that fits
+        block_size -= 1
 
     # compute the gamma of Bernoulli distribution
     gamma = (p * H * W) / ((block_size**2) * ((H - block_size + 1) * (W - block_size + 1)))
@@ -84,9 +87,12 @@ def drop_block3d(
         return input
 
     N, C, D, H, W = input.size()
-    block_size = min(block_size, D, H, W)
     if block_size % 2 == 0:
         raise ValueError(f"block size should be odd. Got {block_size} which is even.")
+    block_size = min(block_size, D, H, W)
+    if block_size % 2 == 0:
+        # the input is smaller than the block: use the largest odd size that fits
+        block_size -= 1
 
     # compute the gamma of Bernoulli distribution
     gamma = (p * D * H * W) / ((block_size**3) * ((D - block_size + 1) * (H - block_size + 1) * (W - block_size + 1)))
