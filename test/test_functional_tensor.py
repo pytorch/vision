@@ -150,6 +150,23 @@ class TestRotate:
         res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
         assert_equal(res1, res2)
 
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("height, width", [(33, 64), (26, 26), (16, 20)])
+    @pytest.mark.parametrize("angle", [0, 90, 180, 270, -90, 450])
+    @pytest.mark.parametrize("expand", [True, False])
+    @pytest.mark.parametrize("fn", [F.rotate, scripted_rotate])
+    def test_rotate_right_angles(self, device, height, width, angle, expand, fn):
+        tensor, pil_img = _create_data(height, width, device=device)
+
+        out_pil_img = F.rotate(pil_img, angle=angle, interpolation=NEAREST, expand=expand)
+        out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+
+        out_tensor = fn(tensor, angle=angle, interpolation=NEAREST, expand=expand).cpu()
+
+        assert out_tensor.shape == out_pil_tensor.shape
+        if expand or height == width or angle % 180 == 0:
+            assert_equal(out_tensor, out_pil_tensor)
+
 
 class TestAffine:
 
