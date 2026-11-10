@@ -1,18 +1,24 @@
 #include "deform_conv2d.h"
 
-#include <ATen/core/dispatch/Dispatcher.h>
-#include <torch/library.h>
-#include <torch/types.h>
+#include <torch/csrc/stable/c/shim.h>
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/stableivalue_conversions.h>
+#include <torch/headeronly/util/shim_utils.h>
+#include <torch/headeronly/version.h>
+
+#include <array>
 
 namespace vision {
 namespace ops {
 
-at::Tensor deform_conv2d(
-    const at::Tensor& input,
-    const at::Tensor& weight,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
-    const at::Tensor& bias,
+using torch::stable::Tensor;
+
+Tensor deform_conv2d(
+    const Tensor& input,
+    const Tensor& weight,
+    const Tensor& offset,
+    const Tensor& mask,
+    const Tensor& bias,
     int64_t stride_h,
     int64_t stride_w,
     int64_t pad_h,
@@ -22,73 +28,35 @@ at::Tensor deform_conv2d(
     int64_t groups,
     int64_t offset_groups,
     bool use_mask) {
-  C10_LOG_API_USAGE_ONCE("torchvision.csrc.ops.deform_conv2d.deform_conv2d");
-  static auto op = c10::Dispatcher::singleton()
-                       .findSchemaOrThrow("torchvision::deform_conv2d", "")
-                       .typed<decltype(deform_conv2d)>();
-  return op.call(
-      input,
-      weight,
-      offset,
-      mask,
-      bias,
-      stride_h,
-      stride_w,
-      pad_h,
-      pad_w,
-      dilation_h,
-      dilation_w,
-      groups,
-      offset_groups,
-      use_mask);
-}
-
-at::Tensor deform_conv2d_symint(
-    const at::Tensor& input,
-    const at::Tensor& weight,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
-    const at::Tensor& bias,
-    c10::SymInt stride_h,
-    c10::SymInt stride_w,
-    c10::SymInt pad_h,
-    c10::SymInt pad_w,
-    c10::SymInt dilation_h,
-    c10::SymInt dilation_w,
-    c10::SymInt groups,
-    c10::SymInt offset_groups,
-    bool use_mask) {
-  C10_LOG_API_USAGE_ONCE("torchvision.csrc.ops.deform_conv2d.deform_conv2d");
-  static auto op = c10::Dispatcher::singleton()
-                       .findSchemaOrThrow("torchvision::deform_conv2d", "")
-                       .typed<decltype(deform_conv2d_symint)>();
-  return op.call(
-      input,
-      weight,
-      offset,
-      mask,
-      bias,
-      stride_h,
-      stride_w,
-      pad_h,
-      pad_w,
-      dilation_h,
-      dilation_w,
-      groups,
-      offset_groups,
-      use_mask);
+  std::array<StableIValue, 14> stack{
+      torch::stable::detail::from(input),
+      torch::stable::detail::from(weight),
+      torch::stable::detail::from(offset),
+      torch::stable::detail::from(mask),
+      torch::stable::detail::from(bias),
+      torch::stable::detail::from(stride_h),
+      torch::stable::detail::from(stride_w),
+      torch::stable::detail::from(pad_h),
+      torch::stable::detail::from(pad_w),
+      torch::stable::detail::from(dilation_h),
+      torch::stable::detail::from(dilation_w),
+      torch::stable::detail::from(groups),
+      torch::stable::detail::from(offset_groups),
+      torch::stable::detail::from(use_mask)};
+  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
+      "torchvision::deform_conv2d", "", stack.data(), TORCH_ABI_VERSION));
+  return torch::stable::detail::to<Tensor>(stack[0]);
 }
 
 namespace detail {
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
-_deform_conv2d_backward(
-    const at::Tensor& grad,
-    const at::Tensor& input,
-    const at::Tensor& weight,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
-    const at::Tensor& bias,
+std::tuple<Tensor, Tensor, Tensor, Tensor, Tensor> _deform_conv2d_backward(
+    const Tensor& grad,
+    const Tensor& input,
+    const Tensor& weight,
+    const Tensor& offset,
+    const Tensor& mask,
+    const Tensor& bias,
     int64_t stride_h,
     int64_t stride_w,
     int64_t pad_h,
@@ -98,74 +66,42 @@ _deform_conv2d_backward(
     int64_t groups,
     int64_t offset_groups,
     bool use_mask) {
-  static auto op =
-      c10::Dispatcher::singleton()
-          .findSchemaOrThrow("torchvision::_deform_conv2d_backward", "")
-          .typed<decltype(_deform_conv2d_backward)>();
-  return op.call(
-      grad,
-      input,
-      weight,
-      offset,
-      mask,
-      bias,
-      stride_h,
-      stride_w,
-      pad_h,
-      pad_w,
-      dilation_h,
-      dilation_w,
-      groups,
-      offset_groups,
-      use_mask);
-}
-
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
-_deform_conv2d_backward_symint(
-    const at::Tensor& grad,
-    const at::Tensor& input,
-    const at::Tensor& weight,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
-    const at::Tensor& bias,
-    c10::SymInt stride_h,
-    c10::SymInt stride_w,
-    c10::SymInt pad_h,
-    c10::SymInt pad_w,
-    c10::SymInt dilation_h,
-    c10::SymInt dilation_w,
-    c10::SymInt groups,
-    c10::SymInt offset_groups,
-    bool use_mask) {
-  static auto op =
-      c10::Dispatcher::singleton()
-          .findSchemaOrThrow("torchvision::_deform_conv2d_backward", "")
-          .typed<decltype(_deform_conv2d_backward_symint)>();
-  return op.call(
-      grad,
-      input,
-      weight,
-      offset,
-      mask,
-      bias,
-      stride_h,
-      stride_w,
-      pad_h,
-      pad_w,
-      dilation_h,
-      dilation_w,
-      groups,
-      offset_groups,
-      use_mask);
+  std::array<StableIValue, 15> stack{
+      torch::stable::detail::from(grad),
+      torch::stable::detail::from(input),
+      torch::stable::detail::from(weight),
+      torch::stable::detail::from(offset),
+      torch::stable::detail::from(mask),
+      torch::stable::detail::from(bias),
+      torch::stable::detail::from(stride_h),
+      torch::stable::detail::from(stride_w),
+      torch::stable::detail::from(pad_h),
+      torch::stable::detail::from(pad_w),
+      torch::stable::detail::from(dilation_h),
+      torch::stable::detail::from(dilation_w),
+      torch::stable::detail::from(groups),
+      torch::stable::detail::from(offset_groups),
+      torch::stable::detail::from(use_mask)};
+  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
+      "torchvision::_deform_conv2d_backward",
+      "",
+      stack.data(),
+      TORCH_ABI_VERSION));
+  return std::make_tuple(
+      torch::stable::detail::to<Tensor>(stack[0]),
+      torch::stable::detail::to<Tensor>(stack[1]),
+      torch::stable::detail::to<Tensor>(stack[2]),
+      torch::stable::detail::to<Tensor>(stack[3]),
+      torch::stable::detail::to<Tensor>(stack[4]));
 }
 
 } // namespace detail
 
-TORCH_LIBRARY_FRAGMENT(torchvision, m) {
-  m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::deform_conv2d(Tensor input, Tensor weight, Tensor offset, Tensor mask, Tensor bias, SymInt stride_h, SymInt stride_w, SymInt pad_h, SymInt pad_w, SymInt dilation_h, SymInt dilation_w, SymInt groups, SymInt offset_groups, bool use_mask) -> Tensor"));
-  m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::_deform_conv2d_backward(Tensor grad, Tensor input, Tensor weight, Tensor offset, Tensor mask, Tensor bias, SymInt stride_h, SymInt stride_w, SymInt pad_h, SymInt pad_w, SymInt dilation_h, SymInt dilation_w, SymInt groups, SymInt offset_groups, bool use_mask) -> (Tensor, Tensor, Tensor, Tensor, Tensor)"));
+STABLE_TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def(
+      "deform_conv2d(Tensor input, Tensor weight, Tensor offset, Tensor mask, Tensor bias, SymInt stride_h, SymInt stride_w, SymInt pad_h, SymInt pad_w, SymInt dilation_h, SymInt dilation_w, SymInt groups, SymInt offset_groups, bool use_mask) -> Tensor");
+  m.def(
+      "_deform_conv2d_backward(Tensor grad, Tensor input, Tensor weight, Tensor offset, Tensor mask, Tensor bias, SymInt stride_h, SymInt stride_w, SymInt pad_h, SymInt pad_w, SymInt dilation_h, SymInt dilation_w, SymInt groups, SymInt offset_groups, bool use_mask) -> (Tensor, Tensor, Tensor, Tensor, Tensor)");
 }
 
 } // namespace ops

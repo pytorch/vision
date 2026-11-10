@@ -1,6 +1,14 @@
 #include "decode_gif.h"
+
+#include <torch/csrc/stable/library.h>
+#include <torch/csrc/stable/ops.h>
+#include <torch/headeronly/core/TensorAccessor.h>
+#include <torch/headeronly/util/Exception.h>
+
+#include <algorithm>
 #include <cstring>
-#include "../common.h"
+
+#include "../common_stable.h"
 #include "giflib/gif_lib.h"
 
 namespace vision {
@@ -32,7 +40,7 @@ int read_from_tensor(GifFileType* gifFile, GifByteType* buf, int len) {
   return num_bytes_to_read;
 }
 
-torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
+torch::stable::Tensor decode_gif(const torch::stable::Tensor& encoded_data) {
   // LibGif docs: https://giflib.sourceforge.net/intro.html
   // Refer over there for more details on the libgif API, API ref, and a
   // detailed description of the GIF format.
@@ -59,7 +67,7 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
   // If we do that, we'd have to make sure the buffers are never written to by
   // GIFLIB, otherwise we'd be overriding the tensor data.
   reader_helper_t reader_helper;
-  reader_helper.encoded_data = encoded_data.data_ptr<uint8_t>();
+  reader_helper.encoded_data = encoded_data.const_data_ptr<uint8_t>();
   reader_helper.encoded_data_size = encoded_data.numel();
   reader_helper.num_bytes_read = 0;
   GifFileType* gifFile =
@@ -97,12 +105,16 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
 
   // We output a channels-last tensor for consistency with other image decoders.
   // Torchvision's resize tends to be is faster on uint8 channels-last tensors.
-  auto options = torch::TensorOptions()
-                     .dtype(torch::kU8)
-                     .memory_format(torch::MemoryFormat::ChannelsLast);
-  auto out = torch::empty(
-      {int64_t(num_images), 3, int64_t(out_h), int64_t(out_w)}, options);
-  auto out_a = out.accessor<uint8_t, 4>();
+  auto out = torch::stable::empty(
+      {int64_t(num_images), 3, int64_t(out_h), int64_t(out_w)},
+      torch::headeronly::ScalarType::Byte,
+      std::nullopt,
+      std::nullopt,
+      std::nullopt,
+      torch::headeronly::MemoryFormat::ChannelsLast);
+  auto out_data = out.mutable_data_ptr<uint8_t>();
+  auto out_a = torch::headeronly::HeaderOnlyTensorAccessor<uint8_t, 4>(
+      out_data, out.sizes().data(), out.strides().data());
   for (int i = 0; i < num_images; i++) {
     const SavedImage& img = gifFile->SavedImages[i];
 
@@ -135,7 +147,8 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
         (gcb.DisposalMode == DISPOSAL_UNSPECIFIED ||
          gcb.DisposalMode == DISPOSE_DO_NOT ||
          gcb.DisposalMode == DISPOSE_PREVIOUS)) {
-      out[i] = out[i - 1];
+      auto dst = torch::stable::select(out, 0, i);
+      torch::stable::copy_(dst, torch::stable::select(out, 0, i - 1));
     } else {
       // Background. If bg wasn't defined, it will be (0, 0, 0)
       for (int h = 0; h < gifFile->SHeight; h++) {
@@ -174,12 +187,21 @@ torch::Tensor decode_gif(const torch::Tensor& encoded_data) {
     }
   }
 
-  out = out.squeeze(0); // remove batch dim if there's only one image
+  out = torch::stable::squeeze(
+      out, 0); // remove batch dim if there's only one image
 
   DGifCloseFile(gifFile, &error);
   STD_TORCH_CHECK(error == D_GIF_SUCCEEDED, "DGifCloseFile() failed - ", error);
 
   return out;
+}
+
+STABLE_TORCH_LIBRARY_FRAGMENT(image, m) {
+  m.def("decode_gif(Tensor data) -> Tensor");
+}
+
+STABLE_TORCH_LIBRARY_IMPL(image, CompositeExplicitAutograd, m) {
+  m.impl("decode_gif", TORCH_BOX(&decode_gif));
 }
 
 } // namespace image

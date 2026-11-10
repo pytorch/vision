@@ -315,9 +315,8 @@ def patch_linux():
     wheels = glob.glob(osp.join(PACKAGE_ROOT, "dist", "*.whl"))
     output_dir = osp.join(PACKAGE_ROOT, "dist", ".wheel-process")
 
-    image_binary = "image.so"
     image_stable_binary = "image_stable.so"
-    torchvision_binaries = [image_binary, image_stable_binary]
+    torchvision_binaries = [image_stable_binary]
     for wheel in wheels:
         if osp.exists(output_dir):
             shutil.rmtree(output_dir)
@@ -351,9 +350,8 @@ def patch_win():
     wheels = glob.glob(osp.join(PACKAGE_ROOT, "dist", "*.whl"))
     output_dir = osp.join(PACKAGE_ROOT, "dist", ".wheel-process")
 
-    image_binary = "image.pyd"
     image_stable_binary = "image_stable.pyd"
-    torchvision_binaries = [image_binary, image_stable_binary]
+    torchvision_binaries = [image_stable_binary]
     for wheel in wheels:
         if osp.exists(output_dir):
             shutil.rmtree(output_dir)

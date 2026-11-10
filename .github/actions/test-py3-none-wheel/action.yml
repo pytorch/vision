@@ -1,0 +1,42 @@
+name: Smoke-Test py3-none wheel on other Python versions
+description: >
+  Install the py3-none wheel built by the build job, and run the smoke tests.
+  This is meant to be called on a different Python version that was used to
+  build the wheel. The point is to verify that the py3-none wheel that was built
+  is indeed compatible with any Python version.
+
+inputs:
+  python-version:
+    description: Python version to install the wheel into
+    required: true
+  artifact-pattern:
+    description: >
+      Pattern matching the CPU wheel artifact.
+    required: true
+  wheel-glob:
+    description: Glob that must match exactly one downloaded wheel, asserting its tags
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+        # 3.15 is still a CPython pre-release.
+        allow-prereleases: true
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ inputs.artifact-pattern }}
+        merge-multiple: true
+        path: dist
+    - shell: bash
+      run: |
+        set -euxo pipefail
+        # Fails the job unless exactly one wheel is tagged the way we expect.
+        wheels=( ${{ inputs.wheel-glob }} )
+        [[ ${#wheels[@]} -eq 1 && -f "${wheels[0]}" ]] || { echo "Expected exactly one wheel matching ${{ inputs.wheel-glob }}, got: ${wheels[*]}"; ls -R dist; exit 1; }
+        wheel="${wheels[0]}"
+        pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu
+        pip install "${wheel}"
+        python test/smoke_test.py

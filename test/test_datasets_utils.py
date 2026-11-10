@@ -1,5 +1,6 @@
 import contextlib
 import gzip
+import io
 import os
 import pathlib
 import re
@@ -205,6 +206,24 @@ class TestDatasetsUtils:
 
         with open(file) as fh:
             assert fh.read() == content
+
+    @pytest.mark.skipif(not hasattr(tarfile, "data_filter"), reason="tarfile extraction filters not available")
+    @pytest.mark.parametrize("member_name", ["../outside.txt", "sub/../../outside.txt"])
+    def test_extract_tar_path_traversal(self, tmpdir, member_name):
+        root = pathlib.Path(tmpdir)
+        to_path = root / "extract_here"
+        to_path.mkdir()
+        archive = root / "archive.tar"
+        content = b"owned"
+        with tarfile.open(archive, "w") as fh:
+            info = tarfile.TarInfo(member_name)
+            info.size = len(content)
+            fh.addfile(info, io.BytesIO(content))
+
+        with pytest.raises(tarfile.OutsideDestinationError):
+            utils.extract_archive(archive, to_path)
+
+        assert not (root / "outside.txt").exists()
 
     @pytest.mark.parametrize(
         "extension, mode", [(".tar", "w"), (".tar.gz", "w:gz"), (".tgz", "w:gz"), (".tar.xz", "w:xz")]

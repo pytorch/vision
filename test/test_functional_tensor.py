@@ -1053,7 +1053,8 @@ def test_gaussian_blur(device, image_size, dt, ksize, sigma, fn):
     )
 
     out = fn(tensor, kernel_size=ksize, sigma=sigma)
-    torch.testing.assert_close(out, true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
+    # OpenCV references are uint8; round float outputs before comparing levels.
+    torch.testing.assert_close(torch.round(out), true_out, rtol=0.0, atol=1.0, msg=f"{ksize}, {sigma}")
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
