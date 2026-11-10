@@ -1,0 +1,166 @@
+name: Build image libraries
+
+# Builds libpng, libwebp and libjpeg-turbo (plus zlib on Windows) from source for
+# each wheel platform, then builds torchvision against them and checks that PNG,
+# JPEG and WebP decoding work. The bundles are what packaging/pre_build_script.sh
+# would use instead of `conda install`.
+#
+# Windows arm64 is not covered: packaging/pre_build_script_arm64.sh already builds
+# the same libraries with vcpkg.
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/build-image-libs.yml
+      - packaging/build_image_libs.sh
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/build-image-libs.yml
+      - packaging/build_image_libs.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    # Linux builds run in the same images as the torchvision wheel builds, so the
+    # libraries get the same glibc and toolchain.
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86_64
+            os: linux
+            runner: ubuntu-latest
+            container: pytorch/manylinux2_28-builder:cpu
+          - name: linux-aarch64
+            os: linux
+            runner: ubuntu-24.04-arm
+            container: pytorch/manylinuxaarch64-builder:cpu-aarch64
+          - name: macos-arm64
+            os: macos
+            runner: macos-14
+          - name: windows-x86_64
+            os: windows
+            runner: windows-2022
+    defaults:
+      run:
+        shell: bash
+    env:
+      PREFIX: ${{ github.workspace }}/image-libs-${{ matrix.name }}
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+      PYTHON_VERSION: "3.12"
+    steps:
+      - uses: actions/checkout@v4
+
+      # Use C:/... paths on Windows, which both the MSYS tools and native CMake accept
+      - name: Normalize prefix path
+        if: matrix.os == 'windows'
+        run: echo "PREFIX=$(cygpath -m "${PREFIX}")" >> "${GITHUB_ENV}"
+
+      # Python, plus the same cmake / ninja pins the wheel builds use today.
+      - name: Set up Python
+        if: matrix.os != 'linux'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Python (manylinux)
+        if: matrix.os == 'linux'
+        run: |
+          PYBIN=/opt/python/cp312-cp312/bin
+          echo "${PYBIN}" >> "${GITHUB_PATH}"
+
+      - name: Install build tools
+        run: |
+          python -m pip install cmake==3.31.2 ninja==1.12.1
+          if [[ "${{ matrix.name }}" == linux-x86_64 ]]; then
+            yum install -y nasm
+          fi
+
+      - name: Install NASM
+        if: matrix.os == 'windows'
+        run: |
+          choco install nasm -y --no-progress
+          echo "C:\Program Files\NASM" >> "${GITHUB_PATH}"
+
+      - name: Set up MSVC
+        if: matrix.os == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Build libraries
+        run: packaging/build_image_libs.sh
+
+      - name: Package
+        run: |
+          tar -czf "image-libs-${{ matrix.name }}.tar.gz" -C "${PREFIX}" .
+          ls -l "image-libs-${{ matrix.name }}.tar.gz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-libs-${{ matrix.name }}
+          path: image-libs-${{ matrix.name }}.tar.gz
+          if-no-files-found: error
+          retention-days: 30
+
+      # Build torchvision against the bundle (not conda, not system libraries) and
+      # check the three decoders work.
+      - name: Install torch
+        run: |
+          python -m pip install numpy setuptools wheel
+          python -m pip install --pre torch --index-url https://download.pytorch.org/whl/nightly/cpu
+
+      - name: Build torchvision against the bundle
+        run: |
+          export TORCHVISION_INCLUDE="${PREFIX}/include"
+          export TORCHVISION_LIBRARY="${PREFIX}/lib"
+          # setup.py finds libpng through libpng-config (pngfix on Windows)
+          export PATH="$(cygpath -u "${PREFIX}" 2>/dev/null || echo "${PREFIX}")/bin:${PATH}"
+          # Keep conda out of the library search, so a pass proves the bundle is enough
+          unset CONDA_PREFIX BUILD_PREFIX
+          python -m pip install --no-build-isolation -v . 2>&1 | tee build.log
+          for lib in PNG JPEG WEBP; do
+            grep -q "Building torchvision with ${lib} image support" build.log \
+              || { echo "torchvision was built without ${lib} support"; exit 1; }
+          done
+
+      - name: Check decoding
+        run: |
+          # Run from outside the checkout so the installed package is imported
+          cd "${RUNNER_TEMP}"
+          PREFIX_U="$(cygpath -u "${PREFIX}" 2>/dev/null || echo "${PREFIX}")"
+          # The libraries are not bundled into the wheel here (auditwheel / delocate
+          # run in the real wheel build), so point the loader at them.
+          case "${{ matrix.os }}" in
+            linux) export LD_LIBRARY_PATH="${PREFIX}/lib:${LD_LIBRARY_PATH:-}" ;;
+            macos) export DYLD_FALLBACK_LIBRARY_PATH="${PREFIX}/lib" ;;
+            windows) export PATH="${PREFIX_U}/bin:${PATH}" ;;
+          esac
+          export WEBP_ASSET="${GITHUB_WORKSPACE}/test/assets/fakedata/logos/rgb_pytorch.webp"
+          python - <<'EOF'
+          import os
+
+          import numpy as np
+          import torch
+          from torchvision.io import decode_jpeg, decode_png, decode_webp, encode_jpeg, encode_png
+
+          img = torch.randint(0, 256, (3, 64, 64), dtype=torch.uint8)
+          assert decode_png(encode_png(img)).equal(img), "png round trip"
+          assert decode_jpeg(encode_jpeg(img)).shape == img.shape, "jpeg round trip"
+
+          webp = torch.from_numpy(np.fromfile(os.environ["WEBP_ASSET"], dtype=np.uint8))
+          assert decode_webp(webp).shape[0] in (3, 4), "webp decode"
+          print("PNG, JPEG and WebP OK")
+          EOF
