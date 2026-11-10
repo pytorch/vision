@@ -228,8 +228,11 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor, inplace: bool) -> torch.Tensor:
 
     # (x2 - x1) = width, same for height
     xyxy[..., 2:].sub_(xyxy[..., :2])
-    # (x1 * 2 + width) / 2 = x1 + width / 2 = x1 + (x2-x1)/2 = (x1 + x2)/2 = cx, same for cy
-    xyxy[..., :2].mul_(2).add_(xyxy[..., 2:]).div_(2, rounding_mode=None if xyxy.is_floating_point() else "floor")
+    # x1 + width / 2 avoids overflowing the x1 * 2 intermediate.
+    if xyxy.is_floating_point():
+        xyxy[..., :2].add_(xyxy[..., 2:] / 2)
+    else:
+        xyxy[..., :2].add_(xyxy[..., 2:].div(2, rounding_mode="floor"))
 
     return xyxy
 
