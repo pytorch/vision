@@ -46,10 +46,10 @@ jobs:
           - name: linux-aarch64
             os: linux
             runner: ubuntu-24.04-arm
-            container: pytorch/manylinuxaarch64-builder:cpu-aarch64
+            container: pytorch/manylinux2_28_aarch64-builder:cpu-aarch64
           - name: macos-arm64
             os: macos
-            runner: macos-14
+            runner: macos-m1-stable
           - name: windows-x86_64
             os: windows
             runner: windows-2022
@@ -68,7 +68,8 @@ jobs:
         if: matrix.os == 'windows'
         run: echo "PREFIX=$(cygpath -m "${PREFIX}")" >> "${GITHUB_ENV}"
 
-      # Python, plus the same cmake / ninja pins the wheel builds use today.
+      # Python and build tools. PyPI has no ninja 1.12.1 (the version conda pins), so use
+      # 1.13.0; the version does not matter for building these libraries.
       - name: Set up Python
         if: matrix.os != 'linux'
         uses: actions/setup-python@v5
@@ -83,7 +84,7 @@ jobs:
 
       - name: Install build tools
         run: |
-          python -m pip install cmake==3.31.2 ninja==1.12.1
+          python -m pip install cmake==3.31.2 ninja==1.13.0
           if [[ "${{ matrix.name }}" == linux-x86_64 ]]; then
             yum install -y nasm
           fi
