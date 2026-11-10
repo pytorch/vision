@@ -2461,6 +2461,22 @@ class TestFocalLoss:
         tol = 1e-3 if dtype is torch.half else 1e-5
         torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
 
+    @pytest.mark.parametrize("gamma", [0.25, 0.5, 0.75, 1, 2])
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half, torch.bfloat16])
+    def test_confident_predictions_have_finite_gradients(self, gamma, device, dtype):
+        if device == "cpu" and dtype is torch.half:
+            pytest.skip("Currently torch.half is not fully supported on cpu")
+        # Confidently correct logits round 1 - p_t to exactly 0, where (1 - p_t) ** gamma has an infinite slope
+        inputs = torch.tensor([20.0, -20.0, 100.0, -100.0, 0.5], device=device, dtype=dtype, requires_grad=True)
+        targets = torch.tensor([1.0, 0.0, 1.0, 0.0, 1.0], device=device, dtype=dtype)
+        loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, reduction="sum")
+        loss.backward()
+
+        assert torch.isfinite(loss)
+        assert torch.isfinite(inputs.grad).all()
+        torch.testing.assert_close(inputs.grad[:4], torch.zeros(4, device=device, dtype=dtype))
+
     # Raise ValueError for anonymous reduction mode
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
