@@ -463,7 +463,7 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     w_gt = boxes2[..., None, :, 2] - boxes2[..., None, :, 0]
     h_gt = boxes2[..., None, :, 3] - boxes2[..., None, :, 1]
 
-    v = (4 / (torch.pi**2)) * torch.pow(torch.atan(w_pred / h_pred) - torch.atan(w_gt / h_gt), 2)
+    v = (4 / (torch.pi**2)) * torch.pow(torch.atan2(w_pred, h_pred + eps) - torch.atan2(w_gt, h_gt + eps), 2)
     with torch.no_grad():
         alpha = v / (1 - iou + v + eps)
     return diou - alpha * v
