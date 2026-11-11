@@ -239,7 +239,7 @@ class INaturalist(VisionDataset):
             DATASET_URLS[self.version], base_root, filename=f"{self.version}.tgz", md5=DATASET_MD5[self.version]
         )
 
-        orig_dir_name = os.path.join(base_root, os.path.basename(DATASET_URLS[self.version]).rstrip(".tar.gz"))
+        orig_dir_name = os.path.join(base_root, os.path.basename(DATASET_URLS[self.version]).removesuffix(".tar.gz"))
         if not os.path.exists(orig_dir_name):
             raise RuntimeError(f"Unable to find downloaded files at {orig_dir_name}")
         os.rename(orig_dir_name, self.root)
