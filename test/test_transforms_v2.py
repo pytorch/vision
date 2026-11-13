@@ -2444,6 +2444,20 @@ class TestRotate:
 
         torch.testing.assert_close(actual, expected)
 
+    @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_keypoints])
+    @pytest.mark.parametrize("angle", [10, -20, 90, 123.4, 180, 270])
+    @pytest.mark.parametrize("center", [None, [10, 15]])
+    @pytest.mark.parametrize("canvas_size", [(100, 120), (37, 90)])
+    def test_expand_canvas_size_matches_image(self, make_input, angle, center, canvas_size):
+        # Non-regression test for https://github.com/pytorch/vision/issues/8654
+        image = make_image(canvas_size)
+        annotations = make_input(canvas_size=canvas_size)
+
+        expected = F.get_size(F.rotate(image, angle=angle, expand=True, center=center))
+        actual = F.rotate(annotations, angle=angle, expand=True, center=center)
+
+        assert actual.canvas_size == tuple(expected)
+
 
 class TestContainerTransforms:
     class BuiltinTransform(transforms.Transform):
