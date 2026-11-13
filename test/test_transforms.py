@@ -333,6 +333,21 @@ def test_randomresized_params():
         assert isinstance(w, int)
 
 
+def test_random_resized_crop_one_pixel_fallback():
+    # Fallback to central crop on images with a 1-pixel side should not produce zero dimensions (#9754)
+    img_tall = torch.arange(1, 9, dtype=torch.uint8).reshape(1, 8, 1)
+    crop_tall = transforms.RandomResizedCrop((8, 8), scale=(1, 1), ratio=(3, 3))
+    _, _, h, w = crop_tall.get_params(img_tall, (1, 1), (3, 3))
+    assert h >= 1 and w >= 1
+    assert crop_tall(img_tall).shape == (1, 8, 8)
+
+    img_wide = torch.arange(1, 9, dtype=torch.uint8).reshape(1, 1, 8)
+    crop_wide = transforms.RandomResizedCrop((8, 8), scale=(1, 1), ratio=(1 / 3, 1 / 3))
+    _, _, h, w = crop_wide.get_params(img_wide, (1, 1), (1 / 3, 1 / 3))
+    assert h >= 1 and w >= 1
+    assert crop_wide(img_wide).shape == (1, 8, 8)
+
+
 @pytest.mark.parametrize(
     "height, width",
     [

@@ -303,10 +303,10 @@ class RandomResizedCrop(Transform):
             in_ratio = float(width) / float(height)
             if in_ratio < min(self.ratio):
                 w = width
-                h = int(round(w / min(self.ratio)))
+                h = max(int(round(w / min(self.ratio))), 1)
             elif in_ratio > max(self.ratio):
                 h = height
-                w = int(round(h * max(self.ratio)))
+                w = max(int(round(h * max(self.ratio))), 1)
             else:  # whole image
                 w = width
                 h = height

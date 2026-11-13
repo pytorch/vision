@@ -4690,6 +4690,20 @@ class TestResizedCrop:
             with pytest.warns(match="Scale and ratio should be of kind"):
                 transforms.RandomResizedCrop(size=self.INPUT_SIZE, **{param: [1, 0]})
 
+    def test_one_pixel_fallback(self):
+        # Fallback to central crop on images with a 1-pixel side should not produce zero dimensions (#9754)
+        img_tall = torch.arange(1, 9, dtype=torch.uint8).reshape(1, 8, 1)
+        crop_tall = transforms.RandomResizedCrop((8, 8), scale=(1, 1), ratio=(3, 3))
+        params_tall = crop_tall.make_params([img_tall])
+        assert params_tall["height"] >= 1 and params_tall["width"] >= 1
+        assert crop_tall(img_tall).shape == (1, 8, 8)
+
+        img_wide = torch.arange(1, 9, dtype=torch.uint8).reshape(1, 1, 8)
+        crop_wide = transforms.RandomResizedCrop((8, 8), scale=(1, 1), ratio=(1 / 3, 1 / 3))
+        params_wide = crop_wide.make_params([img_wide])
+        assert params_wide["height"] >= 1 and params_wide["width"] >= 1
+        assert crop_wide(img_wide).shape == (1, 8, 8)
+
 
 class TestPad:
     EXHAUSTIVE_TYPE_PADDINGS = [1, (1,), (1, 2), (1, 2, 3, 4), [1], [1, 2], [1, 2, 3, 4]]
