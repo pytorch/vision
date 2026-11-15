@@ -476,6 +476,33 @@ class TestRoIAlign(RoIOpTester):
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
+    @pytest.mark.parametrize("aligned", (True, False))
+    @pytest.mark.parametrize("sampling_ratio", (-1, 2))
+    def test_python_impl_boxes_outside_feature_map(self, aligned, sampling_ratio):
+        # The pure Python implementation is used for deterministic CUDA and when
+        # the C++ ops are unavailable. Sample points outside of the feature map
+        # must contribute 0, as they do in the kernels.
+        from torchvision.ops.roi_align import _roi_align
+
+        # __wrapped__ is the function behind lazy_compile, so this runs eagerly
+        python_impl = _roi_align.__wrapped__
+
+        x = torch.rand(2, 3, 10, 10, dtype=torch.float64)
+        rois = torch.tensor(
+            [
+                [0, 1, 1, 8, 8],  # inside
+                [0, -6, -6, 3, 3],  # past the top left corner
+                [1, 5, 5, 16, 16],  # past the bottom right corner
+                [0, -3, 4, 14, 6],  # wider than the feature map
+                [1, 12, 12, 20, 20],  # fully outside
+            ],
+            dtype=torch.float64,
+        )
+        pool_size = 4
+        expected = ops.roi_align(x, rois, pool_size, 1, sampling_ratio, aligned)
+        actual = python_impl(x, rois, 1, pool_size, pool_size, sampling_ratio, aligned)
+        torch.testing.assert_close(actual, expected)
+
     @needs_mps
     @pytest.mark.parametrize("seed", range(3))
     def test_backward_mps_consistency(self, seed):
