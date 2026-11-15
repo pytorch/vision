@@ -42,6 +42,12 @@ def _bilinear_interpolate(
 ):
     _, channels, height, width = input.size()
 
+    # Like the C++, CUDA and MPS kernels, a sample point outside of
+    # [-1, height] x [-1, width] contributes 0. It is masked out through the
+    # interpolation weights below.
+    y_valid = (y >= -1.0) & (y <= height)  # [K, PH, IY]
+    x_valid = (x >= -1.0) & (x <= width)  # [K, PW, IX]
+
     # deal with inverse element out of feature map boundary
     y = y.clamp(min=0)
     x = x.clamp(min=0)
@@ -59,6 +65,8 @@ def _bilinear_interpolate(
     lx = x - x_low
     hy = 1.0 - ly
     hx = 1.0 - lx
+    ly, hy = torch.where(y_valid, ly, 0), torch.where(y_valid, hy, 0)
+    lx, hx = torch.where(x_valid, lx, 0), torch.where(x_valid, hx, 0)
 
     # do bilinear interpolation, but respect the masking!
     # TODO: It's possible the masking here is unnecessary if y and
