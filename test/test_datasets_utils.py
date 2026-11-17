@@ -4,6 +4,7 @@ import io
 import os
 import pathlib
 import re
+import stat
 import tarfile
 import zipfile
 
@@ -362,6 +363,41 @@ class TestDatasetsUtils:
 
         with pytest.raises(tarfile.TarError, match="special|Special"):
             utils.extract_archive(archive, extraction_dir)
+
+    @pytest.mark.parametrize(
+        ("archive_mode", "expected_mode"),
+        [(0o7777, 0o755), (0o2222, 0o600), (0o666, 0o644)],
+    )
+    def test_extract_tar_legacy_fallback_strips_privileged_metadata(
+        self, tmpdir, monkeypatch, archive_mode, expected_mode
+    ):
+        root = pathlib.Path(tmpdir)
+        destination = root / "extracted"
+        archive = root / "privileged.tar"
+        payload = b"safe payload"
+        member = tarfile.TarInfo("payload.txt")
+        member.size = len(payload)
+        member.mode = archive_mode
+        member.uid = 12345
+        member.gid = 23456
+        member.uname = "untrusted"
+        member.gname = "untrusted"
+        with tarfile.open(archive, "w") as tar:
+            tar.addfile(member, io.BytesIO(payload))
+
+        sanitized = utils._sanitize_legacy_tar_member(member)
+        assert sanitized.mode == expected_mode
+        assert (sanitized.uid, sanitized.gid, sanitized.uname, sanitized.gname) == (
+            None, None, None, None
+        )
+        assert member.mode == archive_mode  # Original archive metadata is unchanged.
+
+        monkeypatch.delattr(tarfile, "data_filter", raising=False)
+        utils.extract_archive(archive, destination)
+        extracted = destination / "payload.txt"
+        assert extracted.read_bytes() == payload
+        if os.name != "nt":
+            assert stat.S_IMODE(extracted.stat().st_mode) == expected_mode
 
     def test_verify_str_arg(self):
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
