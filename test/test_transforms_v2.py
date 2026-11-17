@@ -36,6 +36,7 @@ from common_utils import (
     make_video,
     make_video_tensor,
     needs_cuda,
+    script,
     set_rng_seed,
 )
 
@@ -107,7 +108,7 @@ def _check_kernel_cuda_vs_cpu(kernel, input, *args, rtol, atol, **kwargs):
 @cache
 def _script(obj):
     try:
-        return torch.jit.script(obj)
+        return script(obj)
     except Exception as error:
         name = getattr(obj, "__name__", obj.__class__.__name__)
         raise AssertionError(f"Trying to `torch.jit.script` `{name}` raised the error above.") from error

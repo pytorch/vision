@@ -9,6 +9,7 @@ from common_utils import (
     make_keypoints,
     make_segmentation_mask,
     make_video,
+    script,
 )
 from PIL import Image
 
@@ -71,7 +72,7 @@ def test_bbox_instance(data, format):
 def test_bbox_format(format, is_rotated_expected, scripted):
     fn = tv_tensors.is_rotated_bounding_format
     if scripted:
-        fn = torch.jit.script(fn)
+        fn = script(fn)
     assert fn(format) == is_rotated_expected
 
 

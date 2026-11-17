@@ -15,6 +15,7 @@ from common_utils import (
     float_dtypes,
     get_tmp_dir,
     int_dtypes,
+    script,
 )
 from torchvision import transforms as T
 from torchvision.transforms import functional as F, InterpolationMode
@@ -68,7 +69,7 @@ def _test_class_op(transform_cls, device, channels=3, meth_kwargs=None, test_exa
 
     # test for class interface
     f = transform_cls(**meth_kwargs)
-    scripted_fn = torch.jit.script(f)
+    scripted_fn = script(f)
 
     tensor, pil_img = _create_data(26, 34, channels, device=device)
     # set seed to reproduce the same transformation for tensor and PIL image
@@ -98,7 +99,7 @@ def _test_op(func, method, device, channels=3, fn_kwargs=None, meth_kwargs=None,
 
 
 def _test_fn_save_load(fn, tmpdir):
-    scripted_fn = torch.jit.script(fn)
+    scripted_fn = script(fn)
     p = os.path.join(tmpdir, f"t_op_list_{getattr(fn, '__name__', fn.__class__.__name__)}.pt")
     scripted_fn.save(p)
     _ = torch.jit.load(p)
@@ -293,17 +294,17 @@ def test_center_crop(device, tmpdir):
     tensor = torch.randint(0, 256, (3, 10, 10), dtype=torch.uint8, device=device)
     # Test torchscript of transforms.CenterCrop with size as int
     f = T.CenterCrop(size=5)
-    scripted_fn = torch.jit.script(f)
+    scripted_fn = script(f)
     scripted_fn(tensor)
 
     # Test torchscript of transforms.CenterCrop with size as [int, ]
     f = T.CenterCrop(size=[5])
-    scripted_fn = torch.jit.script(f)
+    scripted_fn = script(f)
     scripted_fn(tensor)
 
     # Test torchscript of transforms.CenterCrop with size as tuple
     f = T.CenterCrop(size=(6, 6))
-    scripted_fn = torch.jit.script(f)
+    scripted_fn = script(f)
     scripted_fn(tensor)
 
 
@@ -325,7 +326,7 @@ def test_center_crop_save_load(tmpdir):
 @pytest.mark.parametrize("size", [(5,), [5], (4, 5), [4, 5]])
 def test_x_crop(fn, method, out_length, size, device):
     meth_kwargs = fn_kwargs = {"size": size}
-    scripted_fn = torch.jit.script(fn)
+    scripted_fn = script(fn)
 
     tensor, pil_img = _create_data(height=20, width=20, device=device)
     transformed_t_list = fn(tensor, **fn_kwargs)
@@ -343,7 +344,7 @@ def test_x_crop(fn, method, out_length, size, device):
 
     # test for class interface
     fn = method(**meth_kwargs)
-    scripted_fn = torch.jit.script(fn)
+    scripted_fn = script(fn)
     output = scripted_fn(tensor)
     assert len(output) == len(transformed_t_list_script)
 
@@ -395,7 +396,7 @@ class TestResize:
             pytest.skip("Size should be an int or a sequence of length 1 if max_size is specified")
 
         transform = T.Resize(size=size, interpolation=interpolation, max_size=max_size, antialias=True)
-        s_transform = torch.jit.script(transform)
+        s_transform = script(transform)
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
@@ -419,7 +420,7 @@ class TestResize:
         transform = T.RandomResizedCrop(
             size=size, scale=scale, ratio=ratio, interpolation=interpolation, antialias=antialias
         )
-        s_transform = torch.jit.script(transform)
+        s_transform = script(transform)
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
@@ -432,7 +433,7 @@ def _test_random_affine_helper(device, **kwargs):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
     transform = T.RandomAffine(**kwargs)
-    s_transform = torch.jit.script(transform)
+    s_transform = script(transform)
 
     _test_transform_vs_scripted(transform, s_transform, tensor)
     _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
@@ -489,7 +490,7 @@ def test_random_rotate(device, center, expand, degrees, interpolation, fill):
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     transform = T.RandomRotation(degrees=degrees, interpolation=interpolation, expand=expand, center=center, fill=fill)
-    s_transform = torch.jit.script(transform)
+    s_transform = script(transform)
 
     _test_transform_vs_scripted(transform, s_transform, tensor)
     _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
@@ -509,7 +510,7 @@ def test_random_perspective(device, distortion_scale, interpolation, fill):
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     transform = T.RandomPerspective(distortion_scale=distortion_scale, interpolation=interpolation, fill=fill)
-    s_transform = torch.jit.script(transform)
+    s_transform = script(transform)
 
     _test_transform_vs_scripted(transform, s_transform, tensor)
     _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
@@ -541,7 +542,7 @@ def test_convert_image_dtype(device, in_dtype, out_dtype):
     in_batch_tensors = batch_tensors.to(in_dtype)
 
     fn = T.ConvertImageDtype(dtype=out_dtype)
-    scripted_fn = torch.jit.script(fn)
+    scripted_fn = script(fn)
 
     if (in_dtype == torch.float32 and out_dtype in (torch.int32, torch.int64)) or (
         in_dtype == torch.float64 and out_dtype == torch.int64
@@ -569,7 +570,7 @@ def test_autoaugment(device, policy, fill):
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     transform = T.AutoAugment(policy=policy, fill=fill)
-    s_transform = torch.jit.script(transform)
+    s_transform = script(transform)
     for _ in range(25):
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
@@ -584,7 +585,7 @@ def test_randaugment(device, num_ops, magnitude, fill):
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     transform = T.RandAugment(num_ops=num_ops, magnitude=magnitude, fill=fill)
-    s_transform = torch.jit.script(transform)
+    s_transform = script(transform)
     for _ in range(25):
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
@@ -597,7 +598,7 @@ def test_trivialaugmentwide(device, fill):
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     transform = T.TrivialAugmentWide(fill=fill)
-    s_transform = torch.jit.script(transform)
+    s_transform = script(transform)
     for _ in range(25):
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
@@ -615,7 +616,7 @@ def test_augmix(device, fill):
             return params.softmax(dim=-1)
 
     transform = DeterministicAugMix(fill=fill)
-    s_transform = torch.jit.script(transform)
+    s_transform = script(transform)
     for _ in range(25):
         _test_transform_vs_scripted(transform, s_transform, tensor)
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
@@ -689,7 +690,7 @@ def test_random_erasing(device, config):
     batch_tensors = torch.rand(4, 3, 44, 56, device=device)
 
     fn = T.RandomErasing(**config)
-    scripted_fn = torch.jit.script(fn)
+    scripted_fn = script(fn)
     _test_transform_vs_scripted(fn, scripted_fn, tensor)
     _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
@@ -718,7 +719,7 @@ def test_normalize(device, tmpdir):
     batch_tensors = torch.rand(4, 3, 44, 56, device=device)
     tensor = tensor.to(dtype=torch.float32) / 255.0
     # test for class interface
-    scripted_fn = torch.jit.script(fn)
+    scripted_fn = script(fn)
 
     _test_transform_vs_scripted(fn, scripted_fn, tensor)
     _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
@@ -736,7 +737,7 @@ def test_linear_transformation(device, tmpdir):
     mean_vector = torch.rand(c * h * w, device=device)
 
     fn = T.LinearTransformation(matrix, mean_vector)
-    scripted_fn = torch.jit.script(fn)
+    scripted_fn = script(fn)
 
     _test_transform_vs_scripted(fn, scripted_fn, tensor)
 
@@ -764,7 +765,7 @@ def test_compose(device):
     )
     s_transforms = torch.nn.Sequential(*transforms.transforms)
 
-    scripted_fn = torch.jit.script(s_transforms)
+    scripted_fn = script(s_transforms)
     torch.manual_seed(12)
     transformed_tensor = transforms(tensor)
     torch.manual_seed(12)
@@ -777,7 +778,7 @@ def test_compose(device):
         ]
     )
     with pytest.raises(RuntimeError, match="cannot call a value of type 'Tensor'"):
-        torch.jit.script(t)
+        script(t)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -802,7 +803,7 @@ def test_random_apply(device):
         p=0.4,
     )
 
-    scripted_fn = torch.jit.script(s_transforms)
+    scripted_fn = script(s_transforms)
     torch.manual_seed(12)
     transformed_tensor = transforms(tensor)
     torch.manual_seed(12)
@@ -819,7 +820,7 @@ def test_random_apply(device):
             p=0.3,
         )
         with pytest.raises(RuntimeError, match="Module 'RandomApply' has no attribute 'transforms'"):
-            torch.jit.script(transforms)
+            script(transforms)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())

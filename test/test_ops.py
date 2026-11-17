@@ -13,7 +13,7 @@ import torch
 import torch.fx
 import torch.nn.functional as F
 import torch.testing._internal.optests as optests
-from common_utils import assert_equal, cpu_and_cuda, cpu_and_cuda_and_mps, needs_cuda, needs_mps
+from common_utils import assert_equal, cpu_and_cuda, cpu_and_cuda_and_mps, needs_cuda, needs_mps, script
 from PIL import Image
 from torch import nn, Tensor
 from torch._dynamo.utils import is_compile_supported
@@ -256,7 +256,7 @@ class RoIOpTester(ABC):
         x = torch.rand(2, 1, 10, 10)
         roi = torch.tensor([[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]], dtype=torch.float).t()
         rois = [roi, roi]
-        scriped = torch.jit.script(model)
+        scriped = script(model)
         y = scriped(x, rois)
         assert y.shape == (10, 1, 3, 3)
 
@@ -286,7 +286,7 @@ class TestRoiPool(RoIOpTester):
         return RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
-        scriped = torch.jit.script(ops.roi_pool)
+        scriped = script(ops.roi_pool)
         return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(
@@ -336,7 +336,7 @@ class TestPSRoIPool(RoIOpTester):
         return RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
-        scriped = torch.jit.script(ops.ps_roi_pool)
+        scriped = script(ops.ps_roi_pool)
         return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(
@@ -423,7 +423,7 @@ class TestRoIAlign(RoIOpTester):
         return RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
-        scriped = torch.jit.script(ops.roi_align)
+        scriped = script(ops.roi_align)
         return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(
@@ -684,7 +684,7 @@ class TestPSRoIAlign(RoIOpTester):
         return RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
-        scriped = torch.jit.script(ops.ps_roi_align)
+        scriped = script(ops.ps_roi_align)
         return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(
@@ -1372,7 +1372,7 @@ class TestDeformConv:
 
         gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
-        @torch.jit.script
+        @script
         def script_func(x_, offset_, mask_, weight_, bias_, stride_, pad_, dilation_):
             # type:(Tensor, Tensor, Tensor, Tensor, Tensor, Tuple[int, int], Tuple[int, int], Tuple[int, int])->Tensor
             return ops.deform_conv2d(
@@ -1386,7 +1386,7 @@ class TestDeformConv:
             fast_mode=True,
         )
 
-        @torch.jit.script
+        @script
         def script_func_no_mask(x_, offset_, weight_, bias_, stride_, pad_, dilation_):
             # type:(Tensor, Tensor, Tensor, Tensor, Tuple[int, int], Tuple[int, int], Tuple[int, int])->Tensor
             return ops.deform_conv2d(
@@ -1444,7 +1444,7 @@ class TestDeformConv:
 
     def test_forward_scriptability(self):
         # Non-regression test for https://github.com/pytorch/vision/issues/4078
-        torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
+        script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
 
 
 # NS: Remove me once backward is implemented for MPS
@@ -1695,7 +1695,7 @@ class TestBoxConvert:
             [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float
         )
 
-        scripted_fn = torch.jit.script(ops.box_convert)
+        scripted_fn = script(ops.box_convert)
 
         box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
         scripted_xywh = scripted_fn(box_tensor, "xyxy", "xywh")
@@ -1760,7 +1760,7 @@ class TestBoxArea:
             def forward(self, boxes):
                 return self.area(boxes, self.fmt)
 
-        scripted_fn = torch.jit.script(BoxArea(fmt))
+        scripted_fn = script(BoxArea(fmt))
         scripted_area = scripted_fn(box_tensor)
         torch.testing.assert_close(scripted_area, expected)
 
@@ -1797,7 +1797,7 @@ class TestIouBase:
     def _run_jit_test(target_fn: Callable, actual_box: list, fmt="xyxy"):
         box_tensor = ops.box_convert(torch.tensor(actual_box, dtype=torch.float), in_fmt="xyxy", out_fmt=fmt)
         expected = target_fn(box_tensor, box_tensor)
-        scripted_fn = torch.jit.script(target_fn)
+        scripted_fn = script(target_fn)
         scripted_out = scripted_fn(box_tensor, box_tensor)
         torch.testing.assert_close(scripted_out, expected)
 
@@ -2452,7 +2452,7 @@ class TestFocalLoss:
     def test_jit(self, alpha, gamma, reduction, device, dtype, seed):
         if device == "cpu" and dtype is torch.half:
             pytest.skip("Currently torch.half is not fully supported on cpu")
-        script_fn = torch.jit.script(ops.sigmoid_focal_loss)
+        script_fn = script(ops.sigmoid_focal_loss)
         torch.random.manual_seed(seed)
         inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
         focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)

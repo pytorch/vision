@@ -5,7 +5,7 @@ from itertools import chain
 
 import pytest
 import torch
-from common_utils import set_rng_seed
+from common_utils import script, set_rng_seed
 from torchvision import models
 from torchvision.models._utils import IntermediateLayerGetter
 from torchvision.models.detection.backbone_utils import BackboneWithFPN, mobilenet_backbone, resnet_fpn_backbone
@@ -211,7 +211,7 @@ class TestFxFeatureExtraction:
         model = self._create_feature_extractor(
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
         )
-        model = torch.jit.script(model)
+        model = script(model)
         fgn_out = model(self.inp)
         out_agg = 0
         for node_out in fgn_out.values():

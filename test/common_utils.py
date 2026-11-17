@@ -31,6 +31,24 @@ CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
 MPS_NOT_AVAILABLE_MSG = "MPS device not available"
 OSS_CI_GPU_NO_CUDA_MSG = "We're in an OSS GPU machine, and this test doesn't need cuda."
 
+# PyTorch removed the deprecated public TorchScript APIs (torch.jit.script, trace, load, ...) in 2.16, so the
+# scripting tests can only run with a PyTorch that still has them.
+HAS_TORCHSCRIPT = hasattr(torch.jit, "script")
+TORCHSCRIPT_NOT_AVAILABLE_MSG = "torch.jit.script is not available in this PyTorch"
+needs_torchscript = pytest.mark.skipif(not HAS_TORCHSCRIPT, reason=TORCHSCRIPT_NOT_AVAILABLE_MSG)
+
+
+def script(obj):
+    """torch.jit.script, which skips the test when this PyTorch has none."""
+    if not HAS_TORCHSCRIPT:
+        pytest.skip(TORCHSCRIPT_NOT_AVAILABLE_MSG)
+    return torch.jit.script(obj)
+
+
+def scripted_param(obj):
+    """A pytest.param of the scripted obj to parametrize on at import time, skipped without TorchScript."""
+    return pytest.param(torch.jit.script(obj) if HAS_TORCHSCRIPT else obj, marks=needs_torchscript)
+
 
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
@@ -218,7 +236,7 @@ def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
         torch.testing.assert_close(transformed_img, transformed_batch[i, ...], rtol=0, atol=1e-6)
 
     if scripted_fn_atol >= 0:
-        scripted_fn = torch.jit.script(fn)
+        scripted_fn = script(fn)
         # scriptable function test
         s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
         torch.testing.assert_close(transformed_batch, s_transformed_batch, rtol=1e-5, atol=scripted_fn_atol)
