@@ -1,4 +1,5 @@
 import bz2
+import copy
 import gzip
 import hashlib
 import lzma
@@ -220,7 +221,7 @@ def _extract_tar(
             os.makedirs(to_path, exist_ok=True)
             for member in tar:
                 _validate_tar_member(member, to_path)
-                tar.extract(member, to_path)
+                tar.extract(_sanitize_legacy_tar_member(member), to_path)
 
 
 def _filter_tar_member(member: tarfile.TarInfo, path: str) -> Optional[tarfile.TarInfo]:
@@ -255,6 +256,26 @@ def _validate_tar_member(member: tarfile.TarInfo, path: Union[str, pathlib.Path]
             raise tarfile.TarError(f"Attempted link traversal in tar archive: {member.name!r}")
     elif not (member.isfile() or member.isdir()):
         raise tarfile.TarError(f"Unsupported special file in tar archive: {member.name!r}")
+
+
+def _sanitize_legacy_tar_member(member: tarfile.TarInfo) -> tarfile.TarInfo:
+    # Match the metadata restrictions of tarfile.data_filter on older Python:
+    # strip special permission bits and group/other writes, and never restore
+    # owner/group information from an untrusted archive. Validate paths first.
+    result = copy.copy(member)
+    if result.mode is not None:
+        mode = result.mode & 0o755
+        if result.isfile() or result.islnk():
+            if not mode & 0o100:
+                mode &= ~0o111
+            mode |= 0o600
+        else:
+            # Directory and symlink modes are not taken from the archive.
+            mode = None
+        result.mode = mode
+    result.uid = result.gid = None
+    result.uname = result.gname = None
+    return result
 
 
 def _is_within_directory(directory: str, path: str) -> bool:
