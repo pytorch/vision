@@ -399,6 +399,33 @@ class TestDatasetsUtils:
         if os.name != "nt":
             assert stat.S_IMODE(extracted.stat().st_mode) == expected_mode
 
+    @pytest.mark.skipif(os.name == "nt", reason="creating symlinks requires privileges on Windows")
+    @pytest.mark.parametrize("use_legacy_fallback", (False, True))
+    def test_extract_tar_allows_internal_symlinks(self, tmpdir, monkeypatch, use_legacy_fallback):
+        root = pathlib.Path(tmpdir)
+        extraction_dir = root / "extracted"
+        extraction_dir.mkdir()
+        archive = root / "internal-symlink.tar"
+        payload = b"safe payload"
+        with tarfile.open(archive, "w") as tar:
+            target = tarfile.TarInfo("nested/target.txt")
+            target.size = len(payload)
+            tar.addfile(target, io.BytesIO(payload))
+
+            link = tarfile.TarInfo("safe-link.txt")
+            link.type = tarfile.SYMTYPE
+            link.linkname = "nested/target.txt"
+            tar.addfile(link)
+
+        if use_legacy_fallback:
+            monkeypatch.delattr(tarfile, "data_filter", raising=False)
+        elif not hasattr(tarfile, "data_filter"):
+            pytest.skip("Python's tarfile module has no extraction filters")
+
+        utils.extract_archive(archive, extraction_dir)
+        assert (extraction_dir / "safe-link.txt").is_symlink()
+        assert (extraction_dir / "safe-link.txt").read_bytes() == payload
+
     def test_verify_str_arg(self):
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
         pytest.raises(ValueError, utils.verify_str_arg, 0, ("a",), "arg")
