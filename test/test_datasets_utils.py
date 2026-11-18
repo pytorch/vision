@@ -456,6 +456,36 @@ class TestDatasetsUtils:
 
         assert not (outside / "payload.txt").exists()
 
+    @pytest.mark.parametrize("use_legacy_fallback", (False, True))
+    @pytest.mark.parametrize(
+        ("suffix", "archive_mode"),
+        [(".tar.gz", "w:gz"), (".tgz", "w:gz"), (".tar.xz", "w:xz")],
+    )
+    def test_extract_tar_rejects_compressed_traversal(
+        self, tmpdir, monkeypatch, use_legacy_fallback, suffix, archive_mode
+    ):
+        # Cover extract_archive's public compression dispatch, not only
+        # the uncompressed tar pathway exercised by the tests above.
+        root = pathlib.Path(tmpdir)
+        extraction_dir = root / "extracted"
+        extraction_dir.mkdir()
+        outside = root / "outside.txt"
+        archive = root / f"compressed{suffix}"
+        with tarfile.open(archive, archive_mode) as tar:
+            member = tarfile.TarInfo("../outside.txt")
+            member.size = len(b"escape")
+            tar.addfile(member, io.BytesIO(b"escape"))
+
+        if use_legacy_fallback:
+            monkeypatch.delattr(tarfile, "data_filter", raising=False)
+        elif not hasattr(tarfile, "data_filter"):
+            pytest.skip("Python's tarfile module has no extraction filters")
+
+        with pytest.raises(tarfile.TarError, match="outside|traversal|path"):
+            utils.extract_archive(archive, extraction_dir)
+
+        assert not outside.exists()
+
     def test_verify_str_arg(self):
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
         pytest.raises(ValueError, utils.verify_str_arg, 0, ("a",), "arg")
