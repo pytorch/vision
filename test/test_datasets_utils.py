@@ -426,6 +426,36 @@ class TestDatasetsUtils:
         assert (extraction_dir / "safe-link.txt").is_symlink()
         assert (extraction_dir / "safe-link.txt").read_bytes() == payload
 
+    @pytest.mark.skipif(os.name == "nt", reason="creating symlinks requires privileges on Windows")
+    @pytest.mark.parametrize("use_legacy_fallback", (False, True))
+    def test_extract_tar_rejects_preexisting_directory_symlink_escape(
+        self, tmpdir, monkeypatch, use_legacy_fallback
+    ):
+        # The destination can already contain a symlink created by another
+        # process. An innocent-looking archive member must not follow it out.
+        root = pathlib.Path(tmpdir)
+        destination = root / "extracted"
+        outside = root / "outside"
+        destination.mkdir()
+        outside.mkdir()
+        (destination / "redirect").symlink_to(outside, target_is_directory=True)
+
+        archive = root / "redirect.tar"
+        with tarfile.open(archive, "w") as tar:
+            member = tarfile.TarInfo("redirect/payload.txt")
+            member.size = len(b"untrusted")
+            tar.addfile(member, io.BytesIO(b"untrusted"))
+
+        if use_legacy_fallback:
+            monkeypatch.delattr(tarfile, "data_filter", raising=False)
+        elif not hasattr(tarfile, "data_filter"):
+            pytest.skip("Python's tarfile module has no extraction filters")
+
+        with pytest.raises(tarfile.TarError, match="outside|traversal|path"):
+            utils.extract_archive(archive, destination)
+
+        assert not (outside / "payload.txt").exists()
+
     def test_verify_str_arg(self):
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
         pytest.raises(ValueError, utils.verify_str_arg, 0, ("a",), "arg")
