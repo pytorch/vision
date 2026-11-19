@@ -203,27 +203,6 @@ class TestFxFeatureExtraction:
         for k in ilg_out.keys():
             assert ilg_out[k].equal(fgn_out[k])
 
-    @pytest.mark.parametrize("model_name", models.list_models(models))
-    def test_jit_forward_backward(self, model_name):
-        set_rng_seed(0)
-        model = models.get_model(model_name, **self.model_defaults).train()
-        train_return_nodes, eval_return_nodes = self._get_return_nodes(model)
-        model = self._create_feature_extractor(
-            model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
-        )
-        model = torch.jit.script(model)
-        fgn_out = model(self.inp)
-        out_agg = 0
-        for node_out in fgn_out.values():
-            if isinstance(node_out, Sequence):
-                out_agg += sum(o.float().mean() for o in node_out if o is not None)
-            elif isinstance(node_out, Mapping):
-                out_agg += sum(o.float().mean() for o in node_out.values() if o is not None)
-            else:
-                # Assume that the only other alternative at this point is a Tensor
-                out_agg += node_out.float().mean()
-        out_agg.backward()
-
     def test_train_eval(self):
         class TestModel(torch.nn.Module):
             def __init__(self):

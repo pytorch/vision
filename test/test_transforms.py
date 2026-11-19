@@ -44,12 +44,8 @@ class TestConvertImageDtype:
     def test_float_to_float(self, input_dtype, output_dtype):
         input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
         transform = transforms.ConvertImageDtype(output_dtype)
-        transform_script = torch.jit.script(F.convert_image_dtype)
 
         output_image = transform(input_image)
-        output_image_script = transform_script(input_image, output_dtype)
-
-        torch.testing.assert_close(output_image_script, output_image, rtol=0.0, atol=1e-6)
 
         actual_min, actual_max = output_image.tolist()
         desired_min, desired_max = 0.0, 1.0
@@ -62,7 +58,6 @@ class TestConvertImageDtype:
     def test_float_to_int(self, input_dtype, output_dtype):
         input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
         transform = transforms.ConvertImageDtype(output_dtype)
-        transform_script = torch.jit.script(F.convert_image_dtype)
 
         if (input_dtype == torch.float32 and output_dtype in (torch.int32, torch.int64)) or (
             input_dtype == torch.float64 and output_dtype == torch.int64
@@ -71,9 +66,6 @@ class TestConvertImageDtype:
                 transform(input_image)
         else:
             output_image = transform(input_image)
-            output_image_script = transform_script(input_image, output_dtype)
-
-            torch.testing.assert_close(output_image_script, output_image, rtol=0.0, atol=1e-6)
 
             actual_min, actual_max = output_image.tolist()
             desired_min, desired_max = 0, torch.iinfo(output_dtype).max
@@ -86,12 +78,8 @@ class TestConvertImageDtype:
     def test_int_to_float(self, input_dtype, output_dtype):
         input_image = torch.tensor((0, torch.iinfo(input_dtype).max), dtype=input_dtype)
         transform = transforms.ConvertImageDtype(output_dtype)
-        transform_script = torch.jit.script(F.convert_image_dtype)
 
         output_image = transform(input_image)
-        output_image_script = transform_script(input_image, output_dtype)
-
-        torch.testing.assert_close(output_image_script, output_image, rtol=0.0, atol=1e-6)
 
         actual_min, actual_max = output_image.tolist()
         desired_min, desired_max = 0.0, 1.0
@@ -108,18 +96,8 @@ class TestConvertImageDtype:
         output_max = torch.iinfo(output_dtype).max
 
         transform = transforms.ConvertImageDtype(output_dtype)
-        transform_script = torch.jit.script(F.convert_image_dtype)
 
         output_image = transform(input_image)
-        output_image_script = transform_script(input_image, output_dtype)
-
-        torch.testing.assert_close(
-            output_image_script,
-            output_image,
-            rtol=0.0,
-            atol=1e-6,
-            msg=f"{output_image_script} vs {output_image}",
-        )
 
         actual_min, actual_max = output_image.tolist()
         desired_min, desired_max = 0, output_max
@@ -1471,15 +1449,6 @@ def test_max_value(dtype):
     # runtime error: 5.7896e+76 is outside the range of representable values of type 'float'
     # for dtype in float_dtypes():
     # self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
-
-
-@pytest.mark.xfail(
-    reason="torch.iinfo() is not supported by torchscript. See https://github.com/pytorch/pytorch/issues/41492."
-)
-def test_max_value_iinfo():
-    @torch.jit.script
-    def max_value(image: torch.Tensor) -> int:
-        return 1 if image.is_floating_point() else torch.iinfo(image.dtype).max
 
 
 @pytest.mark.parametrize("should_vflip", [True, False])

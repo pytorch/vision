@@ -8,7 +8,6 @@ import platform
 import sys
 import warnings
 from collections import OrderedDict
-from tempfile import TemporaryDirectory
 from typing import Any
 
 import pytest
@@ -156,40 +155,6 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
         torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False, check_device=False)
 
 
-def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
-    """Check that a nn.Module's results in TorchScript match eager and that it can be exported"""
-
-    def get_export_import_copy(m):
-        """Save and load a TorchScript model"""
-        with TemporaryDirectory() as dir:
-            path = os.path.join(dir, "script.pt")
-            m.save(path)
-            imported = torch.jit.load(path)
-        return imported
-
-    sm = torch.jit.script(nn_module)
-    sm.eval()
-
-    if eager_out is None:
-        with torch.no_grad(), freeze_rng_state():
-            eager_out = nn_module(*args)
-
-    with torch.no_grad(), freeze_rng_state():
-        script_out = sm(*args)
-        if unwrapper:
-            script_out = unwrapper(script_out)
-
-    torch.testing.assert_close(eager_out, script_out, atol=1e-4, rtol=1e-4)
-
-    m_import = get_export_import_copy(sm)
-    with torch.no_grad(), freeze_rng_state():
-        imported_script_out = m_import(*args)
-        if unwrapper:
-            imported_script_out = unwrapper(imported_script_out)
-
-    torch.testing.assert_close(script_out, imported_script_out, atol=3e-4, rtol=3e-4)
-
-
 def _check_fx_compatible(model, inputs, eager_out=None):
     model_fx = torch.fx.symbolic_trace(model)
     if eager_out is None:
@@ -226,27 +191,6 @@ def _check_input_backprop(model, inputs):
     else:
         assert inputs.grad is not None
         inputs.requires_grad_(requires_grad)
-
-
-# If 'unwrapper' is provided it will be called with the script model outputs
-# before they are compared to the eager model outputs. This is useful if the
-# model outputs are different between TorchScript / Eager mode
-script_model_unwrapper = {
-    "googlenet": lambda x: x.logits,
-    "inception_v3": lambda x: x.logits,
-    "fasterrcnn_resnet50_fpn": lambda x: x[1],
-    "fasterrcnn_resnet50_fpn_v2": lambda x: x[1],
-    "fasterrcnn_mobilenet_v3_large_fpn": lambda x: x[1],
-    "fasterrcnn_mobilenet_v3_large_320_fpn": lambda x: x[1],
-    "maskrcnn_resnet50_fpn": lambda x: x[1],
-    "maskrcnn_resnet50_fpn_v2": lambda x: x[1],
-    "keypointrcnn_resnet50_fpn": lambda x: x[1],
-    "retinanet_resnet50_fpn": lambda x: x[1],
-    "retinanet_resnet50_fpn_v2": lambda x: x[1],
-    "ssd300_vgg16": lambda x: x[1],
-    "ssdlite320_mobilenet_v3_large": lambda x: x[1],
-    "fcos_resnet50_fpn": lambda x: x[1],
-}
 
 
 # The following models exhibit flaky numerics under autocast in _test_*_model harnesses.
@@ -546,13 +490,11 @@ def test_inception_v3_eval():
     kwargs["transform_input"] = True
     kwargs["aux_logits"] = True
     kwargs["init_weights"] = False
-    name = "inception_v3"
     model = models.Inception3(**kwargs)
     model.aux_logits = False
     model.AuxLogits = None
     model = model.eval()
     x = torch.rand(1, 3, 299, 299)
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
     _check_input_backprop(model, x)
 
 
@@ -577,14 +519,12 @@ def test_googlenet_eval():
     kwargs["transform_input"] = True
     kwargs["aux_logits"] = True
     kwargs["init_weights"] = False
-    name = "googlenet"
     model = models.GoogLeNet(**kwargs)
     model.aux_logits = False
     model.aux1 = None
     model.aux2 = None
     model = model.eval()
     x = torch.rand(1, 3, 224, 224)
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
     _check_input_backprop(model, x)
 
 
@@ -702,7 +642,6 @@ def test_classification_model(model_fn, dev):
         prec = 0.1
     _assert_expected(out.cpu(), model_name, prec=prec)
     assert out.shape[-1] == num_classes
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
     if dev == "cuda":
@@ -758,7 +697,6 @@ def test_segmentation_model(model_fn, dev):
 
     full_validation = check_out(out["out"])
 
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
     if dev == "cuda":
@@ -862,7 +800,6 @@ def test_detection_model(model_fn, dev):
         return True  # Full validation performed
 
     full_validation = check_out(out)
-    _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
 
     if dev == "cuda":
         with torch.cuda.amp.autocast(), torch.no_grad(), freeze_rng_state():
@@ -937,7 +874,6 @@ def test_video_model(model_fn, dev):
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=0.1)
     assert out.shape[-1] == num_classes
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
     assert out.shape[-1] == num_classes
 
@@ -984,13 +920,7 @@ def test_quantized_classification_model(model_fn):
     if model_name not in quantized_flaky_models:
         _assert_expected(out.cpu(), model_name + "_quantized", prec=2e-2)
         assert out.shape[-1] == 5
-        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
         _check_fx_compatible(model, x, eager_out=out)
-    else:
-        try:
-            torch.jit.script(model)
-        except Exception as e:
-            raise AssertionError("model cannot be scripted.") from e
 
     kwargs["quantize"] = False
     for eval_mode in [True, False]:
@@ -1026,8 +956,7 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
 
 @needs_cuda
 @pytest.mark.parametrize("model_fn", list_model_fns(models.optical_flow))
-@pytest.mark.parametrize("scripted", (False, True))
-def test_raft(model_fn, scripted):
+def test_raft(model_fn):
 
     torch.manual_seed(0)
 
@@ -1038,8 +967,6 @@ def test_raft(model_fn, scripted):
     corr_block = models.optical_flow.raft.CorrBlock(num_levels=2, radius=2)
 
     model = model_fn(corr_block=corr_block).eval().to("cuda")
-    if scripted:
-        model = torch.jit.script(model)
 
     bs = 1
     img1 = torch.rand(bs, 3, 80, 72).cuda()

@@ -22,10 +22,8 @@ import torchvision.transforms.v2 as transforms
 
 from common_utils import (
     assert_equal,
-    cache,
     cpu_and_cuda,
     freeze_rng_state,
-    ignore_jit_no_profile_information_warning,
     make_bounding_boxes,
     make_detection_masks,
     make_image,
@@ -67,8 +65,7 @@ PILLOW_VERSION = tuple(int(x) for x in PIL.__version__.split(".")[:2])
 # turns all warnings into errors for this module
 pytestmark = [pytest.mark.filterwarnings("error")]
 
-# Since torchscript is deprecated, we are explicitly ignoring those warnings.
-# Otherwise we'd error on warnings due to the pytestmark filter above.
+# Some of the tested APIs (e.g. torchvision's image encoding/decoding) are deprecated and warn on every call.
 pytestmark.append(pytest.mark.filterwarnings("ignore::DeprecationWarning"))
 pytestmark.append(pytest.mark.filterwarnings("ignore::FutureWarning"))
 
@@ -102,32 +99,6 @@ def _check_kernel_cuda_vs_cpu(kernel, input, *args, rtol, atol, **kwargs):
         expected = kernel(input_cpu, *args, **kwargs)
 
     assert_close(actual, expected, check_device=False, rtol=rtol, atol=atol)
-
-
-@cache
-def _script(obj):
-    try:
-        return torch.jit.script(obj)
-    except Exception as error:
-        name = getattr(obj, "__name__", obj.__class__.__name__)
-        raise AssertionError(f"Trying to `torch.jit.script` `{name}` raised the error above.") from error
-
-
-def _check_kernel_scripted_vs_eager(kernel, input, *args, rtol, atol, **kwargs):
-    """Checks if the kernel is scriptable and if the scripted output is close to the eager one."""
-    if input.device.type != "cpu":
-        return
-
-    kernel_scripted = _script(kernel)
-
-    input = input.as_subclass(torch.Tensor)
-    with ignore_jit_no_profile_information_warning():
-        with freeze_rng_state():
-            actual = kernel_scripted(input, *args, **kwargs)
-    with freeze_rng_state():
-        expected = kernel(input, *args, **kwargs)
-
-    assert_close(actual, expected, rtol=rtol, atol=atol)
 
 
 def _check_kernel_batched_vs_unbatched(kernel, input, *args, rtol, atol, **kwargs):
@@ -167,7 +138,6 @@ def check_kernel(
     input,
     *args,
     check_cuda_vs_cpu=True,
-    check_scripted_vs_eager=True,
     check_batched_vs_unbatched=True,
     **kwargs,
 ):
@@ -188,24 +158,11 @@ def check_kernel(
     if check_cuda_vs_cpu:
         _check_kernel_cuda_vs_cpu(kernel, input, *args, **kwargs, **_to_tolerances(check_cuda_vs_cpu))
 
-    if check_scripted_vs_eager:
-        _check_kernel_scripted_vs_eager(kernel, input, *args, **kwargs, **_to_tolerances(check_scripted_vs_eager))
-
     if check_batched_vs_unbatched:
         _check_kernel_batched_vs_unbatched(kernel, input, *args, **kwargs, **_to_tolerances(check_batched_vs_unbatched))
 
 
-def _check_functional_scripted_smoke(functional, input, *args, **kwargs):
-    """Checks if the functional can be scripted and the scripted version can be called without error."""
-    if not isinstance(input, tv_tensors.Image):
-        return
-
-    functional_scripted = _script(functional)
-    with ignore_jit_no_profile_information_warning():
-        functional_scripted(input.as_subclass(torch.Tensor), *args, **kwargs)
-
-
-def check_functional(functional, input, *args, check_scripted_smoke=True, **kwargs):
+def check_functional(functional, input, *args, **kwargs):
     unknown_input = object()
     with pytest.raises(TypeError, match=re.escape(str(type(unknown_input)))):
         functional(unknown_input, *args, **kwargs)
@@ -219,9 +176,6 @@ def check_functional(functional, input, *args, check_scripted_smoke=True, **kwar
 
     if isinstance(input, tv_tensors.BoundingBoxes) and functional is not F.convert_bounding_box_format:
         assert output.format == input.format
-
-    if check_scripted_smoke:
-        _check_functional_scripted_smoke(functional, input, *args, **kwargs)
 
 
 def check_functional_kernel_signature_match(functional, *, kernel, input_type):
@@ -258,8 +212,7 @@ def check_functional_kernel_signature_match(functional, *, kernel, input_type):
 
 def _check_transform_v1_compatibility(transform, input, *, rtol, atol):
     """If the transform defines the ``_v1_transform_cls`` attribute, checks if the transform has a public, static
-    ``get_params`` method that is the v1 equivalent, the output is close to v1, is scriptable, and the scripted version
-    can be called without error."""
+    ``get_params`` method that is the v1 equivalent and the output is close to v1."""
     if not (type(input) is torch.Tensor or isinstance(input, PIL.Image.Image)):
         return
 
@@ -279,11 +232,6 @@ def _check_transform_v1_compatibility(transform, input, *, rtol, atol):
         output_v1 = v1_transform(input)
 
     assert_close(F.to_image(output_v2), F.to_image(output_v1), rtol=rtol, atol=atol)
-
-    if isinstance(input, PIL.Image.Image):
-        return
-
-    _script(v1_transform)(input)
 
 
 def _make_transform_sample(transform, *, image_or_video, adapter):
@@ -758,7 +706,6 @@ class TestResize:
             **max_size_kwarg,
             antialias=antialias,
             check_cuda_vs_cpu=check_cuda_vs_cpu_tolerances,
-            check_scripted_vs_eager=not isinstance(size, int),
         )
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
@@ -785,7 +732,6 @@ class TestResize:
             canvas_size=bounding_boxes.canvas_size,
             size=size,
             **max_size_kwarg,
-            check_scripted_vs_eager=not isinstance(size, int),
         )
 
     @pytest.mark.parametrize("size", OUTPUT_SIZES)
@@ -807,7 +753,6 @@ class TestResize:
             canvas_size=keypoints.canvas_size,
             size=size,
             **max_size_kwarg,
-            check_scripted_vs_eager=not isinstance(size, int),
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
@@ -848,7 +793,6 @@ class TestResize:
             size=size,
             **max_size_kwarg,
             antialias=True,
-            check_scripted_smoke=not isinstance(size, int),
         )
 
     @pytest.mark.parametrize(
@@ -1447,11 +1391,7 @@ class TestAffine:
         # two-list of float, two-list of int, two-tuple of float, two-tuple of int
         center=[None, [1.2, 4.9], [-3, 1], (2.5, -4.7), (3, 2)],
     )
-    # The special case for shear makes sure we pick a value that is supported while JIT scripting
-    _MINIMAL_AFFINE_KWARGS = {
-        k: vs[0] if k != "shear" else next(v for v in vs if isinstance(v, list))
-        for k, vs in _EXHAUSTIVE_TYPE_AFFINE_KWARGS.items()
-    }
+    _MINIMAL_AFFINE_KWARGS = {k: vs[0] for k, vs in _EXHAUSTIVE_TYPE_AFFINE_KWARGS.items()}
     _CORRECTNESS_AFFINE_KWARGS = {
         k: [v for v in vs if v is None or isinstance(v, float) or (isinstance(v, list) and len(v) > 1)]
         for k, vs in _EXHAUSTIVE_TYPE_AFFINE_KWARGS.items()
@@ -1489,7 +1429,6 @@ class TestAffine:
             F.affine_image,
             make_image(dtype=dtype, device=device),
             **{param: value},
-            check_scripted_vs_eager=not (param in {"shear", "fill"} and isinstance(value, (int, float))),
             check_cuda_vs_cpu=(
                 dict(atol=1, rtol=0)
                 if dtype is torch.uint8 and param == "interpolation" and value is transforms.InterpolationMode.BILINEAR
@@ -1516,7 +1455,6 @@ class TestAffine:
             format=format,
             canvas_size=bounding_boxes.canvas_size,
             **{param: value},
-            check_scripted_vs_eager=not (param == "shear" and isinstance(value, (int, float))),
             check_cuda_vs_cpu=dict(atol=1e-5, rtol=1e-5),
         )
 
@@ -1535,7 +1473,6 @@ class TestAffine:
             keypoints,
             canvas_size=keypoints.canvas_size,
             **{param: value},
-            check_scripted_vs_eager=not (param == "shear" and isinstance(value, (int, float))),
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
@@ -2073,7 +2010,6 @@ class TestRotate:
             F.rotate_image,
             make_image(dtype=dtype, device=device),
             **kwargs,
-            check_scripted_vs_eager=not (param == "fill" and isinstance(value, (int, float))),
         )
 
     @param_value_parametrization(
@@ -3312,7 +3248,6 @@ class TestElastic:
             image,
             displacement=self._make_displacement(image),
             **{param: value},
-            check_scripted_vs_eager=not (param == "fill" and isinstance(value, (int, float))),
             check_cuda_vs_cpu=dtype is not torch.float16,
         )
 
@@ -3931,7 +3866,6 @@ class TestGaussianBlur:
             make_image(),
             kernel_size=kernel_size,
             sigma=sigma,
-            check_scripted_vs_eager=not (isinstance(kernel_size, int) or isinstance(sigma, (float, int))),
         )
 
     def test_kernel_image_errors(self):
@@ -4287,13 +4221,10 @@ class TestAutoAugmentTransforms:
 
             # For v2, we changed the random sampling of the AA transforms. This makes it impossible to compare the v1
             # and v2 outputs without complicated mocking and monkeypatching. Thus, we skip the v1 compatibility checks
-            # here and only check if we can script the v2 transform and subsequently call the result.
+            # here.
             check_transform(
                 transform, input, check_v1_compatibility=False, check_sample_input=self._sample_input_adapter
             )
-
-            if type(input) is torch.Tensor and dtype is torch.uint8:
-                _script(transform)(input)
 
     def test_auto_augment_policy_error(self):
         with pytest.raises(ValueError, match="provided policy"):
@@ -4720,16 +4651,6 @@ class TestPad:
             F.pad_image,
             image,
             **kwargs,
-            check_scripted_vs_eager=not (
-                (param == "padding" and isinstance(value, int))
-                # See https://github.com/pytorch/vision/pull/7252#issue-1585585521 for details
-                or (
-                    param == "fill"
-                    and (
-                        isinstance(value, tuple) or (isinstance(value, list) and any(isinstance(v, int) for v in value))
-                    )
-                )
-            ),
         )
 
     @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
@@ -4954,7 +4875,6 @@ class TestCenterCrop:
             F.center_crop_image,
             make_image(self.INPUT_SIZE, dtype=dtype, device=device),
             output_size=output_size,
-            check_scripted_vs_eager=not isinstance(output_size, int),
         )
 
     @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
@@ -4967,7 +4887,6 @@ class TestCenterCrop:
             format=bounding_boxes.format,
             canvas_size=bounding_boxes.canvas_size,
             output_size=output_size,
-            check_scripted_vs_eager=not isinstance(output_size, int),
         )
 
     @pytest.mark.parametrize("output_size", OUTPUT_SIZES)
@@ -4978,7 +4897,6 @@ class TestCenterCrop:
             keypoints,
             canvas_size=keypoints.canvas_size,
             output_size=output_size,
-            check_scripted_vs_eager=not isinstance(output_size, int),
         )
 
     @pytest.mark.parametrize("make_mask", [make_segmentation_mask, make_detection_masks])
@@ -5145,7 +5063,6 @@ class TestPerspective:
             F.perspective_image,
             make_image(dtype=dtype, device=device),
             **kwargs,
-            check_scripted_vs_eager=not (param == "fill" and isinstance(value, (int, float))),
         )
 
     def test_kernel_image_error(self):
@@ -6319,7 +6236,6 @@ class TestFiveTenCrop:
             self._functional_wrapper(functional),
             make_input(self.INPUT_SIZE),
             size=self.OUTPUT_SIZE,
-            check_scripted_smoke=False,
         )
 
     @pytest.mark.parametrize(

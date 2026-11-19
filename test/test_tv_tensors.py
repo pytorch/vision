@@ -67,12 +67,8 @@ def test_bbox_instance(data, format):
         (tv_tensors.BoundingBoxFormat.CXCYWHR, True),
     ],
 )
-@pytest.mark.parametrize("scripted", (False, True))
-def test_bbox_format(format, is_rotated_expected, scripted):
-    fn = tv_tensors.is_rotated_bounding_format
-    if scripted:
-        fn = torch.jit.script(fn)
-    assert fn(format) == is_rotated_expected
+def test_bbox_format(format, is_rotated_expected):
+    assert tv_tensors.is_rotated_bounding_format(format) == is_rotated_expected
 
 
 @pytest.mark.parametrize(

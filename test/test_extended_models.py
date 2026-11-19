@@ -4,7 +4,6 @@ import pickle
 
 import pytest
 import test_models as TM
-import torch
 from common_extended_utils import get_file_size_mb, get_ops
 from torchvision import models
 from torchvision.models import get_model_weights, Weights, WeightsEnum
@@ -340,65 +339,6 @@ def test_schema_meta_validation(model_fn):
     assert not problematic_weights
     assert not incorrect_meta
     assert not bad_names
-
-
-@pytest.mark.parametrize(
-    "model_fn",
-    TM.list_model_fns(models)
-    + TM.list_model_fns(models.detection)
-    + TM.list_model_fns(models.quantization)
-    + TM.list_model_fns(models.segmentation)
-    + TM.list_model_fns(models.video)
-    + TM.list_model_fns(models.optical_flow),
-)
-@run_if_test_with_extended
-def test_transforms_jit(model_fn):
-    model_name = model_fn.__name__
-    weights_enum = get_model_weights(model_fn)
-    if len(weights_enum) == 0:
-        pytest.skip(f"Model '{model_name}' doesn't have any pre-trained weights.")
-
-    defaults = {
-        "models": {
-            "input_shape": (1, 3, 224, 224),
-        },
-        "detection": {
-            "input_shape": (3, 300, 300),
-        },
-        "quantization": {
-            "input_shape": (1, 3, 224, 224),
-        },
-        "segmentation": {
-            "input_shape": (1, 3, 520, 520),
-        },
-        "video": {
-            "input_shape": (1, 3, 4, 112, 112),
-        },
-        "optical_flow": {
-            "input_shape": (1, 3, 128, 128),
-        },
-    }
-    module_name = model_fn.__module__.split(".")[-2]
-
-    kwargs = {**defaults[module_name], **TM._model_params.get(model_name, {})}
-    input_shape = kwargs.pop("input_shape")
-    x = torch.rand(input_shape)
-    if module_name == "optical_flow":
-        args = (x, x)
-    else:
-        if module_name == "video":
-            x = x.permute(0, 2, 1, 3, 4)
-        args = (x,)
-
-    problematic_weights = []
-    for w in weights_enum:
-        transforms = w.transforms()
-        try:
-            TM._check_jit_scriptable(transforms, args)
-        except Exception:
-            problematic_weights.append(w)
-
-    assert not problematic_weights
 
 
 # With this filter, every unexpected warning will be turned into an error
