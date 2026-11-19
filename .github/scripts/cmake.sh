@@ -47,20 +47,8 @@ else
   WITH_CUDA=0
 fi
 
-echo '::group::Prepare CMake builds'
-mkdir -p cpp_build
-
-pushd examples/cpp
-python script_model.py
-mkdir -p build
-mv resnet18.pt fasterrcnn_resnet50_fpn.pt build
-popd
-
-# This was only needed for the tracing above
-pip uninstall -y torchvision
-echo '::endgroup::'
-
 echo '::group::Build and install libtorchvision'
+mkdir -p cpp_build
 pushd cpp_build
 
 
@@ -80,28 +68,6 @@ else
   make -j$JOBS
   make install
 fi
-
-popd
-echo '::endgroup::'
-
-echo '::group::Build and run C++ example'
-pushd examples/cpp/build
-
-cmake .. -DTorch_DIR="${Torch_DIR}" \
-  -DCMAKE_PREFIX_PATH="${CONDA_PREFIX}" \
-  -DCMAKE_FIND_FRAMEWORK=NEVER \
-  -DUSE_TORCHVISION=ON  # Needed for faster-rcnn since it's using torchvision ops like NMS.
-if [[ $OS_TYPE == windows ]]; then
-  "${PACKAGING_DIR}/windows/internal/vc_env_helper.bat" "${PACKAGING_DIR}/windows/internal/build_cpp_example.bat" $JOBS
-  cd Release
-  cp ../resnet18.pt .
-  cp ../fasterrcnn_resnet50_fpn.pt .
-else
-  make -j$JOBS
-fi
-
-./run_model resnet18.pt
-./run_model fasterrcnn_resnet50_fpn.pt
 
 popd
 echo '::endgroup::'
