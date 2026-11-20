@@ -1,0 +1,132 @@
+name: Upload wheels to R2
+run-name: Upload wheels from ${{ github.event.workflow_run.name }} (run ${{ github.event.workflow_run.id }})
+
+# Runs from main whenever a nightly wheel build finishes, picks up the wheels that
+# build saved as GitHub artifacts and uploads them to R2. The upload step lives
+# here, not in the build workflows, so a pull request cannot change it, and the R2
+# credentials come from the pytorchbot-env environment.
+
+on:
+  workflow_run:
+    workflows:
+      - Build Linux Wheels
+      - Build Aarch64 Linux Wheels
+      - Build Windows Wheels
+      - Build Windows ARM64 Wheels
+      - Build M1 Wheels
+    types:
+      - completed
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  get-matrix:
+    if: ${{ github.repository == 'pytorch/vision' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'nightly' && github.event.workflow_run.head_repository.full_name == github.repository }}
+    runs-on: ubuntu-22.04
+    permissions:
+      actions: read
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      architecture: ${{ steps.matrix.outputs.architecture }}
+    steps:
+      - name: Link the build run
+        shell: bash
+        env:
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: echo "Uploading the wheels of [${WORKFLOW_NAME} (${RUN_BRANCH})](${RUN_URL})" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Download the build matrix
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: build-matrix
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read the build matrix
+        id: matrix
+        shell: bash
+        env:
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+        run: |
+          set -euo pipefail
+          echo "matrix=$(jq -c . build-matrix.json)" >> "${GITHUB_OUTPUT}"
+          # The architecture in the artifact name, as the build workflows pass it
+          # to the upload (the macOS one passes none)
+          case "${WORKFLOW_NAME}" in
+            "Build Aarch64 Linux Wheels") echo "architecture=aarch64" >> "${GITHUB_OUTPUT}" ;;
+            "Build Windows Wheels") echo "architecture=x64" >> "${GITHUB_OUTPUT}" ;;
+            "Build Windows ARM64 Wheels") echo "architecture=arm64" >> "${GITHUB_OUTPUT}" ;;
+            "Build M1 Wheels") echo "architecture=" >> "${GITHUB_OUTPUT}" ;;
+            *) echo "architecture=x86_64" >> "${GITHUB_OUTPUT}" ;;
+          esac
+
+  upload-r2:
+    needs: get-matrix
+    runs-on: ubuntu-22.04
+    environment: pytorchbot-env
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.get-matrix.outputs.matrix) }}
+    name: upload-r2-${{ matrix.build_name }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: pytorch/test-infra
+          ref: main
+          path: test-infra
+
+      - uses: ./test-infra/.github/actions/set-channel
+
+      - uses: ./test-infra/.github/actions/setup-binary-upload
+        with:
+          repository: pytorch/vision
+          ref: ""
+          python-version: ${{ matrix.python_version }}
+          cuda-version: ${{ matrix.desired_cuda }}
+          arch: ${{ needs.get-matrix.outputs.architecture }}
+          upload-to-base-bucket: ${{ matrix.upload_to_base_bucket }}
+
+      - name: Download the wheel
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: pytorch/vision/dist/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload package to R2
+        shell: bash
+        working-directory: pytorch/vision
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          set -ex
+          if [[ -z "${R2_ACCOUNT_ID}" || -z "${AWS_ACCESS_KEY_ID}" || -z "${AWS_SECRET_ACCESS_KEY}" ]]; then
+            echo "::error::R2 secrets are missing from the pytorchbot-env environment"
+            exit 1
+          fi
+
+          # shellcheck disable=SC1090
+          source "${BUILD_ENV_FILE}"
+
+          pip install awscli==1.32.18
+
+          PYTORCH_S3_BUCKET_PATH=${PYTORCH_S3_BUCKET_PATH/"s3://pytorch"/"s3://pytorch-downloads"}
+          for pkg in dist/*; do
+            shm_id=$(sha256sum "${pkg}" | awk '{print $1}')
+            aws s3 cp "$pkg" "${PYTORCH_S3_BUCKET_PATH}" \
+              --metadata "checksum-sha256=${shm_id}" --endpoint-url "https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          done
