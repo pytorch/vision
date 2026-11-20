@@ -1019,6 +1019,8 @@ def _affine_keypoints_with_expand(
     angle, translate, shear, center = _affine_parse_args(
         angle, translate, scale, shear, InterpolationMode.NEAREST, center
     )
+    # rotate_image uses torch.rot90 for these angles, which swaps the height and width exactly
+    is_rot90 = center is None and angle % 180 == 90
 
     if center is None:
         height, width = canvas_size
@@ -1060,8 +1062,13 @@ def _affine_keypoints_with_expand(
         # Translate keypoints
         transformed_points.sub_(tr)
         # Estimate meta-data for image with inverted=True
-        affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
-        new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
+        # Same output size as rotate_image: torch.rot90 fast path, else the center relative to the image center
+        if is_rot90:
+            new_width, new_height = height, width
+        else:
+            size_center = [center[0] - width * 0.5, center[1] - height * 0.5]
+            affine_vector = _get_inverse_affine_matrix(size_center, angle, translate, scale, shear)
+            new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         canvas_size = (new_height, new_width)
 
     out_keypoints = transformed_points.reshape(original_shape)
@@ -1143,6 +1150,8 @@ def _affine_bounding_boxes_with_expand(
     angle, translate, shear, center = _affine_parse_args(
         angle, translate, scale, shear, InterpolationMode.NEAREST, center
     )
+    # rotate_image uses torch.rot90 for these angles, which swaps the height and width exactly
+    is_rot90 = center is None and angle % 180 == 90
 
     if center is None:
         height, width = canvas_size
@@ -1198,8 +1207,13 @@ def _affine_bounding_boxes_with_expand(
         # Translate bounding boxes
         out_bboxes.sub_(tr.repeat((1, 4 if is_rotated else 2)))
         # Estimate meta-data for image with inverted=True
-        affine_vector = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
-        new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
+        # Same output size as rotate_image: torch.rot90 fast path, else the center relative to the image center
+        if is_rot90:
+            new_width, new_height = height, width
+        else:
+            size_center = [center[0] - width * 0.5, center[1] - height * 0.5]
+            affine_vector = _get_inverse_affine_matrix(size_center, angle, translate, scale, shear)
+            new_width, new_height = _compute_affine_output_size(affine_vector, width, height)
         canvas_size = (new_height, new_width)
 
     out_bboxes = clamp_bounding_boxes(
