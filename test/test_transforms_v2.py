@@ -4372,6 +4372,27 @@ class TestConvertBoundingBoxFormat:
 
         assert_equal(output_inplace, output_out_of_place)
 
+    @pytest.mark.parametrize(
+        ("dtype", "values", "expected"),
+        [
+            (torch.uint8, [[200, 10, 220, 30]], [[210, 20, 20, 20]]),
+            (torch.float16, [[32768, 0, 49152, 32]], [[40960, 16, 16384, 32]]),
+        ],
+    )
+    def test_xyxy_to_cxcywh_inplace_no_overflow(self, dtype, values, expected):
+        bounding_boxes = torch.tensor(values, dtype=dtype)
+        expected = torch.tensor(expected, dtype=dtype)
+
+        output = F.convert_bounding_box_format(
+            bounding_boxes,
+            old_format=tv_tensors.BoundingBoxFormat.XYXY,
+            new_format=tv_tensors.BoundingBoxFormat.CXCYWH,
+            inplace=True,
+        )
+
+        assert output is bounding_boxes
+        torch.testing.assert_close(output, expected)
+
     @pytest.mark.parametrize(("old_format", "new_format"), old_new_formats)
     def test_functional(self, old_format, new_format):
         check_functional(F.convert_bounding_box_format, make_bounding_boxes(format=old_format), new_format=new_format)
@@ -4490,7 +4511,45 @@ class TestConvertBoundingBoxFormat:
         assert (actual >= 0).all()
         torch.testing.assert_close(actual, expected)
 
+    def test_xyxy_to_cxcywh_uint8_no_overflow(self):
+        bounding_boxes = torch.tensor([[200, 10, 220, 30]], dtype=torch.uint8)
 
+        actual = F.convert_bounding_box_format(
+            bounding_boxes,
+            old_format=tv_tensors.BoundingBoxFormat.XYXY,
+            new_format=tv_tensors.BoundingBoxFormat.CXCYWH,
+        )
+
+        expected = torch.tensor([[210, 20, 20, 20]], dtype=torch.uint8)
+        torch.testing.assert_close(actual, expected)
+
+    def test_xyxy_to_cxcywh_float16_no_overflow(self):
+        bounding_boxes = torch.tensor(
+            [[32768, 0, 49152, 32]], dtype=torch.float16
+        )
+        actual = F.convert_bounding_box_format(
+            bounding_boxes,
+            old_format=tv_tensors.BoundingBoxFormat.XYXY,
+            new_format=tv_tensors.BoundingBoxFormat.CXCYWH,
+        )
+        expected = torch.tensor(
+            [[40960, 16, 16384, 32]], dtype=torch.float16
+        )
+        torch.testing.assert_close(actual, expected)
+
+    def test_xyxy_to_cxcywh_int16_negative_coordinates(self):
+        bounding_boxes = torch.tensor(
+            [[-3, -2, 0, 1]], dtype=torch.int16
+        )
+        actual = F.convert_bounding_box_format(
+            bounding_boxes,
+            old_format=tv_tensors.BoundingBoxFormat.XYXY,
+            new_format=tv_tensors.BoundingBoxFormat.CXCYWH,
+        )
+        expected = torch.tensor(
+            [[-2, -1, 3, 3]], dtype=torch.int16
+        )
+        torch.testing.assert_close(actual, expected)
 class TestResizedCrop:
     INPUT_SIZE = (17, 11)
     CROP_KWARGS = dict(top=2, left=2, height=5, width=7)
@@ -4507,6 +4566,7 @@ class TestResizedCrop:
             (F.resized_crop_keypoints, make_keypoints),
         ],
     )
+
     def test_kernel(self, kernel, make_input):
         input = make_input(self.INPUT_SIZE)
         if isinstance(input, tv_tensors.BoundingBoxes):
