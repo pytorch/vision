@@ -52,6 +52,14 @@ void roi_align_forward_kernel_impl(
 
     T roi_width = roi_end_w - roi_start_w;
     T roi_height = roi_end_h - roi_start_h;
+    // A non-finite ROI size comes from a NaN/inf coordinate or an overflow in
+    // T. It would slip past the bilinear bounds check below and be cast to a
+    // garbage index, so skip the ROI: its output and gradient stay zero.
+    // https://github.com/pytorch/vision/issues/9273
+    if (!std::isfinite(static_cast<double>(roi_width)) ||
+        !std::isfinite(static_cast<double>(roi_height))) {
+      continue;
+    }
     if (!aligned) {
       // Force malformed ROIs to be 1x1
       roi_width = std::max(roi_width, (T)1.);
@@ -232,6 +240,14 @@ void roi_align_backward_kernel_impl(
 
     T roi_width = roi_end_w - roi_start_w;
     T roi_height = roi_end_h - roi_start_h;
+    // A non-finite ROI size comes from a NaN/inf coordinate or an overflow in
+    // T. It would slip past the bilinear bounds check below and be cast to a
+    // garbage index, so skip the ROI: its output and gradient stay zero.
+    // https://github.com/pytorch/vision/issues/9273
+    if (!std::isfinite(static_cast<double>(roi_width)) ||
+        !std::isfinite(static_cast<double>(roi_height))) {
+      continue;
+    }
     if (!aligned) {
       // Force malformed ROIs to be 1x1
       roi_width = std::max(roi_width, (T)1.);
