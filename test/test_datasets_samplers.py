@@ -93,5 +93,23 @@ class TestDatasetsSamplers:
         assert_equal(indices, torch.tensor([5, 7, 9, 0, 2, 4]))
 
 
+def test_distributed_sampler_padding_needs_more_than_one_copy():
+    # Regression test for #9708: ensure sampler pads correctly when padding exceeds dataset length
+    dataset = list(range(2))
+    sampler = DistributedSampler(dataset, num_replicas=5, rank=0, group_size=1)
+    indices = list(sampler)
+    assert len(indices) == 1
+    assert indices == [0]
+
+    # Verify all ranks partition the padded total_size correctly
+    all_samples = []
+    for rank in range(5):
+        s = DistributedSampler(dataset, num_replicas=5, rank=rank, group_size=1)
+        all_samples.extend(list(s))
+    assert len(all_samples) == 5
+    assert all_samples == [0, 1, 0, 1, 0]
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
+
