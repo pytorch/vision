@@ -41,7 +41,14 @@ def sigmoid_focal_loss(
     p = torch.sigmoid(inputs)
     ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction="none")
     p_t = p * targets + (1 - p) * (1 - targets)
-    loss = ce_loss * ((1 - p_t) ** gamma)
+    # (1 - p_t) ** gamma has an infinite derivative at 0 for gamma < 1, which autograd turns into NaN
+    # for confident predictions, so take the limit there without differentiating the power.
+    one_minus_p_t = 1 - p_t
+    nonzero = one_minus_p_t > 0
+    modulating_factor = torch.where(
+        nonzero, torch.where(nonzero, one_minus_p_t, 1.0) ** gamma, torch.zeros_like(one_minus_p_t) ** gamma
+    )
+    loss = ce_loss * modulating_factor
 
     if alpha >= 0:
         alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
