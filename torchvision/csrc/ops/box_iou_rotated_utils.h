@@ -111,8 +111,12 @@ HOST_DEVICE_INLINE int get_intersection_points(
       // Solve for 2x2 Ax=b
       T det = cross_2d<T>(vec2[j], vec1[i]);
 
-      // This takes care of parallel lines
-      if (fabs(det) <= 1e-14) {
+      // This takes care of parallel lines. The threshold is relative to the
+      // edge lengths: the intersection of two nearly parallel edges that
+      // overlap (e.g. the same rectangle written with angle + 180) is
+      // ill-conditioned and can land anywhere along the overlap.
+      if (det * det <=
+          1e-12 * dot_2d<T>(vec1[i], vec1[i]) * dot_2d<T>(vec2[j], vec2[j])) {
         continue;
       }
 
@@ -193,8 +197,25 @@ HOST_DEVICE_INLINE int convex_hull_graham(
 
   // Step 2:
   // Subtract starting point from every points (for sorting in the next step)
+  T max_dist = 0;
   for (int i = 0; i < num_in; i++) {
     q[i] = p[i] - start;
+    T d = dot_2d<T>(q[i], q[i]);
+    max_dist = d > max_dist ? d : max_dist;
+  }
+
+  // Points that coincide with the starting point up to rounding errors are
+  // snapped onto it. Otherwise their angle relative to the starting point is
+  // meaningless, Step 3 can sort them anywhere and Step 5 then keeps them as
+  // spurious vertices in the middle of the hull. Once snapped, Step 3 sorts
+  // them right after the starting point and Step 4 skips them. Rounding errors
+  // grow with the coordinates, so the tolerance is relative to the extent of
+  // the points, with the 1e-8 threshold of Step 4 as a floor.
+  T dist_eps = 1e-10 * max_dist > 1e-8 ? 1e-10 * max_dist : 1e-8;
+  for (int i = 0; i < num_in; i++) {
+    if (dot_2d<T>(q[i], q[i]) <= dist_eps) {
+      q[i] = Point<T>(0, 0);
+    }
   }
 
   // Swap the starting point to position 0

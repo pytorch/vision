@@ -2223,6 +2223,33 @@ class TestRotatedBoxIou:
             ious, torch.tensor([[expected_iou]], dtype=torch.float32, device=device), atol=1e-4, rtol=1e-4
         )
 
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_boxes_with_edges_on_the_same_lines(self, device, dtype):
+        """Boxes whose edges lie on the same lines, and the same box written in different ways."""
+        boxes1 = torch.tensor(
+            [
+                [0, 0, 100, 10, 10],
+                [0, 0, 10, 60, 10],
+                [0, 0, 100, 60, 30],
+            ],
+            dtype=dtype,
+            device=device,
+        )
+        boxes2 = torch.tensor(
+            [
+                [0, 0, 10, 10, 10],  # Same center, height and angle: the intersection is the smaller box
+                [0, 0, 10, 60, 190],  # Same box, rotated by 180 degrees
+                [0, 0, 60, 100, 120],  # Same box, with width and height swapped and rotated by 90 degrees
+            ],
+            dtype=dtype,
+            device=device,
+        )
+        expected_ious = torch.tensor([0.1, 1.0, 1.0], dtype=torch.float32, device=device)
+        for b1, b2 in ((boxes1, boxes2), (boxes2, boxes1)):
+            ious = ops.box_iou(b1, b2, fmt="cxcywhr").diagonal()
+            torch.testing.assert_close(ious, expected_ious, atol=1e-4, rtol=1e-4)
+
     @needs_cuda
     def test_cuda_cpu_consistency(self):
         """CUDA and CPU implementations should produce the same results."""
