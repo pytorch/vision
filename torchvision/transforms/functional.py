@@ -937,6 +937,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     The image hue is adjusted by converting the image to HSV and
     cyclically shifting the intensities in the hue channel (H).
     The image is then converted back to original image mode.
+    If the image has an alpha channel, it is preserved.
 
     `hue_factor` is the amount of shift in H channel and must be in the
     interval `[-0.5, 0.5]`.
