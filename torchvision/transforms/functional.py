@@ -1120,6 +1120,20 @@ def rotate(
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.rotate(img, angle=angle, interpolation=pil_interpolation, expand=expand, center=center, fill=fill)
 
+    # fast path for right angles: transposing is exact, whereas the affine grid would produce an output that is one
+    # pixel too large along each side when `expand=True` and the height and width differ by an odd number
+    if center is None:
+        angle_mod = angle % 360
+        if angle_mod == 0:
+            return img.clone()
+        if angle_mod == 180:
+            return torch.rot90(img, k=2, dims=(-2, -1))
+        if expand or img.shape[-1] == img.shape[-2]:
+            if angle_mod == 90:
+                return torch.rot90(img, k=1, dims=(-2, -1))
+            if angle_mod == 270:
+                return torch.rot90(img, k=3, dims=(-2, -1))
+
     center_f = [0.0, 0.0]
     if center is not None:
         _, height, width = get_dimensions(img)
