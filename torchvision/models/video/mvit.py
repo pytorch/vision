@@ -454,7 +454,7 @@ class MViT(nn.Module):
                 the class embedding.
             rel_pos_embed (bool): If True, use MViTv2's relative positional embeddings.
             proj_after_attn (bool): If True, apply the projection after the attention.
-            dropout (float): Dropout rate. Default: 0.0.
+            dropout (float): Dropout rate of the classification head. Default: 0.5.
             attention_dropout (float): Attention dropout rate. Default: 0.0.
             stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
             num_classes (int): The number of classes.
