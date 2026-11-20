@@ -4,7 +4,6 @@ import itertools
 import os
 import pathlib
 import random
-import re
 import shutil
 import sys
 import tempfile
@@ -210,18 +209,12 @@ def _assert_approx_equal_tensor_to_pil(
     assert err < tol, f"{err} vs {tol}"
 
 
-def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
+def _test_fn_on_batch(batch_tensors, fn, **fn_kwargs):
     transformed_batch = fn(batch_tensors, **fn_kwargs)
     for i in range(len(batch_tensors)):
         img_tensor = batch_tensors[i, ...]
         transformed_img = fn(img_tensor, **fn_kwargs)
         torch.testing.assert_close(transformed_img, transformed_batch[i, ...], rtol=0, atol=1e-6)
-
-    if scripted_fn_atol >= 0:
-        scripted_fn = torch.jit.script(fn)
-        # scriptable function test
-        s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
-        torch.testing.assert_close(transformed_batch, s_transformed_batch, rtol=1e-5, atol=scripted_fn_atol)
 
 
 def cache(fn):
@@ -528,15 +521,4 @@ def assert_no_warnings():
     # the warning filters. All changes that are made to the filters while in this context, will be reset upon exit.
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        yield
-
-
-@contextlib.contextmanager
-def ignore_jit_no_profile_information_warning():
-    # Calling a scripted object often triggers a warning like
-    # `UserWarning: operator() profile_node %$INT1 : int[] = prim::profile_ivalue($INT2) does not have profile information`
-    # with varying `INT1` and `INT2`. Since these are uninteresting for us and only clutter the test summary, we ignore
-    # them.
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message=re.escape("operator() profile_node %"), category=UserWarning)
         yield

@@ -99,15 +99,6 @@ class DropBlockWrapper(nn.Module):
         self.layer(a)
 
 
-class PoolWrapper(nn.Module):
-    def __init__(self, pool: nn.Module):
-        super().__init__()
-        self.pool = pool
-
-    def forward(self, imgs: Tensor, boxes: list[Tensor]) -> Tensor:
-        return self.pool(imgs, boxes)
-
-
 class RoIOpTester(ABC):
     dtype = torch.float64
     mps_dtype = torch.float32
@@ -209,12 +200,8 @@ class RoIOpTester(ABC):
         def func(z):
             return self.fn(z, rois, pool_size, pool_size, spatial_scale=1, sampling_ratio=1)
 
-        script_func = self.get_script_fn(rois, pool_size)
-
         with DeterministicGuard(deterministic):
             gradcheck(func, (x,), atol=atol)
-
-        gradcheck(script_func, (x,), atol=atol)
 
     @needs_mps
     def test_mps_error_inputs(self):
@@ -252,12 +239,11 @@ class RoIOpTester(ABC):
             boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
             ops.roi_pool(a, [boxes], output_size=(2, 2))
 
-    def _helper_jit_boxes_list(self, model):
+    def _helper_boxes_list(self, model):
         x = torch.rand(2, 1, 10, 10)
         roi = torch.tensor([[0, 0, 0, 9, 9], [0, 0, 5, 4, 9], [0, 5, 5, 9, 9], [1, 0, 0, 9, 9]], dtype=torch.float).t()
         rois = [roi, roi]
-        scriped = torch.jit.script(model)
-        y = scriped(x, rois)
+        y = model(x, rois)
         assert y.shape == (10, 1, 3, 3)
 
     @abstractmethod
@@ -266,10 +252,6 @@ class RoIOpTester(ABC):
 
     @abstractmethod
     def make_obj(*args, **kwargs):
-        pass
-
-    @abstractmethod
-    def get_script_fn(*args, **kwargs):
         pass
 
     @abstractmethod
@@ -284,10 +266,6 @@ class TestRoiPool(RoIOpTester):
     def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, wrap=False):
         obj = ops.RoIPool((pool_h, pool_w), spatial_scale)
         return RoIOpTesterModuleWrapper(obj) if wrap else obj
-
-    def get_script_fn(self, rois, pool_size):
-        scriped = torch.jit.script(ops.roi_pool)
-        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(
         self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, device=None, dtype=torch.float64
@@ -320,9 +298,8 @@ class TestRoiPool(RoIOpTester):
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
 
-    def test_jit_boxes_list(self):
-        model = PoolWrapper(ops.RoIPool(output_size=[3, 3], spatial_scale=1.0))
-        self._helper_jit_boxes_list(model)
+    def test_boxes_list(self):
+        self._helper_boxes_list(ops.RoIPool(output_size=[3, 3], spatial_scale=1.0))
 
 
 class TestPSRoIPool(RoIOpTester):
@@ -334,10 +311,6 @@ class TestPSRoIPool(RoIOpTester):
     def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, wrap=False):
         obj = ops.PSRoIPool((pool_h, pool_w), spatial_scale)
         return RoIOpTesterModuleWrapper(obj) if wrap else obj
-
-    def get_script_fn(self, rois, pool_size):
-        scriped = torch.jit.script(ops.ps_roi_pool)
-        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(
         self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, device=None, dtype=torch.float64
@@ -421,10 +394,6 @@ class TestRoIAlign(RoIOpTester):
             (pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned
         )
         return RoIOpTesterModuleWrapper(obj) if wrap else obj
-
-    def get_script_fn(self, rois, pool_size):
-        scriped = torch.jit.script(ops.roi_align)
-        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(
         self,
@@ -642,9 +611,8 @@ class TestRoIAlign(RoIOpTester):
         with pytest.raises(RuntimeError, match="Only one image per batch is allowed"):
             ops.roi_align(qx, qrois, output_size=5)
 
-    def test_jit_boxes_list(self):
-        model = PoolWrapper(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
-        self._helper_jit_boxes_list(model)
+    def test_boxes_list(self):
+        self._helper_boxes_list(ops.RoIAlign(output_size=[3, 3], spatial_scale=1.0, sampling_ratio=-1))
 
     @needs_mps
     def test_performance_mps(self):
@@ -682,10 +650,6 @@ class TestPSRoIAlign(RoIOpTester):
     def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, wrap=False):
         obj = ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)
         return RoIOpTesterModuleWrapper(obj) if wrap else obj
-
-    def get_script_fn(self, rois, pool_size):
-        scriped = torch.jit.script(ops.ps_roi_align)
-        return lambda x: scriped(x, rois, pool_size)
 
     def expected_fn(
         self, in_data, rois, pool_h, pool_w, device, spatial_scale=1, sampling_ratio=-1, dtype=torch.float64
@@ -1372,34 +1336,6 @@ class TestDeformConv:
 
         gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5, fast_mode=True)
 
-        @torch.jit.script
-        def script_func(x_, offset_, mask_, weight_, bias_, stride_, pad_, dilation_):
-            # type:(Tensor, Tensor, Tensor, Tensor, Tensor, Tuple[int, int], Tuple[int, int], Tuple[int, int])->Tensor
-            return ops.deform_conv2d(
-                x_, offset_, weight_, bias_, stride=stride_, padding=pad_, dilation=dilation_, mask=mask_
-            )
-
-        gradcheck(
-            lambda z, off, msk, wei, bi: script_func(z, off, msk, wei, bi, stride, padding, dilation),
-            (x, offset, mask, weight, bias),
-            nondet_tol=1e-5,
-            fast_mode=True,
-        )
-
-        @torch.jit.script
-        def script_func_no_mask(x_, offset_, weight_, bias_, stride_, pad_, dilation_):
-            # type:(Tensor, Tensor, Tensor, Tensor, Tuple[int, int], Tuple[int, int], Tuple[int, int])->Tensor
-            return ops.deform_conv2d(
-                x_, offset_, weight_, bias_, stride=stride_, padding=pad_, dilation=dilation_, mask=None
-            )
-
-        gradcheck(
-            lambda z, off, wei, bi: script_func_no_mask(z, off, wei, bi, stride, padding, dilation),
-            (x, offset, weight, bias),
-            nondet_tol=1e-5,
-            fast_mode=True,
-        )
-
     @needs_cuda
     @pytest.mark.parametrize("contiguous", (True, False))
     @pytest.mark.opcheck_only_one()
@@ -1441,10 +1377,6 @@ class TestDeformConv:
     def test_autocast(self, batch_sz, dtype):
         with torch.cuda.amp.autocast():
             self.test_forward(torch.device("cuda"), contiguous=False, batch_sz=batch_sz, dtype=dtype)
-
-    def test_forward_scriptability(self):
-        # Non-regression test for https://github.com/pytorch/vision/issues/4078
-        torch.jit.script(ops.DeformConv2d(in_channels=8, out_channels=8, kernel_size=3))
 
 
 # NS: Remove me once backward is implemented for MPS
@@ -1690,21 +1622,6 @@ class TestBoxConvert:
         with pytest.raises(ValueError):
             ops.box_convert(box_tensor, inv_infmt, inv_outfmt)
 
-    def test_bbox_convert_jit(self):
-        box_tensor = torch.tensor(
-            [[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float
-        )
-
-        scripted_fn = torch.jit.script(ops.box_convert)
-
-        box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
-        scripted_xywh = scripted_fn(box_tensor, "xyxy", "xywh")
-        torch.testing.assert_close(scripted_xywh, box_xywh)
-
-        box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
-        scripted_cxcywh = scripted_fn(box_tensor, "xyxy", "cxcywh")
-        torch.testing.assert_close(scripted_cxcywh, box_cxcywh)
-
 
 class TestBoxArea:
     def area_check(self, box, expected, fmt="xyxy", atol=1e-4):
@@ -1741,29 +1658,6 @@ class TestBoxArea:
         expected = torch.tensor([3.2170, 3.7108, 18.5071], dtype=torch.float16)
         self.area_check(box_tensor, expected, fmt, atol=0.01)
 
-    @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
-    def test_box_area_jit(self, fmt):
-        box_tensor = ops.box_convert(
-            torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float), in_fmt="xyxy", out_fmt=fmt
-        )
-        expected = ops.box_area(box_tensor, fmt)
-
-        class BoxArea(torch.nn.Module):
-            # We are using this intermediate class
-            # since torchscript does not support
-            # neither partial nor lambda functions for this test.
-            def __init__(self, fmt):
-                super().__init__()
-                self.area = ops.box_area
-                self.fmt = fmt
-
-            def forward(self, boxes):
-                return self.area(boxes, self.fmt)
-
-        scripted_fn = torch.jit.script(BoxArea(fmt))
-        scripted_area = scripted_fn(box_tensor)
-        torch.testing.assert_close(scripted_area, expected)
-
 
 INT_BOXES = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300], [0, 0, 25, 25]]
 INT_BOXES2 = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
@@ -1792,14 +1686,6 @@ class TestIouBase:
                 _actual_box2,
             )
             torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
-
-    @staticmethod
-    def _run_jit_test(target_fn: Callable, actual_box: list, fmt="xyxy"):
-        box_tensor = ops.box_convert(torch.tensor(actual_box, dtype=torch.float), in_fmt="xyxy", out_fmt=fmt)
-        expected = target_fn(box_tensor, box_tensor)
-        scripted_fn = torch.jit.script(target_fn)
-        scripted_out = scripted_fn(box_tensor, box_tensor)
-        torch.testing.assert_close(scripted_out, expected)
 
     @staticmethod
     def _cartesian_product(boxes1, boxes2, target_fn: Callable):
@@ -1845,22 +1731,6 @@ class TestBoxIou(TestIouBase):
         self._run_test(partial(ops.box_iou, fmt=fmt), actual_box1, actual_box2, dtypes, atol, expected, fmt)
 
     @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
-    def test_iou_jit(self, fmt):
-        class IoUJit(torch.nn.Module):
-            # We are using this intermediate class
-            # since torchscript does not support
-            # neither partial nor lambda functions for this test.
-            def __init__(self, fmt):
-                super().__init__()
-                self.iou = ops.box_iou
-                self.fmt = fmt
-
-            def forward(self, boxes1, boxes2):
-                return self.iou(boxes1, boxes2, fmt=self.fmt)
-
-        self._run_jit_test(IoUJit(fmt=fmt), INT_BOXES, fmt)
-
-    @pytest.mark.parametrize("fmt", ["xyxy", "xywh", "cxcywh"])
     def test_iou_cartesian(self, fmt):
         self._run_cartesian_test(partial(ops.box_iou, fmt=fmt))
 
@@ -1883,9 +1753,6 @@ class TestGeneralizedBoxIou(TestIouBase):
     )
     def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
         self._run_test(ops.generalized_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
-
-    def test_iou_jit(self):
-        self._run_jit_test(ops.generalized_box_iou, INT_BOXES)
 
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.generalized_box_iou)
@@ -1914,9 +1781,6 @@ class TestDistanceBoxIoU(TestIouBase):
     def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
         self._run_test(ops.distance_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
 
-    def test_iou_jit(self):
-        self._run_jit_test(ops.distance_box_iou, INT_BOXES)
-
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.distance_box_iou)
 
@@ -1943,9 +1807,6 @@ class TestCompleteBoxIou(TestIouBase):
     )
     def test_iou(self, actual_box1, actual_box2, dtypes, atol, expected):
         self._run_test(ops.complete_box_iou, actual_box1, actual_box2, dtypes, atol, expected)
-
-    def test_iou_jit(self):
-        self._run_jit_test(ops.complete_box_iou, INT_BOXES)
 
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.complete_box_iou)
@@ -2442,24 +2303,6 @@ class TestFocalLoss:
         focal_loss.backward()
         ce_loss.backward()
         torch.testing.assert_close(inputs_fl.grad, inputs_ce.grad)
-
-    @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
-    @pytest.mark.parametrize("gamma", [0, 2])
-    @pytest.mark.parametrize("reduction", ["none", "mean", "sum"])
-    @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
-    @pytest.mark.parametrize("seed", [4, 5])
-    def test_jit(self, alpha, gamma, reduction, device, dtype, seed):
-        if device == "cpu" and dtype is torch.half:
-            pytest.skip("Currently torch.half is not fully supported on cpu")
-        script_fn = torch.jit.script(ops.sigmoid_focal_loss)
-        torch.random.manual_seed(seed)
-        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
-        focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
-        scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
-
-        tol = 1e-3 if dtype is torch.half else 1e-5
-        torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
 
     # Raise ValueError for anonymous reduction mode
     @pytest.mark.parametrize("device", cpu_and_cuda())

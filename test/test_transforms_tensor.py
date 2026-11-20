@@ -1,4 +1,3 @@
-import os
 import sys
 
 import numpy as np
@@ -13,7 +12,6 @@ from common_utils import (
     assert_equal,
     cpu_and_cuda,
     float_dtypes,
-    get_tmp_dir,
     int_dtypes,
 )
 from torchvision import transforms as T
@@ -28,15 +26,7 @@ NEAREST, NEAREST_EXACT, BILINEAR, BICUBIC = (
 )
 
 
-def _test_transform_vs_scripted(transform, s_transform, tensor, msg=None):
-    torch.manual_seed(12)
-    out1 = transform(tensor)
-    torch.manual_seed(12)
-    out2 = s_transform(tensor)
-    assert_equal(out1, out2, msg=msg)
-
-
-def _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors, msg=None):
+def _test_transform_on_batch(transform, batch_tensors, msg=None):
     torch.manual_seed(12)
     transformed_batch = transform(batch_tensors)
 
@@ -45,10 +35,6 @@ def _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors, 
         torch.manual_seed(12)
         transformed_img = transform(img_tensor)
         assert_equal(transformed_img, transformed_batch[i, ...], msg=msg)
-
-    torch.manual_seed(12)
-    s_transformed_batch = s_transform(batch_tensors)
-    assert_equal(transformed_batch, s_transformed_batch, msg=msg)
 
 
 def _test_functional_op(f, device, channels=3, fn_kwargs=None, test_exact_match=True, **match_kwargs):
@@ -68,7 +54,6 @@ def _test_class_op(transform_cls, device, channels=3, meth_kwargs=None, test_exa
 
     # test for class interface
     f = transform_cls(**meth_kwargs)
-    scripted_fn = torch.jit.script(f)
 
     tensor, pil_img = _create_data(26, 34, channels, device=device)
     # set seed to reproduce the same transformation for tensor and PIL image
@@ -81,27 +66,13 @@ def _test_class_op(transform_cls, device, channels=3, meth_kwargs=None, test_exa
     else:
         _assert_approx_equal_tensor_to_pil(transformed_tensor.float(), transformed_pil_img, **match_kwargs)
 
-    torch.manual_seed(12)
-    transformed_tensor_script = scripted_fn(tensor)
-    assert_equal(transformed_tensor, transformed_tensor_script)
-
     batch_tensors = _create_data_batch(height=23, width=34, channels=channels, num_samples=4, device=device)
-    _test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
-
-    with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, f"t_{transform_cls.__name__}.pt"))
+    _test_transform_on_batch(f, batch_tensors)
 
 
 def _test_op(func, method, device, channels=3, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
     _test_functional_op(func, device, channels, fn_kwargs, test_exact_match=test_exact_match, **match_kwargs)
     _test_class_op(method, device, channels, meth_kwargs, test_exact_match=test_exact_match, **match_kwargs)
-
-
-def _test_fn_save_load(fn, tmpdir):
-    scripted_fn = torch.jit.script(fn)
-    p = os.path.join(tmpdir, f"t_op_list_{getattr(fn, '__name__', fn.__class__.__name__)}.pt")
-    scripted_fn.save(p)
-    _ = torch.jit.load(p)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -277,39 +248,14 @@ def test_random_crop(size, padding, pad_if_needed, padding_config, device):
     _test_class_op(T.RandomCrop, device, meth_kwargs=config)
 
 
-def test_random_crop_save_load(tmpdir):
-    fn = T.RandomCrop(32, [4], pad_if_needed=True)
-    _test_fn_save_load(fn, tmpdir)
-
-
 @pytest.mark.parametrize("device", cpu_and_cuda())
-def test_center_crop(device, tmpdir):
+def test_center_crop(device):
     fn_kwargs = {"output_size": (4, 5)}
     meth_kwargs = {"size": (4, 5)}
     _test_op(F.center_crop, T.CenterCrop, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs)
     fn_kwargs = {"output_size": (5,)}
     meth_kwargs = {"size": (5,)}
     _test_op(F.center_crop, T.CenterCrop, device=device, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs)
-    tensor = torch.randint(0, 256, (3, 10, 10), dtype=torch.uint8, device=device)
-    # Test torchscript of transforms.CenterCrop with size as int
-    f = T.CenterCrop(size=5)
-    scripted_fn = torch.jit.script(f)
-    scripted_fn(tensor)
-
-    # Test torchscript of transforms.CenterCrop with size as [int, ]
-    f = T.CenterCrop(size=[5])
-    scripted_fn = torch.jit.script(f)
-    scripted_fn(tensor)
-
-    # Test torchscript of transforms.CenterCrop with size as tuple
-    f = T.CenterCrop(size=(6, 6))
-    scripted_fn = torch.jit.script(f)
-    scripted_fn(tensor)
-
-
-def test_center_crop_save_load(tmpdir):
-    fn = T.CenterCrop(size=[5])
-    _test_fn_save_load(fn, tmpdir)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -325,7 +271,6 @@ def test_center_crop_save_load(tmpdir):
 @pytest.mark.parametrize("size", [(5,), [5], (4, 5), [4, 5]])
 def test_x_crop(fn, method, out_length, size, device):
     meth_kwargs = fn_kwargs = {"size": size}
-    scripted_fn = torch.jit.script(fn)
 
     tensor, pil_img = _create_data(height=20, width=20, device=device)
     transformed_t_list = fn(tensor, **fn_kwargs)
@@ -335,17 +280,10 @@ def test_x_crop(fn, method, out_length, size, device):
     for transformed_tensor, transformed_pil_img in zip(transformed_t_list, transformed_p_list):
         _assert_equal_tensor_to_pil(transformed_tensor, transformed_pil_img)
 
-    transformed_t_list_script = scripted_fn(tensor.detach().clone(), **fn_kwargs)
-    assert len(transformed_t_list) == len(transformed_t_list_script)
-    assert len(transformed_t_list_script) == out_length
-    for transformed_tensor, transformed_tensor_script in zip(transformed_t_list, transformed_t_list_script):
-        assert_equal(transformed_tensor, transformed_tensor_script)
-
     # test for class interface
     fn = method(**meth_kwargs)
-    scripted_fn = torch.jit.script(fn)
-    output = scripted_fn(tensor)
-    assert len(output) == len(transformed_t_list_script)
+    output = fn(tensor)
+    assert len(output) == out_length
 
     # test on batch of tensors
     batch_tensors = _create_data_batch(height=23, width=34, channels=3, num_samples=4, device=device)
@@ -358,12 +296,6 @@ def test_x_crop(fn, method, out_length, size, device):
         transformed_img_list = fn(img_tensor)
         for transformed_img, transformed_batch in zip(transformed_img_list, transformed_batch_list):
             assert_equal(transformed_img, transformed_batch[i, ...])
-
-
-@pytest.mark.parametrize("method", ["FiveCrop", "TenCrop"])
-def test_x_crop_save_load(method, tmpdir):
-    fn = getattr(T, method)(size=[5])
-    _test_fn_save_load(fn, tmpdir)
 
 
 class TestResize:
@@ -380,28 +312,17 @@ class TestResize:
         assert y.shape[2] == int(size * 46 / 32)
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
-    @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64])
     @pytest.mark.parametrize("size", [[32], [32, 32], (32, 32), [34, 35]])
     @pytest.mark.parametrize("max_size", [None, 35, 1000])
     @pytest.mark.parametrize("interpolation", [BILINEAR, BICUBIC, NEAREST, NEAREST_EXACT])
-    def test_resize_scripted(self, dt, size, max_size, interpolation, device):
-        tensor, _ = _create_data(height=34, width=36, device=device)
+    def test_resize_batch(self, size, max_size, interpolation, device):
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
-        if dt is not None:
-            # This is a trivial cast to float of uint8 data to test all cases
-            tensor = tensor.to(dt)
         if max_size is not None and len(size) != 1:
             pytest.skip("Size should be an int or a sequence of length 1 if max_size is specified")
 
         transform = T.Resize(size=size, interpolation=interpolation, max_size=max_size, antialias=True)
-        s_transform = torch.jit.script(transform)
-        _test_transform_vs_scripted(transform, s_transform, tensor)
-        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-    def test_resize_save_load(self, tmpdir):
-        fn = T.Resize(size=[32], antialias=True)
-        _test_fn_save_load(fn, tmpdir)
+        _test_transform_on_batch(transform, batch_tensors)
 
     @pytest.mark.parametrize("device", cpu_and_cuda())
     @pytest.mark.parametrize("scale", [(0.7, 1.2), [0.7, 1.2]])
@@ -414,33 +335,17 @@ class TestResize:
         if antialias and interpolation in {NEAREST, NEAREST_EXACT}:
             pytest.skip(f"Can not resize if interpolation mode is {interpolation} and antialias=True")
 
-        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
         transform = T.RandomResizedCrop(
             size=size, scale=scale, ratio=ratio, interpolation=interpolation, antialias=antialias
         )
-        s_transform = torch.jit.script(transform)
-        _test_transform_vs_scripted(transform, s_transform, tensor)
-        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-    def test_resized_crop_save_load(self, tmpdir):
-        fn = T.RandomResizedCrop(size=[32], antialias=True)
-        _test_fn_save_load(fn, tmpdir)
+        _test_transform_on_batch(transform, batch_tensors)
 
 
 def _test_random_affine_helper(device, **kwargs):
-    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
     transform = T.RandomAffine(**kwargs)
-    s_transform = torch.jit.script(transform)
-
-    _test_transform_vs_scripted(transform, s_transform, tensor)
-    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-
-def test_random_affine_save_load(tmpdir):
-    fn = T.RandomAffine(degrees=45.0)
-    _test_fn_save_load(fn, tmpdir)
+    _test_transform_on_batch(transform, batch_tensors)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -485,19 +390,10 @@ def test_random_affine_fill(device, interpolation, fill):
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
 @pytest.mark.parametrize("fill", [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_random_rotate(device, center, expand, degrees, interpolation, fill):
-    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     transform = T.RandomRotation(degrees=degrees, interpolation=interpolation, expand=expand, center=center, fill=fill)
-    s_transform = torch.jit.script(transform)
-
-    _test_transform_vs_scripted(transform, s_transform, tensor)
-    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-
-def test_random_rotate_save_load(tmpdir):
-    fn = T.RandomRotation(degrees=45.0)
-    _test_fn_save_load(fn, tmpdir)
+    _test_transform_on_batch(transform, batch_tensors)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -505,19 +401,10 @@ def test_random_rotate_save_load(tmpdir):
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
 @pytest.mark.parametrize("fill", [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_random_perspective(device, distortion_scale, interpolation, fill):
-    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     transform = T.RandomPerspective(distortion_scale=distortion_scale, interpolation=interpolation, fill=fill)
-    s_transform = torch.jit.script(transform)
-
-    _test_transform_vs_scripted(transform, s_transform, tensor)
-    _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-
-def test_random_perspective_save_load(tmpdir):
-    fn = T.RandomPerspective()
-    _test_fn_save_load(fn, tmpdir)
+    _test_transform_on_batch(transform, batch_tensors)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -541,38 +428,28 @@ def test_convert_image_dtype(device, in_dtype, out_dtype):
     in_batch_tensors = batch_tensors.to(in_dtype)
 
     fn = T.ConvertImageDtype(dtype=out_dtype)
-    scripted_fn = torch.jit.script(fn)
 
     if (in_dtype == torch.float32 and out_dtype in (torch.int32, torch.int64)) or (
         in_dtype == torch.float64 and out_dtype == torch.int64
     ):
         with pytest.raises(RuntimeError, match=r"cannot be performed safely"):
-            _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
+            fn(in_tensor)
         with pytest.raises(RuntimeError, match=r"cannot be performed safely"):
-            _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
+            _test_transform_on_batch(fn, in_batch_tensors)
         return
 
-    _test_transform_vs_scripted(fn, scripted_fn, in_tensor)
-    _test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
-
-
-def test_convert_image_dtype_save_load(tmpdir):
-    fn = T.ConvertImageDtype(dtype=torch.uint8)
-    _test_fn_save_load(fn, tmpdir)
+    _test_transform_on_batch(fn, in_batch_tensors)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("policy", [policy for policy in T.AutoAugmentPolicy])
 @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_autoaugment(device, policy, fill):
-    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     transform = T.AutoAugment(policy=policy, fill=fill)
-    s_transform = torch.jit.script(transform)
     for _ in range(25):
-        _test_transform_vs_scripted(transform, s_transform, tensor)
-        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+        _test_transform_on_batch(transform, batch_tensors)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
@@ -580,33 +457,26 @@ def test_autoaugment(device, policy, fill):
 @pytest.mark.parametrize("magnitude", [7, 9, 11])
 @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_randaugment(device, num_ops, magnitude, fill):
-    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     transform = T.RandAugment(num_ops=num_ops, magnitude=magnitude, fill=fill)
-    s_transform = torch.jit.script(transform)
     for _ in range(25):
-        _test_transform_vs_scripted(transform, s_transform, tensor)
-        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+        _test_transform_on_batch(transform, batch_tensors)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_trivialaugmentwide(device, fill):
-    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     transform = T.TrivialAugmentWide(fill=fill)
-    s_transform = torch.jit.script(transform)
     for _ in range(25):
-        _test_transform_vs_scripted(transform, s_transform, tensor)
-        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+        _test_transform_on_batch(transform, batch_tensors)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
 @pytest.mark.parametrize("fill", [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1], 1])
 def test_augmix(device, fill):
-    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
     class DeterministicAugMix(T.AugMix):
@@ -615,16 +485,8 @@ def test_augmix(device, fill):
             return params.softmax(dim=-1)
 
     transform = DeterministicAugMix(fill=fill)
-    s_transform = torch.jit.script(transform)
     for _ in range(25):
-        _test_transform_vs_scripted(transform, s_transform, tensor)
-        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
-
-
-@pytest.mark.parametrize("augmentation", [T.AutoAugment, T.RandAugment, T.TrivialAugmentWide, T.AugMix])
-def test_autoaugment_save_load(augmentation, tmpdir):
-    fn = augmentation()
-    _test_fn_save_load(fn, tmpdir)
+        _test_transform_on_batch(transform, batch_tensors)
 
 
 @pytest.mark.parametrize("interpolation", [F.InterpolationMode.NEAREST, F.InterpolationMode.BILINEAR])
@@ -685,18 +547,10 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
     ],
 )
 def test_random_erasing(device, config):
-    tensor, _ = _create_data(24, 32, channels=3, device=device)
     batch_tensors = torch.rand(4, 3, 44, 56, device=device)
 
     fn = T.RandomErasing(**config)
-    scripted_fn = torch.jit.script(fn)
-    _test_transform_vs_scripted(fn, scripted_fn, tensor)
-    _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
-
-
-def test_random_erasing_save_load(tmpdir):
-    fn = T.RandomErasing(value=0.2)
-    _test_fn_save_load(fn, tmpdir)
+    _test_transform_on_batch(fn, batch_tensors)
 
 
 def test_random_erasing_with_invalid_data():
@@ -708,7 +562,7 @@ def test_random_erasing_with_invalid_data():
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
-def test_normalize(device, tmpdir):
+def test_normalize(device):
     fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     tensor, _ = _create_data(26, 34, device=device)
 
@@ -716,110 +570,7 @@ def test_normalize(device, tmpdir):
         fn(tensor)
 
     batch_tensors = torch.rand(4, 3, 44, 56, device=device)
-    tensor = tensor.to(dtype=torch.float32) / 255.0
-    # test for class interface
-    scripted_fn = torch.jit.script(fn)
-
-    _test_transform_vs_scripted(fn, scripted_fn, tensor)
-    _test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
-
-    scripted_fn.save(os.path.join(tmpdir, "t_norm.pt"))
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_linear_transformation(device, tmpdir):
-    c, h, w = 3, 24, 32
-
-    tensor, _ = _create_data(h, w, channels=c, device=device)
-
-    matrix = torch.rand(c * h * w, c * h * w, device=device)
-    mean_vector = torch.rand(c * h * w, device=device)
-
-    fn = T.LinearTransformation(matrix, mean_vector)
-    scripted_fn = torch.jit.script(fn)
-
-    _test_transform_vs_scripted(fn, scripted_fn, tensor)
-
-    batch_tensors = torch.rand(4, c, h, w, device=device)
-    # We skip some tests from _test_transform_vs_scripted_on_batch as
-    # results for scripted and non-scripted transformations are not exactly the same
-    torch.manual_seed(12)
-    transformed_batch = fn(batch_tensors)
-    torch.manual_seed(12)
-    s_transformed_batch = scripted_fn(batch_tensors)
-    assert_equal(transformed_batch, s_transformed_batch)
-
-    scripted_fn.save(os.path.join(tmpdir, "t_norm.pt"))
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_compose(device):
-    tensor, _ = _create_data(26, 34, device=device)
-    tensor = tensor.to(dtype=torch.float32) / 255.0
-    transforms = T.Compose(
-        [
-            T.CenterCrop(10),
-            T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ]
-    )
-    s_transforms = torch.nn.Sequential(*transforms.transforms)
-
-    scripted_fn = torch.jit.script(s_transforms)
-    torch.manual_seed(12)
-    transformed_tensor = transforms(tensor)
-    torch.manual_seed(12)
-    transformed_tensor_script = scripted_fn(tensor)
-    assert_equal(transformed_tensor, transformed_tensor_script, msg=f"{transforms}")
-
-    t = T.Compose(
-        [
-            lambda x: x,
-        ]
-    )
-    with pytest.raises(RuntimeError, match="cannot call a value of type 'Tensor'"):
-        torch.jit.script(t)
-
-
-@pytest.mark.parametrize("device", cpu_and_cuda())
-def test_random_apply(device):
-    tensor, _ = _create_data(26, 34, device=device)
-    tensor = tensor.to(dtype=torch.float32) / 255.0
-
-    transforms = T.RandomApply(
-        [
-            T.RandomHorizontalFlip(),
-            T.ColorJitter(),
-        ],
-        p=0.4,
-    )
-    s_transforms = T.RandomApply(
-        torch.nn.ModuleList(
-            [
-                T.RandomHorizontalFlip(),
-                T.ColorJitter(),
-            ]
-        ),
-        p=0.4,
-    )
-
-    scripted_fn = torch.jit.script(s_transforms)
-    torch.manual_seed(12)
-    transformed_tensor = transforms(tensor)
-    torch.manual_seed(12)
-    transformed_tensor_script = scripted_fn(tensor)
-    assert_equal(transformed_tensor, transformed_tensor_script, msg=f"{transforms}")
-
-    if device == "cpu":
-        # Can't check this twice, otherwise
-        # "Can't redefine method: forward on class: __torch__.torchvision.transforms.transforms.RandomApply"
-        transforms = T.RandomApply(
-            [
-                T.ColorJitter(),
-            ],
-            p=0.3,
-        )
-        with pytest.raises(RuntimeError, match="Module 'RandomApply' has no attribute 'transforms'"):
-            torch.jit.script(transforms)
+    _test_transform_on_batch(fn, batch_tensors)
 
 
 @pytest.mark.parametrize("device", cpu_and_cuda())
