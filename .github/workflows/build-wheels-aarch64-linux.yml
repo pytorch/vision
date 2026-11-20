@@ -41,6 +41,19 @@ jobs:
           dupes=$(jq -r '.include | group_by(.desired_cuda) | map(select(length > 1)
             | "\(.[0].desired_cuda): \(map(.python_version) | join(", "))") | .[]' <<< "$MATRIX")
           [[ -z "$dupes" ]] || { echo "More than one build per variant:"; echo "$dupes"; exit 1; }
+  save-build-matrix:
+    needs: generate-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Save the build matrix
+        env:
+          MATRIX: ${{ needs.generate-matrix.outputs.matrix }}
+        run: printf '%s' "${MATRIX}" > build-matrix.json
+      - name: Upload the build matrix
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: build-matrix
+          path: build-matrix.json
   build:
     needs: [generate-matrix, check-one-build-per-variant]
     strategy:
@@ -67,10 +80,6 @@ jobs:
       trigger-event: ${{ github.event_name }}
       architecture: aarch64
       setup-miniconda: false
-    secrets:
-      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
   # See the equivalent job in build-wheels-linux.yml for why this exists.
   test-py3-none-wheel:
     needs: build
