@@ -74,7 +74,8 @@ class DistributedSampler(Sampler):
         g.manual_seed(self.epoch)
         indices: Union[torch.Tensor, list[int]]
         if self.shuffle:
-            indices = torch.randperm(len(self.dataset), generator=g).tolist()
+            group_indices = torch.randperm(len(self.dataset) // self.group_size, generator=g)
+            indices = (group_indices[:, None] * self.group_size + torch.arange(self.group_size)).flatten().tolist()
         else:
             indices = list(range(len(self.dataset)))
 
