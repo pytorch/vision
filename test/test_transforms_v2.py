@@ -1390,7 +1390,7 @@ class TestHorizontalFlip:
     def _reference_horizontal_flip_keypoints(self, keypoints):
         affine_matrix = np.array(
             [
-                [-1, 0, keypoints.canvas_size[1] - 1],
+                [-1, 0, keypoints.canvas_size[1]],
                 [0, 1, 0],
             ],
         )
@@ -1407,6 +1407,32 @@ class TestHorizontalFlip:
         expected = self._reference_horizontal_flip_keypoints(keypoints)
 
         torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize("canvas_size", [(65, 97), (100, 100), (48, 128)])
+    @pytest.mark.parametrize("size", [(94, 155), (47, 65), (85, 77), (100, 100)])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_keypoints_flip_resize_commutativity_and_boundaries(self, canvas_size, size, dtype):
+        h, w = canvas_size
+        points = [
+            [0.0, 0.0],
+            [float(w), float(h)],
+            [0.0, float(h)],
+            [float(w), 0.0],
+            [w / 2.0, h / 2.0],
+            [20.25, 24.5],
+            [12.375, 33.625],
+        ]
+        keypoints = tv_tensors.KeyPoints(points, canvas_size=canvas_size, dtype=dtype)
+
+        # 1. Flip then Resize vs Resize then Flip
+        flip_then_resize = F.resize(F.horizontal_flip(keypoints), size=size)
+        resize_then_flip = F.horizontal_flip(F.resize(keypoints, size=size))
+        torch.testing.assert_close(flip_then_resize, resize_then_flip, atol=1e-5, rtol=1e-5)
+
+        # 2. Boundary and center coordinate verification
+        flipped = F.horizontal_flip(keypoints)
+        expected_flipped_x = torch.tensor([w - p[0] for p in points], dtype=dtype)
+        torch.testing.assert_close(flipped[..., 0], expected_flipped_x)
 
     @pytest.mark.parametrize(
         "make_input",
@@ -1999,7 +2025,7 @@ class TestVerticalFlip:
         affine_matrix = np.array(
             [
                 [1, 0, 0],
-                [0, -1, keypoints.canvas_size[0] - 1],
+                [0, -1, keypoints.canvas_size[0]],
             ],
         )
 
@@ -2013,6 +2039,32 @@ class TestVerticalFlip:
         expected = self._reference_vertical_flip_keypoints(keypoints)
 
         torch.testing.assert_close(actual, expected)
+
+    @pytest.mark.parametrize("canvas_size", [(65, 97), (100, 100), (48, 128)])
+    @pytest.mark.parametrize("size", [(94, 155), (47, 65), (85, 77), (100, 100)])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
+    def test_keypoints_flip_resize_commutativity_and_boundaries(self, canvas_size, size, dtype):
+        h, w = canvas_size
+        points = [
+            [0.0, 0.0],
+            [float(w), float(h)],
+            [0.0, float(h)],
+            [float(w), 0.0],
+            [w / 2.0, h / 2.0],
+            [20.25, 24.5],
+            [12.375, 33.625],
+        ]
+        keypoints = tv_tensors.KeyPoints(points, canvas_size=canvas_size, dtype=dtype)
+
+        # 1. Flip then Resize vs Resize then Flip
+        flip_then_resize = F.resize(F.vertical_flip(keypoints), size=size)
+        resize_then_flip = F.vertical_flip(F.resize(keypoints, size=size))
+        torch.testing.assert_close(flip_then_resize, resize_then_flip, atol=1e-5, rtol=1e-5)
+
+        # 2. Boundary and center coordinate verification
+        flipped = F.vertical_flip(keypoints)
+        expected_flipped_y = torch.tensor([h - p[1] for p in points], dtype=dtype)
+        torch.testing.assert_close(flipped[..., 1], expected_flipped_y)
 
     @pytest.mark.parametrize(
         "make_input",

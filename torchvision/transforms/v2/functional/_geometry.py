@@ -81,7 +81,7 @@ def horizontal_flip_mask(mask: torch.Tensor) -> torch.Tensor:
 def horizontal_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int]):
     shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
-    keypoints[..., 0] = keypoints[..., 0].sub_(canvas_size[1] - 1).neg_()
+    keypoints[..., 0] = keypoints[..., 0].sub_(canvas_size[1]).neg_()
     return keypoints.reshape(shape)
 
 
@@ -169,7 +169,7 @@ def vertical_flip_mask(mask: torch.Tensor) -> torch.Tensor:
 def vertical_flip_keypoints(keypoints: torch.Tensor, canvas_size: tuple[int, int]) -> torch.Tensor:
     shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
-    keypoints[..., 1] = keypoints[..., 1].sub_(canvas_size[0] - 1).neg_()
+    keypoints[..., 1] = keypoints[..., 1].sub_(canvas_size[0]).neg_()
     return keypoints.reshape(shape)
 
 
