@@ -5200,6 +5200,18 @@ class TestPerspective:
                 coefficients=[0.0] * 8,
             )
 
+    @pytest.mark.parametrize("format", list(tv_tensors.BoundingBoxFormat))
+    @pytest.mark.parametrize("dtype", [torch.float16, torch.bfloat16])
+    def test_kernel_bounding_boxes_reduced_precision(self, format, dtype):
+        startpoints, endpoints = self.START_END_POINTS[0]
+        bounding_boxes = make_bounding_boxes(format=format, dtype=torch.float32)
+
+        expected = F.perspective(bounding_boxes, startpoints=startpoints, endpoints=endpoints)
+        actual = F.perspective(bounding_boxes.to(dtype), startpoints=startpoints, endpoints=endpoints)
+
+        assert actual.dtype == dtype
+        assert_close(actual.to(torch.float32), expected, rtol=0, atol=1)
+
     @param_value_parametrization(
         coefficients=COEFFICIENTS,
         start_end_points=START_END_POINTS,
