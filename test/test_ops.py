@@ -2667,6 +2667,15 @@ class TestDropBlock:
 
         assert abs(p - counts / num_samples) / p < 0.15
 
+    @pytest.mark.parametrize("dim", [2, 3])
+    @pytest.mark.parametrize("size", [2, 4])
+    def test_drop_block_input_smaller_than_block(self, dim, size):
+        torch.manual_seed(0)
+        x = torch.ones((2, 3) + (size,) * dim)
+        layer = ops.DropBlock2d(p=0.5, block_size=7) if dim == 2 else ops.DropBlock3d(p=0.5, block_size=7)
+
+        assert layer(x).shape == x.shape
+
     def make_obj(self, dim, p, block_size, inplace, wrap=False):
         if dim == 2:
             obj = ops.DropBlock2d(p, block_size, inplace)
