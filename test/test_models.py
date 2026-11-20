@@ -16,7 +16,7 @@ import torch
 import torch.fx
 import torch.nn as nn
 from _utils_internal import get_relative_path
-from common_utils import cpu_and_cuda, freeze_rng_state, map_nested_tensor_object, needs_cuda, set_rng_seed
+from common_utils import cpu_and_cuda, freeze_rng_state, map_nested_tensor_object, needs_cuda, script, set_rng_seed
 from PIL import Image
 from torchvision import models, transforms
 from torchvision.models import get_model_builder, list_models
@@ -167,7 +167,7 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
             imported = torch.jit.load(path)
         return imported
 
-    sm = torch.jit.script(nn_module)
+    sm = script(nn_module)
     sm.eval()
 
     if eager_out is None:
@@ -988,7 +988,7 @@ def test_quantized_classification_model(model_fn):
         _check_fx_compatible(model, x, eager_out=out)
     else:
         try:
-            torch.jit.script(model)
+            script(model)
         except Exception as e:
             raise AssertionError("model cannot be scripted.") from e
 
@@ -1039,7 +1039,7 @@ def test_raft(model_fn, scripted):
 
     model = model_fn(corr_block=corr_block).eval().to("cuda")
     if scripted:
-        model = torch.jit.script(model)
+        model = script(model)
 
     bs = 1
     img1 = torch.rand(bs, 3, 80, 72).cuda()

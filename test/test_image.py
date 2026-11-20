@@ -12,7 +12,7 @@ import pytest
 import requests
 import torch
 import torchvision.transforms.v2.functional as F
-from common_utils import assert_equal, cpu_and_cuda, IN_OSS_CI, needs_cuda
+from common_utils import assert_equal, cpu_and_cuda, IN_OSS_CI, needs_cuda, script
 from PIL import __version__ as PILLOW_VERSION, Image, ImageOps, ImageSequence
 from torchvision.io.image import (
     decode_avif,
@@ -106,7 +106,7 @@ def test_decode_jpeg(img_path, pil_mode, mode, scripted, decode_fun):
     img_pil = normalize_dimensions(img_pil)
     data = read_file(img_path)
     if scripted:
-        decode_fun = torch.jit.script(decode_fun)
+        decode_fun = script(decode_fun)
     img_ljpeg = decode_fun(data, mode=mode)
 
     # Permit a small variation on pixel values to account for implementation
@@ -197,7 +197,7 @@ def test_damaged_corrupt_images(img_path):
 def test_decode_png(img_path, pil_mode, mode, scripted, decode_fun):
 
     if scripted:
-        decode_fun = torch.jit.script(decode_fun)
+        decode_fun = script(decode_fun)
 
     with Image.open(img_path) as img:
         if pil_mode is not None:
@@ -244,7 +244,7 @@ def test_encode_png(img_path, scripted):
     pil_image = Image.open(img_path)
     img_pil = torch.from_numpy(np.array(pil_image))
     img_pil = img_pil.permute(2, 0, 1)
-    encode = torch.jit.script(encode_png) if scripted else encode_png
+    encode = script(encode_png) if scripted else encode_png
     png_buf = encode(img_pil, compression_level=6)
 
     rec_img = Image.open(io.BytesIO(bytes(png_buf.tolist())))
@@ -280,7 +280,7 @@ def test_write_png(img_path, tmpdir, scripted):
 
     filename, _ = os.path.splitext(os.path.basename(img_path))
     torch_png = os.path.join(tmpdir, f"{filename}_torch.png")
-    write = torch.jit.script(write_png) if scripted else write_png
+    write = script(write_png) if scripted else write_png
     write(img_pil, torch_png, compression_level=6)
     saved_image = torch.from_numpy(np.array(Image.open(torch_png)))
     saved_image = saved_image.permute(2, 0, 1)
@@ -292,7 +292,7 @@ def test_read_image():
     # Just testing torchcsript, the functionality is somewhat tested already in other tests.
     path = next(get_images(IMAGE_ROOT, ".jpg"))
     out = read_image(path)
-    out_scripted = torch.jit.script(read_image)(path)
+    out_scripted = script(read_image)(path)
     torch.testing.assert_close(out, out_scripted, atol=0, rtol=0)
 
 
@@ -303,7 +303,7 @@ def test_read_file(tmpdir, scripted):
     with open(fpath, "wb") as f:
         f.write(content)
 
-    fun = torch.jit.script(read_file) if scripted else read_file
+    fun = script(read_file) if scripted else read_file
     data = fun(fpath)
     expected = torch.tensor(list(content), dtype=torch.uint8)
     os.unlink(fpath)
@@ -330,7 +330,7 @@ def test_write_file(tmpdir, scripted):
     fname, content = "test1.bin", b"TorchVision\211\n"
     fpath = os.path.join(tmpdir, fname)
     content_tensor = torch.tensor(list(content), dtype=torch.uint8)
-    write = torch.jit.script(write_file) if scripted else write_file
+    write = script(write_file) if scripted else write_file
     write(fpath, content_tensor)
 
     with open(fpath, "rb") as f:
@@ -416,7 +416,7 @@ def test_decode_jpegs_cuda(mode, scripted):
         encoded_image = read_file(jpeg_path)
         encoded_images.append(encoded_image)
     decoded_images_cpu = decode_jpeg(encoded_images, mode=mode)
-    decode_fn = torch.jit.script(decode_jpeg) if scripted else decode_jpeg
+    decode_fn = script(decode_jpeg) if scripted else decode_jpeg
 
     # test multithreaded decoding
     # in the current version we prevent this by using a lock but we still want to test it
@@ -569,7 +569,7 @@ def test_encode_jpeg(img_path, scripted):
 
     encoded_jpeg_pil = torch.frombuffer(buf.getvalue(), dtype=torch.uint8)
 
-    encode = torch.jit.script(encode_jpeg) if scripted else encode_jpeg
+    encode = script(encode_jpeg) if scripted else encode_jpeg
     for src_img in [img, img.contiguous()]:
         encoded_jpeg_torch = encode(src_img, quality=75)
         assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
@@ -604,7 +604,7 @@ def test_encode_jpeg_cuda_device_param():
 @pytest.mark.parametrize("contiguous", (False, True))
 def test_encode_jpeg_cuda(img_path, scripted, contiguous):
     decoded_image_tv = read_image(img_path)
-    encode_fn = torch.jit.script(encode_jpeg) if scripted else encode_jpeg
+    encode_fn = script(encode_jpeg) if scripted else encode_jpeg
 
     if "cmyk" in img_path:
         pytest.xfail("Encoding a CMYK jpeg isn't supported")
@@ -679,7 +679,7 @@ def test_encode_jpegs_batch(scripted, contiguous, device):
             decoded_image = decoded_image[None].contiguous(memory_format=torch.channels_last)[0]
         decoded_images_tv.append(decoded_image)
 
-    encode_fn = torch.jit.script(encode_jpeg) if scripted else encode_jpeg
+    encode_fn = script(encode_jpeg) if scripted else encode_jpeg
 
     decoded_images_tv_device = [img.to(device=device) for img in decoded_images_tv]
     encoded_jpegs_tv_device = encode_fn(decoded_images_tv_device, quality=75)
@@ -817,7 +817,7 @@ def test_write_jpeg(img_path, tmpdir, scripted):
     torch_jpeg = str(tmpdir / "torch.jpg")
     pil_jpeg = str(tmpdir / "pil.jpg")
 
-    write = torch.jit.script(write_jpeg) if scripted else write_jpeg
+    write = script(write_jpeg) if scripted else write_jpeg
     write(img, torch_jpeg, quality=75)
     pil_img.save(pil_jpeg, quality=75)
 
@@ -874,7 +874,7 @@ def test_decode_gif(tmpdir, name, scripted):
         f.write(requests.get(url).content)
 
     encoded_bytes = read_file(path)
-    f = torch.jit.script(decode_gif) if scripted else decode_gif
+    f = script(decode_gif) if scripted else decode_gif
     tv_out = f(encoded_bytes)
     if tv_out.ndim == 3:
         tv_out = tv_out[None]
@@ -935,7 +935,7 @@ def test_decode_gif_frame_outside_canvas(scripted, frame1_left, frame1_top, is_o
         + bytes([2, 2, 0x44, 0x01, 0])  # LZW min=2, [Clear, 0, EOI]
         + bytes([0x3B])  # trailer
     )
-    f = torch.jit.script(decode_gif) if scripted else decode_gif
+    f = script(decode_gif) if scripted else decode_gif
     out = f(torch.frombuffer(bytearray(encoded), dtype=torch.uint8))
 
     assert out.shape == (2, 3, 1, 1)
@@ -986,7 +986,7 @@ def test_decode_bad_encoded_data(decode_fun, match):
 def test_decode_webp(decode_fun, scripted):
     encoded_bytes = read_file(next(get_images(FAKEDATA_DIR, ".webp")))
     if scripted:
-        decode_fun = torch.jit.script(decode_fun)
+        decode_fun = script(decode_fun)
     img = decode_fun(encoded_bytes)
     assert img.shape == (3, 100, 100)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
@@ -1033,7 +1033,7 @@ def test_decode_webp_grayscale(decode_fun):
 def test_decode_webp_against_pil(decode_fun, scripted, mode, pil_mode, filename):
     encoded_bytes = read_file(filename)
     if scripted:
-        decode_fun = torch.jit.script(decode_fun)
+        decode_fun = script(decode_fun)
     img = decode_fun(encoded_bytes, mode=mode)
     assert img[None].is_contiguous(memory_format=torch.channels_last)
 
@@ -1162,7 +1162,7 @@ def test_decode_image_path(input_type, scripted):
     if scripted and input_type == "Path":
         pytest.xfail(reason="Can't pass a Path when scripting")
 
-    decode_fun = torch.jit.script(decode_image) if scripted else decode_image
+    decode_fun = script(decode_image) if scripted else decode_image
     decode_fun(input)
 
 

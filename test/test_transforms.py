@@ -25,7 +25,7 @@ try:
 except ImportError:
     stats = None
 
-from common_utils import assert_equal, cycle_over, float_dtypes, int_dtypes
+from common_utils import assert_equal, cycle_over, float_dtypes, int_dtypes, script
 
 
 GRACE_HOPPER = get_file_path_2(
@@ -44,7 +44,7 @@ class TestConvertImageDtype:
     def test_float_to_float(self, input_dtype, output_dtype):
         input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
         transform = transforms.ConvertImageDtype(output_dtype)
-        transform_script = torch.jit.script(F.convert_image_dtype)
+        transform_script = script(F.convert_image_dtype)
 
         output_image = transform(input_image)
         output_image_script = transform_script(input_image, output_dtype)
@@ -62,7 +62,7 @@ class TestConvertImageDtype:
     def test_float_to_int(self, input_dtype, output_dtype):
         input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
         transform = transforms.ConvertImageDtype(output_dtype)
-        transform_script = torch.jit.script(F.convert_image_dtype)
+        transform_script = script(F.convert_image_dtype)
 
         if (input_dtype == torch.float32 and output_dtype in (torch.int32, torch.int64)) or (
             input_dtype == torch.float64 and output_dtype == torch.int64
@@ -86,7 +86,7 @@ class TestConvertImageDtype:
     def test_int_to_float(self, input_dtype, output_dtype):
         input_image = torch.tensor((0, torch.iinfo(input_dtype).max), dtype=input_dtype)
         transform = transforms.ConvertImageDtype(output_dtype)
-        transform_script = torch.jit.script(F.convert_image_dtype)
+        transform_script = script(F.convert_image_dtype)
 
         output_image = transform(input_image)
         output_image_script = transform_script(input_image, output_dtype)
@@ -108,7 +108,7 @@ class TestConvertImageDtype:
         output_max = torch.iinfo(output_dtype).max
 
         transform = transforms.ConvertImageDtype(output_dtype)
-        transform_script = torch.jit.script(F.convert_image_dtype)
+        transform_script = script(F.convert_image_dtype)
 
         output_image = transform(input_image)
         output_image_script = transform_script(input_image, output_dtype)
@@ -1477,7 +1477,7 @@ def test_max_value(dtype):
     reason="torch.iinfo() is not supported by torchscript. See https://github.com/pytorch/pytorch/issues/41492."
 )
 def test_max_value_iinfo():
-    @torch.jit.script
+    @script
     def max_value(image: torch.Tensor) -> int:
         return 1 if image.is_floating_point() else torch.iinfo(image.dtype).max
 

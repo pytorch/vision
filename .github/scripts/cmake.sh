@@ -50,11 +50,23 @@ fi
 echo '::group::Prepare CMake builds'
 mkdir -p cpp_build
 
-pushd examples/cpp
-python script_model.py
-mkdir -p build
-mv resnet18.pt fasterrcnn_resnet50_fpn.pt build
-popd
+# The C++ example loads models that are scripted in Python. PyTorch removed torch.jit.script
+# (pytorch/pytorch#203621), so with such a PyTorch the example can't be set up: libtorchvision
+# is still built and installed, but the example is skipped.
+if python -c "import torch; raise SystemExit(0 if hasattr(torch.jit, 'script') else 1)"; then
+  RUN_CPP_EXAMPLE=1
+else
+  RUN_CPP_EXAMPLE=0
+  echo "::warning::torch.jit.script is not available in this PyTorch: skipping the C++ example"
+fi
+
+if [[ $RUN_CPP_EXAMPLE == 1 ]]; then
+  pushd examples/cpp
+  python script_model.py
+  mkdir -p build
+  mv resnet18.pt fasterrcnn_resnet50_fpn.pt build
+  popd
+fi
 
 # This was only needed for the tracing above
 pip uninstall -y torchvision
@@ -83,6 +95,10 @@ fi
 
 popd
 echo '::endgroup::'
+
+if [[ $RUN_CPP_EXAMPLE == 0 ]]; then
+  exit 0
+fi
 
 echo '::group::Build and run C++ example'
 pushd examples/cpp/build
