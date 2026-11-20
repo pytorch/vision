@@ -143,6 +143,73 @@ class TestDatasetsUtils:
         with open(file) as fh:
             assert fh.read() == content
 
+    @pytest.mark.parametrize("extension", [".bz2", ".gz", ".xz"])
+    @pytest.mark.parametrize("use_pathlib", (True, False))
+    def test_decompress_multiple_suffix_occurrences(self, extension, tmpdir, use_pathlib):
+        content = "test content"
+        sub_dir = os.path.join(tmpdir, f"dir{extension}")
+        os.makedirs(sub_dir)
+        unrelated_file = os.path.join(tmpdir, "sample.backup")
+        with open(unrelated_file, "w") as fh:
+            fh.write("unrelated")
+
+        compressed = os.path.join(sub_dir, f"sample{extension}.backup{extension}")
+        expected_decompressed = os.path.join(sub_dir, f"sample{extension}.backup")
+        opener = _COMPRESSED_FILE_OPENERS[extension]
+        with opener(compressed, "wb") as fh:
+            fh.write(content.encode())
+
+        src = pathlib.Path(compressed) if use_pathlib else compressed
+        result = utils._decompress(src)
+
+        assert os.path.exists(expected_decompressed)
+        with open(expected_decompressed) as fh:
+            assert fh.read() == content
+
+        # Ensure unrelated file was not overwritten
+        with open(unrelated_file) as fh:
+            assert fh.read() == "unrelated"
+        assert not os.path.exists(os.path.join(sub_dir, "sample.backup"))
+        if use_pathlib:
+            assert isinstance(result, pathlib.Path)
+            assert result == pathlib.Path(expected_decompressed)
+        else:
+            assert isinstance(result, pathlib.Path)
+            assert str(result) == expected_decompressed
+
+    @pytest.mark.parametrize("extension", [".bz2", ".gz", ".xz"])
+    @pytest.mark.parametrize("use_pathlib", (True, False))
+    def test_extract_archive_multiple_suffix_occurrences(self, extension, tmpdir, use_pathlib):
+        content = "test content"
+        sub_dir = os.path.join(tmpdir, f"dir{extension}")
+        os.makedirs(sub_dir)
+        unrelated_file = os.path.join(sub_dir, "sample.backup")
+        with open(unrelated_file, "w") as fh:
+            fh.write("unrelated")
+
+        compressed = os.path.join(sub_dir, f"sample{extension}.backup{extension}")
+        expected_extracted = os.path.join(sub_dir, f"sample{extension}.backup")
+        opener = _COMPRESSED_FILE_OPENERS[extension]
+        with opener(compressed, "wb") as fh:
+            fh.write(content.encode())
+
+        src = pathlib.Path(compressed) if use_pathlib else compressed
+        result = utils.extract_archive(src)
+
+        assert os.path.exists(expected_extracted)
+        with open(expected_extracted) as fh:
+            assert fh.read() == content
+
+        with open(unrelated_file) as fh:
+            assert fh.read() == "unrelated"
+
+        if use_pathlib:
+            assert isinstance(result, pathlib.Path)
+            assert result == pathlib.Path(expected_extracted)
+        else:
+            assert isinstance(result, str)
+            assert result == expected_extracted
+
     def test_decompress_no_compression(self):
         with pytest.raises(RuntimeError):
             utils._decompress("foo.tar")
