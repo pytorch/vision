@@ -11,6 +11,7 @@ from torchvision import tv_tensors
 from torchvision.transforms.v2._utils import check_type, has_any, is_pure_tensor
 from torchvision.utils import _log_api_usage_once
 
+from .functional._cvcuda import _is_cvcuda_tensor
 from .functional._utils import _get_kernel
 
 
@@ -23,7 +24,7 @@ class Transform(nn.Module):
 
     # Class attribute defining transformed types. Other types are passed-through without any transformation
     # We support both Types and callables that are able to do further checks on the type of the input.
-    _transformed_types: tuple[type | Callable[[Any], bool], ...] = (torch.Tensor, PIL.Image.Image)
+    _transformed_types: tuple[type | Callable[[Any], bool], ...] = (torch.Tensor, PIL.Image.Image, _is_cvcuda_tensor)
 
     def __init__(self) -> None:
         super().__init__()
@@ -45,7 +46,7 @@ class Transform(nn.Module):
         return dict()
 
     def _call_kernel(self, functional: Callable, inpt: Any, *args: Any, **kwargs: Any) -> Any:
-        kernel = _get_kernel(functional, type(inpt), allow_passthrough=True)
+        kernel = _get_kernel(functional, type(inpt), allow_passthrough=not _is_cvcuda_tensor(inpt))
         return kernel(inpt, *args, **kwargs)
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> Any:
@@ -90,7 +91,9 @@ class Transform(nn.Module):
         # However, this case wasn't supported by transforms v1 either, so there is no BC concern.
 
         needs_transform_list = []
-        transform_pure_tensor = not has_any(flat_inputs, tv_tensors.Image, tv_tensors.Video, PIL.Image.Image)
+        transform_pure_tensor = not has_any(
+            flat_inputs, tv_tensors.Image, tv_tensors.Video, PIL.Image.Image, _is_cvcuda_tensor
+        )
         for inpt in flat_inputs:
             needs_transform = True
 

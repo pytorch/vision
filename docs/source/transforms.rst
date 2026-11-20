@@ -452,6 +452,8 @@ Conversion
     :toctree: generated/
     :template: class.rst
 
+    v2.ToCVCUDATensor
+    v2.CVCUDAToTensor
     v2.ToImage
     v2.ToPureTensor
     v2.PILToTensor
@@ -465,11 +467,37 @@ functionals
     :toctree: generated/
     :template: functional.rst
 
+    v2.functional.to_cvcuda_tensor
+    v2.functional.cvcuda_to_tensor
     v2.functional.to_image
     v2.functional.pil_to_tensor
     v2.functional.to_pil_image
     v2.functional.to_dtype
     v2.functional.convert_bounding_box_format
+
+Supported CV-CUDA backend transforms
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+    :header-rows: 1
+    :widths: 15 85
+
+    * - Family
+      - Functions
+    * - Geometry
+      - ``affine``, ``center_crop``, ``crop``, ``elastic``, ``five_crop``,
+        ``horizontal_flip``, ``pad``, ``perspective``, ``resize``,
+        ``resized_crop``, ``rotate``, ``ten_crop``, ``vertical_flip``
+    * - Color
+      - ``adjust_brightness``, ``adjust_contrast``, ``adjust_gamma``,
+        ``adjust_hue``, ``adjust_saturation``, ``adjust_sharpness``,
+        ``autocontrast``, ``equalize``, ``grayscale_to_rgb``, ``invert``,
+        ``permute_channels``, ``posterize``, ``rgb_to_grayscale``, ``solarize``
+    * - Augmentation
+      - ``erase``, ``jpeg``
+    * - Miscellaneous
+      - ``gaussian_blur``, ``gaussian_noise``, ``normalize``, ``to_dtype``
+
 
 
 Deprecated

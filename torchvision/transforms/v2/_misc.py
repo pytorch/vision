@@ -20,6 +20,8 @@ from ._utils import (
     is_pure_tensor,
 )
 
+from .functional._cvcuda import _is_cvcuda_tensor
+
 
 # TODO: do we want/need to expose this?
 class Identity(Transform):
@@ -267,7 +269,7 @@ class ToDtype(Transform):
             Default: ``False``.
     """
 
-    _transformed_types = (torch.Tensor,)
+    _transformed_types = (torch.Tensor, _is_cvcuda_tensor)
 
     def __init__(
         self, dtype: Union[torch.dtype, dict[Union[type, str], Optional[torch.dtype]]], scale: bool = False
@@ -294,7 +296,11 @@ class ToDtype(Transform):
         if isinstance(self.dtype, torch.dtype):
             # For consistency / BC with ConvertImageDtype, we only care about images or videos when dtype
             # is a simple torch.dtype
-            if not is_pure_tensor(inpt) and not isinstance(inpt, (tv_tensors.Image, tv_tensors.Video)):
+            if not (
+                is_pure_tensor(inpt)
+                or isinstance(inpt, (tv_tensors.Image, tv_tensors.Video))
+                or _is_cvcuda_tensor(inpt)
+            ):
                 return inpt
 
             dtype: Optional[torch.dtype] = self.dtype
@@ -311,7 +317,9 @@ class ToDtype(Transform):
                 'e.g. dtype={tv_tensors.Mask: torch.int64, "others": None} to pass-through the rest of the inputs.'
             )
 
-        supports_scaling = is_pure_tensor(inpt) or isinstance(inpt, (tv_tensors.Image, tv_tensors.Video))
+        supports_scaling = (
+            is_pure_tensor(inpt) or isinstance(inpt, (tv_tensors.Image, tv_tensors.Video)) or _is_cvcuda_tensor(inpt)
+        )
         if dtype is None:
             if self.scale and supports_scaling:
                 warnings.warn(

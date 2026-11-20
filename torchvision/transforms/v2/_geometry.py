@@ -11,6 +11,7 @@ from torchvision import transforms as _transforms, tv_tensors
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.v2 import functional as F, InterpolationMode, Transform
+from torchvision.transforms.v2.functional._cvcuda import _is_cvcuda_tensor
 from torchvision.transforms.v2.functional._utils import _FillType
 
 from ._transform import _RandomApplyTransform
@@ -1170,7 +1171,7 @@ class RandomIoUCrop(Transform):
     def check_inputs(self, flat_inputs: list[Any]) -> None:
         if not (
             has_all(flat_inputs, tv_tensors.BoundingBoxes)
-            and has_any(flat_inputs, PIL.Image.Image, tv_tensors.Image, is_pure_tensor)
+            and has_any(flat_inputs, PIL.Image.Image, tv_tensors.Image, is_pure_tensor, _is_cvcuda_tensor)
         ):
             raise TypeError(
                 f"{type(self).__name__}() requires input sample to contain tensor or PIL images "

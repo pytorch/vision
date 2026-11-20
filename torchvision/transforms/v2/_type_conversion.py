@@ -8,6 +8,7 @@ from torchvision import tv_tensors
 from torchvision.transforms.v2 import functional as F, Transform
 
 from torchvision.transforms.v2._utils import is_pure_tensor
+from torchvision.transforms.v2.functional._cvcuda import _is_cvcuda_tensor
 
 
 class PILToTensor(Transform):
@@ -90,3 +91,38 @@ class ToPureTensor(Transform):
 
     def transform(self, inpt: Any, params: dict[str, Any]) -> torch.Tensor:
         return inpt.as_subclass(torch.Tensor)
+
+
+class ToCVCUDATensor(Transform):
+    """Convert CHW/NCHW Torch images to CV-CUDA, without scaling or permuting values.
+
+    Requires CV-CUDA >= 0.19.0. CPU inputs move to CUDA; CUDA inputs preserve their
+    device unless ``device`` is specified. Non-contiguous inputs are copied. This
+    transform does not support TorchScript or autograd.
+
+    Args:
+        device (torch.device or str, optional): Target CUDA device.
+    """
+
+    _transformed_types = (is_pure_tensor, tv_tensors.Image)
+
+    def __init__(self, *, device=None) -> None:
+        super().__init__()
+        self.device = device
+
+    def transform(self, inpt: torch.Tensor, params: dict[str, Any]):
+        return F.to_cvcuda_tensor(inpt, device=self.device)
+
+
+class CVCUDAToTensor(Transform):
+    """Convert CV-CUDA tensors to zero-copy CUDA Torch tensors.
+
+    Preserves shape, axis order, dtype, values, and CUDA device without permuting channels.
+
+    This transform does not support TorchScript.
+    """
+
+    _transformed_types = (_is_cvcuda_tensor,)
+
+    def transform(self, inpt: Any, params: dict[str, Any]) -> torch.Tensor:
+        return F.cvcuda_to_tensor(inpt)
