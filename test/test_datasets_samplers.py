@@ -14,6 +14,32 @@ except ImportError:
     _torchcodec_available = False
 
 
+@pytest.mark.parametrize("group_size", [1, 2, 3])
+@pytest.mark.parametrize("num_groups", [0, 4, 5])
+@pytest.mark.parametrize("shuffle", [False, True])
+def test_distributed_sampler_groups(group_size, num_groups, shuffle):
+    dataset = range(num_groups * group_size)
+    original_groups = [list(range(i, i + group_size)) for i in range(0, len(dataset), group_size)]
+    num_replicas = 2
+    for epoch in [0, 1]:
+        generator = torch.Generator().manual_seed(epoch)
+        group_order = torch.randperm(num_groups, generator=generator).tolist() if shuffle else list(range(num_groups))
+        group_order += group_order[: (num_groups % num_replicas)]
+        sampled_groups = set()
+        for rank in range(num_replicas):
+            sampler = DistributedSampler(
+                dataset, num_replicas=num_replicas, rank=rank, group_size=group_size, shuffle=shuffle
+            )
+            sampler.set_epoch(epoch)
+            indices = list(sampler)
+            assert indices == list(sampler)
+            assert len(indices) == len(sampler)
+            groups = [indices[i : i + group_size] for i in range(0, len(indices), group_size)]
+            assert groups == [original_groups[i] for i in group_order[rank::num_replicas]]
+            sampled_groups.update(tuple(group) for group in groups)
+        assert sampled_groups == {tuple(group) for group in original_groups}
+
+
 @pytest.mark.skipif(
     not (_torchcodec_available and sys.platform == "linux"),
     reason="this test requires torchcodec (linux only)",
