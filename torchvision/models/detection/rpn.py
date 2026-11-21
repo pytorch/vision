@@ -358,7 +358,11 @@ class RegionProposalNetwork(torch.nn.Module):
         # RPN uses all feature maps that are available
         features = list(features.values())
         objectness, pred_bbox_deltas = self.head(features)
-        anchors = self.anchor_generator(images, features)
+        anchors_per_image_per_level = self.anchor_generator(images, features)
+        
+        # Flatten anchors across feature levels for compatibility with existing code
+        # anchors_per_image_per_level: list[list[Tensor]] -> anchors: list[Tensor]
+        anchors = [torch.cat(anchors_per_level, dim=0) for anchors_per_level in anchors_per_image_per_level]
 
         num_images = len(anchors)
         num_anchors_per_level_shape_tensors = [o[0].shape for o in objectness]
