@@ -958,10 +958,10 @@ class RandomResizedCrop(torch.nn.Module):
         in_ratio = float(width) / float(height)
         if in_ratio < min(ratio):
             w = width
-            h = int(round(w / min(ratio)))
+            h = max(int(round(w / min(ratio))), 1)
         elif in_ratio > max(ratio):
             h = height
-            w = int(round(h * max(ratio)))
+            w = max(int(round(h * max(ratio))), 1)
         else:  # whole image
             w = width
             h = height
