@@ -4,17 +4,27 @@ import torch
 
 from ._internally_replaced_utils import _get_extension_path
 
+# Last ImportError/OSError raised while loading a native extension. Surfaced by
+# _assert_has_ops() so users see the missing .so / ABI mismatch instead of only
+# a generic "couldn't load custom C++ ops" message.
+_EXTENSION_LOAD_ERROR = None
+
 
 def _load_library(lib_name):
     """Load a library, optionally warning on failure based on env variable.
 
     Returns True if the library was loaded successfully, False otherwise.
     """
+    global _EXTENSION_LOAD_ERROR
     try:
         lib_path = _get_extension_path(lib_name)
         torch.ops.load_library(lib_path)
         return True
     except (ImportError, OSError) as e:
+        # Prefer the C++ ops library error; later optional extensions (e.g.
+        # image_stable) must not hide the reason _has_ops() is False.
+        if _EXTENSION_LOAD_ERROR is None or lib_name == "_C_stable":
+            _EXTENSION_LOAD_ERROR = e
         if os.environ.get("TORCHVISION_WARN_WHEN_EXTENSION_LOADING_FAILS"):
             import warnings
 
@@ -34,7 +44,7 @@ if _load_library("_C_stable"):
 
 def _assert_has_ops():
     if not _has_ops():
-        raise RuntimeError(
+        msg = (
             "Couldn't load custom C++ ops. This can happen if your PyTorch and "
             "torchvision versions are incompatible, or if you had errors while compiling "
             "torchvision from source. For further information on the compatible versions, check "
@@ -44,6 +54,9 @@ def _assert_has_ops():
             "please reinstall torchvision so that it matches your PyTorch install. "
             "Set TORCHVISION_WARN_WHEN_EXTENSION_LOADING_FAILS=1 and retry to get more details."
         )
+        if _EXTENSION_LOAD_ERROR is not None:
+            msg += f" Underlying error: {type(_EXTENSION_LOAD_ERROR).__name__}: {_EXTENSION_LOAD_ERROR}"
+        raise RuntimeError(msg)
 
 
 def _check_cuda_version():
