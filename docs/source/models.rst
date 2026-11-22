@@ -79,7 +79,8 @@ Migrating to the new API is very straightforward. The following method calls bet
     resnet50(pretrained=False)  # deprecated
     resnet50(False)  # deprecated
 
-Note that the ``pretrained`` parameter is now deprecated, using it will emit warnings and will be removed on v0.15.
+The ``pretrained`` parameter is deprecated since v0.13 and may be removed in a future release.
+Use ``weights`` instead.
 
 Using the pre-trained models
 ----------------------------
