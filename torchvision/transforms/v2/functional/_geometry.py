@@ -2400,17 +2400,15 @@ def elastic_keypoints(
     original_shape = keypoints.shape
     keypoints = keypoints.clone().reshape(-1, 2)
 
-    id_grid = _create_identity_grid(canvas_size, device=device, dtype=dtype)
-    inv_grid = id_grid.sub_(displacement)
-
     index_xy = keypoints.to(dtype=torch.long)
     index_x, index_y = index_xy[:, 0], index_xy[:, 1]
-    # Unlike bounding boxes, this may not work well.
-    index_x.clamp_(0, inv_grid.shape[2] - 1)
-    index_y.clamp_(0, inv_grid.shape[1] - 1)
+    # Clamp only the displacement lookup, not the original point coordinates.
+    index_x = index_x.clamp(0, canvas_size[1] - 1)
+    index_y = index_y.clamp(0, canvas_size[0] - 1)
 
     t_size = torch.tensor(canvas_size[::-1], device=displacement.device, dtype=displacement.dtype)
-    transformed_points = inv_grid[0, index_y, index_x, :].add_(1).mul_(0.5 * t_size).sub_(0.5)
+    offsets = displacement[0, index_y, index_x, :].mul(0.5 * t_size)
+    transformed_points = keypoints.to(dtype).sub(offsets)
 
     return transformed_points.to(keypoints.dtype).reshape(original_shape)
 
