@@ -223,6 +223,10 @@ def roi_align(
             contain the index of the corresponding element in the batch, i.e. a number in ``[0, N - 1]``.
             If a list of Tensors is passed, then each Tensor will correspond to the boxes for an element i
             in the batch.
+            ``boxes`` must have the same dtype as ``input``. For a floating-point ``input`` the box
+            coordinates (including the batch index in the first column of a single Tensor) must
+            therefore be floating-point as well, not integer. If ``input`` is quantized, ``boxes``
+            must be quantized too.
         output_size (int or Tuple[int, int]): the size of the output (in bins or pixels) after the pooling
             is performed, as (height, width).
         spatial_scale (float): a scaling factor that maps the box coordinates to
