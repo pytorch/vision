@@ -1007,7 +1007,7 @@ def _affine_keypoints_with_expand(
     center: Optional[list[float]] = None,
     expand: bool = False,
 ) -> tuple[torch.Tensor, tuple[int, int]]:
-    if keypoints.numel() == 0:
+    if keypoints.numel() == 0 and not expand:
         return keypoints, canvas_size
 
     original_dtype = keypoints.dtype
@@ -1125,7 +1125,7 @@ def _affine_bounding_boxes_with_expand(
     expand: bool = False,
     clamping_mode: CLAMPING_MODE_TYPE = "soft",
 ) -> tuple[torch.Tensor, tuple[int, int]]:
-    if bounding_boxes.numel() == 0:
+    if bounding_boxes.numel() == 0 and not expand:
         return bounding_boxes, canvas_size
 
     original_shape = bounding_boxes.shape

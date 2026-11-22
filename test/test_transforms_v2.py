@@ -2397,6 +2397,42 @@ class TestRotate:
         torch.testing.assert_close(actual, expected)
         torch.testing.assert_close(F.get_size(actual), F.get_size(expected), atol=2 if expand else 0, rtol=0)
 
+    @pytest.mark.parametrize(
+        "make_input",
+        [make_keypoints]
+        + [functools.partial(make_bounding_boxes, format=format) for format in tv_tensors.BoundingBoxFormat],
+    )
+    @pytest.mark.parametrize("angle", [0, 45, 90])
+    @pytest.mark.parametrize("expand", [False, True])
+    def test_empty_annotations(self, make_input, angle, expand):
+        inpt = make_input(canvas_size=(10, 20))
+        expected_canvas_size = F.rotate(inpt, angle=angle, expand=expand).canvas_size
+        inpt = tv_tensors.wrap(inpt[:0], like=inpt)
+
+        actual = F.rotate(inpt, angle=angle, expand=expand)
+        transformed = transforms.RandomRotation((angle, angle), expand=expand)(inpt)
+
+        assert actual.shape == inpt.shape
+        assert actual.dtype == inpt.dtype
+        assert actual.canvas_size == expected_canvas_size
+        assert_equal(actual, transformed)
+        assert transformed.canvas_size == actual.canvas_size
+
+    @pytest.mark.parametrize("make_input", [make_bounding_boxes, make_keypoints])
+    @pytest.mark.parametrize("angle", [90, 270])
+    def test_empty_annotations_pipeline(self, make_input, angle):
+        canvas_size = (10, 20)
+        image = make_image(canvas_size)
+        inpt = make_input(canvas_size=canvas_size)
+        inpt = tv_tensors.wrap(inpt[:0], like=inpt)
+
+        rotated_image, transformed = transforms.RandomRotation((angle, angle), expand=True)(image, inpt)
+        assert transformed.canvas_size == tuple(rotated_image.shape[-2:])
+
+        # Subsequent transforms must see matching image and annotation sizes.
+        cropped_image, cropped = transforms.RandomCrop((5, 5))(rotated_image, transformed)
+        assert cropped.canvas_size == tuple(cropped_image.shape[-2:]) == (5, 5)
+
     @pytest.mark.parametrize("degrees", _EXHAUSTIVE_TYPE_TRANSFORM_AFFINE_RANGES["degrees"])
     @pytest.mark.parametrize("seed", list(range(10)))
     def test_transformmake_params_bounds(self, degrees, seed):

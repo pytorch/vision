@@ -595,6 +595,7 @@ class RandomRotation(Transform):
         expand (bool, optional): Optional expansion flag.
             If true, expands the output to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
+            The canvas size of bounding boxes and keypoints is updated even if they are empty.
             Note that the expand flag assumes rotation around the center (see note below) and no translation.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
