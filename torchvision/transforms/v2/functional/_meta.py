@@ -446,9 +446,22 @@ def _order_bounding_boxes_points(
     if indices is None:
         output_xyxyxyxy = bounding_boxes.reshape(-1, 8)
         x, y = output_xyxyxyxy[..., 0::2], output_xyxyxyxy[..., 1::2]
-        y_max = torch.max(y.abs(), dim=1, keepdim=True)[0]
-        x_max = torch.max(x.abs(), dim=1, keepdim=True)[0]
-        _, x1 = (y / y_max + (x / x_max) * 100).min(dim=1)
+        # Lowest x first, lowest y among the points that share the lowest x. Two x values count as equal when they
+        # are within a few ulps of the largest coordinate, so that boxes rotated by exactly 0, 90, 180 or 270 degrees
+        # still tie after the cos/sin round-off of the format conversion, while a real tilt picks the leftmost point.
+        if x.dtype == torch.float64:
+            rel_tol = 8 * 2.220446049250313e-16
+        elif x.dtype == torch.float32:
+            rel_tol = 8 * 1.1920928955078125e-07
+        elif x.dtype == torch.bfloat16:
+            rel_tol = 8 * 0.0078125
+        elif x.dtype == torch.float16:
+            rel_tol = 8 * 0.0009765625
+        else:
+            rel_tol = 0.0
+        x_min = x.amin(dim=1, keepdim=True)
+        tol = x.abs().amax(dim=1, keepdim=True) * rel_tol
+        x1 = torch.where(x <= x_min + tol, y, y.amax(dim=1, keepdim=True) + 1).argmin(dim=1)
         indices = torch.ones_like(output_xyxyxyxy)
         indices[..., 0] = x1.mul(2)
         indices.cumsum_(1).remainder_(8)
