@@ -750,18 +750,51 @@ def gaussian_blur(img: Tensor, kernel_size: list[int], sigma: list[float]) -> Te
     _assert_image_tensor(img)
 
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
-    kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [dtype])
 
-    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype])
-
-    # padding = (left, right, top, bottom)
-    padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
-    img = torch_pad(img, padding, mode="reflect")
-    img = conv2d(img, kernel, groups=img.shape[-3])
+    # Keep the single convolution for small or already one-dimensional kernels.
+    # Large kernels benefit from O(kx + ky), rather than O(kx * ky), filtering.
+    if _should_use_separable_gaussian_blur(img, kernel_size):
+        kernel_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0], dtype, img.device)
+        kernel_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1], dtype, img.device)
+        img = _separable_gaussian_blur(img, kernel_x, kernel_y)
+    else:
+        kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
+        kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
+        # padding = (left, right, top, bottom)
+        padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
+        img = torch_pad(img, padding, mode="reflect")
+        img = conv2d(img, kernel, groups=img.shape[-3])
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
+
+
+def _should_use_separable_gaussian_blur(img: Tensor, kernel_size: list[int]) -> bool:
+    kernel_taps = kernel_size[0] * kernel_size[1]
+    if kernel_taps <= 1024 or min(kernel_size) == 1:
+        return False
+    # Two CPU convolutions can cost more than a single dense convolution on
+    # small inputs. This conservative work threshold is a heuristic, not an
+    # optimal crossover for every backend (see benchmarks/gaussian_blur.py).
+    # Float64 CPU convolution needs the workspace reduction even on small
+    # images, since its dense im2col allocation scales with both kernel axes.
+    return img.device.type != "cpu" or img.dtype == torch.float64 or img.numel() * kernel_taps >= 2**28
+
+
+def _separable_gaussian_blur(img: Tensor, kernel_x: Tensor, kernel_y: Tensor) -> Tensor:
+    channels = img.shape[-3]
+    padding_x = kernel_x.numel() // 2
+    padding_y = kernel_y.numel() // 2
+    kernel_x = kernel_x.reshape(1, 1, 1, -1).expand(channels, 1, 1, -1)
+    kernel_y = kernel_y.reshape(1, 1, -1, 1).expand(channels, 1, -1, 1)
+
+    # Reflect each axis independently. Keep the intermediate result floating
+    # point, since rounding between passes changes the integer image result.
+    img = torch_pad(img, [padding_x, padding_x, 0, 0], mode="reflect")
+    img = conv2d(img, kernel_x, groups=channels)
+    img = torch_pad(img, [0, 0, padding_y, padding_y], mode="reflect")
+    return conv2d(img, kernel_y, groups=channels)
 
 
 def invert(img: Tensor) -> Tensor:
