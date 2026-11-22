@@ -1,0 +1,34 @@
+name: reference COCO evaluation
+
+on:
+  pull_request:
+    paths:
+      - "references/detection/**"
+      - ".github/workflows/test-reference-coco-eval.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    env:
+      RAYON_NUM_THREADS: "2"
+      OMP_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies for the standalone reference scripts
+        run: |
+          python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install pytest numpy pillow matplotlib pycocotools "ultrafast-pycocotools>=0.1.11,<0.2"
+      - name: Compare COCO outputs and two-rank aggregation
+        working-directory: ${{ runner.temp }}
+        run: python -m pytest -v "$GITHUB_WORKSPACE/references/detection/test_coco_eval.py"

@@ -72,6 +72,9 @@ def get_args_parser(add_help=True):
     import argparse
 
     parser = argparse.ArgumentParser(description="PyTorch Detection Training", add_help=add_help)
+    parser.add_argument(
+        "--coco-backend", default="pycocotools", choices=("pycocotools", "ultrafast"), help="COCO evaluation backend"
+    )
 
     parser.add_argument("--data-path", default="/datasets01/COCO/022719/", type=str, help="dataset path")
     parser.add_argument(
@@ -298,7 +301,7 @@ def main(args):
 
     if args.test_only:
         torch.backends.cudnn.deterministic = True
-        evaluate(model, data_loader_test, device=device)
+        evaluate(model, data_loader_test, device=device, coco_backend=args.coco_backend)
         return
 
     print("Start training")
@@ -322,7 +325,7 @@ def main(args):
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
         # evaluate after every epoch
-        evaluate(model, data_loader_test, device=device)
+        evaluate(model, data_loader_test, device=device, coco_backend=args.coco_backend)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
