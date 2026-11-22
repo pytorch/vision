@@ -223,8 +223,8 @@ class GaussianNoise(Transform):
     noise added to each image will be different.
 
     The input tensor is also expected to be of float dtype in ``[0, 1]``,
-    or of ``uint8`` dtype in ``[0, 255]``. This transform does not support PIL
-    images.
+    or of ``uint8`` dtype in ``[0, 255]``. PIL images are supported and
+    processed through the ``uint8`` path via ``pil_to_tensor``.
 
     Regardless of the dtype used, the parameters of the function use the same
     scale, so a ``mean`` parameter of 0.5 will result in an average value
