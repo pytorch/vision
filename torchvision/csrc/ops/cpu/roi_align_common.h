@@ -57,7 +57,10 @@ void pre_calc_for_bilinear_interpolate(
           T x = xx;
           T y = yy;
           // deal with: inverse elements are out of feature map boundary
-          if (y < -1.0 || y > height || x < -1.0 || x > width) {
+          // NB: written as !(in range) rather than (out of range) so that NaN
+          // coordinates, for which every comparison is false, take this branch
+          // instead of reaching the (int) casts below.
+          if (!(y >= -1.0 && y <= height && x >= -1.0 && x <= width)) {
             // empty
             PreCalc<T> pc;
             pc.pos1 = 0;

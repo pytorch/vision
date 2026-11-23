@@ -162,6 +162,35 @@ class RoIOpTester(ABC):
 
         torch.testing.assert_close(gt_y.to(y), y, rtol=tol, atol=tol)
 
+    @pytest.mark.parametrize("device", cpu_and_cuda_and_mps())
+    @pytest.mark.parametrize(
+        "coords",
+        (
+            pytest.param([float("nan")] * 4, id="nan"),
+            pytest.param([float("inf"), float("-inf"), float("inf"), float("-inf")], id="inf"),
+            # Finite, but roi_end - roi_start overflows to inf, and 0 * inf is nan.
+            pytest.param([-3.4e38, -3.4e38, 3.4e38, 3.4e38], id="overflow"),
+        ),
+    )
+    def test_non_finite_boxes(self, device, coords):
+        # A non-finite coordinate makes every comparison in the bounds check
+        # false, so the sample point used to be neither rejected nor clamped,
+        # and the index was then computed from (int)nan -- undefined behaviour,
+        # INT_MIN on x86 -- reading far outside the input buffer.
+        pool_size = 5
+        # n_channels % (pool_size ** 2) == 0 required for PS operations.
+        n_channels = 2 * (pool_size**2)
+        x = torch.rand(1, n_channels, 10, 10, device=device, requires_grad=True)
+        rois = torch.tensor([[0.0] + coords], dtype=torch.float32, device=device)
+
+        y = self.fn(x, rois, pool_size, pool_size, spatial_scale=1, sampling_ratio=1)
+        assert y.shape[0] == rois.shape[0]
+        assert not y.isinf().any()
+
+        y.sum().backward()
+        assert x.grad.shape == x.shape
+        assert not x.grad.isinf().any()
+
     @pytest.mark.parametrize("device", cpu_and_cuda())
     def test_is_leaf_node(self, device):
         op_obj = self.make_obj(wrap=True).to(device=device)
