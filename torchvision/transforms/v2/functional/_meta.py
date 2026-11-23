@@ -112,6 +112,25 @@ def get_size_video(video: torch.Tensor) -> list[int]:
     return get_size_image(video)
 
 
+def _validate_cvcuda_image(inpt) -> None:
+    if (str(inpt.layout), inpt.ndim) not in (("CHW", 3), ("HWC", 3), ("NCHW", 4), ("NHWC", 4)):
+        raise ValueError("CV-CUDA images must have CHW, HWC, NCHW, or NHWC layout and matching rank 3 or 4.")
+
+
+def _get_dimensions_image_cvcuda(image) -> list[int]:
+    _validate_cvcuda_image(image)
+    layout = str(image.layout)
+    return [image.shape[layout.index(axis)] for axis in "CHW"]
+
+
+def _get_num_channels_image_cvcuda(image) -> int:
+    return _get_dimensions_image_cvcuda(image)[0]
+
+
+def _get_size_image_cvcuda(image) -> list[int]:
+    return _get_dimensions_image_cvcuda(image)[1:]
+
+
 @_register_kernel_internal(get_size, tv_tensors.Mask, tv_tensor_wrapper=False)
 def get_size_mask(mask: torch.Tensor) -> list[int]:
     return get_size_image(mask)
