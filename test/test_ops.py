@@ -473,6 +473,17 @@ class TestRoIAlign(RoIOpTester):
                         out_data[r, channel, i, j] = val
         return out_data
 
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("size, value", [(2, 20000.0), (64, 1.0), (256, 1.0)])
+    def test_half_average(self, device, size, value):
+        # One aligned bin with a sample at every pixel center.
+        x = torch.full((1, 1, size, size), value, dtype=torch.float16, device=device, requires_grad=True)
+        rois = x.new_tensor([[0, 0, 0, size, size]])
+        pooled = ops.roi_align(x, rois, 1, sampling_ratio=-1, aligned=True)
+        torch.testing.assert_close(pooled, x.new_full((1, 1, 1, 1), value), rtol=0, atol=0)
+        pooled.sum().backward()
+        torch.testing.assert_close(x.grad, torch.full_like(x, 1 / (size * size)), rtol=0, atol=0)
+
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 

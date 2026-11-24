@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <type_traits>
 
 #include "cuda_helpers.h"
 
@@ -21,6 +22,9 @@ namespace ops {
 namespace {
 
 using torch::stable::Tensor;
+
+template <typename T>
+using accum_t = std::conditional_t<std::is_same_v<T, double>, double, float>;
 
 template <typename T>
 __device__ T bilinear_interpolate(
@@ -130,9 +134,10 @@ __global__ void roi_align_forward_kernel_impl(
 
     // We do average (integral) pooling inside a bin
     // When the grid is empty, output zeros.
-    const T count = max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
+    const accum_t<T> count =
+        max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
 
-    T output_val = 0.;
+    accum_t<T> output_val = 0.;
     for (int iy = 0; iy < roi_bin_grid_h; iy++) // e.g., iy = 0, 1
     {
       const T y = roi_start_h + ph * bin_size_h +
@@ -274,7 +279,7 @@ __global__ void roi_align_backward_kernel_impl(
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
 
     // We do average (integral) pooling inside a bin
-    const T count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
+    const accum_t<T> count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
 
     const int input_offset = (roi_batch_ind * channels + c) * height * width;
 
