@@ -310,10 +310,15 @@ class ImageFolder(DatasetFolder):
         allow_empty(bool, optional): If True, empty folders are considered to be valid classes.
             An error is raised on empty folders if False (default).
 
-     Attributes:
+    Attributes:
         classes (list): List of the class names sorted alphabetically.
         class_to_idx (dict): Dict with items (class_name, class_index).
         imgs (list): List of (image path, class_index) tuples
+    Notes:
+       - Samples are sorted alphabetically by class name and file name.
+       - All samples from all classes are concatenated into a single list.
+         Indexing the dataset (e.g. dataset[i]) accesses this global list,
+         not a per-class subset.
     """
 
     def __init__(
