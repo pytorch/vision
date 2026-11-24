@@ -89,8 +89,14 @@ torch::stable::Tensor decode_gif(const torch::stable::Tensor& encoded_data) {
   STD_TORCH_CHECK(
       num_images > 0, "GIF file should contain at least one image!");
 
+  // SBackGroundColor is an unvalidated byte (0-255) read straight from the
+  // logical screen descriptor, while SColorMap->ColorCount may be as small as
+  // 2. GIFLIB deliberately leaves this bound to the caller (see the comment at
+  // the end of DGifGetScreenDesc()), so we have to check it here. An
+  // out-of-range background index means "no background": we leave bg black.
   GifColorType bg = {0, 0, 0};
-  if (gifFile->SColorMap) {
+  if (gifFile->SColorMap &&
+      gifFile->SBackGroundColor < gifFile->SColorMap->ColorCount) {
     bg = gifFile->SColorMap->Colors[gifFile->SBackGroundColor];
   }
 
@@ -176,7 +182,11 @@ torch::stable::Tensor decode_gif(const torch::stable::Tensor& encoded_data) {
           continue;
         }
         auto c = img.RasterBits[h * desc.Width + w];
-        if (c == gcb.TransparentColor) {
+        // The LZW minimum code size is read independently of the colour table
+        // size, so c may be greater than cmap->ColorCount on a crafted (or
+        // merely sloppy) GIF. Treat an out-of-range index as transparent
+        // rather than erroring out, which is what browsers and Pillow do.
+        if (c == gcb.TransparentColor || c >= cmap->ColorCount) {
           continue;
         }
         GifColorType rgb = cmap->Colors[c];
