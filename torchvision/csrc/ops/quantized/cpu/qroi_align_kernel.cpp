@@ -4,6 +4,7 @@
 #include <torch/headeronly/core/Dispatch_v2.h>
 
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <limits>
 
@@ -93,6 +94,12 @@ void qroi_align_forward_kernel_impl(
         : ceil(roi_height / pooled_height); // e.g., = 2
     int roi_bin_grid_w =
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
+
+    STD_TORCH_CHECK(
+        static_cast<double>(roi_bin_grid_h) * roi_bin_grid_w * pooled_width *
+                pooled_height <=
+            INT_MAX,
+        "roi_align sampling grid is too large, reduce sampling_ratio or the RoI size");
 
     // We do average (integral) pooling inside a bin
     // When the grid is empty, output zeros.

@@ -27,9 +27,40 @@ jobs:
       test-infra-repository: pytorch/test-infra
       test-infra-ref: main
       with-cuda: disable
+      build-python-only: enable
+      # We don't build abi3 wheels, we build py3-none (which is better!)
+      # But we still need to set this until
+      # https://github.com/pytorch/test-infra/pull/9047 lands
+      python-abi3: enable
 
-  build:
+  # We should only need one build per `arch x accelerator` variant (no need for
+  # per-Python-version wheels!). This fails if the matrix builds an accelerator
+  # variant (cpu, cu134, ...) more than once.
+  check-one-build-per-variant:
     needs: generate-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          MATRIX: ${{ needs.generate-matrix.outputs.matrix }}
+        run: |
+          dupes=$(jq -r '.include | group_by(.desired_cuda) | map(select(length > 1)
+            | "\(.[0].desired_cuda): \(map(.python_version) | join(", "))") | .[]' <<< "$MATRIX")
+          [[ -z "$dupes" ]] || { echo "More than one build per variant:"; echo "$dupes"; exit 1; }
+  save-build-matrix:
+    needs: generate-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Save the build matrix
+        env:
+          MATRIX: ${{ needs.generate-matrix.outputs.matrix }}
+        run: printf '%s' "${MATRIX}" > build-matrix.json
+      - name: Upload the build matrix
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: build-matrix
+          path: build-matrix.json
+  build:
+    needs: [generate-matrix, check-one-build-per-variant]
     strategy:
       fail-fast: false
       matrix:
@@ -52,7 +83,3 @@ jobs:
       smoke-test-script: ${{ matrix.smoke-test-script }}
       trigger-event: ${{ github.event_name }}
       architecture: ${{ matrix.architecture }}
-    secrets:
-      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

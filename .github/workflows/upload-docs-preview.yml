@@ -1,0 +1,62 @@
+name: Upload docs preview
+
+# Publishes the docs built by a PR's Docs workflow to s3://doc-previews, served at
+# https://docs-preview.pytorch.org/pytorch/vision/<PR_NUMBER>/index.html.
+#
+# This can't be done from the Docs workflow itself: PRs from forks get no OIDC token, so they can't obtain AWS
+# credentials. workflow_run runs in the context of the base repo, where OIDC is available.
+#
+# The artifact comes from untrusted PR code: its content is only ever uploaded, never executed, and the PR number read
+# from it is validated before use.
+
+on:
+  workflow_run:
+    workflows:
+      - Docs
+    types:
+      - completed
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
+jobs:
+  upload:
+    if: >-
+      github.repository == 'pytorch/vision' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docs
+          path: docs
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read PR number
+        id: metadata
+        run: |
+          set -euo pipefail
+          PR_NUMBER="$(grep -m1 '^PR_NUMBER=' docs/pr-metadata.txt | cut -d= -f2- || true)"
+          if ! [[ "${PR_NUMBER}" =~ ^[0-9]+$ ]]; then
+            echo "Invalid or missing PR_NUMBER in pr-metadata.txt, aborting."
+            exit 1
+          fi
+          echo "pr-number=${PR_NUMBER}" >> "${GITHUB_OUTPUT}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722 # v4.1.0
+        with:
+          role-to-assume: arn:aws:iam::308535385114:role/arc
+          aws-region: us-east-1
+          role-session-name: docs-preview-uploader
+
+      - name: Upload docs preview
+        env:
+          PR_NUMBER: ${{ steps.metadata.outputs.pr-number }}
+        run: |
+          aws s3 sync docs/html/ "s3://doc-previews/pytorch/vision/${PR_NUMBER}" --delete --quiet

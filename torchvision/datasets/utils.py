@@ -210,7 +210,12 @@ def _extract_tar(
     from_path: Union[str, pathlib.Path], to_path: Union[str, pathlib.Path], compression: Optional[str]
 ) -> None:
     with tarfile.open(from_path, f"r:{compression[1:]}" if compression else "r") as tar:
-        tar.extractall(to_path)
+        # The filter argument rejects members that would escape to_path (absolute paths, "..", links pointing
+        # outside, etc.). It is only available from Python 3.11.4, see PEP 706.
+        if hasattr(tarfile, "data_filter"):
+            tar.extractall(to_path, filter="data")
+        else:
+            tar.extractall(to_path)
 
 
 _ZIP_COMPRESSION_MAP: dict[str, int] = {
