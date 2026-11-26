@@ -549,6 +549,8 @@ class RoIHeads(nn.Module):
 
         self.score_thresh = score_thresh
         self.nms_thresh = nms_thresh
+        if detections_per_img < 0:
+            raise ValueError(f"detections_per_img should be non-negative, got {detections_per_img}")
         self.detections_per_img = detections_per_img
 
         self.mask_roi_pool = mask_roi_pool
