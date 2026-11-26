@@ -168,7 +168,7 @@ class TestModelsDetectionNegativeSamples:
             "fasterrcnn_resnet50_fpn",
             "maskrcnn_resnet50_fpn",
             "keypointrcnn_resnet50_fpn",
-    ],
+        ],
     )
     @pytest.mark.parametrize("limit", [-1, -2])
     def test_negative_box_detections_per_img(self, name, limit):
@@ -179,41 +179,64 @@ class TestModelsDetectionNegativeSamples:
             torchvision.models.get_model(
                 name, weights=None, weights_backbone=None, num_classes=2, box_detections_per_img=limit
             )
-    
+
+    def test_roi_heads_negative_detections_per_img(self):
+        # The validation lives in RoIHeads itself, so constructing one
+        # directly with a negative detections_per_img must also raise,
+        # without going through a model factory.
+        box_roi_pool = MultiScaleRoIAlign(featmap_names=["0", "1", "2", "3"], output_size=7, sampling_ratio=2)
+        resolution = box_roi_pool.output_size[0]
+        box_head = TwoMLPHead(4 * resolution**2, 1024)
+        box_predictor = FastRCNNPredictor(1024, 2)
+
+        with pytest.raises(ValueError, match="detections_per_img should be non-negative"):
+            RoIHeads(
+                box_roi_pool,
+                box_head,
+                box_predictor,
+                0.5,
+                0.5,
+                512,
+                0.25,
+                None,
+                0.05,
+                0.5,
+                -1,
+            )
+
     def test_box_detections_per_img_zero_and_positive(self):
         # Based on the reproducer in https://github.com/pytorch/vision/issues/9761:
         # non-negative values must keep their previous behavior, with 0
         # returning no detections and a positive value capping the output.
         image = torch.linspace(0, 1, 3 * 64 * 64).reshape(3, 64, 64)
-    
-    def run(limit):
-        torch.manual_seed(109150)
-        model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(
-            weights=None,
-            weights_backbone=None,
-            num_classes=2,
-            box_score_thresh=0.0,
-            box_nms_thresh=1.0,
-            box_detections_per_img=limit,
-            min_size=64,
-            max_size=64,
-        ).eval()
-        with torch.no_grad():
-            return model([image])[0]
-    
-    full = run(100)
-    assert len(full["scores"]) > 10
-    
-    capped = run(10)
-    assert_equal(capped["boxes"], full["boxes"][:10])
-    assert_equal(capped["scores"], full["scores"][:10])
-    assert_equal(capped["labels"], full["labels"][:10])
-    
-    empty = run(0)
-    assert len(empty["boxes"]) == 0
-    assert len(empty["scores"]) == 0
-    assert len(empty["labels"]) == 0
 
+        def run(limit):
+            torch.manual_seed(109150)
+            model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(
+                weights=None,
+                weights_backbone=None,
+                num_classes=2,
+                box_score_thresh=0.0,
+                box_nms_thresh=1.0,
+                box_detections_per_img=limit,
+                min_size=64,
+                max_size=64,
+            ).eval()
+            with torch.no_grad():
+                return model([image])[0]
+
+        full = run(100)
+        assert len(full["scores"]) > 10
+
+        capped = run(10)
+        assert_equal(capped["boxes"], full["boxes"][:10])
+        assert_equal(capped["scores"], full["scores"][:10])
+        assert_equal(capped["labels"], full["labels"][:10])
+
+        empty = run(0)
+        assert len(empty["boxes"]) == 0
+        assert len(empty["scores"]) == 0
+        assert len(empty["labels"]) == 0
 
 
 if __name__ == "__main__":
