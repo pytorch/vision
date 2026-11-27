@@ -138,7 +138,6 @@ Image pairs
     :template: class_dataset.rst
 
     LFWPairs
-    PhotoTour
 
 Image captioning
 ~~~~~~~~~~~~~~~~
