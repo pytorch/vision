@@ -3297,6 +3297,16 @@ class InStereo2k(datasets_utils.ImageDatasetTestCase):
                 for left, right, disparity in dataset:
                     datasets_utils.shape_test_for_stereo(left, right, disparity)
 
+    def test_disparity_scale(self):
+        with self.create_dataset(split="train") as (dataset, _):
+            disparity_path = dataset._disparities[0][0]
+            disparity_image = PIL.Image.fromarray(
+                np.full((100, 200), 100, dtype=np.uint16)
+            )
+            disparity_image.save(disparity_path)
+            disparity = dataset._read_disparity(disparity_path)[0]
+            np.testing.assert_array_equal(disparity, np.ones((1, 100, 200)))
+
     def test_bad_input(self):
         with pytest.raises(
             ValueError, match="Unknown value 'bad' for argument split. Valid values are {'train', 'test'}."
