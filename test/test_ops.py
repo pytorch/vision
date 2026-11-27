@@ -1947,6 +1947,15 @@ class TestCompleteBoxIou(TestIouBase):
     def test_iou_jit(self):
         self._run_jit_test(ops.complete_box_iou, INT_BOXES)
 
+    def test_degenerate_boxes_are_finite(self):
+        # A point box or a box clamped to zero height must not put NaN into the matrix or its gradient.
+        boxes1 = torch.tensor([[5.0, 5.0, 5.0, 5.0], [10.0, 80.0, 50.0, 80.0]], requires_grad=True)
+        boxes2 = torch.tensor([[10.0, 20.0, 50.0, 80.0], [0.0, 0.0, 10.0, 10.0]])
+        iou = ops.complete_box_iou(boxes1, boxes2)
+        iou.sum().backward()
+        assert torch.isfinite(iou).all()
+        assert torch.isfinite(boxes1.grad).all()
+
     def test_iou_cartesian(self):
         self._run_cartesian_test(ops.complete_box_iou)
 
@@ -2327,6 +2336,17 @@ class TestCompleteBoxIouLoss:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_empty_inputs(self, dtype, device):
         assert_empty_loss(ops.complete_box_iou_loss, dtype, device)
+
+    @pytest.mark.parametrize("device", cpu_and_cuda())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_zero_height_box_has_finite_gradient(self, dtype, device):
+        # A predicted box clamped to the image border can have zero height; the aspect-ratio term must stay finite.
+        pred = torch.tensor([[10.0, 80.0, 50.0, 80.0]], dtype=dtype, device=device, requires_grad=True)
+        target = torch.tensor([[10.0, 20.0, 50.0, 80.0]], dtype=dtype, device=device)
+        loss = ops.complete_box_iou_loss(pred, target, reduction="sum")
+        loss.backward()
+        assert torch.isfinite(loss)
+        assert torch.isfinite(pred.grad).all()
 
 
 class TestDistanceBoxIouLoss:
