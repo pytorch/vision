@@ -23,7 +23,7 @@ def normalize(
     inplace: bool = False,
 ) -> torch.Tensor:
     """See :class:`~torchvision.transforms.v2.Normalize` for details."""
-    if torch.jit.is_scripting():
+    if torch.jit.is_scripting() or torch._dynamo.is_compiling():
         return normalize_image(inpt, mean=mean, std=std, inplace=inplace)
 
     _log_api_usage_once(normalize)
