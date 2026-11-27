@@ -257,7 +257,7 @@ class LFWPairs(_LFW):
             index (int): Index
 
         Returns:
-            tuple: (image1, image2, target) where target is `0` for different indentities and `1` for same identities.
+            tuple: (image1, image2, target) where target is `0` for different identities and `1` for same identities.
         """
         img1, img2 = self.data[index]
         img1, img2 = self._loader(img1), self._loader(img2)
