@@ -1,11 +1,10 @@
 import io
 import os.path
-import pickle
-import string
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, Callable, cast, Optional, Union
 
+import torch
 from PIL import Image
 
 from .utils import iterable_to_str, verify_str_arg
@@ -23,13 +22,21 @@ class LSUNClass(VisionDataset):
         self.env = lmdb.open(root, max_readers=1, readonly=True, lock=False, readahead=False, meminit=False)
         with self.env.begin(write=False) as txn:
             self.length = txn.stat()["entries"]
-        cache_file = "_cache_" + "".join(c for c in root if c in string.ascii_letters)
+        # Cache the enumerated keys next to the LMDB store (a trusted, per-class
+        # location) rather than in the current working directory, and use the
+        # restricted ``weights_only`` unpickler so a cache file can never execute
+        # code on load. See https://github.com/pytorch/vision for context.
+        cache_file = os.path.join(root, "_cache_keys.pt")
         if os.path.isfile(cache_file):
-            self.keys = pickle.load(open(cache_file, "rb"))
+            self.keys = torch.load(cache_file, weights_only=True)
         else:
             with self.env.begin(write=False) as txn:
                 self.keys = [key for key in txn.cursor().iternext(keys=True, values=False)]
-            pickle.dump(self.keys, open(cache_file, "wb"))
+            try:
+                torch.save(self.keys, cache_file)
+            except OSError:
+                # Read-only dataset directory: skip caching and re-enumerate next time.
+                pass
 
     def __getitem__(self, index: int) -> tuple[Any, Any]:
         img, target = None, None
