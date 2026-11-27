@@ -1,4 +1,5 @@
 import concurrent.futures
+import contextlib
 import glob
 import io
 import os
@@ -1004,7 +1005,13 @@ def test_decode_webp_grayscale(decode_fun):
     #
     # torch surfaces the C++ warning as a Python warning, see
     # https://github.com/pytorch/pytorch/pull/193451.
-    with pytest.warns(UserWarning, match="Webp does not support grayscale conversions"):
+    @contextlib.contextmanager
+    def set_always_warn():
+        torch._C._set_warnAlways(True)
+        yield
+        torch._C._set_warnAlways(False)
+
+    with set_always_warn(), pytest.warns(UserWarning, match="Webp does not support grayscale conversions"):
         img = decode_fun(encoded_bytes, mode=ImageReadMode.GRAY)
 
         # Note that because we do not support grayscale conversions, we expect
