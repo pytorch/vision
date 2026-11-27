@@ -11,6 +11,14 @@ from torch import nn, Tensor
 from . import functional as F, InterpolationMode
 
 
+# Integer inputs are rescaled to [0, 1] on the way to float. Float inputs keep their values.
+# This sentence is copied onto every pretrained-weight page.
+_DTYPE_RANGE_NOTE = (
+    "Integer images (``PIL.Image`` or an integer tensor, typically ``uint8``) are rescaled to ``[0.0, 1.0]`` "
+    "when converted to float. A float tensor keeps its values and is expected to already be in ``[0.0, 1.0]``."
+)
+
+
 __all__ = [
     "ObjectDetection",
     "ImageClassification",
@@ -32,7 +40,7 @@ class ObjectDetection(nn.Module):
     def describe(self) -> str:
         return (
             "Accepts ``PIL.Image``, batched ``(B, C, H, W)`` and single ``(C, H, W)`` image ``torch.Tensor`` objects. "
-            "The images are rescaled to ``[0.0, 1.0]``."
+            f"{_DTYPE_RANGE_NOTE}"
         )
 
 
@@ -78,8 +86,8 @@ class ImageClassification(nn.Module):
         return (
             "Accepts ``PIL.Image``, batched ``(B, C, H, W)`` and single ``(C, H, W)`` image ``torch.Tensor`` objects. "
             f"The images are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
-            f"followed by a central crop of ``crop_size={self.crop_size}``. Finally the values are first rescaled to "
-            f"``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and ``std={self.std}``."
+            f"followed by a central crop of ``crop_size={self.crop_size}``. {_DTYPE_RANGE_NOTE} "
+            f"Values are then normalized using ``mean={self.mean}`` and ``std={self.std}``."
         )
 
 
@@ -138,9 +146,9 @@ class VideoClassification(nn.Module):
         return (
             "Accepts batched ``(B, T, C, H, W)`` and single ``(T, C, H, W)`` video frame ``torch.Tensor`` objects. "
             f"The frames are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
-            f"followed by a central crop of ``crop_size={self.crop_size}``. Finally the values are first rescaled to "
-            f"``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and ``std={self.std}``. Finally the output "
-            "dimensions are permuted to ``(..., C, T, H, W)`` tensors."
+            f"followed by a central crop of ``crop_size={self.crop_size}``. {_DTYPE_RANGE_NOTE} "
+            f"Values are then normalized using ``mean={self.mean}`` and ``std={self.std}``. "
+            "The output dimensions are permuted to ``(..., C, T, H, W)`` tensors."
         )
 
 
@@ -183,8 +191,8 @@ class SemanticSegmentation(nn.Module):
         return (
             "Accepts ``PIL.Image``, batched ``(B, C, H, W)`` and single ``(C, H, W)`` image ``torch.Tensor`` objects. "
             f"The images are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``. "
-            f"Finally the values are first rescaled to ``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and "
-            f"``std={self.std}``."
+            f"{_DTYPE_RANGE_NOTE} "
+            f"Values are then normalized using ``mean={self.mean}`` and ``std={self.std}``."
         )
 
 
@@ -213,5 +221,5 @@ class OpticalFlow(nn.Module):
     def describe(self) -> str:
         return (
             "Accepts ``PIL.Image``, batched ``(B, C, H, W)`` and single ``(C, H, W)`` image ``torch.Tensor`` objects. "
-            "The images are rescaled to ``[-1.0, 1.0]``."
+            f"{_DTYPE_RANGE_NOTE} Values are then mapped to ``[-1.0, 1.0]``."
         )
