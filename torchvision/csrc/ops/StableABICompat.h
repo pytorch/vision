@@ -13,8 +13,6 @@
 #include <torch/headeronly/version.h>
 
 #include <array>
-#include <optional>
-#include <tuple>
 
 // Stable-ABI compatibility shims for torchvision's C++ operators.
 //
@@ -27,34 +25,14 @@
 // This file GROWS as operators migrate: add a helper the first time an op needs
 // an ATen call with no stable wrapper. Each is a thin shim -- delete it once an
 // upstream torch::stable wrapper lands.
-// TODO(stable-abi): upstream torch::stable wrappers for sort / masked_select /
-// mm.out so these helpers can be removed.
+// TODO(stable-abi): upstream torch::stable wrappers for masked_select / mm.out
+// so these helpers can be removed.
 
 namespace vision {
 namespace ops {
 namespace stable_helpers {
 
 using torch::stable::Tensor;
-
-// aten::sort.stable(Tensor self, bool? stable, int dim=-1, bool
-// descending=False)
-//     -> (Tensor values, Tensor indices)
-inline std::tuple<Tensor, Tensor> sort(
-    const Tensor& self,
-    bool stable,
-    int64_t dim,
-    bool descending) {
-  std::array<StableIValue, 4> stack{
-      torch::stable::detail::from(self),
-      torch::stable::detail::from(std::optional<bool>(stable)),
-      torch::stable::detail::from(dim),
-      torch::stable::detail::from(descending)};
-  TORCH_ERROR_CODE_CHECK(torch_call_dispatcher(
-      "aten::sort", "stable", stack.data(), TORCH_ABI_VERSION));
-  return {
-      torch::stable::detail::to<Tensor>(stack[0]),
-      torch::stable::detail::to<Tensor>(stack[1])};
-}
 
 // aten::masked_select(Tensor self, Tensor mask) -> Tensor
 inline Tensor masked_select(const Tensor& self, const Tensor& mask) {
