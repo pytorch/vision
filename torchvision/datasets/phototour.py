@@ -37,27 +37,27 @@ class PhotoTour(VisionDataset):
 
     urls = {
         "notredame_harris": [
-            "http://matthewalunbrown.com/patchdata/notredame_harris.zip",
+            "https://cmp.felk.cvut.cz/~mishkdmy/datasets/BrownPhotoTour/notredame_harris.zip",
             "notredame_harris.zip",
-            "69f8c90f78e171349abdf0307afefe4d",
+            "f139ca4e4101d558c31c3233233c2a06",
         ],
         "yosemite_harris": [
-            "http://matthewalunbrown.com/patchdata/yosemite_harris.zip",
+            "https://cmp.felk.cvut.cz/~mishkdmy/datasets/BrownPhotoTour/yosemite_harris.zip",
             "yosemite_harris.zip",
-            "a73253d1c6fbd3ba2613c45065c00d46",
+            "a9f8a48c96dbe9e5703f21c1de764173",
         ],
         "liberty_harris": [
-            "http://matthewalunbrown.com/patchdata/liberty_harris.zip",
+            "https://cmp.felk.cvut.cz/~mishkdmy/datasets/BrownPhotoTour/liberty_harris.zip",
             "liberty_harris.zip",
-            "c731fcfb3abb4091110d0ae8c7ba182c",
+            "01c32c4d98493a95f23159923ff0ca39",
         ],
         "notredame": [
-            "http://icvl.ee.ic.ac.uk/vbalnt/notredame.zip",
+            "https://cmp.felk.cvut.cz/~mishkdmy/datasets/BrownPhotoTour/notredame.zip",
             "notredame.zip",
-            "509eda8535847b8c0a90bbb210c83484",
+            "a0d36b46324d5807c559145e1f940359",
         ],
-        "yosemite": ["http://icvl.ee.ic.ac.uk/vbalnt/yosemite.zip", "yosemite.zip", "533b2e8eb7ede31be40abc317b2fd4f0"],
-        "liberty": ["http://icvl.ee.ic.ac.uk/vbalnt/liberty.zip", "liberty.zip", "fdd9152f138ea5ef2091746689176414"],
+        "yosemite": ["https://cmp.felk.cvut.cz/~mishkdmy/datasets/BrownPhotoTour/yosemite.zip","yosemite.zip", "97f1ecc08928cdf2dba220939778779e"],
+        "liberty": ["https://cmp.felk.cvut.cz/~mishkdmy/datasets/BrownPhotoTour/liberty.zip", "liberty.zip", "abb7b7e7c8f58b953f9d10dce2cb5e9c"],
     }
     means = {
         "notredame": 0.4854,
