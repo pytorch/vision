@@ -25,7 +25,7 @@ class SEMEION(VisionDataset):
 
     """
 
-    url = "http://archive.ics.uci.edu/ml/machine-learning-databases/semeion/semeion.data"
+    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/semeion/semeion.data"
     filename = "semeion.data"
     md5_checksum = "cb545d371d2ce14ec121470795a77432"
 
