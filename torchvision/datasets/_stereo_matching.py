@@ -334,13 +334,13 @@ class Kitti2015Stereo(StereoMatchingDataset):
         verify_str_arg(split, "split", valid_values=("train", "test"))
 
         root = Path(root) / "Kitti2015" / (split + "ing")
-        left_img_pattern = str(root / "image_2" / "*.png")
-        right_img_pattern = str(root / "image_3" / "*.png")
+        left_img_pattern = str(root / "image_2" / "*_10.png")
+        right_img_pattern = str(root / "image_3" / "*_10.png")
         self._images = self._scan_pairs(left_img_pattern, right_img_pattern)
 
         if split == "train":
-            left_disparity_pattern = str(root / "disp_occ_0" / "*.png")
-            right_disparity_pattern = str(root / "disp_occ_1" / "*.png")
+            left_disparity_pattern = str(root / "disp_occ_0" / "*_10.png")
+            right_disparity_pattern = str(root / "disp_occ_1" / "*_10.png")
             self._disparities = self._scan_pairs(left_disparity_pattern, right_disparity_pattern)
         else:
             self._disparities = list((None, None) for _ in self._images)
