@@ -19,7 +19,7 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
-    metric_logger.add_meter("clips/s", utils.SmoothedValue(window_size=10, fmt="{value:.3f}"))
+    metric_logger.add_meter("clips/s", utils.SmoothedValue(window_size=10, fmt="{avg:.3f}"))
 
     header = f"Epoch: [{epoch}]"
     for video, target, _ in metric_logger.log_every(data_loader, print_freq, header):
