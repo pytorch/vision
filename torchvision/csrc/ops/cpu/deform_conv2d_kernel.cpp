@@ -71,7 +71,6 @@
 #include <torch/csrc/stable/ops.h>
 #include <torch/csrc/stable/tensor.h>
 #include <torch/headeronly/core/Dispatch_v2.h>
-#include "../StableABICompat.h"
 
 #include <algorithm>
 #include <array>
@@ -729,7 +728,7 @@ std::tuple<Tensor, Tensor, Tensor> backward_gradient_inputs(
       auto grad_out_g = torch::stable::flatten(
           torch::stable::select(torch::stable::select(grad_out, 0, elt), 0, g),
           1);
-      stable_helpers::mm_out(weight_g, grad_out_g, columns_g);
+      torch::stable::mm_out(columns_g, weight_g, grad_out_g);
     }
 
     compute_grad_offset_and_mask(
@@ -1130,7 +1129,7 @@ Tensor deform_conv2d_forward_kernel(
       auto weight_g =
           torch::stable::flatten(torch::stable::select(weight_c, 0, g), 1);
       auto columns_g = torch::stable::select(columns, 0, g);
-      stable_helpers::mm_out(weight_g, columns_g, out_buf_g);
+      torch::stable::mm_out(out_buf_g, weight_g, columns_g);
     }
     columns = torch::stable::view(
         columns, {columns.size(0) * columns.size(1), columns.size(2)});
