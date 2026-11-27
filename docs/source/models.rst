@@ -105,6 +105,15 @@ accessible via the ``weight.transforms`` attribute:
     # Apply it to the input image
     img_transformed = preprocess(img)
 
+These transforms rescale integer images (PIL or ``uint8``) to ``[0.0, 1.0]``
+when converting them to float. A float tensor keeps its values and must
+already be in ``[0.0, 1.0]``; see :ref:`range_and_dtype`. A float tensor whose
+values are still in ``[0, 255]`` is normalized on that range.
+
+Some weights use a very small standard deviation on purpose. VGG-16
+``IMAGENET1K_FEATURES`` uses ``std = 1/255``, which undoes the ``[0.0, 1.0]``
+rescale and matches the original Caffe preprocessing. Activations from that
+recipe are large when preprocessing is correct.
 
 Some models use modules which have different training and evaluation
 behavior, such as batch normalization. To switch between these modes, use

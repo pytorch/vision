@@ -100,7 +100,9 @@ that can be represented in that dtype. Typically, images of dtype
 ``torch.uint8`` are expected to have values in ``[0, 255]``.
 
 Use :class:`~torchvision.transforms.v2.ToDtype` to convert both the dtype and
-range of the inputs.
+range of the inputs. Pretrained-weight transforms call ``convert_image_dtype``,
+which rescales an integer image to ``[0, 1]`` on the way to float. A
+floating-point tensor keeps its values, so it must already be in ``[0, 1]``.
 
 .. _v1_or_v2:
 
