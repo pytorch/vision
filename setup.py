@@ -81,10 +81,10 @@ def write_version_file(version, sha):
         f.write("    cuda = _check_cuda_version()\n")
 
 
-# We're ABI stable w.r.t. torch 2.14. TORCH_MIN_VERSION and TORCH_TARGET_VERSION
+# We're ABI stable w.r.t. torch 2.16. TORCH_MIN_VERSION and TORCH_TARGET_VERSION
 # must be kept in sync.
-TORCH_MIN_VERSION = (2, 14, 0)
-TORCH_TARGET_VERSION = "0x020e000000000000"
+TORCH_MIN_VERSION = (2, 16, 0)
+TORCH_TARGET_VERSION = "0x0210000000000000"
 
 
 def get_requirements():
@@ -104,7 +104,7 @@ def get_requirements():
     else:
         # Before being ABI stable w.r.t. 2.14, we used to pin to
         # torch==PYTORCH_VERSION where PYTORCH_VERSION was set by test-infra. We
-        # now ignore it and always pin to `torch >= 2.14`.
+        # now ignore it and use TORCH_MIN_VERSION as the runtime minimum.
         pytorch_dep += ">=" + ".".join(str(v) for v in TORCH_MIN_VERSION)
 
     requirements = [

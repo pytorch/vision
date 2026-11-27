@@ -20,11 +20,6 @@ namespace {
 
 using torch::stable::Tensor;
 
-// TODO(stable-abi): use torch::stable::add once the shim adds aten::add.Tensor.
-Tensor add_tensors(const Tensor& self, const Tensor& other) {
-  return torch::stable::subtract(self, other, -1.0);
-}
-
 struct DeformConv2dIm2colLaunchArgs {
   AtenTensorHandle input;
   AtenTensorHandle offset;
@@ -237,7 +232,7 @@ Tensor deform_conv2d_forward_kernel(
       1);
   Tensor bias_view = torch::stable::view(
       bias_c, {1, static_cast<int64_t>(out_channels), 1, 1});
-  return add_tensors(out, bias_view);
+  return torch::stable::add(out, bias_view);
 }
 
 } // namespace
