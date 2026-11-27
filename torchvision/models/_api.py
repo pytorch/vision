@@ -88,6 +88,13 @@ class WeightsEnum(Enum):
         return obj
 
     def get_state_dict(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        # Load checkpoints with ``weights_only=True`` by default so a tampered
+        # checkpoint cannot execute arbitrary code via pickle during unpickling.
+        # ``torch.hub.load_state_dict_from_url`` forwards ``weights_only`` to
+        # ``torch.load`` explicitly, so it does not benefit from the
+        # ``weights_only=True`` default that ``torch.load`` itself adopted in
+        # PyTorch 2.6 -- it must be requested here. Callers may still override.
+        kwargs.setdefault("weights_only", True)
         return load_state_dict_from_url(self.url, *args, **kwargs)
 
     def __repr__(self) -> str:
