@@ -371,9 +371,23 @@ def draw_bounding_boxes(
         label_background_colors = colors.copy()  # type: ignore[assignment]
 
     if font is None:
-        if font_size is not None:
-            warnings.warn("Argument 'font_size' will be ignored since 'font' is not set.")
-        txt_font = ImageFont.load_default()
+        # This may throw if the version string is from an install that comes from a
+        # non-stable or development version. We'll fall back to the old behavior in
+        # such cases.
+        try:
+            PILLOW_VERSION = tuple(int(x) for x in PILLOW_VERSION_STRING.split("."))
+        except Exception:
+            PILLOW_VERSION = None
+
+        if PILLOW_VERSION is None or PILLOW_VERSION < (10, 1):
+            if font_size is not None:
+                warnings.warn(
+                    "Argument 'font_size' will be ignored since 'font' is not set. "
+                    "To use 'font_size' with the default font, please upgrade to Pillow >= 10.1."
+                )
+            txt_font = ImageFont.load_default()
+        else:
+            txt_font = ImageFont.load_default(size=font_size)
     else:
         txt_font = ImageFont.truetype(font=font, size=font_size or 10)
 
